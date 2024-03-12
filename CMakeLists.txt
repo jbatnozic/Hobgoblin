@@ -14,9 +14,14 @@ include("CMake/hg_copy_test_assets.cmake")
 
 # ===== ADD ALL THE PARTS =====
 
+# In Debug builds, define "UHOBGOBLIN_DEBUG" macro for all targets.
+add_compile_definitions($<$<CONFIG:Debug>:UHOBGOBLIN_DEBUG>)
+
 # This will make the modules which compile to Windows DLLs
 # export their symbols properly.
 add_compile_definitions("UHOBGOBLIN_EXPORT")
 
 add_subdirectory("EngineCore")
 add_subdirectory("Overlays")
+
+add_subdirectory("ProofOfConceptProjects")

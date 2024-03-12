@@ -21,6 +21,7 @@ set(COMPONENT_SOURCES
   "Source/Builtin_fonts.cpp"
   "Source/Circle_shape.cpp"
   "Source/Draw_batcher.cpp"
+  "Source/Font.cpp"
   "Source/Image.cpp"
   "Source/Multisprite.cpp"
   "Source/Multisprite_blueprint.cpp"
@@ -33,6 +34,7 @@ set(COMPONENT_SOURCES
   "Source/Sprite.cpp"
   "Source/Sprite_blueprint.cpp"
   "Source/Sprite_loader.cpp"
+  "Source/Text.cpp"
   "Source/Texture.cpp"
   "Source/Texture_packing.cpp"
   "Source/Tga_export.cpp"
@@ -56,6 +58,7 @@ PUBLIC
     "Hobgoblin_L00_S01_GSL"
     "Hobgoblin_L00_S02_HGExcept"
     "Hobgoblin_L00_S03_Logging"
+    "Hobgoblin_L00_S04_Unicode"
 
     # Utilities
     "Hobgoblin_L01_S00_Math"
