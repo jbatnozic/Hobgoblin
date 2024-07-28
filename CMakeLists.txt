@@ -26,5 +26,6 @@ add_compile_definitions("UHOBGOBLIN_EXPORT")
 
 add_subdirectory("EngineCore")
 add_subdirectory("Overlays")
+
+add_subdirectory("ProofOfConceptProjects")
 add_subdirectory("Tools")
-# add_subdirectory("ProofOfConceptProjects")
