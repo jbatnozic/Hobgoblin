@@ -706,6 +706,7 @@ void RN_UdpConnectorImpl::_processDisconnectPacket(util::Packet& packet) {
 }
 
 void RN_UdpConnectorImpl::_processDataPacket(util::Packet& packet) {
+    // clang-format off
     switch (_status) {
     case RN_ConnectorStatus::Connecting:
         HG_THROW_TRACED(InvalidDataError, 0, "Received DATA packet (status: Connecting).");
@@ -723,9 +724,11 @@ void RN_UdpConnectorImpl::_processDataPacket(util::Packet& packet) {
         HG_UNREACHABLE("Invalid value for _status ({}).", (int)_status);
         break;
     }
+    // clang-format on
 }
 
 void RN_UdpConnectorImpl::_processDataMorePacket(util::Packet& packet) {
+    // clang-format off
     switch (_status) {
     case RN_ConnectorStatus::Connecting:
         HG_THROW_TRACED(InvalidDataError, 0, "Received DATA_MORE packet (status: Connecting).");
@@ -743,9 +746,11 @@ void RN_UdpConnectorImpl::_processDataMorePacket(util::Packet& packet) {
         HG_UNREACHABLE("Invalid value for _status ({}).", (int)_status);
         break;
     }
+    // clang-format on
 }
 
 void RN_UdpConnectorImpl::_processDataTailPacket(util::Packet& packet) {
+    // clang-format off
     switch (_status) {
     case RN_ConnectorStatus::Connecting:
         HG_THROW_TRACED(InvalidDataError, 0, "Received DATA_TAIL packet (status: Connecting).");
@@ -763,6 +768,7 @@ void RN_UdpConnectorImpl::_processDataTailPacket(util::Packet& packet) {
         HG_UNREACHABLE("Invalid value for _status ({}).", (int)_status);
         break;
     }
+    // clang-format on
 }
 
 void RN_UdpConnectorImpl::_processAcksPacket(util::Packet& packet) {
