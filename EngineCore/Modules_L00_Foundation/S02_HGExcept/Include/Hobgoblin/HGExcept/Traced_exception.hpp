@@ -1,8 +1,6 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-// clang-format off
-
 #ifndef UHOBGOBLIN_HGEXCEPT_TRACED_EXCEPTION_HPP
 #define UHOBGOBLIN_HGEXCEPT_TRACED_EXCEPTION_HPP
 
@@ -23,18 +21,16 @@ HOBGOBLIN_NAMESPACE_BEGIN
 class TracedException : public std::exception {
 public:
     //! Constructs the TracedException.
-    //! 
+    //!
     //! It is recommended to use the `HG_THROW_TRACED` macro
     //! for convenience and not the constructor directly.
-    TracedException(
-        std::string aType,
-        std::string aFunc,
-        std::string aFile,
-        int aLineNumber,
-        int aErrorCode,
-        std::string aErrorMessage,
-        std::string aComment = ""
-    );
+    TracedException(std::string aType,
+                    std::string aFunc,
+                    std::string aFile,
+                    int         aLineNumber,
+                    int         aErrorCode,
+                    std::string aErrorMessage,
+                    std::string aComment = "");
 
     //!
     const std::string& getType() const noexcept;
@@ -58,7 +54,7 @@ public:
     const std::string& getComment() const noexcept;
 
     //! \brief returns the stack trace indicating where the exception was thrown.
-    //! 
+    //!
     //! Depending on several factors, such as the Operating System, compiler and
     //! build type (Debug, Release etc.) the stack trace may or may not be available
     //! at runtime.
@@ -82,19 +78,32 @@ public:
     //! Same as `getDescription()`, provided with compatibility with `std::exception`.
     const char* what() const noexcept override;
 
+    //! Casts this exception object into an object of a different type, which also inherits from
+    //! `TracedException`. Most reliable if neither type has additional fields apart from the inherited
+    //! one, and doesn't override `what()` further. Useful for changing the type of a caught traced
+    //! exception, for purposes of conforing to an API, or similar.
+    template <class T>
+    T cast() const {
+        T result{_type, _func, _file, _lineNumber, _errorCode, _errorMessage, _comment};
+        result._stackTrace = _stackTrace;
+        return result;
+    }
+
 private:
-    std::string _type;
-    std::string _func;
-    std::string _file;
-    int _lineNumber;
-    int _errorCode;
-    std::string _errorMessage;
-    std::string _comment;
-    std::string _description; //!< Need to have this as member so what() would work.
+    std::string              _type;
+    std::string              _func;
+    std::string              _file;
+    int                      _lineNumber;
+    int                      _errorCode;
+    std::string              _errorMessage;
+    std::string              _comment;
+    std::string              _description; //!< Need to have this as member so what() would work.
     std::vector<std::string> _stackTrace;
 };
 
 #include <Hobgoblin/HGExcept/Private/Throw_traced_macros.inl>
+
+// clang-format off
 
 //! Use this macro to throw a `TracedException` or a derived exception type
 //! with the same constructor parameters.
@@ -127,20 +136,20 @@ private:
 //! `TracedException` constructor).
 //! 
 //! This macro can be used in three forms:
-//!  1. HG_THROW_TRACED(<type>, <error-code>, <comment>);
+//!  1. HG_THROW_TRACED_C(<type>, <error-code>, <comment>);
 //!     (in this case the error message of the thrown exception will be '<no message provided>'.)
 //! 
-//!     For example: HG_THROW_TRACED(TracedLogicError, 1);
+//!     For example: HG_THROW_TRACED_C(TracedLogicError, 1);
 //! 
-//!  2. HG_THROW_TRACED(<type>, <error-code>, <comment>, <message>);
+//!  2. HG_THROW_TRACED_C(<type>, <error-code>, <comment>, <message>);
 //!     (<message> must be a `std::string` or convertible to it.)
 //! 
-//!     For example: HG_THROW_TRACED(TracedLogicError, 1, "Some error description.");
+//!     For example: HG_THROW_TRACED_C(TracedLogicError, 1, "Some error description.");
 //! 
-//!  3. HG_THROW_TRACED(<type>, <error-code>, <comment>, <format-string>, <arg0>, <arg1>, ...);
+//!  3. HG_THROW_TRACED_C(<type>, <error-code>, <comment>, <format-string>, <arg0>, <arg1>, ...);
 //!     (<format-string> must be a string literal and a valid format string (as per Hobgoblin/Format))
 //! 
-//!     For example: HG_THROW_TRACED(TracedLogicError, 1, "Expected {} but got {}.", aA, aB);
+//!     For example: HG_THROW_TRACED_C(TracedLogicError, 1, "Expected {} but got {}.", aA, aB);
 //! 
 //! In all cases, <comment> must be a `std::string` or convertible to it.
 //! 
@@ -149,11 +158,11 @@ private:
 #define HG_THROW_TRACED_C(_type_, _code_, _comment_, ...) \
     UHOBGOBLIN_THROW_TRACED_MIDDLE(_type_, _code_, _comment_, HG_PP_COUNT_ARGS(__VA_ARGS__), __VA_ARGS__)
 
+// clang-format on
+
 HOBGOBLIN_NAMESPACE_END
 
 #include <Hobgoblin/Private/Pmacro_undef.hpp>
 #include <Hobgoblin/Private/Short_namespace.hpp>
 
 #endif // !UHOBGOBLIN_HGEXCEPT_TRACED_EXCEPTION_HPP
-
-// clang-format on
