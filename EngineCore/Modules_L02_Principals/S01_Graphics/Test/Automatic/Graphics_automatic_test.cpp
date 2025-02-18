@@ -11,6 +11,9 @@
 
 #include <array>
 #include <cmath>
+#include <filesystem>
+
+#include <Hobgoblin/Logging.hpp>
 
 namespace gr = hg::gr;
 
@@ -82,4 +85,38 @@ TEST(SpriteLoadingTest, LoadOriginOffset_SingleSubspriteExamples) {
             CheckOriginCorrectness(sprite, _case.expectedOffset);
         }
     }
+}
+
+TEST(SpriteManifestTest, Test1) {
+    enum SpriteIds {
+        TILE_0 = 0,
+        TILE_1 = 1
+    };
+
+    const auto originalSeveity = hg::log::GetMinimalLogSeverity();
+    try {
+        hg::log::SetMinimalLogSeverity(hg::log::Severity::Debug);
+
+        const std::array<std::filesystem::path, 4> paths = {
+            std::filesystem::path{HG_TEST_ASSET_DIR} / "SpriteManifest1.txt",
+            std::filesystem::path{HG_TEST_ASSET_DIR} / "SpriteManifest2.txt",
+            std::filesystem::path{HG_TEST_ASSET_DIR} / "SpriteManifest3.txt",
+            std::filesystem::path{HG_TEST_ASSET_DIR} / "SpriteManifest4.txt"};
+
+        for (const auto& path : paths) {
+            SCOPED_TRACE(path.string());
+
+            hg::gr::SpriteLoader loader;
+            ASSERT_NO_THROW(loader.loadSpriteManifest(path));
+
+            EXPECT_NO_THROW(loader.getMultiBlueprint(TILE_0).multispr());
+            EXPECT_NO_THROW(loader.getMultiBlueprint(TILE_1).multispr());
+            EXPECT_NO_THROW(loader.getMultiBlueprint(2).multispr());
+            EXPECT_NO_THROW(loader.getMultiBlueprint("tile-3").multispr());
+        }
+    } catch (...) {
+        hg::log::SetMinimalLogSeverity(originalSeveity);
+        throw;
+    }
+    hg::log::SetMinimalLogSeverity(originalSeveity);
 }

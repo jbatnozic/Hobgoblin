@@ -14,6 +14,7 @@
 
 #include "SFML_conversions.hpp"
 #include "SFML_err.hpp"
+#include "Sprite_manifest_parser.hpp"
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
@@ -41,7 +42,7 @@ std::optional<OriginOffset> LoadOriginOffset(const std::filesystem::path& aOrigi
     URegex        regex{pattern, URegex::CASE_INSENSITIVE};
     UMatchResults matchResults;
 
-    if (MatchRegex(contents, regex, matchResults)) {
+    if (RegexMatch(contents, regex, matchResults)) {
         HG_HARD_ASSERT(matchResults.getGroupCount() == 3);
 
         const auto tag = matchResults[1];
@@ -211,6 +212,13 @@ public:
 
             for (auto& pair : _indexedRequests) {
                 for (auto& subsprite : pair.second.subsprites) {
+                    if (!subsprite.occupied) {
+                        HG_LOG_WARN(LOG_ID,
+                                    "Sprite or multisprite with index {} has undefined subsprite with "
+                                    "defined subsprites after it.",
+                                    pair.first);
+                        continue;
+                    }
                     subspritePointers.push_back(std::addressof(subsprite));
                     imagePointers.push_back(std::addressof(subsprite.image));
                 }
@@ -218,6 +226,13 @@ public:
 
             for (auto& pair : _mappedRequests) {
                 for (auto& subsprite : pair.second.subsprites) {
+                    if (!subsprite.occupied) {
+                        HG_LOG_WARN(LOG_ID,
+                                    "Sprite or multisprite with ID '{}' has undefined subsprite with "
+                                    "defined subsprites after it.",
+                                    pair.first);
+                        continue;
+                    }
                     subspritePointers.push_back(std::addressof(subsprite));
                     imagePointers.push_back(std::addressof(subsprite.image));
                 }
@@ -339,6 +354,10 @@ void SpriteLoader::removeTexture(Texture& aTextureToRemove) {
             return (aElem.get() == &aTextureToRemove);
         });
     _textures.erase(iter, _textures.end());
+}
+
+void SpriteLoader::loadSpriteManifest(const std::filesystem::path& aManifestFilePath) {
+    ParseSpriteManifestFile(aManifestFilePath, SELF);
 }
 
 SpriteBlueprint SpriteLoader::getBlueprint(SpriteIdNumerical aSpriteId) const {

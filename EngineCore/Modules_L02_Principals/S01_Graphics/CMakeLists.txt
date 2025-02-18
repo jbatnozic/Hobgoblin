@@ -33,6 +33,7 @@ set(COMPONENT_SOURCES
   "Source/Render_window.cpp"
   "Source/Shader.cpp"
   "Source/Shape.cpp"
+  "Source/Sprite_manifest_parser.cpp"
   "Source/Sprite.cpp"
   "Source/Sprite_blueprint.cpp"
   "Source/Sprite_loader.cpp"

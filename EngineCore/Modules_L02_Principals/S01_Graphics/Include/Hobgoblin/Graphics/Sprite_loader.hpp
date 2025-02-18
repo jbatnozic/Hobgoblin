@@ -11,6 +11,7 @@
 #include <Hobgoblin/Graphics/Sprite_blueprint.hpp>
 #include <Hobgoblin/Graphics/Texture.hpp>
 #include <Hobgoblin/Graphics/Texture_packing.hpp>
+#include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/Math.hpp>
 
 #include <filesystem>
@@ -32,6 +33,14 @@ using SpriteIdTextual = std::string;
 namespace detail {
 class TextureBuilderImpl;
 } // namespace detail
+
+//! Exception that's thrown when processing a sprite manifest (see `loadSpriteManifest()`) fails.
+//! \note it can fail for several reasons: syntatic or semantic errors in the manifest file itself,
+//!       failure to open files containing sprites, failure to create or pack textures, etc.
+class SpriteManifestProcessingError : public TracedRuntimeError {
+public:
+    using TracedRuntimeError::TracedRuntimeError;
+};
 
 class SpriteLoader {
 public:
@@ -153,6 +162,12 @@ public:
     AvoidNull<std::unique_ptr<TextureBuilder>> startTexture(PZInteger aWidth, PZInteger aHeight);
 
     void removeTexture(Texture& aTexture);
+
+    //! Creates textures and adds sprites to them according to a sprite manifest file.
+    //! This is not mutually exclusive with the manual (`addTexture`) methods of loading sprites.
+    //!
+    //! \throws SpriteManifestProcessingError on failure.
+    void loadSpriteManifest(const std::filesystem::path& aManifestFilePath);
 
     SpriteBlueprint getBlueprint(SpriteIdNumerical aSpriteId) const;
 
