@@ -1,0 +1,59 @@
+@enumeration:
+    // Kraken
+    SPR_KRAKEN_BODY = 0,
+    SPR_KRAKEN_FINS = 1,
+    // Diver
+    SPR_DIVER_ALIVE = 2,
+    // Mountain
+    SPR_TERRAIN = 3,
+    // Miscellaneous
+    SPR_POWER      = 4,
+    SPR_BACKGROUND = 5,
+    SPR_LAYOUT     = 6,
+    SPR_SPONGE     = 7,
+    SPR_PEARL      = 8,
+    SPR_SHELL      = 9,
+
+@texture(1024, 1024, BestAreaFit):
+    // Kraken
+    addSubsprite(SPR_KRAKEN_BODY, "Kraken/kraken-eat-1.png"),
+    addSubsprite(SPR_KRAKEN_BODY, "Kraken/kraken-eat-2.png"),
+    addSubsprite(SPR_KRAKEN_BODY, "Kraken/kraken-eat-3.png"),
+    addSubsprite(SPR_KRAKEN_BODY, "Kraken/kraken-eat-4.png"),
+    addSubsprite(SPR_KRAKEN_FINS, "Kraken/kraken-fin-1.png"),
+    addSubsprite(SPR_KRAKEN_FINS, "Kraken/kraken-fin-2.png"),
+    addSubsprite(SPR_KRAKEN_FINS, "Kraken/kraken-fin-3.png"),
+    addSubsprite(SPR_KRAKEN_FINS, "Kraken/kraken-fin-4.png"),
+    addSubsprite(SPR_KRAKEN_FINS, "Kraken/kraken-fin-5.png"),
+    addSubsprite(SPR_KRAKEN_FINS, "Kraken/kraken-fin-6.png"),
+    // Diver
+    addSubsprite(SPR_DIVER_ALIVE, "Diver/diver-1.png"),
+    addSubsprite(SPR_DIVER_ALIVE, "Diver/diver-2.png"),
+    addSubsprite(SPR_DIVER_ALIVE, "Diver/diver-3.png"),
+    addSubsprite(SPR_DIVER_ALIVE, "Diver/diver-4.png"),
+    // Map pieces
+    addSubsprite(SPR_TERRAIN, "Terrain/0.png"),
+    addSubsprite(SPR_TERRAIN, "Terrain/1.png"),
+    addSubsprite(SPR_TERRAIN, "Terrain/2.png"),
+    addSubsprite(SPR_TERRAIN, "Terrain/3.png"),
+    addSubsprite(SPR_TERRAIN, "Terrain/4.png"),
+    addSubsprite(SPR_TERRAIN, "Terrain/5.png"),
+    addSubsprite(SPR_TERRAIN, "Terrain/6.png"),
+    addSubsprite(SPR_TERRAIN, "Terrain/7.png"),
+    addSubsprite(SPR_TERRAIN, "Terrain/8.png"),
+    addSubsprite(SPR_TERRAIN, "Terrain/9.png"),
+    addSubsprite(SPR_TERRAIN, "Terrain/10.png")
+    addSubsprite(SPR_TERRAIN, "Terrain/11.png")
+    addSubsprite(SPR_TERRAIN, "Terrain/12.png")
+    addSubsprite(SPR_TERRAIN, "Terrain/13.png")
+    // Miscellaneous
+    addSubsprite(SPR_POWER, "power.png"),
+    addSubsprite(SPR_SPONGE, "sponge.png"),
+    addSubsprite(SPR_PEARL, "pearl.png"),
+    addSubsprite(SPR_SHELL, "shell.png"),
+
+@texture(4096, 4096, BestAreaFit):
+    addSubsprite(SPR_BACKGROUND, "background.png")
+
+@texture(4096, 4096, BestAreaFit):
+    addSubsprite(SPR_LAYOUT, "Mapfinal.png")

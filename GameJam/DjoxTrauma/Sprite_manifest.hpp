@@ -8,19 +8,19 @@
 
 enum SpriteIds {
     // Kraken
-    SPR_KRAKEN_BODY,
-    SPR_KRAKEN_FINS,
+    SPR_KRAKEN_BODY = 0,
+    SPR_KRAKEN_FINS = 1,
     // Diver
-    SPR_DIVER_ALIVE,
+    SPR_DIVER_ALIVE = 2,
     // Mountain
-    SPR_TERRAIN,
+    SPR_TERRAIN = 3,
     // Miscellaneous
-    SPR_POWER,
-    SPR_BACKGROUND,
-    SPR_LAYOUT,
-    SPR_SPONGE,
-    SPR_PEARL,
-    SPR_SHELL,
+    SPR_POWER      = 4,
+    SPR_BACKGROUND = 5,
+    SPR_LAYOUT     = 6,
+    SPR_SPONGE     = 7,
+    SPR_PEARL      = 8,
+    SPR_SHELL      = 9,
 };
 
 inline void LoadSprites(hg::gr::SpriteLoader& aSpriteLoader) {
@@ -32,70 +32,5 @@ inline void LoadSprites(hg::gr::SpriteLoader& aSpriteLoader) {
         root = root.parent_path();
     }
 
-    const std::filesystem::path basePath     = root / "Assets/Sprites";
-    const std::filesystem::path krakenPath   = root / "Assets/Sprites/Kraken";
-    const std::filesystem::path mountainPath = root / "Assets/Sprites/Terrain";
-    const std::filesystem::path diverPath    = root / "Assets/Sprites/Diver";
-
-    float occupancy = 0.f;
-
-    aSpriteLoader
-        .startTexture(2048, 2048)
-        // Kraken
-        ->addSubsprite(SPR_KRAKEN_BODY, krakenPath / "kraken-eat-1.png")
-        ->addSubsprite(SPR_KRAKEN_BODY, krakenPath / "kraken-eat-2.png")
-        ->addSubsprite(SPR_KRAKEN_BODY, krakenPath / "kraken-eat-3.png")
-        ->addSubsprite(SPR_KRAKEN_BODY, krakenPath / "kraken-eat-4.png")
-        ->addSubsprite(SPR_KRAKEN_FINS, krakenPath / "kraken-fin-1.png")
-        ->addSubsprite(SPR_KRAKEN_FINS, krakenPath / "kraken-fin-2.png")
-        ->addSubsprite(SPR_KRAKEN_FINS, krakenPath / "kraken-fin-3.png")
-        ->addSubsprite(SPR_KRAKEN_FINS, krakenPath / "kraken-fin-4.png")
-        ->addSubsprite(SPR_KRAKEN_FINS, krakenPath / "kraken-fin-5.png")
-        ->addSubsprite(SPR_KRAKEN_FINS, krakenPath / "kraken-fin-6.png")
-        // Diver
-        ->addSubsprite(SPR_DIVER_ALIVE, diverPath / "diver-1.png")
-        ->addSubsprite(SPR_DIVER_ALIVE, diverPath / "diver-2.png")
-        ->addSubsprite(SPR_DIVER_ALIVE, diverPath / "diver-3.png")
-        ->addSubsprite(SPR_DIVER_ALIVE, diverPath / "diver-4.png")
-        // Map pieces
-        ->addSubsprite(SPR_TERRAIN, mountainPath / "0.png")
-        ->addSubsprite(SPR_TERRAIN, mountainPath / "1.png")
-        ->addSubsprite(SPR_TERRAIN, mountainPath / "2.png")
-        ->addSubsprite(SPR_TERRAIN, mountainPath / "3.png")
-        ->addSubsprite(SPR_TERRAIN, mountainPath / "4.png")
-        ->addSubsprite(SPR_TERRAIN, mountainPath / "5.png")
-        ->addSubsprite(SPR_TERRAIN, mountainPath / "6.png")
-        ->addSubsprite(SPR_TERRAIN, mountainPath / "7.png")
-        ->addSubsprite(SPR_TERRAIN, mountainPath / "8.png")
-        ->addSubsprite(SPR_TERRAIN, mountainPath / "9.png")
-        ->addSubsprite(SPR_TERRAIN, mountainPath / "10.png")
-        ->addSubsprite(SPR_TERRAIN, mountainPath / "11.png")
-        ->addSubsprite(SPR_TERRAIN, mountainPath / "12.png")
-        ->addSubsprite(SPR_TERRAIN, mountainPath / "13.png")
-        // Miscellaneous
-        ->addSubsprite(SPR_POWER, basePath / "power.png")
-        ->addSubsprite(SPR_SPONGE, basePath / "sponge.png")
-        ->addSubsprite(SPR_PEARL, basePath / "pearl.png")
-        ->addSubsprite(SPR_SHELL, basePath / "shell.png")
-        // Finalize
-        ->finalize(hg::gr::TexturePackingHeuristic::BestAreaFit, &occupancy);
-
-    HG_LOG_INFO(LOG_ID, "Game sprites loaded successfully (texture occupancy {}%).", occupancy * 100.f);
-
-    aSpriteLoader
-        .startTexture(4096, 4094)
-        // Miscellaneous
-        ->addSubsprite(SPR_BACKGROUND, basePath / "background.png")
-        // Finalize
-        ->finalize(hg::gr::TexturePackingHeuristic::BestAreaFit, &occupancy);
-    aSpriteLoader
-        .startTexture(4096, 4094)
-        // Miscellaneous
-        ->addSubsprite(SPR_LAYOUT, basePath / "Mapfinal.png")
-        // Finalize
-        ->finalize(hg::gr::TexturePackingHeuristic::BestAreaFit, &occupancy);
-
-    HG_LOG_INFO(LOG_ID,
-                "Background sprites loaded successfully (texture occupancy {}%).",
-                occupancy * 100.f);
+    aSpriteLoader.loadSpriteManifest(root / "Assets/Sprites/Manifest.txt");
 }
