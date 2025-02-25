@@ -14,5 +14,19 @@ namespace gridgoblin {
 //!          16 bits, so don't use IDs over 65,535!
 using SpriteId = std::uint16_t;
 
+constexpr SpriteId SPRITEID_IDENTIFIER_MASK = 0x0FFF;
+
+constexpr SpriteId SPRITEID_HFLIP_BIT = 0x4000; //!< Horizontal flip (through the Y axis)
+constexpr SpriteId SPRITEID_VFLIP_BIT = 0x8000; //!< Vertical flip (through the X axis)
+
+constexpr SpriteId SPRITEID_FLIP_MASK = 0xC000;
+
+constexpr SpriteId SPRITEID_PROJECTION_DIMETRIC = 0x0000;
+constexpr SpriteId SPRITEID_PROJECTION_TOPDOWN  = 0x1000;
+constexpr SpriteId SPRITEID_PROJECTION_UNUSED_1 = 0x2000;
+constexpr SpriteId SPRITEID_PROJECTION_UNUSED_2 = 0x3000;
+
+constexpr SpriteId SPRITEID_PROJECTION_MASK = 0x3000;
+
 } // namespace gridgoblin
 } // namespace jbatnozic

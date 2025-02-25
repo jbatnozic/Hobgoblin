@@ -141,6 +141,8 @@ void DimetricRenderer::render(hg::gr::Canvas& aCanvas) {
 // MARK: Private
 
 hg::gr::Sprite& DimetricRenderer::_getSprite(SpriteId aSpriteId) const {
+    aSpriteId = ((aSpriteId & SPRITEID_IDENTIFIER_MASK) | SPRITEID_PROJECTION_DIMETRIC);
+
     const auto iter = _spriteCache.find(aSpriteId);
     if (iter != _spriteCache.end()) {
         return iter->second;
@@ -423,6 +425,7 @@ void DimetricRenderer::CellToRenderedObjectAdapter::render(hg::gr::Canvas& aCanv
         break;
 
     default:
+        HG_UNREACHABLE("Invalid value for Layer ({}).", (int)_spatialInfo.getLayer());
         break;
     }
 }

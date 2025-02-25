@@ -14,6 +14,8 @@
 #include <Hobgoblin/Window.hpp>
 
 #include <chrono>
+#include <array>
+#include <utility>
 
 #include <Hobgoblin/Logging.hpp>
 
@@ -81,6 +83,38 @@ void DrawChunk(hg::gr::Canvas&             aCanvas,
 #define CELLRES          32.f
 #define CELL_PROBABILITY 15
 
+enum Sprites {
+    SPR_FULL_SQUARE,
+    SPR_LARGE_TRIANGLE,
+    SPR_SMALL_TRIANGLE_HOR,
+    SPR_TALL_SMALL_TRIANGLE_HOR,
+    SPR_HALF_SQUARE_HOR,
+    SPR_SMALL_TRIANGLE_VER,
+    SPR_TALL_SMALL_TRIANGLE_VER,
+    SPR_HALF_SQUARE_VER,
+};
+
+void SelectRandom(gridgoblin::SpriteId& aSpriteId, gridgoblin::Shape& aShape) {
+    namespace gg = gridgoblin;
+
+    // clang-format off
+    static constexpr std::array<std::pair<gg::SpriteId, gg::Shape>, 8> CELLS = {{
+        {SPR_FULL_SQUARE,             gg::Shape::FULL_SQUARE},
+        {SPR_LARGE_TRIANGLE,          gg::Shape::LARGE_TRIANGLE},
+        {SPR_SMALL_TRIANGLE_HOR,      gg::Shape::SMALL_TRIANGLE_HOR},
+        {SPR_TALL_SMALL_TRIANGLE_HOR, gg::Shape::TALL_SMALL_TRIANGLE_HOR},
+        {SPR_HALF_SQUARE_HOR,         gg::Shape::HALF_SQUARE_HOR},
+        {SPR_SMALL_TRIANGLE_VER,      gg::Shape::SMALL_TRIANGLE_VER},
+        {SPR_TALL_SMALL_TRIANGLE_VER, gg::Shape::TALL_SMALL_TRIANGLE_VER},
+        {SPR_HALF_SQUARE_VER,         gg::Shape::HALF_SQUARE_VER},
+    }};
+    // clang-format on
+
+    const auto index = hg::util::GetRandomNumber<std::size_t>(0, CELLS.size() - 1);
+    aSpriteId        = CELLS[index].first;
+    aShape           = CELLS[index].second;
+}
+
 void RunVisibilityCalculatorTestImpl() {
     hg::log::SetMinimalLogSeverity(hg::log::Severity::Info);
 
@@ -89,14 +123,14 @@ void RunVisibilityCalculatorTestImpl() {
     hg::gr::SpriteLoader loader;
     // clang-format off
     loader.startTexture(256, 256)
-        ->addSprite("FULL_SQUARE()",             root / "full-square.png")
-        ->addSprite("LARGE_TRIANGLE()",          root / "large-triangle.png")
-        ->addSprite("SMALL_TRIANGLE_HOR()",      root / "small-triangle-hor.png")
-        ->addSprite("TALL_SMALL_TRIANGLE_HOR()", root / "tall-small-triangle-hor.png")
-        ->addSprite("HALF_SQUARE_HOR()",         root / "half-square-hor.png")
-        ->addSprite("SMALL_TRIANGLE_VER()",      root / "small-triangle-ver.png")
-        ->addSprite("TALL_SMALL_TRIANGLE_VER()", root / "tall-small-triangle-ver.png")
-        ->addSprite("HALF_SQUARE_VER()",         root / "half-square-ver.png")
+        ->addSprite(SPR_FULL_SQUARE,             root / "full-square.png")
+        ->addSprite(SPR_LARGE_TRIANGLE,          root / "large-triangle.png")
+        ->addSprite(SPR_SMALL_TRIANGLE_HOR,      root / "small-triangle-hor.png")
+        ->addSprite(SPR_TALL_SMALL_TRIANGLE_HOR, root / "tall-small-triangle-hor.png")
+        ->addSprite(SPR_HALF_SQUARE_HOR,         root / "half-square-hor.png")
+        ->addSprite(SPR_SMALL_TRIANGLE_VER,      root / "small-triangle-ver.png")
+        ->addSprite(SPR_TALL_SMALL_TRIANGLE_VER, root / "tall-small-triangle-ver.png")
+        ->addSprite(SPR_HALF_SQUARE_VER,         root / "half-square-ver.png")
         ->finalize(hg::gr::TexturePackingHeuristic::BestAreaFit);
     // clang-format on
 
@@ -115,16 +149,16 @@ void RunVisibilityCalculatorTestImpl() {
         hg::util::DoWith32bitRNG([](std::mt19937& aRng) {
             // const auto seed = hg::util::Generate32bitSeed();
             // const auto seed = 2593577924ULL;
-            // aRng.seed(seed);
-            aRng.seed(0xDEADBEEF);
-            // HG_LOG_INFO(LOG_ID, "32bit seed = {}", seed);
+            const auto seed = 0xDEADBEEF;
+            aRng.seed(seed);
+            HG_LOG_INFO(LOG_ID, "32bit seed = {}", seed);
         });
         hg::util::DoWith64bitRNG([](std::mt19937_64& aRng) {
             // const auto seed = hg::util::Generate64bitSeed();
             // const auto seed = 11823085330007581526ULL;
-            // aRng.seed(seed);
-            aRng.seed(0xDEADBEEFDEADBEEF);
-            // HG_LOG_INFO(LOG_ID, "64bit seed = {}", seed);
+            const auto seed = 0xDEADBEEFDEADBEEF;
+            aRng.seed(seed);
+            HG_LOG_INFO(LOG_ID, "64bit seed = {}", seed);
         });
 
         auto perm = world.getPermissionToEdit();
@@ -143,6 +177,7 @@ void RunVisibilityCalculatorTestImpl() {
         });
     }
 
+    TopDownRenderer      renderer{world, loader};
     VisibilityCalculator visCalc{world};
     hg::gr::Image        image;
     hg::gr::Texture      texture;
@@ -228,6 +263,26 @@ void RunVisibilityCalculatorTestImpl() {
         // }
 
         window.clear(hg::gr::Color{155, 155, 155});
+
+        if (!hg::in::CheckPressedVK(hg::in::VK_SPACE)) {
+            renderer.startPrepareToRender(window.getView(0),
+                                          {.top = 32.f, .bottom = 256.f, .left = 32.f, .right = 32.f},
+                                          cursorInWorld,
+                                          DimetricRenderer::REDUCE_WALLS_BASED_ON_POSITION,
+                                          nullptr);
+        } else {
+            visCalc.calc(dimetric::ToPositionInWorld(PositionInView{window.getView(0).getCenter()}),
+                         window.getView(0).getSize(),
+                         cursorInWorld);
+            renderer.startPrepareToRender(window.getView(0),
+                                          {.top = 32.f, .bottom = 256.f, .left = 32.f, .right = 32.f},
+                                          cursorInWorld,
+                                          DimetricRenderer::REDUCE_WALLS_BASED_ON_POSITION |
+                                              DimetricRenderer::REDUCE_WALLS_BASED_ON_VISIBILITY,
+                                          &visCalc);
+        }
+        renderer.endPrepareToRender();
+        renderer.render(window);
         DrawChunk(window, world, {0, 0}, loader);
         window.draw(spr);
 

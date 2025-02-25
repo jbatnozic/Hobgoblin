@@ -5,6 +5,7 @@
 
 namespace jbatnozic {
 namespace gridgoblin {
+
 namespace dimetric {
 
 PositionInView ToPositionInView(PositionInWorld aPosInWorld) {
@@ -24,5 +25,18 @@ PositionInWorld ToPositionInWorld(PositionInView aPosInView) {
 }
 
 } // namespace dimetric
+
+namespace topdown {
+
+PositionInView ToPositionInView(PositionInWorld aPosInWorld) {
+    return PositionInView{aPosInWorld->x, aPosInWorld->y};
+}
+
+PositionInWorld ToPositionInWorld(PositionInView aPosInView) {
+    return PositionInWorld{aPosInView->x, aPosInView->y};
+}
+
+} // namespace topdown
+
 } // namespace gridgoblin
 } // namespace jbatnozic

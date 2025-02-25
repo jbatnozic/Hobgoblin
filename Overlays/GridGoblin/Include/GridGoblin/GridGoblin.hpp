@@ -16,6 +16,7 @@
 #include <GridGoblin/Rendering/Drawing_order.hpp>
 #include <GridGoblin/Rendering/Rendered_object.hpp>
 #include <GridGoblin/Rendering/Renderer.hpp>
+#include <GridGoblin/Rendering/Top_down_renderer.hpp>
 #include <GridGoblin/Rendering/Visibility_calculator.hpp>
 #include <GridGoblin/Rendering/Visibility_provider.hpp>
 // #include <GridGoblin/Rendering/Top_down_los_renderer.hpp>
