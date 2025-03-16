@@ -112,7 +112,7 @@ void TopDownRenderer::_prepareCells(std::int32_t aRenderFlags, const VisibilityP
     const int startY = std::max(0, static_cast<int>(topLeft->y / cr));
 
     const int endX = std::min(_world.getCellCountX() - 1, static_cast<int>(bottomRight->x / cr));
-    const int endY = std::max(_world.getCellCountY() - 1, static_cast<int>(bottomRight->y / cr));
+    const int endY = std::min(_world.getCellCountY() - 1, static_cast<int>(bottomRight->y / cr));
 
     for (int y = startY; y <= endY; y += 1) {
         for (int x = startX; x <= endX; x += 1) {
@@ -177,30 +177,23 @@ void TopDownRenderer::CellToRenderedObjectAdapter::render(hg::gr::Canvas& aCanva
     // Draw
     auto& sprite = _renderer._getSprite(spriteId);
 
-    if ((spriteId & SPRITEID_FLIP_MASK) != 0) {
+    sprite.setColor(hg::gr::COLOR_WHITE);
+    sprite.setPosition(*aScreenPosition);
+
+    {
         float xscale = 1.f;
         float yscale = 1.f;
-        float xoff   = 0.f;
-        float yoff   = 0.f;
 
-        const auto cr = _renderer._world.getCellResolution();
         if ((spriteId & SPRITEID_HFLIP_BIT) != 0) {
             xscale = -1.f;
-            xoff   = cr;
         }
         if ((spriteId & SPRITEID_VFLIP_BIT) != 0) {
             yscale = -1.f;
-            yoff   = cr;
         }
 
         sprite.setScale(xscale, yscale);
-        sprite.setPosition(aScreenPosition->x + xoff, aScreenPosition->y + yoff);
-    } else {
-        sprite.setScale(1.f, 1.f);
-        sprite.setPosition(*aScreenPosition);
     }
-
-    sprite.setColor(hg::gr::COLOR_WHITE);
+    
     aCanvas.draw(sprite);
 }
 

@@ -27,7 +27,6 @@ namespace {
 
 namespace hg = jbatnozic::hobgoblin;
 
-namespace {
 void DrawChunk(hg::gr::Canvas&             aCanvas,
                const World&                aWorld,
                ChunkId                     aChunkId,
@@ -76,7 +75,6 @@ void DrawChunk(hg::gr::Canvas&             aCanvas,
         }
     }
 }
-} // namespace
 
 #define CELL_COUNT_X     40
 #define CELL_COUNT_Y     40
@@ -113,6 +111,34 @@ void SelectRandom(gridgoblin::SpriteId& aSpriteId, gridgoblin::Shape& aShape) {
     const auto index = hg::util::GetRandomNumber<std::size_t>(0, CELLS.size() - 1);
     aSpriteId        = CELLS[index].first;
     aShape           = CELLS[index].second;
+
+    const auto rotation = hg::util::GetRandomNumber<int>(0, 3);
+    switch (rotation) {
+    case 0: // Flip none
+        break;
+
+    case 1: // Flip horizontal
+        aSpriteId = aSpriteId | SPRITEID_HFLIP_BIT;
+        aShape    = aShape | Shape::HFLIP;
+        break;
+
+    case 2: // Flip vertical
+        aSpriteId = aSpriteId | SPRITEID_VFLIP_BIT;
+        aShape    = aShape | Shape::VFLIP;
+        break;
+
+    case 3: // Flip both
+        aSpriteId = aSpriteId | SPRITEID_HFLIP_BIT | SPRITEID_VFLIP_BIT;
+        aShape    = aShape | Shape::HVFLIP;
+        break;
+
+    default:
+        HG_UNREACHABLE();
+    }
+}
+
+SpriteId TopDown(SpriteId aSpriteId) {
+    return aSpriteId | SPRITEID_PROJECTION_TOPDOWN;
 }
 
 void RunVisibilityCalculatorTestImpl() {
@@ -123,14 +149,14 @@ void RunVisibilityCalculatorTestImpl() {
     hg::gr::SpriteLoader loader;
     // clang-format off
     loader.startTexture(256, 256)
-        ->addSprite(SPR_FULL_SQUARE,             root / "full-square.png")
-        ->addSprite(SPR_LARGE_TRIANGLE,          root / "large-triangle.png")
-        ->addSprite(SPR_SMALL_TRIANGLE_HOR,      root / "small-triangle-hor.png")
-        ->addSprite(SPR_TALL_SMALL_TRIANGLE_HOR, root / "tall-small-triangle-hor.png")
-        ->addSprite(SPR_HALF_SQUARE_HOR,         root / "half-square-hor.png")
-        ->addSprite(SPR_SMALL_TRIANGLE_VER,      root / "small-triangle-ver.png")
-        ->addSprite(SPR_TALL_SMALL_TRIANGLE_VER, root / "tall-small-triangle-ver.png")
-        ->addSprite(SPR_HALF_SQUARE_VER,         root / "half-square-ver.png")
+        ->addSprite(TopDown(SPR_FULL_SQUARE),             root / "full-square.png")
+        ->addSprite(TopDown(SPR_LARGE_TRIANGLE),          root / "large-triangle.png")
+        ->addSprite(TopDown(SPR_SMALL_TRIANGLE_HOR),      root / "small-triangle-hor.png")
+        ->addSprite(TopDown(SPR_TALL_SMALL_TRIANGLE_HOR), root / "tall-small-triangle-hor.png")
+        ->addSprite(TopDown(SPR_HALF_SQUARE_HOR),         root / "half-square-hor.png")
+        ->addSprite(TopDown(SPR_SMALL_TRIANGLE_VER),      root / "small-triangle-ver.png")
+        ->addSprite(TopDown(SPR_TALL_SMALL_TRIANGLE_VER), root / "tall-small-triangle-ver.png")
+        ->addSprite(TopDown(SPR_HALF_SQUARE_VER),         root / "half-square-ver.png")
         ->finalize(hg::gr::TexturePackingHeuristic::BestAreaFit);
     // clang-format on
 
@@ -165,13 +191,17 @@ void RunVisibilityCalculatorTestImpl() {
         world.edit(*perm, [&world](World::Editor& aEditor) {
             for (int y = 0; y < world.getCellCountY(); y += 1) {
                 for (int x = 0; x < world.getCellCountX(); x += 1) {
-                    aEditor.setFloorAt({x, y}, CellModel::Floor{0});
-                    if (hg::util::GetRandomNumber(0, 99) < CELL_PROBABILITY &&
-                        x != CELL_COUNT_X / 2 - 1 && x != CELL_COUNT_X / 2) {
-                        aEditor.setWallAt(
-                            {x, y},
-                            CellModel::Wall{0, 0, (Shape)hg::util::GetRandomNumber(0, 30)});
+                    if (x == CELL_COUNT_X / 2 - 1 || x == CELL_COUNT_X / 2) {
+                        continue;
                     }
+                    if (hg::util::GetRandomNumber(0, 99) >= CELL_PROBABILITY) {
+                        continue;
+                    }
+
+                    SpriteId spriteId;
+                    Shape    shape;
+                    SelectRandom(spriteId, shape);
+                    aEditor.setWallAt({x, y}, CellModel::Wall{spriteId, 0, shape});
                 }
             }
         });
@@ -179,8 +209,8 @@ void RunVisibilityCalculatorTestImpl() {
 
     TopDownRenderer      renderer{world, loader};
     VisibilityCalculator visCalc{world};
-    hg::gr::Image        image;
-    hg::gr::Texture      texture;
+    hg::gr::Image        vcImage;
+    hg::gr::Texture      vcTexture;
 
     const auto generateLoS = [&](hg::math::Vector2f pos) {
         HG_LOG_INFO(LOG_ID, "===============================================");
@@ -201,27 +231,27 @@ void RunVisibilityCalculatorTestImpl() {
         HG_LOG_INFO(LOG_ID, "Generating image...");
         {
             HG_LOG_WITH_SCOPED_STOPWATCH_MS(INFO, LOG_ID, "Image generation took {}ms", elapsed_time_ms);
-            image.create(hg::ToPz(CELL_COUNT_X * CELLRES), hg::ToPz(CELL_COUNT_Y * CELLRES));
+            vcImage.create(hg::ToPz(CELL_COUNT_X * CELLRES), hg::ToPz(CELL_COUNT_Y * CELLRES));
             for (int y = 0; y < hg::ToPz(CELL_COUNT_X * CELLRES); y += 1) {
                 for (int x = 0; x < hg::ToPz(CELL_COUNT_Y * CELLRES); x += 1) {
                     const auto v = visCalc.testVisibilityAt({(float)x, (float)y});
                     if (!v.has_value() || *v == false) {
-                        image.setPixel(x, y, hg::gr::COLOR_BLACK.withAlpha(150));
+                        vcImage.setPixel(x, y, hg::gr::COLOR_BLACK.withAlpha(150));
                     } else {
-                        image.setPixel(x, y, hg::gr::COLOR_TRANSPARENT);
+                        vcImage.setPixel(x, y, hg::gr::COLOR_TRANSPARENT);
                     }
                 }
             }
         }
 
         HG_LOG_INFO(LOG_ID, "Loading texture...");
-        texture.loadFromImage(image);
+        vcTexture.loadFromImage(vcImage);
     };
 
     generateLoS({CELL_COUNT_X * CELLRES * 0.5f, CELL_COUNT_Y * CELLRES * 0.5f});
 
-    hg::gr::Sprite spr;
-    spr.setTexture(&texture, true);
+    hg::gr::Sprite vcSprite;
+    vcSprite.setTexture(&vcTexture, true);
 
     hg::gr::RenderWindow window{
         hg::win::VideoMode{1280, 1280},
@@ -255,36 +285,14 @@ void RunVisibilityCalculatorTestImpl() {
                 });
         } // end event processing
 
-        // {
-        //     using namespace hg::in;
-        //     const auto lr = (float)CheckPressedPK(PK_D) - (float)CheckPressedPK(PK_A);
-        //     const auto ud = (float)CheckPressedPK(PK_S) - (float)CheckPressedPK(PK_W);
-        //     window.getView().move({lr * 1.f, ud * 1.f});
-        // }
-
         window.clear(hg::gr::Color{155, 155, 155});
 
-        if (!hg::in::CheckPressedVK(hg::in::VK_SPACE)) {
-            renderer.startPrepareToRender(window.getView(0),
-                                          {.top = 32.f, .bottom = 256.f, .left = 32.f, .right = 32.f},
-                                          cursorInWorld,
-                                          DimetricRenderer::REDUCE_WALLS_BASED_ON_POSITION,
-                                          nullptr);
-        } else {
-            visCalc.calc(dimetric::ToPositionInWorld(PositionInView{window.getView(0).getCenter()}),
-                         window.getView(0).getSize(),
-                         cursorInWorld);
-            renderer.startPrepareToRender(window.getView(0),
-                                          {.top = 32.f, .bottom = 256.f, .left = 32.f, .right = 32.f},
-                                          cursorInWorld,
-                                          DimetricRenderer::REDUCE_WALLS_BASED_ON_POSITION |
-                                              DimetricRenderer::REDUCE_WALLS_BASED_ON_VISIBILITY,
-                                          &visCalc);
-        }
+        renderer.startPrepareToRender(window.getView(0), {}, {}, 0, nullptr);
         renderer.endPrepareToRender();
         renderer.render(window);
-        DrawChunk(window, world, {0, 0}, loader);
-        window.draw(spr);
+
+        //DrawChunk(window, world, {0, 0}, loader);
+        window.draw(vcSprite);
 
         window.display();
     }
