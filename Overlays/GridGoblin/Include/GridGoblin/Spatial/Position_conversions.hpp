@@ -8,11 +8,20 @@
 
 namespace jbatnozic {
 namespace gridgoblin {
+
 namespace dimetric {
 
 PositionInView  ToPositionInView(PositionInWorld aPosInWorld);
 PositionInWorld ToPositionInWorld(PositionInView aPosInView);
 
 } // namespace dimetric
+
+namespace topdown {
+
+PositionInView  ToPositionInView(PositionInWorld aPosInWorld);
+PositionInWorld ToPositionInWorld(PositionInView aPosInView);
+
+} // namespace dimetric
+
 } // namespace gridgoblin
 } // namespace jbatnozic

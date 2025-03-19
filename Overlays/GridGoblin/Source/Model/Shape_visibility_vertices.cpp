@@ -983,8 +983,8 @@ std::size_t GetVisibilityVertices<Shape::HALF_SQUARE_VER | Shape::HVFLIP>(
 namespace {
 using GetVisibilityVerticesFunc = decltype(&GetVisibilityVertices<Shape::FULL_SQUARE>);
 
-std::array<GetVisibilityVerticesFunc, MAX_SHAPE_NUMBER> MakeVisibilityVerticesFuncTable() {
-    std::array<GetVisibilityVerticesFunc, MAX_SHAPE_NUMBER> result;
+std::array<GetVisibilityVerticesFunc, MAX_SHAPE_NUMBER + 1> MakeVisibilityVerticesFuncTable() {
+    std::array<GetVisibilityVerticesFunc, MAX_SHAPE_NUMBER + 1> result;
 
 #define ADD_ENTRY(_shape_) result[static_cast<std::size_t>(_shape_)] = &GetVisibilityVertices<_shape_>
 
