@@ -21,6 +21,8 @@ struct TopDownRendererConfig {
     // Nothing for now...
 };
 
+//! Renders the world in a simple 2D top-down perspective (but it can be also used for sidescrollers).
+//! \note Doesn't ever reduce walls.
 class TopDownRenderer : public Renderer {
 public:
     TopDownRenderer(const World&                 aWorld,
@@ -44,10 +46,6 @@ private:
 
     const World&                _world;
     const hg::gr::SpriteLoader& _spriteLoader;
-
-    // ===== Cycle counter =====
-
-    std::int64_t _renderCycleCounter = 0;
 
     // ===== View data =====
 

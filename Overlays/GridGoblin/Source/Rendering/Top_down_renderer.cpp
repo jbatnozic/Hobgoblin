@@ -39,8 +39,6 @@ void TopDownRenderer::startPrepareToRender(const hg::gr::View&       aView,
     _cellAdapters.clear();
 
     _prepareCells(aRenderFlags, aVisProv);
-
-    _renderCycleCounter += 1;
 }
 
 void TopDownRenderer::addObject(const RenderedObject& aObject) {
@@ -184,10 +182,10 @@ void TopDownRenderer::CellToRenderedObjectAdapter::render(hg::gr::Canvas& aCanva
         float xscale = 1.f;
         float yscale = 1.f;
 
-        if ((spriteId & SPRITEID_HFLIP_BIT) != 0) {
+        if ((spriteId & SPRITEID_HFLIP) != 0) {
             xscale = -1.f;
         }
-        if ((spriteId & SPRITEID_VFLIP_BIT) != 0) {
+        if ((spriteId & SPRITEID_VFLIP) != 0) {
             yscale = -1.f;
         }
 

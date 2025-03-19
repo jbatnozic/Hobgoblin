@@ -27,55 +27,6 @@ namespace {
 
 namespace hg = jbatnozic::hobgoblin;
 
-void DrawChunk(hg::gr::Canvas&             aCanvas,
-               const World&                aWorld,
-               ChunkId                     aChunkId,
-               const hg::gr::SpriteLoader& aSpriteLoader) {
-    const auto  cellRes = aWorld.getCellResolution();
-    const auto* chunk   = aWorld.getChunkAtId(aChunkId);
-    if (chunk == nullptr) {
-        return;
-    }
-
-    hg::math::Vector2f start{aChunkId.x * chunk->getCellCountX() * cellRes,
-                             aChunkId.y * chunk->getCellCountY() * cellRes};
-
-    hg::gr::RectangleShape rect{
-        {cellRes, cellRes}
-    };
-    rect.setOutlineColor(hg::gr::COLOR_BLACK);
-    rect.setOutlineThickness(1.f);
-
-    for (hg::PZInteger y = 0; y < chunk->getCellCountY(); y += 1) {
-        for (hg::PZInteger x = 0; x < chunk->getCellCountX(); x += 1) {
-            const auto& cell = chunk->getCellAtUnchecked(x, y);
-            const auto  ext  = static_cast<const gridgoblin::detail::CellModelExt&>(cell);
-            if (cell.isWallInitialized()) {
-                const auto shape = cell.getWall().shape;
-                auto       spr =
-                    aSpriteLoader.getMultiBlueprint(ShapeToString(shape & ~Shape::HVFLIP)).multispr();
-                spr.setPosition(start.x + x * cellRes, start.y + y * cellRes);
-                float xScale = 1.f;
-                float yScale = 1.f;
-                if ((shape & Shape::HFLIP) == Shape::HFLIP) {
-                    xScale = -1.f;
-                    spr.move(cellRes, 0.f);
-                }
-                if ((shape & Shape::VFLIP) == Shape::VFLIP) {
-                    yScale = -1.f;
-                    spr.move(0.f, cellRes);
-                }
-                spr.setScale(xScale, yScale);
-                aCanvas.draw(spr);
-            } else {
-                rect.setPosition(start.x + x * cellRes, start.y + y * cellRes);
-                rect.setFillColor(hg::gr::COLOR_TRANSPARENT);
-                aCanvas.draw(rect);
-            }
-        }
-    }
-}
-
 #define CELL_COUNT_X     40
 #define CELL_COUNT_Y     40
 #define CELLRES          32.f
@@ -118,17 +69,17 @@ void SelectRandom(gridgoblin::SpriteId& aSpriteId, gridgoblin::Shape& aShape) {
         break;
 
     case 1: // Flip horizontal
-        aSpriteId = aSpriteId | SPRITEID_HFLIP_BIT;
+        aSpriteId = aSpriteId | SPRITEID_HFLIP;
         aShape    = aShape | Shape::HFLIP;
         break;
 
     case 2: // Flip vertical
-        aSpriteId = aSpriteId | SPRITEID_VFLIP_BIT;
+        aSpriteId = aSpriteId | SPRITEID_VFLIP;
         aShape    = aShape | Shape::VFLIP;
         break;
 
     case 3: // Flip both
-        aSpriteId = aSpriteId | SPRITEID_HFLIP_BIT | SPRITEID_VFLIP_BIT;
+        aSpriteId = aSpriteId | SPRITEID_HFLIP | SPRITEID_VFLIP;
         aShape    = aShape | Shape::HVFLIP;
         break;
 
