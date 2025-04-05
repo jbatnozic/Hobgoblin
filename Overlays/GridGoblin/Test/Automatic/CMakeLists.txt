@@ -11,6 +11,7 @@ add_executable(${PROJECT_NAME}
     "Model_conversions_test.cpp"
     "Shape_conversions_test.cpp"
     "Spatial_info_test.cpp"
+    "World_config_test.cpp"
     "World_test.cpp"
 )
 

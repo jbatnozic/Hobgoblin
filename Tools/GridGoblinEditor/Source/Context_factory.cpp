@@ -1,6 +1,9 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
+#include "Context_factory.hpp"
+
+#include <Hobgoblin/Common/Build_type.hpp>
 #include <SPeMPE/SPeMPE.hpp>
 
 #include <memory>
@@ -19,14 +22,14 @@ namespace spe = ::jbatnozic::spempe;
 
 // Main Render Texture (MRT) size determines the resolution
 // at which the game will be rendered internally.
-#define MRT_WIDTH  960
-#define MRT_HEIGHT 540
+#define MRT_WIDTH  1920
+#define MRT_HEIGHT 1080
 
-std::unique_ptr<spe::GameContext> CreateSPeMPEContext() {
+std::unique_ptr<spe::GameContext> CreateEditorSPeMPEContext(const EditorConfig& aConfig) {
     auto context =
         std::make_unique<spe::GameContext>(spe::GameContext::RuntimeConfig{spe::TickRate{TICK_RATE}});
     context->setToMode(spe::GameContext::Mode::Client);
-
+#if 1
     // Window manager
     auto winMgr = QAO_UPCreate<spe::DefaultWindowManager>(context->getQAORuntime().nonOwning(),
                                                           PRIORITY_WINDOWMGR);
@@ -52,7 +55,7 @@ std::unique_ptr<spe::GameContext> CreateSPeMPEContext() {
     winMgr->setToNormalMode(
         spe::WindowManagerInterface::WindowConfig{
             hg::win::VideoMode{WINDOW_WIDTH, WINDOW_HEIGHT},
-            "DjoxTrauma",
+            "GridGoblin Editor",
             hg::win::WindowStyle::Default
         },
         spe::WindowManagerInterface::MainRenderTextureConfig{{MRT_WIDTH, MRT_HEIGHT}},
@@ -82,13 +85,13 @@ std::unique_ptr<spe::GameContext> CreateSPeMPEContext() {
         Rml::LoadFontFace((root / "Assets/fonts/").string() + face.filename, face.fallback_face);
     }
 
-#ifndef NDEBUG
+#if HG_BUILD_TYPE == HG_DEBUG
     Rml::Debugger::Initialise(&(winMgr->getGUIContext()));
     Rml::Debugger::SetVisible(true);
 #endif
 
     context->attachAndOwnComponent(std::move(winMgr));
-
+#endif
     return context;
 }
 
