@@ -18,7 +18,7 @@
 namespace jbatnozic {
 namespace gridgoblin {
 
-namespace gh = ::jbatnozic::hobgoblin;
+namespace hg = ::jbatnozic::hobgoblin;
 
 //! This class contains a number of callbacks which can be overriden to 'bind'
 //! a GridGoblin World to its enclosing application and help them interoperate better.
