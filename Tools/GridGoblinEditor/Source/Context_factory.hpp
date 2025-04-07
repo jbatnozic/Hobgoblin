@@ -15,9 +15,10 @@ namespace editor {
 namespace spe = ::jbatnozic::spempe;
 
 struct EditorConfig {
-    std::filesystem::path definitionsPath;
-    std::filesystem::path spritesPath;
-    std::filesystem::path worldCachePath;
+    std::filesystem::path assetsDir;
+    std::filesystem::path definitionsDir;
+    std::filesystem::path spritesDir;
+    std::filesystem::path worldCacheDir;
 };
 
 std::unique_ptr<spe::GameContext> CreateEditorSPeMPEContext(const EditorConfig& aConfig);

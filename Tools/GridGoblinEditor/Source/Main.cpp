@@ -13,15 +13,21 @@ constexpr auto LOG_ID = "GridGoblin.Editor";
 constexpr auto RUN_WITHOUT_ITERATION_LIMIT = -1;
 
 int main(int argc, char* argv[]) try {
+    hg::log::SetMinimalLogSeverity(hg::log::Severity::Info);
+
     using namespace jbatnozic::gridgoblin::editor;
 
-    HG_VALIDATE_ARGUMENT(argc == 4);
+    if (argc != 5) {
+        HG_LOG_INFO(LOG_ID, "Usage: ./ggedit <assets-dir> <definitions-dir> <sprites-dir> <world-cache-dir>");
+        return EXIT_SUCCESS;
+    }
 
     EditorConfig config;
-    config.definitionsPath = argv[1];
-    config.spritesPath = argv[2];
-    config.worldCachePath = argv[3];
-    
+    config.assetsDir      = argv[1];
+    config.definitionsDir = argv[2];
+    config.spritesDir     = argv[3];
+    config.worldCacheDir  = argv[4];
+
     auto ctx = CreateEditorSPeMPEContext(config);
     return ctx->runFor(RUN_WITHOUT_ITERATION_LIMIT);
 } catch (const hg::TracedException& ex) {

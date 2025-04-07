@@ -6,7 +6,11 @@ project("GridGoblin.Editor")
 find_package(RapidJSON CONFIG REQUIRED)
 
 add_executable(${PROJECT_NAME}
-    "Source/GGEdit_main.cpp"
+    "Source/Definitions.cpp"
+    "Source/Context_factory.cpp"
+    "Source/Editor_ui_driver.cpp"
+    "Source/Editor_world_driver.cpp"
+    "Source/Main.cpp"
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -41,3 +45,5 @@ target_compile_definitions(${PROJECT_NAME}
 PRIVATE
     "RAPIDJSON_HAS_STDSTRING=1"
 )
+
+hg_copy_test_assets(${PROJECT_NAME} "Assets")

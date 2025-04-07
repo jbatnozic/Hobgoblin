@@ -15,8 +15,6 @@
 namespace jbatnozic {
 namespace gridgoblin {
 
-namespace hg = jbatnozic::hobgoblin;
-
 //! A single cell of a GridGoblin World.
 class CellModel {
 public:

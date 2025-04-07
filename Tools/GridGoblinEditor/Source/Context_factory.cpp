@@ -2,6 +2,9 @@
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
 #include "Context_factory.hpp"
+#include "Priorities.hpp"
+#include "Editor_ui_driver.hpp"
+#include "Editor_world_driver.hpp"
 
 #include <Hobgoblin/Common/Build_type.hpp>
 #include <SPeMPE/SPeMPE.hpp>
@@ -12,6 +15,7 @@ namespace jbatnozic {
 namespace gridgoblin {
 namespace editor {
 
+namespace hg  = ::jbatnozic::hobgoblin;
 namespace spe = ::jbatnozic::spempe;
 
 #define TICK_RATE  60
@@ -29,8 +33,8 @@ std::unique_ptr<spe::GameContext> CreateEditorSPeMPEContext(const EditorConfig& 
     auto context =
         std::make_unique<spe::GameContext>(spe::GameContext::RuntimeConfig{spe::TickRate{TICK_RATE}});
     context->setToMode(spe::GameContext::Mode::Client);
-#if 1
-    // Window manager
+
+    // Instantiate Window manager
     auto winMgr = QAO_UPCreate<spe::DefaultWindowManager>(context->getQAORuntime().nonOwning(),
                                                           PRIORITY_WINDOWMGR);
     spe::WindowManagerInterface::TimingConfig timingConfig{
@@ -64,6 +68,14 @@ std::unique_ptr<spe::GameContext> CreateEditorSPeMPEContext(const EditorConfig& 
     winMgr->setMainRenderTextureDrawPosition(spe::WindowManagerInterface::DrawPosition::Fit);
     winMgr->setStopIfCloseClicked(true);
 
+#if HG_BUILD_TYPE == HG_DEBUG
+    Rml::Debugger::Initialise(&(winMgr->getGUIContext()));
+    Rml::Debugger::SetVisible(true);
+#endif
+
+    context->attachAndOwnComponent(std::move(winMgr));
+
+    // Load fonts (global) - goes after the WindowManager because it initializes the RmlUi system
     struct FontFace {
         Rml::String filename;
         bool        fallback_face;
@@ -74,24 +86,24 @@ std::unique_ptr<spe::GameContext> CreateEditorSPeMPEContext(const EditorConfig& 
         {      "LatoLatin-Bold.ttf", false},
         {"LatoLatin-BoldItalic.ttf", false},
     };
-    std::filesystem::path root = std::filesystem::current_path();
-    for (int i = 0; i < 10; i += 1) {
-        if (std::filesystem::exists(root / "Assets")) {
-            break;
-        }
-        root = root.parent_path();
-    }
     for (const FontFace& face : font_faces) {
-        Rml::LoadFontFace((root / "Assets/fonts/").string() + face.filename, face.fallback_face);
+        Rml::LoadFontFace((aConfig.assetsDir / "Fonts/").string() + face.filename, face.fallback_face);
     }
 
-#if HG_BUILD_TYPE == HG_DEBUG
-    Rml::Debugger::Initialise(&(winMgr->getGUIContext()));
-    Rml::Debugger::SetVisible(true);
-#endif
+    // Instantiate World driver
+    {
+        using namespace hg::qao;
+        auto* driver = QAO_PCreate<EditorWorldDriver>(context->getQAORuntime(), PRIORITY_WORLDDRIVER);
+        driver->init(aConfig);
+    }
 
-    context->attachAndOwnComponent(std::move(winMgr));
-#endif
+    // Instantiate UI driver
+    {
+        using namespace hg::qao;
+        auto* driver = QAO_PCreate<EditorUiDriver>(context->getQAORuntime(), PRIORITY_UIDRIVER);
+        driver->init(aConfig.assetsDir, aConfig.definitionsDir);
+    }
+
     return context;
 }
 
