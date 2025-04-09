@@ -13,7 +13,9 @@
 HOBGOBLIN_NAMESPACE_BEGIN
 namespace gr {
 
-void ParseSpriteManifestFile(const std::filesystem::path& aPath, SpriteLoader& aSpriteLoader);
+void ParseSpriteManifestFile(const std::filesystem::path&                aPath,
+                             SpriteLoader&                               aSpriteLoader,
+                             SpriteLoader::SpriteManifestEnumerationMap* aSpriteManifestEnumerationMap);
 
 } // namespace gr
 HOBGOBLIN_NAMESPACE_END
