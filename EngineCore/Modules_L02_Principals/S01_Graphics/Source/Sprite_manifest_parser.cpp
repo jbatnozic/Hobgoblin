@@ -96,6 +96,11 @@ public:
         }
     }
 
+    void transferEnumerationMap(
+        SpriteLoader::SpriteManifestEnumerationMap& aSpriteManifestEnumerationMap) {
+        aSpriteManifestEnumerationMap = std::move(_enumerationMappings);
+    }
+
 private:
     std::filesystem::path _manifestDirectory;
 
@@ -500,10 +505,16 @@ private:
 };
 } // namespace
 
-void ParseSpriteManifestFile(const std::filesystem::path& aPath, SpriteLoader& aSpriteLoader) {
+void ParseSpriteManifestFile(const std::filesystem::path&                aPath,
+                             SpriteLoader&                               aSpriteLoader,
+                             SpriteLoader::SpriteManifestEnumerationMap* aSpriteManifestEnumerationMap) {
     try {
         ManifestParser parser{aPath};
         parser.parse(aSpriteLoader);
+
+        if (aSpriteManifestEnumerationMap != nullptr) {
+            parser.transferEnumerationMap(*aSpriteManifestEnumerationMap);
+        }
     } catch (const SpriteManifestProcessingError& aEx) {
         throw;
     } catch (const TracedException& aEx) {

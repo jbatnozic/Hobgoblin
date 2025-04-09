@@ -356,8 +356,9 @@ void SpriteLoader::removeTexture(Texture& aTextureToRemove) {
     _textures.erase(iter, _textures.end());
 }
 
-void SpriteLoader::loadSpriteManifest(const std::filesystem::path& aManifestFilePath) {
-    ParseSpriteManifestFile(aManifestFilePath, SELF);
+void SpriteLoader::loadSpriteManifest(const std::filesystem::path&  aManifestFilePath,
+                                      SpriteManifestEnumerationMap* aSpriteManifestEnumerationMap) {
+    ParseSpriteManifestFile(aManifestFilePath, SELF, aSpriteManifestEnumerationMap);
 }
 
 SpriteBlueprint SpriteLoader::getBlueprint(SpriteIdNumerical aSpriteId) const {

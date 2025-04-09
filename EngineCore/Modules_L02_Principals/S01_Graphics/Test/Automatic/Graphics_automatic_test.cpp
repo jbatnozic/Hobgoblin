@@ -103,16 +103,21 @@ TEST(SpriteManifestTest, Test1) {
             std::filesystem::path{HG_TEST_ASSET_DIR} / "SpriteManifest3.txt",
             std::filesystem::path{HG_TEST_ASSET_DIR} / "SpriteManifest4.txt"};
 
+        hg::gr::SpriteLoader::SpriteManifestEnumerationMap enumMap;
+
         for (const auto& path : paths) {
             SCOPED_TRACE(path.string());
 
             hg::gr::SpriteLoader loader;
-            ASSERT_NO_THROW(loader.loadSpriteManifest(path));
+            ASSERT_NO_THROW(loader.loadSpriteManifest(path, &enumMap));
 
             EXPECT_NO_THROW(loader.getMultiBlueprint(TILE_0).multispr());
             EXPECT_NO_THROW(loader.getMultiBlueprint(TILE_1).multispr());
             EXPECT_NO_THROW(loader.getMultiBlueprint(2).multispr());
             EXPECT_NO_THROW(loader.getMultiBlueprint("tile-3").multispr());
+
+            EXPECT_TRUE(enumMap.contains("TILE_0") && enumMap["TILE_0"] == TILE_0);
+            EXPECT_TRUE(enumMap.contains("TILE_1") && enumMap["TILE_1"] == TILE_1);
         }
     } catch (...) {
         hg::log::SetMinimalLogSeverity(originalSeveity);

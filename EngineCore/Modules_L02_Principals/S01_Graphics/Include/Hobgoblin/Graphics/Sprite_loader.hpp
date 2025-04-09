@@ -163,11 +163,19 @@ public:
 
     void removeTexture(Texture& aTexture);
 
+    using SpriteManifestEnumerationMap = std::unordered_map<std::string, SpriteIdNumerical>;
+
     //! Creates textures and adds sprites to them according to a sprite manifest file.
     //! This is not mutually exclusive with the manual (`addTexture`) methods of loading sprites.
     //!
+    //! \param aManifestFilePath path to the sprite manifest file (including the file name and its
+    //!                          extension).
+    //! \param aSpriteManifestEnumerationMap if not null, the pointed-to map will be populated with all
+    //!                                      the enumerations defined in the manifest file.
+    //!
     //! \throws SpriteManifestProcessingError on failure.
-    void loadSpriteManifest(const std::filesystem::path& aManifestFilePath);
+    void loadSpriteManifest(const std::filesystem::path&  aManifestFilePath,
+                            SpriteManifestEnumerationMap* aSpriteManifestEnumerationMap = nullptr);
 
     SpriteBlueprint getBlueprint(SpriteIdNumerical aSpriteId) const;
 
