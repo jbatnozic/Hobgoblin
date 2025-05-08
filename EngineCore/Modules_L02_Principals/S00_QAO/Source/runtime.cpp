@@ -119,7 +119,7 @@ std::unique_ptr<QAO_Base> QAO_Runtime::releaseObject(QAO_Base* object) {
     }
     _orderer.erase(object);
 
-    object->_context = QAO_Base::Context{};
+    object->_context = QAO_Base::Context{}; // !!!!!! TODO: problems for the destructor of the object !!!!!!
 
     return rv;
 }

@@ -8,6 +8,7 @@
 #include <GridGoblin/World/World.hpp>
 
 #include <Hobgoblin/HGExcept.hpp>
+#include <Hobgoblin/Logging.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -18,6 +19,8 @@ namespace jbatnozic {
 namespace gridgoblin {
 
 namespace {
+constexpr auto LOG_ID = "GridGoblin";
+
 std::unique_ptr<detail::ChunkDiskIoHandlerInterface> CreateDiskIoHandler(const WorldConfig& aConfig) {
     return std::make_unique<detail::DefaultChunkDiskIoHandler>(aConfig);
 }
@@ -36,6 +39,7 @@ World::World(const WorldConfig& aConfig)
     , _chunkSpooler{_internalChunkSpooler.get()}
     , _chunkStorage{aConfig} //
 {
+    _compareOrCreateConfigFile();
     _connectSubcomponents();
 }
 
@@ -48,6 +52,7 @@ World::World(const WorldConfig&                                  aConfig,
     , _chunkSpooler{_internalChunkSpooler.get()}
     , _chunkStorage{aConfig} //
 {
+    _compareOrCreateConfigFile();
     _connectSubcomponents();
 }
 
@@ -502,6 +507,45 @@ void World::_attachBinder(hg::NeverNull<Binder*> aBinder, std::int32_t aPriority
     std::sort(_binders.begin(), _binders.end(), [](const auto& aLhs, const auto& aRhs) {
         return (aLhs.second < aRhs.second);
     });
+}
+
+// ===== Config =====
+
+void World::_compareOrCreateConfigFile() {
+    const auto path = _config.chunkDirectoryPath / "WORLD_CONFIG.TXT";
+    if (std::filesystem::exists(path)) {
+        const auto previous = WorldConfig::loadFromFile(path);
+
+        // clang-format off
+        const bool areCompatible =
+            std::tie(_config.chunkCountX, _config.chunkCountY, _config.cellsPerChunkX, _config.cellsPerChunkY) == 
+            std::tie(previous.chunkCountX, previous.chunkCountY, previous.cellsPerChunkX, previous.cellsPerChunkY);
+        // clang-format on
+        if (!areCompatible) {
+            HG_THROW_TRACED(
+                hg::TracedRuntimeError,
+                0,
+                "The world configuration previously saved at {} is INCOMPATIBLE with the new "
+                "configuration.",
+                path.string());
+        }
+
+        // clang-format off
+        const bool areSame =
+            std::tie(_config.cellResolution, _config.wallHeight, _config.maxCellOpenness, _config.maxLoadedNonessentialChunks) == 
+            std::tie(previous.cellResolution, previous.wallHeight, previous.maxCellOpenness, previous.maxLoadedNonessentialChunks);
+        // clang-format on
+        if (!areSame) {
+            HG_LOG_WARN(LOG_ID,
+                        "The world configuration previously saved at {} is compatible with the new "
+                        "configuration but it is not identical; will overwrite.",
+                        path.string());
+            // Overwrite the old config with the new one.
+            WorldConfig::saveToFile(_config, path);
+        }
+    } else {
+        WorldConfig::saveToFile(_config, path);
+    }
 }
 
 // ===== Subcomponents =====

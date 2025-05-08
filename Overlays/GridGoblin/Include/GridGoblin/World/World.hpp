@@ -363,6 +363,8 @@ private:
 
     WorldConfigExt _config;
 
+    void _compareOrCreateConfigFile();
+
     // ===== Subcomponents =====
 
     std::unique_ptr<detail::ChunkDiskIoHandlerInterface> _internalChunkDiskIoHandler;
