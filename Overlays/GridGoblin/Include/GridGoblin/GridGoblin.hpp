@@ -8,12 +8,16 @@
 #include <GridGoblin/Model/Chunk_extension.hpp>
 #include <GridGoblin/Model/Chunk_id.hpp>
 #include <GridGoblin/Model/Layer.hpp>
+#include <GridGoblin/Model/Light.hpp>
+#include <GridGoblin/Model/Light_id.hpp>
 #include <GridGoblin/Model/Shape.hpp>
 #include <GridGoblin/Model/Shape_vertices.hpp>
 #include <GridGoblin/Model/Sprites.hpp>
 
 #include <GridGoblin/Rendering/Dimetric_renderer.hpp>
+#include <GridGoblin/Rendering/Dimetric_transform.hpp>
 #include <GridGoblin/Rendering/Drawing_order.hpp>
+#include <GridGoblin/Rendering/Lighting_renderer.hpp>
 #include <GridGoblin/Rendering/Rendered_object.hpp>
 #include <GridGoblin/Rendering/Renderer.hpp>
 #include <GridGoblin/Rendering/Top_down_renderer.hpp>
