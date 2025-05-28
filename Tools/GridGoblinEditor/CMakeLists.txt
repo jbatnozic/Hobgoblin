@@ -11,6 +11,7 @@ add_executable(${PROJECT_NAME}
     "Source/Editor_ui_driver.cpp"
     "Source/Editor_world_driver.cpp"
     "Source/Main.cpp"
+    "Source/Resource_holder_default.cpp"
 )
 
 target_link_libraries(${PROJECT_NAME}

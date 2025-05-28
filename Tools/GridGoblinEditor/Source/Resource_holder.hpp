@@ -15,7 +15,7 @@ namespace editor {
 namespace hg  = ::jbatnozic::hobgoblin;
 namespace spe = ::jbatnozic::spempe;
 
-class ResourceManager : public spe::ContextComponent {
+class ResourceHolder : public spe::ContextComponent {
 public:
 
     virtual const hg::gr::SpriteLoader& getSpriteLoader() const = 0;
@@ -23,7 +23,7 @@ public:
     virtual const AllDefinitions& getAllDefinitions() const = 0;
 
 private:
-    SPEMPE_CTXCOMP_TAG("jbatnozic::gridgoblin::editor::ResourceManager");
+    SPEMPE_CTXCOMP_TAG("jbatnozic::gridgoblin::editor::ResourceHolder");
 };
 
 } // namespace editor

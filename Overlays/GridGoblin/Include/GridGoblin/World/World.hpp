@@ -224,6 +224,13 @@ public:
         void setWallAtUnchecked(hg::math::Vector2pz                   aCell,
                                 const std::optional<CellModel::Wall>& aWallOpt);
 
+        // User data
+
+        void setUserDataAt(hg::PZInteger aX, hg::PZInteger aY, std::int64_t aUserData);
+        void setUserDataAt(hg::math::Vector2pz aCell, std::int64_t aUserData);
+        void setUserDataAtUnchecked(hg::PZInteger aX, hg::PZInteger aY, std::int64_t aUserData);
+        void setUserDataAtUnchecked(hg::math::Vector2pz aCell, std::int64_t aUserData);
+
     private:
         friend class World;
         Editor(World& aWorld)
@@ -439,6 +446,11 @@ private:
                              const std::optional<CellModel::Wall>& aWallOpt);
 
     void _setWallAtUnchecked(hg::math::Vector2pz aCell, const std::optional<CellModel::Wall>& aWallOpt);
+
+    void _setUserDataAt(hg::PZInteger aX, hg::PZInteger aY, std::int64_t aUserData);
+    void _setUserDataAt(hg::math::Vector2pz aCell, std::int64_t aUserData);
+    void _setUserDataAtUnchecked(hg::PZInteger aX, hg::PZInteger aY, std::int64_t aUserData);
+    void _setUserDataAtUnchecked(hg::math::Vector2pz aCell, std::int64_t aUserData);
 };
 
 ///////////////////////////////////////////////////////////////////////////
@@ -491,6 +503,24 @@ inline void World::Editor::setWallAtUnchecked(hg::PZInteger                     
 inline void World::Editor::setWallAtUnchecked(hg::math::Vector2pz                   aCell,
                                               const std::optional<CellModel::Wall>& aWallOpt) {
     _world._setWallAtUnchecked(aCell, aWallOpt);
+}
+
+inline void World::Editor::setUserDataAt(hg::PZInteger aX, hg::PZInteger aY, std::int64_t aUserData) {
+    _world._setUserDataAt(aX, aY, aUserData);
+}
+
+inline void World::Editor::setUserDataAt(hg::math::Vector2pz aCell, std::int64_t aUserData) {
+    _world._setUserDataAt(aCell, aUserData);
+}
+
+inline void World::Editor::setUserDataAtUnchecked(hg::PZInteger aX,
+                                                  hg::PZInteger aY,
+                                                  std::int64_t  aUserData) {
+    _world._setUserDataAtUnchecked(aX, aY, aUserData);
+}
+
+inline void World::Editor::setUserDataAtUnchecked(hg::math::Vector2pz aCell, std::int64_t aUserData) {
+    _world._setUserDataAtUnchecked(aCell, aUserData);
 }
 
 } // namespace gridgoblin

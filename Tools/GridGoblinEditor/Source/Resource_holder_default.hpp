@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "Resource_manager.hpp"
+#include "Resource_holder.hpp"
 
 #include <filesystem>
 
@@ -14,9 +14,9 @@ namespace editor {
 namespace hg  = ::jbatnozic::hobgoblin;
 namespace spe = ::jbatnozic::spempe;
 
-class DefaultResourceManager : public ResourceManager {
+class DefaultResourceHolder : public ResourceHolder {
 public:
-    DefaultResourceManager(const std::filesystem::path& aDefinitionsDir,
+    DefaultResourceHolder(const std::filesystem::path& aDefinitionsDir,
                            const std::filesystem::path& aSpritesDir);
 
     const hg::gr::SpriteLoader& getSpriteLoader() const override;

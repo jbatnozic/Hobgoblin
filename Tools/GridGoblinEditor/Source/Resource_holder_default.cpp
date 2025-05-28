@@ -1,28 +1,28 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#include "Resource_manager_default.hpp"
+#include "Resource_holder_default.hpp"
 
 namespace jbatnozic {
 namespace gridgoblin {
 namespace editor {
 
-DefaultResourceManager::DefaultResourceManager(const std::filesystem::path& aDefinitionsDir,
+DefaultResourceHolder::DefaultResourceHolder(const std::filesystem::path& aDefinitionsDir,
                                                const std::filesystem::path& aSpritesDir) {}
 
-const hg::gr::SpriteLoader& DefaultResourceManager::getSpriteLoader() const {
+const hg::gr::SpriteLoader& DefaultResourceHolder::getSpriteLoader() const {
     return _spriteLoader;
 }
 
-const AllDefinitions& DefaultResourceManager::getAllDefinitions() const {
+const AllDefinitions& DefaultResourceHolder::getAllDefinitions() const {
     return _allDefinitions;
 }
 
-void DefaultResourceManager::_loadSprites(const std::filesystem::path& aSpritesDir) {
-    // TODO
+void DefaultResourceHolder::_loadSprites(const std::filesystem::path& aSpritesDir) {
+    _spriteLoader.loadSpriteManifest(aSpritesDir / "sprite_manifest.txt");
 }
 
-void DefaultResourceManager::_loadAllDefinitions(const std::filesystem::path& aDefinitionsDir) {
+void DefaultResourceHolder::_loadAllDefinitions(const std::filesystem::path& aDefinitionsDir) {
     hg::UnicodeString contents;
     if (auto path = aDefinitionsDir / "cells+world.json"; std::filesystem::exists(path)) {
         contents = hg::LoadWholeFile(path);

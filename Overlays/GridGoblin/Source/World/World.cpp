@@ -767,7 +767,7 @@ void World::_setFloorAtUnchecked(hg::PZInteger                          aX,
     }
 
     // clang-format off
-    _cellEditInfos.push_back({{aX, aY},Binder::CellEditInfo::FLOOR});
+    _cellEditInfos.push_back({{aX, aY}, Binder::CellEditInfo::FLOOR});
     if (_isInGeneratorMode) {
         prune();
     }
@@ -836,6 +836,33 @@ SWAP_WALL:
 void World::_setWallAtUnchecked(hg::math::Vector2pz                   aCell,
                                 const std::optional<CellModel::Wall>& aWallOpt) {
     _setWallAtUnchecked(aCell.x, aCell.y, aWallOpt);
+}
+
+void World::_setUserDataAt(hg::PZInteger aX, hg::PZInteger aY, std::int64_t aUserData) {
+    HG_VALIDATE_ARGUMENT(aX < getCellCountX());
+    HG_VALIDATE_ARGUMENT(aY < getCellCountY());
+
+    _setUserDataAtUnchecked(aX, aY, aUserData);
+}
+
+void World::_setUserDataAt(hg::math::Vector2pz aCell, std::int64_t aUserData) {
+    _setUserDataAt(aCell.x, aCell.y, aUserData);
+}
+
+void World::_setUserDataAtUnchecked(hg::PZInteger aX, hg::PZInteger aY, std::int64_t aUserData) {
+    auto& cell = _chunkStorage.getCellAtUnchecked(aX, aY, detail::LOAD_IF_MISSING);
+    cell.setUserData(aUserData);
+
+    // clang-format off
+    _cellEditInfos.push_back({{aX, aY}, Binder::CellEditInfo::USER_DATA});
+    if (_isInGeneratorMode) {
+        prune();
+    }
+    // clang-format on
+}
+
+void World::_setUserDataAtUnchecked(hg::math::Vector2pz aCell, std::int64_t aUserData) {
+    _setUserDataAtUnchecked(aCell.x, aCell.y, aUserData);
 }
 
 } // namespace gridgoblin

@@ -4,6 +4,7 @@
 #include "Editor_ui_driver.hpp"
 
 #include "Definitions.hpp"
+#include "Resource_holder.hpp"
 
 #include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/Logging.hpp>
@@ -101,8 +102,11 @@ public:
     void init(const std::filesystem::path& aAssetsDir, const std::filesystem::path& aDefinitionsDir) {
         SPEMPE_VALIDATE_GAME_CONTEXT_FLAGS(_super.ctx(), headless == false);
 
-        _allDefinitions = _loadAllDefinitions(aDefinitionsDir);
-        _editorUiModel  = _allDefinitionsToModel(_allDefinitions);
+        const auto& resources = ccomp<ResourceHolder>();
+
+        _editorUiModel  = _allDefinitionsToModel(resources.getAllDefinitions());
+        HG_HARD_ASSERT(_editorUiModel.cellDefinitions.size() > 0);
+        _selectedDefinition = _editorUiModel.cellDefinitions[0].definitionName;
 
         auto& guiContext = ccomp<MWindow>().getGUIContext();
         _dataModelHandle = _setUpDataBinding(guiContext);
@@ -116,6 +120,24 @@ public:
         } else {
             HG_LOG_ERROR(LOG_ID, "RMLUI Document could not be loaded.");
         }
+    }
+
+    CellModel getSelectedCellModel() const {
+        const auto& resources = ccomp<ResourceHolder>();
+        const auto& allDefinitions = resources.getAllDefinitions();
+
+        const auto iter = allDefinitions.cellDefinitions.find(_selectedDefinition);
+        HG_HARD_ASSERT(iter != allDefinitions.cellDefinitions.end());
+
+        CellModel result;
+        if (const auto& floor = iter->second.floor; floor.has_value()) {
+            result.setFloor(*floor);
+        }
+        if (const auto& wall = iter->second.wall; wall.has_value()) {
+            result.setWall(*wall);
+        }
+        result.setUserData(iter->second.userData);
+        return result;
     }
 
     void eventBeginUpdate() {}
@@ -176,14 +198,14 @@ public:
 private:
     EditorUiDriver& _super;
 
-    AllDefinitions _allDefinitions;
-
     EditorUiModel        _editorUiModel;
     Rml::DataModelHandle _dataModelHandle;
 
     Rml::ElementDocument* _document = nullptr;
 
     bool _documentVisible = false;
+
+    std::string _selectedDefinition;
 
     void _onDefinitionSelected(Rml::DataModelHandle, Rml::Event&, const Rml::VariantList& aArguments) {
         const auto index = aArguments.at(0).Get<std::size_t>(-1);
@@ -208,22 +230,6 @@ private:
             constructor.BindEventCallback("SelectDefinition", &Impl::_onDefinitionSelected, this));
 
         return constructor.GetModelHandle();
-    }
-
-    static AllDefinitions _loadAllDefinitions(const std::filesystem::path& aDefinitionsDir) {
-        hg::UnicodeString contents;
-        if (auto path = aDefinitionsDir / "cells+world.json"; std::filesystem::exists(path)) {
-            contents = hg::LoadWholeFile(path);
-        } else if (auto path = aDefinitionsDir / "cells+world.txt"; std::filesystem::exists(path)) {
-            contents = hg::LoadWholeFile(path);
-        } else {
-            HG_THROW_TRACED(hg::TracedRuntimeError,
-                            0,
-                            "Neither 'cells+world.json' nor 'cells+world.txt' were found in '{}'.",
-                            aDefinitionsDir.string());
-        }
-
-        return JsonStringToAllDefinitions(hg::UniStrConv(hobgoblin::TO_UTF8_STD_STRING, contents));
     }
 
     static EditorUiModel _allDefinitionsToModel(const AllDefinitions& aDefinitions) {
@@ -253,6 +259,10 @@ EditorUiDriver::~EditorUiDriver() = default;
 void EditorUiDriver::init(const std::filesystem::path& aAssetsDir,
                           const std::filesystem::path& aDefinitionsDir) {
     _impl->init(aAssetsDir, aDefinitionsDir);
+}
+
+CellModel EditorUiDriver::getSelectedCellModel() const {
+    return _impl->getSelectedCellModel();
 }
 
 void EditorUiDriver::_eventBeginUpdate() {

@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <GridGoblin/Model/Cell_model.hpp>
 #include <SPeMPE/SPeMPE.hpp>
 
 #include <filesystem>
@@ -22,6 +23,8 @@ public:
     ~EditorUiDriver();
 
     void init(const std::filesystem::path& aAssetsDir, const std::filesystem::path& aDefinitionsDir);
+
+    CellModel getSelectedCellModel() const;
 
 private:
     class Impl;

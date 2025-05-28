@@ -29,6 +29,7 @@ private:
     std::optional<World> _world;
     std::optional<TopDownRenderer> _worldRenderer;
 
+    void _eventUpdate1() override;
     void _eventDraw1() override;
 };
 

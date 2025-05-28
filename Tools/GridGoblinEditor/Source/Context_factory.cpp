@@ -5,6 +5,7 @@
 #include "Priorities.hpp"
 #include "Editor_ui_driver.hpp"
 #include "Editor_world_driver.hpp"
+#include "Resource_holder_default.hpp"
 
 #include <Hobgoblin/Common/Build_type.hpp>
 #include <SPeMPE/SPeMPE.hpp>
@@ -88,6 +89,13 @@ std::unique_ptr<spe::GameContext> CreateEditorSPeMPEContext(const EditorConfig& 
     };
     for (const FontFace& face : font_faces) {
         Rml::LoadFontFace((aConfig.assetsDir / "Fonts/").string() + face.filename, face.fallback_face);
+    }
+
+    // Instantiate Resource holder
+    {
+        auto resHolder =
+            std::make_unique<DefaultResourceHolder>(aConfig.definitionsDir, aConfig.spritesDir);
+        context->attachAndOwnComponent(std::move(resHolder));
     }
 
     // Instantiate World driver
