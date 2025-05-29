@@ -7,6 +7,7 @@ find_package(GTest CONFIG REQUIRED)
 
 add_executable(${PROJECT_NAME}
     "Base64_test.cpp"
+    "Compact_int_test.cpp"
     "Compressed_small_vector_test.cpp"
     "Packet_test.cpp"
     "Value_sorted_map_test.cpp"

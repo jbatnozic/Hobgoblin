@@ -53,9 +53,7 @@ public:
     //!
     //! \returns The number of bytes written (could be 0 if the stream could receive no data at
     //!          all, or a negative error code (see `StreamBase`) on failure).
-    HG_NODISCARD std::int64_t write(NeverNull<const void*> aData,
-                                    std::int64_t           aByteCount,
-                                    bool                   aAllowPartal = false);
+    std::int64_t write(NeverNull<const void*> aData, std::int64_t aByteCount, bool aAllowPartal = false);
 
     //! Appends an object of type `T` to the stream (assuming it has the proper `operator<<`
     //! defined.
