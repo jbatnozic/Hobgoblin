@@ -74,6 +74,9 @@ public:
     }
 
     // Misc.
+
+    //! If the stored value is outside of the 28-bit or the 56-bit range (depending on `taValueType`),
+    //! throws `TracedLogicError`. If the value is in range, it does nothing.
     void validateValueRange();
 
 private:
@@ -86,8 +89,14 @@ OutputStream& operator<<(OutputStreamExtender& aStreamExtender, CompactIntImpl<t
 template <class taValueType>
 InputStream& operator>>(InputStreamExtender& aStreamExtender, CompactIntImpl<taValueType>& aData);
 
+//! Unsigned CompactInt implementation that can hold up to 56 bits of information.
 using CompactUInt56 = CompactIntImpl<std::uint64_t>;
+
+//! Unsigned CompactInt implementation that can hold up to 28 bits of information.
 using CompactUInt28 = CompactIntImpl<std::uint32_t>;
+
+//! Signed CompactInt implementation that can hold up to 56 bits of information.
+using CompactInt56 = CompactIntImpl<std::int64_t>;
 
 } // namespace util
 HOBGOBLIN_NAMESPACE_END
