@@ -55,8 +55,6 @@ OutputStream& operator<<(OutputStreamExtender& aStreamExt, CompactIntImpl<taValu
 
     taValueType val = aData.value();
 
-    aData.validateValueRange();
-
     if (val == 0) {
         aStreamExt->append((std::uint8_t)0x01);
     } else {
@@ -83,6 +81,8 @@ OutputStream& operator<<(OutputStreamExtender& aStreamExt, CompactIntImpl<taValu
 
 template <class taValueType>
 InputStream& operator>>(InputStreamExtender& aStreamExt, CompactIntImpl<taValueType>& aData) {
+    static constexpr bool IS_SIGNED = std::is_signed_v<taValueType>;
+
     std::uint8_t buffer[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 
     aStreamExt->noThrow() >> buffer[0];
@@ -91,26 +91,16 @@ InputStream& operator>>(InputStreamExtender& aStreamExt, CompactIntImpl<taValueT
         return *aStreamExt;
     }
 
-    if constexpr (std::is_unsigned_v<taValueType>) { // UNSIGNED
-        const auto units = CountTrailingZeros(buffer[0]);
-        (void)aStreamExt->read(&buffer[1], units);
-        aData = 0;
-        // The insertion operator (<<) stores the number in the stream in the little-endian format.
-        static_assert(HG_ENDIANESS == HG_LITTLE_ENDIAN);
-        std::memcpy(&*aData, &buffer, sizeof(taValueType));
-        *aData >>= units + 1;
-    } else { // SIGNED
-        const auto extraOctets = CountTrailingZeros(buffer[0]);
-        (void)aStreamExt->read(&buffer[1], extraOctets);
-        aData = 0;
-        // The insertion operator (<<) stores the number in the stream in the little-endian format.
-        static_assert(HG_ENDIANESS == HG_LITTLE_ENDIAN);
-        std::memcpy(&*aData, &buffer, sizeof(taValueType));
-        *aData >>= extraOctets + 1;
-        if ((buffer[extraOctets] & 0x80) != 0) {
-            const auto leading1count = (sizeof(taValueType) * 8) - ((extraOctets + 1) * 7);
-            *aData |= IntWithTopNBitsSet<taValueType>(leading1count);
-        }
+    const auto extraOctets = CountTrailingZeros(buffer[0]);
+    (void)aStreamExt->read(&buffer[1], extraOctets);
+    aData = 0;
+    // The insertion operator (<<) stores the number in the stream in the little-endian format.
+    static_assert(HG_ENDIANESS == HG_LITTLE_ENDIAN);
+    std::memcpy(&*aData, &buffer, sizeof(taValueType));
+    *aData >>= extraOctets + 1;
+    if (IS_SIGNED && (buffer[extraOctets] & 0x80) != 0) {
+        const auto leading1count = (sizeof(taValueType) * 8) - ((extraOctets + 1) * 7);
+        *aData |= IntWithTopNBitsSet<taValueType>(leading1count);
     }
 
     return *aStreamExt;
@@ -119,30 +109,53 @@ InputStream& operator>>(InputStreamExtender& aStreamExt, CompactIntImpl<taValueT
 template <class taValueType>
 void CompactIntImpl<taValueType>::validateValueRange() {
     if constexpr (std::is_unsigned_v<taValueType>) { // UNSIGNED
-        static constexpr std::uint32_t LIMIT_32 = 0x0F'FF'FF'FF;
-        static constexpr std::uint64_t LIMIT_64 = 0x00'FF'FF'FF'FF'FF'FF'FF;
+        static constexpr std::uint32_t MAX_32 = 0x0F'FF'FF'FF;
+        static constexpr std::uint64_t MAX_64 = 0x00'FF'FF'FF'FF'FF'FF'FF;
 
         if constexpr (sizeof(taValueType) == 4) {
-            if (_value <= LIMIT_32) {
+            if (_value <= MAX_32) {
                 return;
             }
 
             HG_THROW_TRACED(TracedLogicError,
                             0,
-                            "The stored value ({}) is outside of the 28-bit range.",
+                            "The stored value ({}) is outside of the unsigned 28-bit range.",
                             _value);
         } else {
-            if (_value <= LIMIT_64) {
+            if (_value <= MAX_64) {
                 return;
             }
 
             HG_THROW_TRACED(TracedLogicError,
                             0,
-                            "The stored value ({}) is outside of the 56-bit range.",
+                            "The stored value ({}) is outside of the unsigned 56-bit range.",
                             _value);
         }
     } else { // SIGNED
-        // TODO
+        static constexpr std::int32_t  MIN_32 = -0x08'00'00'00;
+        static constexpr std::int32_t  MAX_32 = +0x07'FF'FF'FF;
+        static constexpr std::int64_t MIN_64 = -0x00'80'00'00'00'00'00'00;
+        static constexpr std::int64_t MAX_64 = +0x00'7F'FF'FF'FF'FF'FF'FF;
+
+        if constexpr (sizeof(taValueType) == 4) {
+            if (_value >= MIN_32 && _value <= MAX_32) {
+                return;
+            }
+
+            HG_THROW_TRACED(TracedLogicError,
+                            0,
+                            "The stored value ({}) is outside of the signed 28-bit range.",
+                            _value);
+        } else {
+            if (_value >= MIN_64 && _value <= MAX_64) {
+                return;
+            }
+
+            HG_THROW_TRACED(TracedLogicError,
+                            0,
+                            "The stored value ({}) is outside of the signed 56-bit range.",
+                            _value);
+        }
     }
 }
 

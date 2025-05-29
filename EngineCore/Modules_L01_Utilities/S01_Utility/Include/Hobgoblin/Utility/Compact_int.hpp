@@ -14,6 +14,18 @@
 HOBGOBLIN_NAMESPACE_BEGIN
 namespace util {
 
+//! An instance of a CompactInt (either signed or unsigned) represents a basic integer of a certain
+//! width. What sets it apart from a primitive integer type is the somewhat reduced range of values
+//! traded for the ability to be packed into an output stream (`hg::util::OutputStream`) or packet
+//! (`hg::util::Packet`) using fewer total bytes the closer the actual value is to zero.
+//!
+//! As such, this is a type whose intended use is network bandwidth optimization.
+//!
+//! \note do not use this class template directly; use one of the concrete aliases provided below:
+//!       - CompactUInt56
+//!       - CompactUInt28
+//!       - CompactInt56
+//!       - CompactInt28
 template <class taValueType>
 class CompactIntImpl {
 public:
@@ -90,13 +102,44 @@ template <class taValueType>
 InputStream& operator>>(InputStreamExtender& aStreamExtender, CompactIntImpl<taValueType>& aData);
 
 //! Unsigned CompactInt implementation that can hold up to 56 bits of information.
+//! With this class, numbers that can be represented using up to 7 bits will take up 1 byte
+//! when packed to a stream, numbers that can be represented up to 14 bits will take up 2 bytes
+//! when packed into a stream, and so on (max = 56-bit number -> 8 bytes in a stream).
+//!      0..127     -> 1B
+//!    128..16383   -> 2B
+//!  16384..2097151 -> 3B
+//!  etc.
 using CompactUInt56 = CompactIntImpl<std::uint64_t>;
 
 //! Unsigned CompactInt implementation that can hold up to 28 bits of information.
+//! With this class, numbers that can be represented using up to 7 bits will take up 1 byte
+//! when packed to a stream, numbers that can be represented up to 14 bits will take up 2 bytes
+//! when packed into a stream, and so on (max = 28-bit number -> 4 bytes in a stream).
+//!      0..127     -> 1B
+//!    128..16383   -> 2B
+//!  16384..2097151 -> 3B
+//!  etc.
 using CompactUInt28 = CompactIntImpl<std::uint32_t>;
 
 //! Signed CompactInt implementation that can hold up to 56 bits of information.
+//! With this class, numbers that can be represented using up to 7 bits will take up 1 byte
+//! when packed to a stream, numbers that can be represented up to 14 bits will take up 2 bytes
+//! when packed into a stream, and so on (max = 56-bit number -> 8 bytes in a stream).
+//!       -64..63      -> 1B
+//!     -8192..8191    -> 2B
+//!  -1048576..1048575 -> 3B
+//!  etc.
 using CompactInt56 = CompactIntImpl<std::int64_t>;
+
+//! Signed CompactInt implementation that can hold up to 28 bits of information.
+//! With this class, numbers that can be represented using up to 7 bits will take up 1 byte
+//! when packed to a stream, numbers that can be represented up to 14 bits will take up 2 bytes
+//! when packed into a stream, and so on (max = 28-bit number -> 4 bytes in a stream).
+//!       -64..63      -> 1B
+//!     -8192..8191    -> 2B
+//!  -1048576..1048575 -> 3B
+//!  etc.
+using CompactInt28 = CompactIntImpl<std::int32_t>;
 
 } // namespace util
 HOBGOBLIN_NAMESPACE_END
