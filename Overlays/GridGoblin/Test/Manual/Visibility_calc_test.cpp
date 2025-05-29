@@ -13,8 +13,8 @@
 #include <Hobgoblin/Utility/Time_utils.hpp>
 #include <Hobgoblin/Window.hpp>
 
-#include <chrono>
 #include <array>
+#include <chrono>
 #include <utility>
 
 #include <Hobgoblin/Logging.hpp>
@@ -242,7 +242,7 @@ void RunVisibilityCalculatorTestImpl() {
         renderer.endPrepareToRender();
         renderer.render(window);
 
-        //DrawChunk(window, world, {0, 0}, loader);
+        // DrawChunk(window, world, {0, 0}, loader);
         window.draw(vcSprite);
 
         window.display();
