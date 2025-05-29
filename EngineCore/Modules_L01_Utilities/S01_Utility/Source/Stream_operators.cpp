@@ -25,36 +25,36 @@ OutputStream& operator<<(OutputStreamExtender& aOutputStreamExt, bool aData) {
 }
 
 OutputStream& operator<<(OutputStreamExtender& aOutputStreamExt, std::int8_t aData) {
-    (void)aOutputStreamExt->write(&aData, sizeof(aData));
+    aOutputStreamExt->write(&aData, sizeof(aData));
     return *aOutputStreamExt;
 }
 
 OutputStream& operator<<(OutputStreamExtender& aOutputStreamExt, std::uint8_t aData) {
-    (void)aOutputStreamExt->write(&aData, sizeof(aData));
+    aOutputStreamExt->write(&aData, sizeof(aData));
     return *aOutputStreamExt;
 }
 
 OutputStream& operator<<(OutputStreamExtender& aOutputStreamExt, std::int16_t aData) {
     std::int16_t toWrite = static_cast<std::int16_t>(htons(static_cast<std::uint16_t>(aData)));
-    (void)aOutputStreamExt->write(&toWrite, sizeof(toWrite));
+    aOutputStreamExt->write(&toWrite, sizeof(toWrite));
     return *aOutputStreamExt;
 }
 
 OutputStream& operator<<(OutputStreamExtender& aOutputStreamExt, std::uint16_t aData) {
     std::uint16_t toWrite = htons(aData);
-    (void)aOutputStreamExt->write(&toWrite, sizeof(toWrite));
+    aOutputStreamExt->write(&toWrite, sizeof(toWrite));
     return *aOutputStreamExt;
 }
 
 OutputStream& operator<<(OutputStreamExtender& aOutputStreamExt, std::int32_t aData) {
     std::int32_t toWrite = static_cast<std::int32_t>(htonl(static_cast<std::uint32_t>(aData)));
-    (void)aOutputStreamExt->write(&toWrite, sizeof(toWrite));
+    aOutputStreamExt->write(&toWrite, sizeof(toWrite));
     return *aOutputStreamExt;
 }
 
 OutputStream& operator<<(OutputStreamExtender& aOutputStreamExt, std::uint32_t aData) {
     std::uint32_t toWrite = htonl(aData);
-    (void)aOutputStreamExt->write(&toWrite, sizeof(toWrite));
+    aOutputStreamExt->write(&toWrite, sizeof(toWrite));
     return *aOutputStreamExt;
 }
 
@@ -71,7 +71,7 @@ OutputStream& operator<<(OutputStreamExtender& aOutputStreamExt, std::int64_t aD
                               static_cast<std::uint8_t>((aData >>  8) & 0xFF),
                               static_cast<std::uint8_t>((aData      ) & 0xFF)};
     // clang-format on
-    (void)aOutputStreamExt->write(&toWrite, sizeof(toWrite));
+    aOutputStreamExt->write(&toWrite, sizeof(toWrite));
     return *aOutputStreamExt;
 }
 
@@ -88,7 +88,7 @@ OutputStream& operator<<(OutputStreamExtender& aOutputStreamExt, std::uint64_t a
                               static_cast<std::uint8_t>((aData >>  8) & 0xFF),
                               static_cast<std::uint8_t>((aData      ) & 0xFF)};
     // clang-format on
-    (void)aOutputStreamExt->write(&toWrite, sizeof(toWrite));
+    aOutputStreamExt->write(&toWrite, sizeof(toWrite));
     return *aOutputStreamExt;
 }
 
@@ -114,7 +114,7 @@ OutputStream& operator<<(OutputStreamExtender& aOutputStreamExt, double aData) {
 
 OutputStream& operator<<(OutputStreamExtender& aOutputStreamExt, std::string_view aData) {
     aOutputStreamExt << static_cast<std::uint32_t>(aData.size());
-    (void)aOutputStreamExt->write(aData.data(), static_cast<std::int64_t>(aData.size()));
+    aOutputStreamExt->write(aData.data(), static_cast<std::int64_t>(aData.size()));
     return *aOutputStreamExt;
 }
 

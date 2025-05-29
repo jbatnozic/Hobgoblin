@@ -12,6 +12,7 @@ set(COMPONENT_NAME "Hobgoblin.Utility")
 
 set(COMPONENT_SOURCES
   "Source/Base64.cpp"
+  "Source/Compact_uint_56.cpp"
   "Source/Dynamic_bitset.cpp"
   "Source/File_io.cpp"
   "Source/Flow_field_spooler_impl.cpp"
