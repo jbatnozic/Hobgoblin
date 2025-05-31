@@ -1,6 +1,7 @@
 // Copyright 2025 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
+#include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/Utility/Compact_int.hpp>
 #include <Hobgoblin/Utility/Stream_buffer.hpp>
 
@@ -60,6 +61,12 @@ TEST_F(CompactUInt56Test, TestValidValues) {
     // clang-format on
 }
 
+TEST_F(CompactUInt56Test, TestOutOfRangeValue) {
+    BufferStream  bufStream;
+    CompactUInt56 compactUInt{0x01ULL << 56};
+    EXPECT_THROW(bufStream << compactUInt, TracedLogicError);
+}
+
 // MARK: Unsigned 28
 
 class CompactUInt28Test : public ::testing::Test {
@@ -98,6 +105,12 @@ TEST_F(CompactUInt28Test, TestValidValues) {
     _testWithValue((0x01ULL << 21) - 0, 4);
     _testWithValue((0x01ULL << 28) - 1, 4);
     // clang-format on
+}
+
+TEST_F(CompactUInt28Test, TestOutOfRangeValue) {
+    BufferStream  bufStream;
+    CompactUInt28 compactUInt{0x01ULL << 28};
+    EXPECT_THROW(bufStream << compactUInt, TracedLogicError);
 }
 
 // MARK: Signed 56
@@ -167,6 +180,14 @@ TEST_F(CompactInt56Test, TestValidValues) {
     // clang-format on
 }
 
+TEST_F(CompactInt56Test, TestOutOfRangeValue) {
+    BufferStream bufStream;
+    CompactInt56 positive{0x01LL << (56 - 1)};
+    EXPECT_THROW(bufStream << positive, TracedLogicError);
+    CompactInt56 negative{-(0x01LL << (56 - 1)) - 1};
+    EXPECT_THROW(bufStream << negative, TracedLogicError);
+}
+
 // MARK: Signed 28
 
 class CompactInt28Test : public ::testing::Test {
@@ -216,6 +237,14 @@ TEST_F(CompactInt28Test, TestValidValues) {
     _testWithValue(-(0x01 << (21 - 1)) - 1, 4);
     _testWithValue(-(0x01 << (28 - 1)) - 0, 4);
     // clang-format on
+}
+
+TEST_F(CompactInt28Test, TestOutOfRangeValue) {
+    BufferStream bufStream;
+    CompactInt28 positive{0x01 << (28 - 1)};
+    EXPECT_THROW(bufStream << positive, TracedLogicError);
+    CompactInt28 negative{-(0x01 << (28 - 1)) - 1};
+    EXPECT_THROW(bufStream << negative, TracedLogicError);
 }
 
 } // namespace util

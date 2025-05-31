@@ -1,8 +1,8 @@
 // Copyright 2025 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#ifndef UHOBGOBLIN_UTIL_COMPACT_UINT_56_HPP
-#define UHOBGOBLIN_UTIL_COMPACT_UINT_56_HPP
+#ifndef UHOBGOBLIN_UTIL_COMPACT_INT_HPP
+#define UHOBGOBLIN_UTIL_COMPACT_INT_HPP
 
 #include <Hobgoblin/Utility/Stream_input.hpp>
 #include <Hobgoblin/Utility/Stream_output.hpp>
@@ -144,4 +144,4 @@ using CompactInt28 = CompactIntImpl<std::int32_t>;
 } // namespace util
 HOBGOBLIN_NAMESPACE_END
 
-#endif // !UHOBGOBLIN_UTIL_COMPACT_UINT_56_HPP
+#endif // !UHOBGOBLIN_UTIL_COMPACT_INT_HPP
