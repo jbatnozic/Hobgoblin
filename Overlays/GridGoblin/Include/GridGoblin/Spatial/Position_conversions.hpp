@@ -21,7 +21,7 @@ namespace topdown {
 PositionInView  ToPositionInView(PositionInWorld aPosInWorld);
 PositionInWorld ToPositionInWorld(PositionInView aPosInView);
 
-} // namespace dimetric
+} // namespace topdown
 
 } // namespace gridgoblin
 } // namespace jbatnozic

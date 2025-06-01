@@ -19,7 +19,7 @@ constexpr SpriteId SPRITEID_IDENTIFIER_MASK = 0x0FFF;
 
 //! Flip the sprite horizontally (through the Y axis) when this bit is set to 1
 constexpr SpriteId SPRITEID_HFLIP = 0x4000;
-//! Flip the sprite vertically (through the X axis) when this bit is set to 1 
+//! Flip the sprite vertically (through the X axis) when this bit is set to 1
 constexpr SpriteId SPRITEID_VFLIP = 0x8000;
 
 //! Bits 14..15
