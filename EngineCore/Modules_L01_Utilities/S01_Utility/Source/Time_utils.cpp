@@ -1,9 +1,6 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-// clang-format off
-
-
 #include <Hobgoblin/Utility/Time_utils.hpp>
 
 #include <Hobgoblin/HGExcept.hpp>
@@ -13,20 +10,21 @@
 #include <cstdint>
 #include <thread>
 
+// clang-format off
 #ifdef _WIN32
-#  define WIN32_LEAN_AND_MEAN
-#  include <windows.h>
-#  include <Mmsystem.h>
-
+    #define WIN32_LEAN_AND_MEAN
+    #include <Mmsystem.h>
+    #include <Windows.h>
 #else
-#  include <time.h>
-#  include <errno.h>
-
-#  ifdef __APPLE__
-#    include <mach/clock.h>
-#    include <mach/mach.h>
-#  endif
+    #include <errno.h>
+    #include <time.h>
+    #ifdef __APPLE__
+        #include <dispatch/dispatch.h>
+        #include <mach/clock.h>
+        #include <mach/mach.h>
+    #endif // __APPLE__
 #endif // _WIN32
+// clang-format on
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
@@ -34,19 +32,20 @@ HOBGOBLIN_NAMESPACE_BEGIN
 namespace util {
 
 using std::chrono::duration_cast;
-using std::chrono::milliseconds;
 using std::chrono::microseconds;
+using std::chrono::milliseconds;
+using std::chrono::nanoseconds;
 
 void Sleep(milliseconds timeToSleep) {
     std::this_thread::sleep_for(timeToSleep);
 }
 
-#ifdef _WIN32
+#if defined(_WIN32)
 // ****************** WINDOWS ******************
 
 namespace detail {
-void CALLBACK SignallingTimerCallback(UINT      timerID,
-                                      UINT      /* reserved */,
+void CALLBACK SignallingTimerCallback(UINT timerID,
+                                      UINT /* reserved */,
                                       DWORD_PTR userData,
                                       DWORD_PTR /* reserved */,
                                       DWORD_PTR /* reserved */) {
@@ -70,7 +69,7 @@ void PreciseSleep(milliseconds timeToSleep) {
 #endif // !NDEBUG
 
     Semaphore sem{0};
-    auto mmresult = timeSetEvent(timeToSleep.count(),
+    auto      mmresult = timeSetEvent(timeToSleep.count(),
                                  1 /* minimal resolution in milliseconds */,
                                  &detail::SignallingTimerCallback,
                                  reinterpret_cast<DWORD_PTR>(&sem),
@@ -81,28 +80,60 @@ void PreciseSleep(milliseconds timeToSleep) {
     sem.wait();
 }
 
+#elif defined(__APPLE__)
+// ****************** MAC ******************
+
+void PreciseSleep(milliseconds aTimeToSleep) {
+    dispatch_queue_t queue = dispatch_get_global_queue(QOS_CLASS_USER_INTERACTIVE, 0);
+    if (queue == nullptr) {
+        return;
+    }
+
+    dispatch_source_t timer =
+        dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, DISPATCH_TIMER_STRICT, queue);
+    if (timer == nullptr) {
+        return;
+    }
+
+    dispatch_source_set_timer(
+        timer,
+        dispatch_time(DISPATCH_TIME_NOW, duration_cast<nanoseconds>(aTimeToSleep).count()),
+        DISPATCH_TIME_FOREVER,
+        0 /* leeway 0 = high precision timer */);
+
+    Semaphore sem;
+    auto*     semPtr = &sem;
+    dispatch_source_set_event_handler(timer, ^{
+        semPtr->signal();
+        dispatch_source_cancel(timer); // prevent further calls of this event handler
+    });
+
+    dispatch_resume(timer); // start the timer
+
+    sem.wait();
+
+    dispatch_release(timer);
+}
+
 #else
 // ****************** UNIX ******************
 
 void PreciseSleep(milliseconds timeToSleep) {
-    static constexpr auto MILLISECONDS_PER_SECOND = 1'000LL;
+    static constexpr auto MILLISECONDS_PER_SECOND     = 1'000LL;
     static constexpr auto NANOSECONDS_PER_MILLISECOND = 1'000'000LL;
 
     struct timespec ts;
-    ts.tv_sec  = static_cast<decltype(ts.tv_sec)>(
-        timeToSleep.count() / MILLISECONDS_PER_SECOND
-    );
-    ts.tv_nsec = static_cast<decltype(ts.tv_nsec)>(
-        (timeToSleep.count() % 1'000) * NANOSECONDS_PER_MILLISECOND
-    );
+    ts.tv_sec = static_cast<decltype(ts.tv_sec)>(timeToSleep.count() / MILLISECONDS_PER_SECOND);
+    ts.tv_nsec =
+        static_cast<decltype(ts.tv_nsec)>((timeToSleep.count() % 1'000) * NANOSECONDS_PER_MILLISECOND);
 
     while (nanosleep(&ts, &ts) == -1 && errno == EINTR) {}
 }
 
 #endif
 
-void SuperPreciseSleep(microseconds timeToSleep) {
-    if (timeToSleep.count() <= 0) {
+void SuperPreciseSleep(microseconds aTimeToSleep) {
+    if (aTimeToSleep.count() <= 0) {
         return;
     }
 
@@ -110,11 +141,11 @@ void SuperPreciseSleep(microseconds timeToSleep) {
 
     Stopwatch stopwatch{};
 
-    if (timeToSleep > PRECISE_SLEEP_GRANULARITY) {
-        PreciseSleep(duration_cast<milliseconds>(timeToSleep - PRECISE_SLEEP_GRANULARITY));
+    if (aTimeToSleep > PRECISE_SLEEP_GRANULARITY) {
+        PreciseSleep(duration_cast<milliseconds>(aTimeToSleep - PRECISE_SLEEP_GRANULARITY));
     }
 
-    while (stopwatch.getElapsedTime<std::chrono::microseconds>() < timeToSleep) {
+    while (stopwatch.getElapsedTime<std::chrono::microseconds>() < aTimeToSleep) {
         // Busy wait for the remainder of the time. yield() provides a hint to the
         // implementation to reschedule the execution of threads, allowing other
         // threads to run.
@@ -126,5 +157,3 @@ void SuperPreciseSleep(microseconds timeToSleep) {
 HOBGOBLIN_NAMESPACE_END
 
 #include <Hobgoblin/Private/Pmacro_undef.hpp>
-
-// clang-format on

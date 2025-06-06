@@ -48,14 +48,14 @@ T Stopwatch::getElapsedTime() const {
 }
 
 // Max error: ~15ms
-void Sleep(std::chrono::milliseconds timeToSleep);
+void Sleep(std::chrono::milliseconds aTimeToSleep);
 
 // Max error: ~1ms
-void PreciseSleep(std::chrono::milliseconds timeToSleep);
+void PreciseSleep(std::chrono::milliseconds aTimeToSleep);
 
 // Max error: usually ~1us; rarely up to 20us
 // Note: does busy waiting for up to a millisecond
-void SuperPreciseSleep(std::chrono::microseconds timeToSleep);
+void SuperPreciseSleep(std::chrono::microseconds aTimeToSleep);
 
 } // namespace util
 HOBGOBLIN_NAMESPACE_END
