@@ -1,8 +1,6 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-// clang-format off
-
 #ifndef UHOBGOBLIN_QAO_ORDERER_HPP
 #define UHOBGOBLIN_QAO_ORDERER_HPP
 
@@ -30,12 +28,10 @@ using QAO_OrdererReverseIterator      = qao_detail::QAO_Orderer::reverse_iterato
 using QAO_OrdererConstIterator        = qao_detail::QAO_Orderer::const_iterator;
 using QAO_OrdererConstReverseIterator = qao_detail::QAO_Orderer::const_reverse_iterator;
 
-}
+} // namespace qao
 HOBGOBLIN_NAMESPACE_END
 
 #include <Hobgoblin/Private/Pmacro_undef.hpp>
 #include <Hobgoblin/Private/Short_namespace.hpp>
 
 #endif // !UHOBGOBLIN_QAO_ORDERER_HPP
-
-// clang-format on

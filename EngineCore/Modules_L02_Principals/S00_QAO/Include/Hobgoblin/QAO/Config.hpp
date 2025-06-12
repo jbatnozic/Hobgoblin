@@ -43,14 +43,6 @@ struct QAO_Event {
     };
 };
 
-namespace qao_detail {
-
-struct QAO_SerialIndexPair {
-    std::int64_t serial;
-    PZInteger index;
-};
-
-} // namespace qao_detail
 } // namespace qao
 HOBGOBLIN_NAMESPACE_END
 

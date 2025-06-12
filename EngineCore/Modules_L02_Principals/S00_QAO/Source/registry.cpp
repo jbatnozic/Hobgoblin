@@ -1,15 +1,10 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-// clang-format off
-
-
-#include <Hobgoblin/QAO/config.hpp>
-#include <Hobgoblin/QAO/base.hpp>
-#include <Hobgoblin/QAO/registry.hpp>
 #include <Hobgoblin/HGExcept.hpp>
-
-#include <stdexcept>
+#include <Hobgoblin/QAO/Base.hpp>
+#include <Hobgoblin/QAO/Config.hpp>
+#include <Hobgoblin/QAO/Registry.hpp>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
@@ -20,136 +15,125 @@ namespace qao_detail {
 QAO_Registry::QAO_Registry(PZInteger capacity)
     : _indexer{capacity}
     , _elements{ToSz(capacity)}
-    , _serial_counter{QAO_MIN_SERIAL}
-{
-}
+    , _serialCounter{QAO_MIN_SERIAL} {}
 
-QAO_SerialIndexPair QAO_Registry::insert(std::unique_ptr<QAO_Base> ptr) {
-    const auto index = static_cast<PZInteger>(_indexer.acquire());
-    const auto serial = nextSerial();
+QAO_GenericId QAO_Registry::insert(QAO_GenericHandle aHandle) {
+    HG_VALIDATE_ARGUMENT(!!aHandle);
 
-    adjustSize();
+    const auto index  = static_cast<PZInteger>(_indexer.acquire());
+    const auto serial = _nextSerial();
 
-    _elements[ToSz(index)].ptr = std::move(ptr);
-    _elements[ToSz(index)].serial = serial;
-    _elements[ToSz(index)].no_own = false;
-
-    return QAO_SerialIndexPair{serial, index};
-}
-
-QAO_SerialIndexPair QAO_Registry::insertNoOwn(QAO_Base* ptr) {
-    const auto index = static_cast<int>(_indexer.acquire());
-    const auto serial = nextSerial();
-
-    adjustSize();
-
-    _elements[index].ptr = std::unique_ptr<QAO_Base>{ptr};
-    _elements[index].serial = serial;
-    _elements[index].no_own = true;
-
-    return QAO_SerialIndexPair{serial, index};
-}
-
-void QAO_Registry::insert(std::unique_ptr<QAO_Base> ptr, QAO_SerialIndexPair serialIndexPair) {
-    if (!_indexer.tryAcquireSpecific(serialIndexPair.index)) {
-        HG_THROW_TRACED(TracedLogicError, 0, "Cannot register object; Index {} already in use.", serialIndexPair.index);
+    const auto didInsert = _serialToIndex.insert(std::make_pair(serial, index)).second;
+    if (!didInsert) {
+        HG_THROW_TRACED(TracedRuntimeError, 0, "Fatal serial number clash with value {}.", serial);
     }
 
-    if (objectWithSerial(serialIndexPair.serial) != nullptr) {
-        HG_THROW_TRACED(TracedLogicError, 0, "Cannot register object; Serial {} already in use.", serialIndexPair.serial);
+    _adjustSize();
+
+    const auto id = QAO_GenericId{serial, index};
+
+    _elements[ToSz(index)] = Elem(id, std::move(aHandle));
+    // auto& elem = _elements[ToSz(index)];
+    // elem.id = id;
+    // elem.handle = std::move(aHandle);
+
+    return id;
+}
+
+void QAO_Registry::insertWithId(QAO_GenericHandle aHandle, QAO_GenericId aId) {
+    if (!_indexer.tryAcquireSpecific(aId.getIndex())) {
+        HG_THROW_TRACED(TracedLogicError,
+                        0,
+                        "Cannot register object; Index {} already in use.",
+                        aId.getIndex());
     }
 
-    adjustSize();
-
-    _elements[serialIndexPair.index].ptr = std::move(ptr);
-    _elements[serialIndexPair.index].serial = serialIndexPair.serial;
-    _elements[serialIndexPair.index].no_own = false;
-}
-
-void QAO_Registry::insertNoOwn(QAO_Base* ptr, QAO_SerialIndexPair serialIndexPair) {
-    if (!_indexer.tryAcquireSpecific(serialIndexPair.index)) {
-        HG_THROW_TRACED(TracedLogicError, 0, "Cannot register object; Index {} already in use.", serialIndexPair.index);
+    const auto didInsert = _serialToIndex.insert(std::make_pair(aId.getSerial(), aId.getIndex())).second;
+    if (!didInsert) {
+        HG_THROW_TRACED(TracedRuntimeError,
+                        0,
+                        "Fatal serial number clash with value {}.",
+                        aId.getSerial());
     }
 
-    if (objectWithSerial(serialIndexPair.serial) != nullptr) {
-        HG_THROW_TRACED(TracedLogicError, 0, "Cannot register object; Serial {} already in use.", serialIndexPair.serial);
+    _adjustSize();
+
+    _elements[ToSz(aId.getIndex())] = {aId, std::move(aHandle)};
+}
+
+QAO_GenericHandle QAO_Registry::remove(PZInteger aIndex) {
+    Elem& elem = _elements.at(ToSz(aIndex));
+    if (elem.handle.isNull()) {
+        return {};
     }
 
-    adjustSize();
+    QAO_GenericHandle rv = std::move(elem.handle);
 
-    _elements[serialIndexPair.index].ptr = std::unique_ptr<QAO_Base>{ptr};
-    _elements[serialIndexPair.index].serial = serialIndexPair.serial;
-    _elements[serialIndexPair.index].no_own = true;
+    _serialToIndex.erase(elem.id.getSerial());
+
+    elem = {};
+    _indexer.free(aIndex);
+
+    return rv;
 }
 
-std::unique_ptr<QAO_Base> QAO_Registry::release(PZInteger index) {
-    Elem& elem = _elements[index];
-    if (elem.no_own) {
-        elem.ptr.release();
-        _indexer.free(static_cast<std::size_t>(index));
-        return std::unique_ptr<QAO_Base>{nullptr};
+QAO_GenericHandle QAO_Registry::findObjectWithIndex(PZInteger aIndex) const {
+    const auto szIdx = ToSz(aIndex);
+    if (szIdx >= _elements.size()) {
+        return {};
     }
-    else {
-        auto rv = std::move(elem.ptr);
-        _indexer.free(static_cast<std::size_t>(index));
-        return rv;
+    return _elements[szIdx].handle;
+}
+
+QAO_GenericHandle QAO_Registry::findObjectWithSerial(std::int64_t serial) const {
+    const auto iter = _serialToIndex.find(serial);
+    if (iter == _serialToIndex.end()) {
+        return {};
     }
+
+    return _elements[ToSz(iter->second)].handle;
 }
 
-void QAO_Registry::erase(PZInteger index) {
-    Elem& elem = _elements[index];
-    if (elem.no_own) {
-        elem.ptr.release();
-    } else {
-        elem.ptr.reset();
+QAO_GenericHandle QAO_Registry::findObjectWithId(QAO_GenericId aId) const {
+    const auto szIdx = ToSz(aId.getIndex());
+    if (szIdx >= _elements.size()) {
+        return {};
     }
-    _indexer.free(static_cast<std::size_t>(index));
+    return _elements[szIdx].handle;
 }
 
-int QAO_Registry::size() const {
-    return _indexer.getSize();
+bool QAO_Registry::isObjectWithIndexOwned(PZInteger aIndex) const {
+    HG_VALIDATE_ARGUMENT(ToSz(aIndex) < _elements.size());
+    const auto& elem = _elements[ToSz(aIndex)];
+    HG_VALIDATE_PRECONDITION(!elem.handle.isNull());
+    return elem.handle.isOwning();
 }
 
-QAO_Base* QAO_Registry::objectAt(PZInteger index) const {
-    return _elements[index].ptr.get();
-}
-
-QAO_Base* QAO_Registry::objectWithSerial(std::int64_t serial) const {
-    for (auto& elem : _elements) {
-        if (elem.serial == serial && elem.ptr != nullptr) {
-            return elem.ptr.get();
-        }
-    }
-    return nullptr;
-}
-
-bool QAO_Registry::isObjectAtOwned(PZInteger index) const {
-    return !_elements[index].no_own;
-}
-
-std::int64_t QAO_Registry::serialAt(PZInteger index) const {
-    return _elements[index].serial;
-}
+// std::int64_t QAO_Registry::serialAt(PZInteger index) const {
+//     return _elements[index].serial;
+// }
 
 PZInteger QAO_Registry::instanceCount() const {
     return _indexer.countFilled();
 }
 
-void QAO_Registry::adjustSize() {
-    const auto indexer_size = _indexer.getSize();
+// bool QAO_Registry::isSlotEmpty(PZInteger index) const {
+//     return _indexer.isSlotEmpty(static_cast<std::size_t>(index));
+// }
 
-    if (indexer_size != _elements.size()) {
-        _elements.resize(indexer_size);
+// MARK: Private
+
+void QAO_Registry::_adjustSize() {
+    const auto indexerSize = _indexer.getSize();
+
+    if (indexerSize > _elements.size()) {
+        _elements.resize(indexerSize);
     }
 }
 
-bool QAO_Registry::isSlotEmpty(PZInteger index) const {
-    return _indexer.isSlotEmpty(static_cast<std::size_t>(index));
-}
-
-std::int64_t QAO_Registry::nextSerial() {
-    std::int64_t rv = _serial_counter;
-    _serial_counter += 1;
+std::int64_t QAO_Registry::_nextSerial() {
+    std::int64_t rv = _serialCounter;
+    _serialCounter += 1;
     return rv;
 }
 
@@ -158,5 +142,3 @@ std::int64_t QAO_Registry::nextSerial() {
 HOBGOBLIN_NAMESPACE_END
 
 #include <Hobgoblin/Private/Pmacro_undef.hpp>
-
-// clang-format on

@@ -35,8 +35,8 @@ protected:
 
 class SimpleActiveObject : public QAO_Base {
 public:
-    SimpleActiveObject(QAO_RuntimeRef runtime, std::vector<int>& vec, int number)
-        : QAO_Base{runtime, TYPEID_SELF, 0, "SimpleActiveObject"}
+    SimpleActiveObject(QAO_IKey aIKey, QAO_RuntimeRef runtime, std::vector<int>& vec, int number)
+        : QAO_Base{aIKey, runtime, TYPEID_SELF, 0, "SimpleActiveObject"}
         , _myVec{vec}
         , _myNumber{number}
     {
@@ -55,8 +55,8 @@ private:
 
 class SimpleActiveObjectWhichDeletesItself : public QAO_Base {
 public:
-    SimpleActiveObjectWhichDeletesItself(QAO_RuntimeRef rtRef)
-        : QAO_Base{rtRef, TYPEID_SELF, 0, "SimpleActiveObjectWhichDeletesItself"}
+    SimpleActiveObjectWhichDeletesItself(QAO_IKey aIKey, QAO_RuntimeRef rtRef)
+        : QAO_Base{aIKey, rtRef, TYPEID_SELF, 0, "SimpleActiveObjectWhichDeletesItself"}
     {
     }
 
@@ -73,7 +73,7 @@ private:
 // QAO_Runtime tests:
 
 TEST_F(QAO_Test, ObjectCount) {
-    auto obj = QAO_PCreate<SimpleActiveObject>(&_runtime, _numbers, 0);
+    auto obj = QAO_Create<SimpleActiveObject>(&_runtime, _numbers, 0);
     ASSERT_EQ(_runtime.getObjectCount(), 1);
     QAO_PDestroy(obj);
     ASSERT_EQ(_runtime.getObjectCount(), 0);
@@ -81,7 +81,7 @@ TEST_F(QAO_Test, ObjectCount) {
 
 TEST_F(QAO_Test, SimpleEvent) {
     constexpr int VALUE_0 = 1;
-    auto obj = QAO_PCreate<SimpleActiveObject>(&_runtime, _numbers, VALUE_0);
+    auto obj = QAO_Create<SimpleActiveObject>(&_runtime, _numbers, VALUE_0);
     performStep();
     ASSERT_EQ(_numbers.size(), 1u);
     ASSERT_EQ(_numbers[0], VALUE_0);
@@ -91,9 +91,9 @@ TEST_F(QAO_Test, Ordering) {
     constexpr int VALUE_0 = 1;
     constexpr int VALUE_1 = 2;
     constexpr int VALUE_2 = 3;
-    auto obj0 = QAO_PCreate<SimpleActiveObject>(&_runtime, _numbers, VALUE_0);
-    auto obj1 = QAO_PCreate<SimpleActiveObject>(&_runtime, _numbers, VALUE_1);
-    auto obj2 = QAO_PCreate<SimpleActiveObject>(&_runtime, _numbers, VALUE_2);
+    auto obj0 = QAO_Create<SimpleActiveObject>(&_runtime, _numbers, VALUE_0);
+    auto obj1 = QAO_Create<SimpleActiveObject>(&_runtime, _numbers, VALUE_1);
+    auto obj2 = QAO_Create<SimpleActiveObject>(&_runtime, _numbers, VALUE_2);
 
     obj0->setExecutionPriority(80);
     obj1->setExecutionPriority(70);
@@ -123,7 +123,7 @@ TEST_F(QAO_Test, Ordering) {
 // Create/Destroy function tests:
 
 TEST_F(QAO_Test, PCreatePDestroy) {
-    auto obj = QAO_PCreate<SimpleActiveObject>(&_runtime, _numbers, 0);
+    auto obj = QAO_Create<SimpleActiveObject>(&_runtime, _numbers, 0);
     ASSERT_EQ(_runtime.getObjectCount(), 1);
 
     QAO_PDestroy(obj);
@@ -131,11 +131,11 @@ TEST_F(QAO_Test, PCreatePDestroy) {
 }
 
 TEST_F(QAO_Test, PCreateFailsBecauseOfNull) {
-    EXPECT_THROW(QAO_PCreate<SimpleActiveObject>(nullptr, _numbers, 0), hg::TracedLogicError);
+    EXPECT_THROW(QAO_Create<SimpleActiveObject>(nullptr, _numbers, 0), hg::TracedLogicError);
 }
 
 TEST_F(QAO_Test, PCreateFailsBecauseOfNonOwningRef) {
-    EXPECT_THROW(QAO_PCreate<SimpleActiveObject>(_runtime.nonOwning(), _numbers, 0), hg::TracedLogicError);
+    EXPECT_THROW(QAO_Create<SimpleActiveObject>(_runtime.nonOwning(), _numbers, 0), hg::TracedLogicError);
 }
 
 TEST_F(QAO_Test, UPCreate) {

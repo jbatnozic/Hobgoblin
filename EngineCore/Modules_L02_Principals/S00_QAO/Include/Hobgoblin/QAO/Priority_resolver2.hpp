@@ -7,7 +7,6 @@
 #define UHOBGOBLIN_QAO_PRIORITY_RESOLVER2_HPP
 
 #include <cassert>
-#include <list>
 #include <optional>
 #include <type_traits>
 #include <unordered_map>

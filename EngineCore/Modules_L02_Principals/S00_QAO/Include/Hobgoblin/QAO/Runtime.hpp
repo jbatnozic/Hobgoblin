@@ -1,24 +1,21 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-// clang-format off
-
 #ifndef UHOBGOBLIN_QAO_RUNTIME_HPP
 #define UHOBGOBLIN_QAO_RUNTIME_HPP
 
 #include <Hobgoblin/Common.hpp>
-#include <Hobgoblin/QAO/config.hpp>
-#include <Hobgoblin/QAO/id.hpp>
-#include <Hobgoblin/QAO/orderer.hpp>
-#include <Hobgoblin/QAO/registry.hpp>
+#include <Hobgoblin/QAO/Config.hpp>
+#include <Hobgoblin/QAO/Id.hpp>
+#include <Hobgoblin/QAO/Orderer.hpp>
+#include <Hobgoblin/QAO/Registry.hpp>
+#include <Hobgoblin/QAO/Handle.hpp>
+#include <Hobgoblin/QAO/Runtime_ref.hpp>
 #include <Hobgoblin/Utility/Any_ptr.hpp>
 #include <Hobgoblin/Utility/No_copy_no_move.hpp>
-#include <Hobgoblin/Utility/Packet.hpp>
 
 #include <cstdint>
-#include <memory>
 #include <string>
-#include <typeinfo>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
@@ -28,43 +25,6 @@ namespace qao {
 constexpr std::int32_t QAO_ALL_EVENT_FLAGS = 0xFFFFFFFF;
 
 class QAO_Base;
-class QAO_Runtime;
-
-class QAO_RuntimeRef {
-public:
-    QAO_RuntimeRef() noexcept = default;
-
-    QAO_RuntimeRef(std::nullptr_t) noexcept
-        : QAO_RuntimeRef{}
-    {
-    }
-
-    QAO_RuntimeRef(QAO_Runtime& runtime) noexcept
-        : _runtime{&runtime}
-        , _isOwning{true}
-    {
-    }
-
-    QAO_RuntimeRef(QAO_Runtime* runtime) noexcept
-        : _runtime{runtime}
-        , _isOwning{true}
-    {
-    }
-
-    QAO_Runtime* ptr() const noexcept {
-        return _runtime;
-    }
-
-    bool isOwning() const noexcept {
-        return _isOwning;
-    }
-
-private:
-    QAO_Runtime* _runtime = nullptr;
-    bool _isOwning = false;
-
-    friend class QAO_Runtime;
-};
 
 class QAO_Runtime : NO_COPY, NO_MOVE {
 public:
@@ -72,18 +32,22 @@ public:
     QAO_Runtime(util::AnyPtr userData);
     ~QAO_Runtime();
 
+    //! Create a non-owning reference to this runtime.
     QAO_RuntimeRef nonOwning();
 
     // Object manipulation
-    void addObject(std::unique_ptr<QAO_Base> obj);
-    void addObjectNoOwn(QAO_Base& object);
+    void attachObject(AvoidNull<QAO_GenericHandle> aHandle);
 
-    void addObject(std::unique_ptr<QAO_Base> obj, QAO_GenericId specififcId);
-    void addObjectNoOwn(QAO_Base& object, QAO_GenericId specififcId);
+    // TODO: adding objects with specific IDs seems to be unused (serialization?)
+    void attachObject(AvoidNull<QAO_GenericHandle> aHandle, QAO_GenericId aSpecificId);
 
-    std::unique_ptr<QAO_Base> releaseObject(QAO_Base* obj);
-    // TODO: Name should be destroyObject
-    void eraseObject(QAO_Base* obj);
+    //! Detach an object from the runtime.
+    //! - If the object was owned by the runtime, an owning handle will be returned.
+    //! - Otherwise, a non-owning handle will be returned.
+    //! \throws PreconditionNotMetError if the object is not attached to this runtime.
+    AvoidNull<QAO_GenericHandle> detachObject(QAO_GenericId aId);
+    AvoidNull<QAO_GenericHandle> detachObject(QAO_Base& aObject);
+    AvoidNull<QAO_GenericHandle> detachObject(NeverNull<QAO_GenericHandle> aObject);
 
     void destroyAllOwnedObjects();
 
@@ -102,7 +66,9 @@ public:
 
     // Other
     PZInteger getObjectCount() const noexcept;
-    bool ownsObject(const QAO_Base* object) const;
+    bool ownsObject(QAO_GenericId aId) const;
+    bool ownsObject(QAO_Base& aObject) const;
+    bool ownsObject(NeverNull<QAO_GenericHandle> aObject) const;
 
     // User data
     void setUserData(std::nullptr_t);
@@ -128,10 +94,6 @@ public:
 
     QAO_OrdererConstReverseIterator crbegin() const;
     QAO_OrdererConstReverseIterator crend() const;
-
-    // Pack/Unpack state:
-    friend util::OutputStream& operator<<(util::OutputStreamExtender& ostream, const QAO_Runtime& self);
-    friend util::InputStream& operator>>(util::InputStreamExtender& istream, QAO_Runtime& self);
 
 private:
     qao_detail::QAO_Registry _registry;
@@ -169,5 +131,3 @@ HOBGOBLIN_NAMESPACE_END
 #include <Hobgoblin/Private/Short_namespace.hpp>
 
 #endif // !UHOBGOBLIN_QAO_RUNTIME_HPP
-
-// clang-format on

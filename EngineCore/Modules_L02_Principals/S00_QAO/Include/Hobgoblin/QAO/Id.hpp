@@ -1,13 +1,10 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-// clang-format off
-
 #ifndef UHOBGOBLIN_QAO_ID_HPP
 #define UHOBGOBLIN_QAO_ID_HPP
 
 #include <Hobgoblin/Common.hpp>
-#include <Hobgoblin/Utility/Packet.hpp>
 
 #include <cstdint>
 
@@ -17,8 +14,10 @@ HOBGOBLIN_NAMESPACE_BEGIN
 namespace qao {
 
 class QAO_Base;
-class QAO_Registry;
 class QAO_Runtime;
+namespace qao_detail {
+class QAO_Registry;
+} // namespace qao_detail
 
 template <class T>
 class QAO_Id;
@@ -34,31 +33,29 @@ public:
     bool operator!=(const QAO_GenericId& other) const;
 
     // Copy:
-    QAO_GenericId(const QAO_GenericId &other) = default;
-    QAO_GenericId& operator=(const QAO_GenericId &other) = default;
+    QAO_GenericId(const QAO_GenericId& other)            = default;
+    QAO_GenericId& operator=(const QAO_GenericId& other) = default;
 
     // Move:
-    QAO_GenericId(QAO_GenericId &&other) = default;
-    QAO_GenericId& operator=(QAO_GenericId &&other) = default;
+    QAO_GenericId(QAO_GenericId&& other)            = default;
+    QAO_GenericId& operator=(QAO_GenericId&& other) = default;
 
     // Utility:
-    PZInteger getIndex() const noexcept;
+    PZInteger    getIndex() const noexcept;
     std::int64_t getSerial() const noexcept;
-    bool isNull() const noexcept;
+    bool         isNull() const noexcept;
 
-    template<class T>
+    template <class T>
     QAO_Id<T> cast() const noexcept;
-
-    friend util::OutputStream& operator<<(util::OutputStreamExtender& ostream, const QAO_GenericId& self);
-    friend util::InputStream& operator>>(util::InputStreamExtender& istream, QAO_GenericId& self);
 
 protected:
     friend class QAO_Runtime;
+    friend class qao_detail::QAO_Registry;
     QAO_GenericId(std::int64_t serial, PZInteger index);
 
 private:
     std::int64_t _serial;
-    PZInteger _index;
+    PZInteger    _index;
 };
 
 template <class T>
@@ -67,37 +64,25 @@ public:
     using QAO_GenericId::QAO_GenericId;
 
     // Copy:
-    QAO_Id(const QAO_Id<T> &other) = default;
-    QAO_Id& operator=(const QAO_Id<T> &other) = default;
+    QAO_Id(const QAO_Id<T>& other)            = default;
+    QAO_Id& operator=(const QAO_Id<T>& other) = default;
 
     // Move:
-    QAO_Id(QAO_Id &&other) = default;
-    QAO_Id& operator=(QAO_Id &&other) = default;
-
-    friend util::OutputStream& operator<<(util::OutputStreamExtender& ostream, const QAO_Id& self) {
-        ostream->noThrow() << static_cast<const QAO_GenericId&>(self);
-        return *ostream;
-    }
-
-    friend util::InputStream& operator>>(util::InputStreamExtender& istream, QAO_Id& self) {
-        istream->noThrow() >> static_cast<QAO_GenericId&>(self);
-        return *istream;
-    }
+    QAO_Id(QAO_Id&& other)            = default;
+    QAO_Id& operator=(QAO_Id&& other) = default;
 
 protected:
     friend class QAO_GenericId;
     QAO_Id(std::int64_t serial, PZInteger index)
-        : QAO_GenericId{serial, index} 
-    {
-    }
+        : QAO_GenericId{serial, index} {}
 };
 
-template<class T>
+template <class T>
 QAO_Id<T> QAO_GenericId::cast() const noexcept {
     return QAO_Id<T>{_serial, _index};
 }
 
-}
+} // namespace qao
 HOBGOBLIN_NAMESPACE_END
 
 #include <Hobgoblin/Private/Pmacro_undef.hpp>

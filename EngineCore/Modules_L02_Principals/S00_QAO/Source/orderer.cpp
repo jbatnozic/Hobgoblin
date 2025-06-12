@@ -4,8 +4,8 @@
 // clang-format off
 
 
-#include <Hobgoblin/QAO/base.hpp>
-#include <Hobgoblin/QAO/orderer.hpp>
+#include <Hobgoblin/QAO/Base.hpp>
+#include <Hobgoblin/QAO/Orderer.hpp>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 

@@ -34,3 +34,5 @@ PUBLIC
 )
 
 add_library("Hobgoblin_L02_S00_QAO" ALIAS ${COMPONENT_NAME})
+
+add_subdirectory("Test")

@@ -1,11 +1,8 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-// clang-format off
-
-
-#include <Hobgoblin/QAO/base.hpp>
-#include <Hobgoblin/QAO/runtime.hpp>
+#include <Hobgoblin/QAO/Base.hpp>
+#include <Hobgoblin/QAO/Runtime.hpp>
 
 #include <cassert>
 #include <cstring>
@@ -19,26 +16,15 @@ namespace qao {
 constexpr std::int64_t MIN_STEP_ORDINAL = std::numeric_limits<std::int64_t>::min(); // TODO to config.hpp
 
 QAO_Runtime::QAO_Runtime()
-    : QAO_Runtime{nullptr}
-{
-}
+    : QAO_Runtime{nullptr} {}
 
 QAO_Runtime::QAO_Runtime(util::AnyPtr userData)
     : _step_counter{MIN_STEP_ORDINAL + 1}
     , _current_event{QAO_Event::NONE}
     , _step_orderer_iterator{_orderer.end()}
-    , _user_data{userData}
-{
-}
+    , _user_data{userData} {}
 
-QAO_Runtime::~QAO_Runtime() {
-    for (PZInteger i = 0; i < _registry.size(); i += 1) {
-        if (!_registry.isSlotEmpty(i)) {
-            QAO_Base* const object = _registry.objectAt(i);
-            delete object;
-        }
-    }
-}
+QAO_Runtime::~QAO_Runtime() = default;
 
 QAO_RuntimeRef QAO_Runtime::nonOwning() {
     QAO_RuntimeRef rv{this};
@@ -46,97 +32,81 @@ QAO_RuntimeRef QAO_Runtime::nonOwning() {
     return rv;
 }
 
-void QAO_Runtime::addObject(std::unique_ptr<QAO_Base> object) {
-    QAO_Base* const objRaw = object.get();
-    const auto reg_pair = _registry.insert(std::move(object));
+void QAO_Runtime::attachObject(AvoidNull<QAO_GenericHandle> aHandle) {
+    HG_VALIDATE_PRECONDITION(aHandle->getRuntime() == nullptr);
 
-    auto ordPair = _orderer.insert(objRaw); // first = iterator, second = added_new
-    assert(ordPair.second);
+    QAO_Base* const objRaw = aHandle.underlying().ptr();
+    const auto      id     = _registry.insert(std::move(aHandle));
 
-    objRaw->_context = QAO_Base::Context{
-        MIN_STEP_ORDINAL,
-        QAO_GenericId{reg_pair.serial, reg_pair.index},
-        ordPair.first,
-        this
-    };
+    auto ordererInsertionResult = _orderer.insert(objRaw);
+    HG_HARD_ASSERT(ordererInsertionResult.second);
+
+    objRaw->_context = {.stepOrdinal     = MIN_STEP_ORDINAL,
+                        .id              = id,
+                        .ordererIterator = ordererInsertionResult.first,
+                        .runtime         = this};
+
+    objRaw->_didAttach();
 }
 
-void QAO_Runtime::addObjectNoOwn(QAO_Base& object) {
-    const auto reg_pair = _registry.insertNoOwn(&object);
+void QAO_Runtime::attachObject(AvoidNull<QAO_GenericHandle> aHandle, QAO_GenericId aSpecificId) {
+    HG_VALIDATE_PRECONDITION(aHandle->getRuntime() == nullptr);
 
-    auto ordPair = _orderer.insert(&object); // first = iterator, second = added_new
-    assert(ordPair.second);
+    QAO_Base* const objRaw = aHandle.underlying().ptr();
+    _registry.insertWithId(std::move(aHandle), aSpecificId);
 
-    object._context = QAO_Base::Context{
-        MIN_STEP_ORDINAL,
-        QAO_GenericId{reg_pair.serial, reg_pair.index},
-        ordPair.first,
-        this
-    };
+    auto ordererInsertionResult = _orderer.insert(objRaw);
+    HG_HARD_ASSERT(ordererInsertionResult.second);
+
+    objRaw->_context = {.stepOrdinal     = MIN_STEP_ORDINAL,
+                        .id              = aSpecificId,
+                        .ordererIterator = ordererInsertionResult.first,
+                        .runtime         = this};
+
+    objRaw->_didAttach();
 }
 
-void QAO_Runtime::addObject(std::unique_ptr<QAO_Base> object, QAO_GenericId specififcId) {
-    QAO_Base* const objRaw = object.get();
-    _registry.insert(std::move(object), qao_detail::QAO_SerialIndexPair{specififcId.getSerial(), specififcId.getIndex()});
+AvoidNull<QAO_GenericHandle> QAO_Runtime::detachObject(QAO_GenericId aId) {
+    auto handle = _registry.findObjectWithId(aId);
+    HG_VALIDATE_PRECONDITION(!handle.isNull() &&
+                             "Object by given ID must exist attached to the Runtime.");
 
-    auto ordPair = _orderer.insert(objRaw); // first = iterator, second = added_new
-    assert(ordPair.second);
+    handle->_willDetach();
 
-    objRaw->_context = QAO_Base::Context{
-        MIN_STEP_ORDINAL,
-        objRaw->_context.id,
-        ordPair.first,
-        this
-    };
-}
+    const auto index = aId.getIndex();
 
-void QAO_Runtime::addObjectNoOwn(QAO_Base& object, QAO_GenericId specififcId) {
-    _registry.insertNoOwn(&object, qao_detail::QAO_SerialIndexPair{specififcId.getSerial(), specififcId.getIndex()});
-
-    auto ordPair = _orderer.insert(&object); // first = iterator, second = added_new
-    assert(ordPair.second);
-
-    object._context = QAO_Base::Context{
-        MIN_STEP_ORDINAL,
-        object._context.id,
-        ordPair.first,
-        this
-    };
-}
-
-std::unique_ptr<QAO_Base> QAO_Runtime::releaseObject(QAO_Base* object) {
-    assert(object && object->getRuntime() == this);
-
-    const auto id = object->getId();
-    const auto index = id.getIndex();
-    const auto serial = id.getSerial();
-
-    std::unique_ptr<QAO_Base> rv = _registry.release(index); // nullptr if object wasn't owned
+    auto rv = _registry.remove(index);
 
     // If current _step_orderer_iterator points to released object, advance it first
-    if (_step_orderer_iterator != _orderer.end() && *_step_orderer_iterator == object) {
+    if (_step_orderer_iterator != _orderer.end() && *_step_orderer_iterator == handle.ptr()) {
         _step_orderer_iterator = std::next(_step_orderer_iterator);
     }
-    _orderer.erase(object);
+    _orderer.erase(handle.ptr());
 
-    object->_context = QAO_Base::Context{};
+    handle->_context = QAO_Base::Context{};
 
     return rv;
 }
 
-void QAO_Runtime::eraseObject(QAO_Base* object) {
-    releaseObject(object).reset();
+AvoidNull<QAO_GenericHandle> QAO_Runtime::detachObject(QAO_Base& aObject) {
+    HG_VALIDATE_PRECONDITION(aObject.getRuntime() == this && "Object must be attached to this Runtime.");
+    return detachObject(aObject.getId());
+}
+
+AvoidNull<QAO_GenericHandle> QAO_Runtime::detachObject(NeverNull<QAO_GenericHandle> aObject) {
+    return detachObject(*aObject);
 }
 
 void QAO_Runtime::destroyAllOwnedObjects() {
-    std::vector<QAO_Base*> objectsToErase;
+    std::vector<QAO_GenericId> objectsToErase;
     for (auto& object : SELF) {
-        if (ownsObject(object)) {
-            objectsToErase.push_back(object);
+        const auto id = object->getId();
+        if (ownsObject(id)) {
+            objectsToErase.push_back(id);
         }
     }
-    for (auto& object : objectsToErase) {
-        eraseObject(object);
+    for (auto& id : objectsToErase) {
+        detachObject(id);
     }
 }
 
@@ -150,16 +120,7 @@ QAO_Base* QAO_Runtime::find(const std::string& name) const {
 }
 
 QAO_Base* QAO_Runtime::find(QAO_GenericId id) const {
-    const auto index = id.getIndex();
-    const auto serial = id.getSerial();
-
-    if (_registry.size() <= index) {
-        return nullptr;
-    }
-    if (_registry.serialAt(index) != serial) {
-        return nullptr;
-    }
-    return _registry.objectAt(index);
+    return _registry.findObjectWithId(id).ptr();
 }
 
 void QAO_Runtime::updateExecutionPriorityForObject(QAO_Base* object, int newPriority) {
@@ -169,19 +130,19 @@ void QAO_Runtime::updateExecutionPriorityForObject(QAO_Base* object, int newPrio
     _orderer.erase(object);
     object->_execution_priority = newPriority;
 
-    const auto ord_pair = _orderer.insert(object); // first = iterator, second = added_new
+    const auto ord_pair              = _orderer.insert(object); // first = iterator, second = added_new
     object->_context.ordererIterator = ord_pair.first;
 }
 
 // Execution
 
 void QAO_Runtime::startStep() {
-    _current_event = QAO_Event::PRE_UPDATE;
+    _current_event         = QAO_Event::PRE_UPDATE;
     _step_orderer_iterator = _orderer.begin();
 }
 
 void QAO_Runtime::advanceStep(bool& done, std::int32_t eventFlags) {
-    done = false;
+    done                      = false;
     QAO_OrdererIterator& curr = _step_orderer_iterator;
 
     //-----------------------------------------//
@@ -190,7 +151,7 @@ void QAO_Runtime::advanceStep(bool& done, std::int32_t eventFlags) {
             continue;
         }
 
-        auto ev = static_cast<QAO_Event::Enum>(i);
+        auto ev        = static_cast<QAO_Event::Enum>(i);
         _current_event = ev;
 
         while (curr != _orderer.end()) {
@@ -202,13 +163,15 @@ void QAO_Runtime::advanceStep(bool& done, std::int32_t eventFlags) {
             if (instance->_context.stepOrdinal < _step_counter) {
                 instance->_context.stepOrdinal = _step_counter;
                 instance->_callEvent(ev);
-                // After calling _callEvent, the instance variable must no longer be used until reassigned,
-                // because an instance is allowed to delete itself inside of an event implementation
+                // After calling _callEvent, the instance variable must no longer be used until
+                // reassigned, because an instance is allowed to delete itself inside of an event
+                // implementation
             }
             // If the step orderer iterator wasn't advanced by the _callEvent invocation (by the callee
             // deleting itself), it must be advanced here. Raw memory compare is necessary because
             // the iterator being compared then becomes invalid when deleting the list node.
-            const bool stepIteratorStayedTheSame = (std::memcmp(currBeforeEvent, &curr, sizeof(curr)) == 0);
+            const bool stepIteratorStayedTheSame =
+                (std::memcmp(currBeforeEvent, &curr, sizeof(curr)) == 0);
             if (stepIteratorStayedTheSame && curr != _orderer.end()) {
                 curr = std::next(curr);
             }
@@ -220,7 +183,7 @@ void QAO_Runtime::advanceStep(bool& done, std::int32_t eventFlags) {
     //-----------------------------------------//
 
     _current_event = QAO_Event::NONE;
-    done = true;
+    done           = true;
 }
 
 QAO_Event::Enum QAO_Runtime::getCurrentEvent() const {
@@ -233,14 +196,17 @@ PZInteger QAO_Runtime::getObjectCount() const noexcept {
     return _registry.instanceCount();
 }
 
-bool QAO_Runtime::ownsObject(const QAO_Base* object) const {
-    assert(object);
-    assert(object->getRuntime() == this);
+bool QAO_Runtime::ownsObject(QAO_GenericId aId) const {
+    return _registry.isObjectWithIndexOwned(aId.getIndex());
+}
 
-    const auto id = object->getId();
-    const auto index = id.getIndex();
+bool QAO_Runtime::ownsObject(QAO_Base& aObject) const {
+    HG_VALIDATE_PRECONDITION(aObject.getRuntime() == this && "Object must be attached to this Runtime.");
+    return ownsObject(aObject.getId());
+}
 
-    return _registry.isObjectAtOwned(index);
+bool QAO_Runtime::ownsObject(NeverNull<QAO_GenericHandle> aObject) const {
+    return ownsObject(*aObject);
 }
 
 // User data
@@ -283,23 +249,7 @@ QAO_OrdererConstReverseIterator QAO_Runtime::crend() const {
     return _orderer.crend();
 }
 
-// Pack/Unpack state:
-util::OutputStream& operator<<(util::OutputStreamExtender& ostream, const QAO_Runtime& self) {
-    ostream << self._step_counter << std::int32_t{self._current_event};
-    return *ostream;
-}
-
-util::InputStream& operator>>(util::InputStreamExtender& istream, QAO_Runtime& self) {
-    std::int32_t currentEvent;
-    istream->noThrow() >> self._step_counter >> currentEvent;
-    self._current_event = static_cast<decltype(self._current_event)>(currentEvent);
-
-    return *istream;
-}
-
-}
+} // namespace qao
 HOBGOBLIN_NAMESPACE_END
 
 #include <Hobgoblin/Private/Pmacro_undef.hpp>
-
-// clang-format on
