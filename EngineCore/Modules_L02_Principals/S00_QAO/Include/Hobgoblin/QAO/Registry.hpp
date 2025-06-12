@@ -29,17 +29,17 @@ public:
 
     QAO_GenericId     insert(QAO_GenericHandle aHandle);
     void              insertWithId(QAO_GenericHandle aHandle, QAO_GenericId aId);
-    QAO_GenericHandle remove(PZInteger aIndex);
+    QAO_GenericHandle remove(QAO_Index aIndex);
 
     //! Look for an object with the specified index.
     //! \returns non-owning handle to the object if it is found, or a null handle if it is not found.
     //! \note this function has O(1) complexity.
-    QAO_GenericHandle findObjectWithIndex(PZInteger aIndex) const;
+    QAO_GenericHandle findObjectWithIndex(QAO_Index aIndex) const;
 
     //! Look for an object with the specified serial number.
     //! \returns non-owning handle to the object if it is found, or a null handle if it is not found.
     //! \note this function has O(log(N)) complexity.
-    QAO_GenericHandle findObjectWithSerial(std::int64_t aSerial) const;
+    QAO_GenericHandle findObjectWithSerial(QAO_Serial aSerial) const;
 
     //! Look for an object with the specified ID.
     //! \returns non-owning handle to the object if it is found, or a null handle if it is not found.
@@ -47,10 +47,10 @@ public:
     QAO_GenericHandle findObjectWithId(QAO_GenericId aId) const;
 
     //!
-    bool isObjectWithIndexOwned(PZInteger aIndex) const;
-    // std::int64_t      serialAt(PZInteger index) const;
+    bool isObjectWithIndexOwned(QAO_Index aIndex) const;
+    // QAO_Serial      serialAt(QAO_Index index) const;
     PZInteger instanceCount() const;
-    // bool              isSlotEmpty(PZInteger index) const;
+    // bool              isSlotEmpty(QAO_Index index) const;
 
 private:
     struct Elem {
@@ -60,12 +60,12 @@ private:
 
     util::SlabIndexer _indexer;
     std::vector<Elem> _elements;
-    std::int64_t      _serialCounter;
+    QAO_Serial      _serialCounter;
 
-    std::unordered_map<std::int64_t, PZInteger> _serialToIndex;
+    std::unordered_map<QAO_Serial, QAO_Index> _serialToIndex;
 
     void         _adjustSize();
-    std::int64_t _nextSerial();
+    QAO_Serial _nextSerial();
 };
 
 } // namespace qao_detail

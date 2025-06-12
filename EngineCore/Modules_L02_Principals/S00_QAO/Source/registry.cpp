@@ -15,12 +15,12 @@ namespace qao_detail {
 QAO_Registry::QAO_Registry(PZInteger capacity)
     : _indexer{capacity}
     , _elements{ToSz(capacity)}
-    , _serialCounter{QAO_MIN_SERIAL} {}
+    , _serialCounter{QAO_STARTING_SERIAL} {}
 
 QAO_GenericId QAO_Registry::insert(QAO_GenericHandle aHandle) {
     HG_VALIDATE_ARGUMENT(!!aHandle);
 
-    const auto index  = static_cast<PZInteger>(_indexer.acquire());
+    const auto index  = static_cast<QAO_Index>(_indexer.acquire());
     const auto serial = _nextSerial();
 
     const auto didInsert = _serialToIndex.insert(std::make_pair(serial, index)).second;
@@ -33,9 +33,6 @@ QAO_GenericId QAO_Registry::insert(QAO_GenericHandle aHandle) {
     const auto id = QAO_GenericId{serial, index};
 
     _elements[ToSz(index)] = Elem(id, std::move(aHandle));
-    // auto& elem = _elements[ToSz(index)];
-    // elem.id = id;
-    // elem.handle = std::move(aHandle);
 
     return id;
 }
@@ -61,7 +58,7 @@ void QAO_Registry::insertWithId(QAO_GenericHandle aHandle, QAO_GenericId aId) {
     _elements[ToSz(aId.getIndex())] = {aId, std::move(aHandle)};
 }
 
-QAO_GenericHandle QAO_Registry::remove(PZInteger aIndex) {
+QAO_GenericHandle QAO_Registry::remove(QAO_Index aIndex) {
     Elem& elem = _elements.at(ToSz(aIndex));
     if (elem.handle.isNull()) {
         return {};
@@ -77,7 +74,7 @@ QAO_GenericHandle QAO_Registry::remove(PZInteger aIndex) {
     return rv;
 }
 
-QAO_GenericHandle QAO_Registry::findObjectWithIndex(PZInteger aIndex) const {
+QAO_GenericHandle QAO_Registry::findObjectWithIndex(QAO_Index aIndex) const {
     const auto szIdx = ToSz(aIndex);
     if (szIdx >= _elements.size()) {
         return {};
@@ -85,8 +82,8 @@ QAO_GenericHandle QAO_Registry::findObjectWithIndex(PZInteger aIndex) const {
     return _elements[szIdx].handle;
 }
 
-QAO_GenericHandle QAO_Registry::findObjectWithSerial(std::int64_t serial) const {
-    const auto iter = _serialToIndex.find(serial);
+QAO_GenericHandle QAO_Registry::findObjectWithSerial(QAO_Serial aSerial) const {
+    const auto iter = _serialToIndex.find(aSerial);
     if (iter == _serialToIndex.end()) {
         return {};
     }
@@ -102,22 +99,22 @@ QAO_GenericHandle QAO_Registry::findObjectWithId(QAO_GenericId aId) const {
     return _elements[szIdx].handle;
 }
 
-bool QAO_Registry::isObjectWithIndexOwned(PZInteger aIndex) const {
+bool QAO_Registry::isObjectWithIndexOwned(QAO_Index aIndex) const {
     HG_VALIDATE_ARGUMENT(ToSz(aIndex) < _elements.size());
     const auto& elem = _elements[ToSz(aIndex)];
     HG_VALIDATE_PRECONDITION(!elem.handle.isNull());
     return elem.handle.isOwning();
 }
 
-// std::int64_t QAO_Registry::serialAt(PZInteger index) const {
+// QAO_Serial QAO_Registry::serialAt(QAO_Index index) const {
 //     return _elements[index].serial;
 // }
 
-PZInteger QAO_Registry::instanceCount() const {
+QAO_Index QAO_Registry::instanceCount() const {
     return _indexer.countFilled();
 }
 
-// bool QAO_Registry::isSlotEmpty(PZInteger index) const {
+// bool QAO_Registry::isSlotEmpty(QAO_Index index) const {
 //     return _indexer.isSlotEmpty(static_cast<std::size_t>(index));
 // }
 
@@ -131,8 +128,8 @@ void QAO_Registry::_adjustSize() {
     }
 }
 
-std::int64_t QAO_Registry::_nextSerial() {
-    std::int64_t rv = _serialCounter;
+QAO_Serial QAO_Registry::_nextSerial() {
+    QAO_Serial rv = _serialCounter;
     _serialCounter += 1;
     return rv;
 }

@@ -26,7 +26,7 @@ QAO_GenericId::QAO_GenericId(const QAO_Base* object)
 QAO_GenericId::QAO_GenericId(const QAO_Base& object)
     : QAO_GenericId{object._context.id} {}
 
-QAO_GenericId::QAO_GenericId(std::int64_t serial, PZInteger index)
+QAO_GenericId::QAO_GenericId(QAO_Serial serial, QAO_Index index)
     : _serial{serial}
     , _index{index} {}
 
@@ -42,7 +42,7 @@ int QAO_GenericId::getIndex() const noexcept {
     return _index;
 }
 
-std::int64_t QAO_GenericId::getSerial() const noexcept {
+QAO_Serial QAO_GenericId::getSerial() const noexcept {
     return _serial;
 }
 

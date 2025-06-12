@@ -302,7 +302,7 @@ auto MakeAvoidNull(T&& t) {
 //!          ANYMORE. Consider the move as ending its lifetime.
 template <class T>
 T MoveToUnderlying(AvoidNull<T> aPtr) {
-    T rv = static_cast<T&&>(aPtr);
+    T rv = static_cast<AvoidNull<T>&&>(aPtr);
     return rv;
 }
 

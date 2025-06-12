@@ -18,6 +18,7 @@
 HOBGOBLIN_NAMESPACE_BEGIN
 namespace qao {
 
+//! TODO: add description
 template <class T, class... taArgs>
 QAO_Handle<T> QAO_Create(QAO_RuntimeRef aRuntimeRef, taArgs&&... aArgs) {
     QAO_IKey ikey;
@@ -46,6 +47,8 @@ QAO_Handle<T> QAO_Create(QAO_RuntimeRef aRuntimeRef, taArgs&&... aArgs) {
     HG_UNREACHABLE();
     return {};
 }
+
+//! TODO: QAO_ICreate
 
 template <class T>
 void QAO_Destroy(QAO_Handle<T> aHandle) {

@@ -5,6 +5,7 @@
 #define UHOBGOBLIN_QAO_ID_HPP
 
 #include <Hobgoblin/Common.hpp>
+#include <Hobgoblin/QAO/Config.hpp>
 
 #include <cstdint>
 
@@ -41,8 +42,8 @@ public:
     QAO_GenericId& operator=(QAO_GenericId&& other) = default;
 
     // Utility:
-    PZInteger    getIndex() const noexcept;
-    std::int64_t getSerial() const noexcept;
+    QAO_Index    getIndex() const noexcept;
+    QAO_Serial getSerial() const noexcept;
     bool         isNull() const noexcept;
 
     template <class T>
@@ -51,11 +52,11 @@ public:
 protected:
     friend class QAO_Runtime;
     friend class qao_detail::QAO_Registry;
-    QAO_GenericId(std::int64_t serial, PZInteger index);
+    QAO_GenericId(QAO_Serial serial, QAO_Index index);
 
 private:
-    std::int64_t _serial;
-    PZInteger    _index;
+    QAO_Serial _serial;
+    QAO_Index    _index;
 };
 
 template <class T>
@@ -73,7 +74,7 @@ public:
 
 protected:
     friend class QAO_GenericId;
-    QAO_Id(std::int64_t serial, PZInteger index)
+    QAO_Id(QAO_Serial serial, QAO_Index index)
         : QAO_GenericId{serial, index} {}
 };
 

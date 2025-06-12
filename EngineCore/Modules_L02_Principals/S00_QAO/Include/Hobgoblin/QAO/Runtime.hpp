@@ -6,10 +6,10 @@
 
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/QAO/Config.hpp>
+#include <Hobgoblin/QAO/Handle.hpp>
 #include <Hobgoblin/QAO/Id.hpp>
 #include <Hobgoblin/QAO/Orderer.hpp>
 #include <Hobgoblin/QAO/Registry.hpp>
-#include <Hobgoblin/QAO/Handle.hpp>
 #include <Hobgoblin/QAO/Runtime_ref.hpp>
 #include <Hobgoblin/Utility/Any_ptr.hpp>
 #include <Hobgoblin/Utility/No_copy_no_move.hpp>
@@ -26,7 +26,9 @@ constexpr std::int32_t QAO_ALL_EVENT_FLAGS = 0xFFFFFFFF;
 
 class QAO_Base;
 
-class QAO_Runtime : NO_COPY, NO_MOVE {
+class QAO_Runtime
+    : NO_COPY
+    , NO_MOVE {
 public:
     QAO_Runtime();
     QAO_Runtime(util::AnyPtr userData);
@@ -60,15 +62,15 @@ public:
     void updateExecutionPriorityForObject(QAO_Base* object, int new_priority);
 
     // Execution
-    void startStep();
-    void advanceStep(bool& done, std::int32_t eventFlags = QAO_ALL_EVENT_FLAGS);
+    void            startStep();
+    void            advanceStep(bool& done, std::int32_t eventFlags = QAO_ALL_EVENT_FLAGS);
     QAO_Event::Enum getCurrentEvent() const;
 
     // Other
     PZInteger getObjectCount() const noexcept;
-    bool ownsObject(QAO_GenericId aId) const;
-    bool ownsObject(QAO_Base& aObject) const;
-    bool ownsObject(NeverNull<QAO_GenericHandle> aObject) const;
+    bool      ownsObject(QAO_GenericId aId) const;
+    bool      ownsObject(QAO_Base& aObject) const;
+    bool      ownsObject(NeverNull<QAO_GenericHandle> aObject) const;
 
     // User data
     void setUserData(std::nullptr_t);
@@ -97,14 +99,14 @@ public:
 
 private:
     qao_detail::QAO_Registry _registry;
-    qao_detail::QAO_Orderer _orderer;
-    std::int64_t _step_counter;
-    QAO_Event::Enum _current_event;
-    QAO_OrdererIterator _step_orderer_iterator;
-    util::AnyPtr _user_data;
+    qao_detail::QAO_Orderer  _orderer;
+    std::int64_t             _step_counter;
+    QAO_Event::Enum          _current_event;
+    QAO_OrdererIterator      _step_orderer_iterator;
+    util::AnyPtr             _user_data;
 };
 
-template<class T>
+template <class T>
 T* QAO_Runtime::find(QAO_Id<T> id) const {
     return static_cast<T*>(find(QAO_GenericId{id}));
 }
