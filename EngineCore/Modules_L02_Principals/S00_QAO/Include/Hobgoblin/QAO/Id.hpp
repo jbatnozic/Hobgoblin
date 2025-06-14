@@ -7,8 +7,6 @@
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/QAO/Config.hpp>
 
-#include <cstdint>
-
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
 HOBGOBLIN_NAMESPACE_BEGIN

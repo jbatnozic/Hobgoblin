@@ -10,7 +10,6 @@
 #include <Hobgoblin/QAO/Id.hpp>
 #include <Hobgoblin/Utility/Slab_indexer.hpp>
 
-#include <cstdint>
 #include <unordered_map>
 #include <vector>
 
