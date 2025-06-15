@@ -45,11 +45,9 @@ public:
     //! \note this function has O(1) complexity.
     QAO_GenericHandle findObjectWithId(QAO_GenericId aId) const;
 
-    //!
     bool isObjectWithIndexOwned(QAO_Index aIndex) const;
-    // QAO_Serial      serialAt(QAO_Index index) const;
+    
     PZInteger instanceCount() const;
-    // bool              isSlotEmpty(QAO_Index index) const;
 
 private:
     struct Elem {

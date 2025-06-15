@@ -106,17 +106,9 @@ bool QAO_Registry::isObjectWithIndexOwned(QAO_Index aIndex) const {
     return elem.handle.isOwning();
 }
 
-// QAO_Serial QAO_Registry::serialAt(QAO_Index index) const {
-//     return _elements[index].serial;
-// }
-
 QAO_Index QAO_Registry::instanceCount() const {
     return _indexer.countFilled();
 }
-
-// bool QAO_Registry::isSlotEmpty(QAO_Index index) const {
-//     return _indexer.isSlotEmpty(static_cast<std::size_t>(index));
-// }
 
 // MARK: Private
 

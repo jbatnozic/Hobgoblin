@@ -19,6 +19,8 @@ namespace spempe {
 
 namespace {
 
+// MARK: General tests
+
 class SPeMPE_Test : public ::testing::Test {
 protected:
     void SetUp() override {
@@ -111,9 +113,7 @@ TEST_F(SPeMPE_Test, ChildContextTest) {
     );
 }
 
-///////////////////////////////////////////////////////////////////////////
-// SYNCHRONIZATION TEST                                                  //
-///////////////////////////////////////////////////////////////////////////
+// MARK: Synchronized tests
 
 namespace {
 
@@ -558,6 +558,8 @@ TEST_F(SPeMPE_SynchronizedTest, DeactivationTest) {
         _serverCtx.reset();
     }
 }
+
+// MARK: Parametrized synchronized tests
 
 class SPeMPE_ParametrizedSynchronizedTest : public ::testing::TestWithParam<int> {
 protected:

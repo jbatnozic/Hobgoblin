@@ -67,8 +67,6 @@ TEST_F(QAO_TestWithRuntime, QAO_CreateReturnsOwningHandleWhenNoRuntimeIsGiven) {
 TEST_F(QAO_TestWithRuntime, QAO_CreateReturnsOwningHandleWhenNonOwningRuntimeRefIsGiven) {
     auto handle = QAO_Create<SimpleActiveObject>(_runtime.nonOwning(), _numbers, 0);
     EXPECT_TRUE(handle.isOwning());
-
-    QAO_GenericHandle superclassHandle = handle; // TODO
 }
 
 TEST_F(QAO_TestWithRuntime, QAO_CreateReturnsNonOwningHandleWhenOwningRuntimeRefIsGiven) {
@@ -118,15 +116,6 @@ TEST_F(QAO_TestWithRuntime, CreateObjectOwnedByHandleThenAttachToRuntimeLater) {
     EXPECT_EQ(_runtime.getObjectCount(), 0);
 }
 
-// TEST_F(QAO_TestWithRuntime, UPCreateWithNonOwningInsert) {
-//     auto obj = QAO_UPCreate<SimpleActiveObject>(_runtime.nonOwning(), _numbers, 0);
-//     ASSERT_EQ(_runtime.getObjectCount(), 1);
-//     ASSERT_EQ(obj->getRuntime(), &_runtime);
-
-//     QAO_UPDestroy(std::move(obj));
-//     ASSERT_EQ(_runtime.getObjectCount(), 0);
-// }
-
 #if 0
 TEST_F(QAO_TestWithRuntime, ICreate) {
     auto id = QAO_ICreate<SimpleActiveObject>(&_runtime, _numbers, 0);
@@ -150,22 +139,32 @@ TEST_F(QAO_TestWithRuntime, ICreateFailsBecauseOfNonOwningRef) {
 }
 #endif
 
-// TEST_F(QAO_TestWithRuntime, ReleaseObject) {
-//     auto obj   = QAO_PCreate<SimpleActiveObject>(&_runtime, _numbers, 0);
-//     auto upObj = _runtime.releaseObject(obj);
-//     ASSERT_EQ(_runtime.getObjectCount(), 0);
-//     ASSERT_NE(upObj.get(), nullptr);
-//     ASSERT_EQ(upObj->getRuntime(), nullptr);
-//     ASSERT_NO_THROW(upObj.reset());
-// }
+TEST_F(QAO_TestWithRuntime, DetachingObjectsFailsWhenObjectIsNotAttachedToRuntime) {
+    auto handle = QAO_Create<SimpleActiveObject>(nullptr, _numbers, 0);
 
-// TEST_F(QAO_TestWithRuntime, ReleaseObjectFails) {
-//     auto upObj = QAO_UPCreate<SimpleActiveObject>(nullptr, _numbers, 0);
-//     _runtime.addObjectNoOwn(*upObj);
+    EXPECT_THROW(_runtime.detachObject(*handle), hg::PreconditionNotMetError);
+}
 
-//     auto upReleased = _runtime.releaseObject(upObj.get());
-//     ASSERT_EQ(upReleased.get(), nullptr);
-// }
+TEST_F(QAO_TestWithRuntime, DetachingObjectsReturnsOwningHandleWhenObjectIsOwnedByRuntime) {
+    auto  handle = QAO_Create<SimpleActiveObject>(nullptr, _numbers, 0);
+    auto* objRaw = handle.ptr();
+    _runtime.attachObject(std::move(handle));
+    ASSERT_EQ(_runtime.getObjectCount(), 1);
+
+    auto detachedHandle = hg::MoveToUnderlying(_runtime.detachObject(*objRaw));
+    ASSERT_TRUE(detachedHandle.isOwning());
+    ASSERT_EQ(_runtime.getObjectCount(), 0);
+}
+
+TEST_F(QAO_TestWithRuntime, DetachingObjectsReturnsNonOwningHandleWhenObjectIsNotOwnedByRuntime) {
+    auto handle = QAO_Create<SimpleActiveObject>(nullptr, _numbers, 0);
+    _runtime.attachObject(handle);
+    ASSERT_EQ(_runtime.getObjectCount(), 1);
+
+    auto detachedHandle = hg::MoveToUnderlying(_runtime.detachObject(*handle));
+    ASSERT_FALSE(detachedHandle.isOwning());
+    ASSERT_EQ(_runtime.getObjectCount(), 0);
+}
 
 TEST_F(QAO_TestWithRuntime, ObjectCount) {
     auto handle = QAO_Create<SimpleActiveObject>(&_runtime, _numbers, 0);

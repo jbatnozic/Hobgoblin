@@ -13,7 +13,13 @@ namespace qao {
 
 class QAO_Runtime;
 
-// TODO: add description
+//! Represents a reference to a `QAO_Runtime` object - can be one of: null, non-owning, owning.
+//! It is used as a parameter for certain functions that manage QAO objects, so that they can
+//! attach those objects to the referred runtime.
+//!
+//! \warning An instance of this class NEVER manages the lifetime of a `QAO_Runtime`! The 'non-owning'
+//!          and 'owning' part of a RuntimeRef refers to whether the runtime will own the objects or
+//!          not after attaching.
 class QAO_RuntimeRef {
 public:
     QAO_RuntimeRef() noexcept = default;
@@ -28,6 +34,22 @@ public:
     QAO_RuntimeRef(QAO_Runtime* runtime) noexcept
         : _runtime{runtime}
         , _isOwning{true} {}
+
+    bool isNull() const {
+        return (_runtime == nullptr);
+    }
+
+    operator bool() const {
+        return !isNull();
+    }
+
+    bool operator==(std::nullptr_t) const {
+        return isNull();
+    }
+
+    bool operator!=(std::nullptr_t) const {
+        return !isNull();
+    }
 
     QAO_Runtime* ptr() const noexcept {
         return _runtime;

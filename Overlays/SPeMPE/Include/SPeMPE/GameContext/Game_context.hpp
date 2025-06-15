@@ -336,7 +336,6 @@ ContextComponentHandle<taComponent> GameContext::detachComponent(
     _ownedComponents.erase(iter);
     *aDetachStatus = DetachStatus::OK;
     return result;
-    // return {};
 }
 
 template <class taComponent>

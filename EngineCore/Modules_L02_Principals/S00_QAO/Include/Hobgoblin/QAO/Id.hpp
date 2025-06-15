@@ -12,7 +12,6 @@
 HOBGOBLIN_NAMESPACE_BEGIN
 namespace qao {
 
-class QAO_Base;
 class QAO_Runtime;
 namespace qao_detail {
 class QAO_Registry;
@@ -86,5 +85,3 @@ HOBGOBLIN_NAMESPACE_END
 #include <Hobgoblin/Private/Short_namespace.hpp>
 
 #endif // !UHOBGOBLIN_QAO_ID_HPP
-
-// clang-format on

@@ -17,7 +17,6 @@ set(COMPONENT_SOURCES
   "Source/Math_test.cpp"
   "Source/gtest_main.cpp"
   "Source/Preprocessor_test.cpp"
-  # "Source/QAO_test.cpp"
   "Source/Util_test.cpp"
 )
 
