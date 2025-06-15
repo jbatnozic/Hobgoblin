@@ -31,12 +31,15 @@ RN_DEFINE_RPC(SetGlobalStateBufferingLength, RN_ARGS(unsigned, aNewLength)) {
 MainGameplayManager::MainGameplayManager(QAO_IKey aIKey, int aExecutionPriority)
     : NonstateObject{aIKey, SPEMPE_TYPEID_SELF, aExecutionPriority, "GameplayManager"}
 {
+}
+
+void MainGameplayManager::_didAttach(QAO_Runtime&) {
     auto& netMgr = ccomp<MNetworking>();
     netMgr.addEventListener(this);
     stateBufferingLength = netMgr.getStateBufferingLength();
 }
 
-MainGameplayManager::~MainGameplayManager() {
+void MainGameplayManager::_willDetach(QAO_Runtime&) {
     ccomp<MNetworking>().removeEventListener(this);
 }
 

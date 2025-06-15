@@ -15,12 +15,13 @@ class MainGameplayManager
 public:
     explicit MainGameplayManager(QAO_IKey aIKey, int aExecutionPriority);
 
-    ~MainGameplayManager() override;
-
 private:
     hg::PZInteger stateBufferingLength = 0;
 
     hg::PZInteger printBandwidthUsageCountdown = 120;
+
+    void _didAttach(QAO_Runtime&) override;
+    void _willDetach(QAO_Runtime&) override;
 
     void _eventUpdate1() override;
     void _eventPostUpdate() override;
