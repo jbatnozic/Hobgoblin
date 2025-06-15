@@ -64,4 +64,4 @@ add_subdirectory("Test")
 
 # ===== BUILD EXAMPLES =====
 
-# add_subdirectory("Examples")
+add_subdirectory("Examples")

@@ -28,8 +28,8 @@ RN_DEFINE_RPC(SetGlobalStateBufferingLength, RN_ARGS(unsigned, aNewLength)) {
         });
 }
 
-MainGameplayManager::MainGameplayManager(QAO_RuntimeRef aRuntimeRef, int aExecutionPriority)
-    : NonstateObject{aRuntimeRef, SPEMPE_TYPEID_SELF, aExecutionPriority, "GameplayManager"}
+MainGameplayManager::MainGameplayManager(QAO_IKey aIKey, int aExecutionPriority)
+    : NonstateObject{aIKey, SPEMPE_TYPEID_SELF, aExecutionPriority, "GameplayManager"}
 {
     auto& netMgr = ccomp<MNetworking>();
     netMgr.addEventListener(this);

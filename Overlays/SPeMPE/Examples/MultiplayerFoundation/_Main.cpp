@@ -57,8 +57,8 @@ std::unique_ptr<spe::GameContext> MakeGameContext(GameMode aGameMode,
                        : spe::GameContext::Mode::Client);
 
     // Create and attach a Window manager
-    auto winMgr = std::make_unique<spe::DefaultWindowManager>(context->getQAORuntime().nonOwning(),
-                                                              PRIORITY_WINDOWMGR);
+    auto winMgr = QAO_Create<spe::DefaultWindowManager>(context->getQAORuntime().nonOwning(),
+                                                        PRIORITY_WINDOWMGR);
     spe::WindowManagerInterface::TimingConfig timingConfig{
     #ifdef _MSC_VER
         spe::FrameRate{FRAME_RATE},
@@ -106,9 +106,9 @@ std::unique_ptr<spe::GameContext> MakeGameContext(GameMode aGameMode,
     context->attachAndOwnComponent(std::move(winMgr));
 
     // Create and attach a Networking manager
-    auto netMgr = std::make_unique<spe::DefaultNetworkingManager>(context->getQAORuntime().nonOwning(),
-                                                                  PRIORITY_NETWORKMGR,
-                                                                  STATE_BUFFERING_LENGTH);
+    auto netMgr = QAO_Create<spe::DefaultNetworkingManager>(context->getQAORuntime().nonOwning(),
+                                                            PRIORITY_NETWORKMGR,
+                                                            STATE_BUFFERING_LENGTH);
     if (aGameMode == GameMode::Server) {
         netMgr->setToServerMode(
             RN_Protocol::UDP,
@@ -144,8 +144,8 @@ std::unique_ptr<spe::GameContext> MakeGameContext(GameMode aGameMode,
     context->attachAndOwnComponent(std::move(netMgr));
 
     // Create and attack an Input sync manager
-    auto insMgr = std::make_unique<spe::DefaultInputSyncManager>(context->getQAORuntime().nonOwning(),
-                                                                 PRIORITY_INPUTMGR);
+    auto insMgr = QAO_Create<spe::DefaultInputSyncManager>(context->getQAORuntime().nonOwning(),
+                                                           PRIORITY_INPUTMGR);
 
     if (aGameMode == GameMode::Server) {
         insMgr->setToHostMode(aPlayerCount - 1, STATE_BUFFERING_LENGTH);
@@ -167,8 +167,8 @@ std::unique_ptr<spe::GameContext> MakeGameContext(GameMode aGameMode,
     context->attachAndOwnComponent(std::move(insMgr));
 
     // Create and attach a varmap manager
-    auto svmMgr = std::make_unique<spe::DefaultSyncedVarmapManager>(context->getQAORuntime().nonOwning(),
-                                                                    PRIORITY_VARMAPMGR);
+    auto svmMgr = QAO_Create<spe::DefaultSyncedVarmapManager>(context->getQAORuntime().nonOwning(),
+                                                              PRIORITY_VARMAPMGR);
     if (aGameMode == GameMode::Server) {
         svmMgr->setToMode(spe::SyncedVarmapManagerInterface::Mode::Host);
         for (hg::PZInteger i = 0; i < aPlayerCount; i += 1) {
@@ -182,8 +182,8 @@ std::unique_ptr<spe::GameContext> MakeGameContext(GameMode aGameMode,
     context->attachAndOwnComponent(std::move(svmMgr));
 
     // Create and attach a lobby backend manager
-    auto lobbyMgr = std::make_unique<spe::DefaultLobbyBackendManager>(context->getQAORuntime().nonOwning(),
-                                                                      PRIORITY_LOBBYBACKMGR);
+    auto lobbyMgr = QAO_Create<spe::DefaultLobbyBackendManager>(context->getQAORuntime().nonOwning(),
+                                                                PRIORITY_LOBBYBACKMGR);
 
     if (aGameMode == GameMode::Server) {
         lobbyMgr->setToHostMode(aPlayerCount);
@@ -195,8 +195,8 @@ std::unique_ptr<spe::GameContext> MakeGameContext(GameMode aGameMode,
     context->attachAndOwnComponent(std::move(lobbyMgr));
 
     // Create and attach a lobby frontend manager
-    auto lobbyFrontendMgr = std::make_unique<LobbyFrontendManager>(context->getQAORuntime().nonOwning(),
-                                                                   PRIORITY_LOBBYFRONTMGR);
+    auto lobbyFrontendMgr = QAO_Create<LobbyFrontendManager>(context->getQAORuntime().nonOwning(),
+                                                             PRIORITY_LOBBYFRONTMGR);
 
     if (aGameMode == GameMode::Server) {
         lobbyFrontendMgr->setToHeadlessHostMode();
@@ -210,8 +210,8 @@ std::unique_ptr<spe::GameContext> MakeGameContext(GameMode aGameMode,
     context->attachAndOwnComponent(std::move(lobbyFrontendMgr));
 
     // Create and attach an Auth manager
-    auto authMgr = std::make_unique<spe::DefaultAuthorizationManager>(context->getQAORuntime().nonOwning(),
-                                                                      PRIORITY_AUTHMGR);
+    auto authMgr = QAO_Create<spe::DefaultAuthorizationManager>(context->getQAORuntime().nonOwning(),
+                                                                PRIORITY_AUTHMGR);
 
     if (aGameMode == GameMode::Server) {
         authMgr->setToHostMode();
@@ -223,8 +223,8 @@ std::unique_ptr<spe::GameContext> MakeGameContext(GameMode aGameMode,
     context->attachAndOwnComponent(std::move(authMgr));
 
     // Create and attach a Gameplay manager
-    auto gpMgr = std::make_unique<MainGameplayManager>(context->getQAORuntime().nonOwning(),
-                                                       PRIORITY_GAMEPLAYMGR);
+    auto gpMgr = QAO_Create<MainGameplayManager>(context->getQAORuntime().nonOwning(),
+                                                 PRIORITY_GAMEPLAYMGR);
     context->attachAndOwnComponent(std::move(gpMgr));
 
     // Create player "characters"
@@ -232,7 +232,7 @@ std::unique_ptr<spe::GameContext> MakeGameContext(GameMode aGameMode,
         for (hg::PZInteger i = 0; i < aPlayerCount; i += 1) {
             if (i == 0) continue; // host doesn't need a character
             {
-                auto* p = QAO_PCreate<BasicPlayerCharacter>(
+                auto p = QAO_Create<BasicPlayerCharacter>(
                     context->getQAORuntime(),
                     context->getComponent<MNetworking>().getRegistryId(),
                     spe::SYNC_ID_NEW
@@ -240,7 +240,7 @@ std::unique_ptr<spe::GameContext> MakeGameContext(GameMode aGameMode,
                 p->init(i, 20.f + i * 40.f, 40.f);
             }
             {
-                auto* p = QAO_PCreate<AutodiffPlayerCharacter>(
+                auto p = QAO_Create<AutodiffPlayerCharacter>(
                     context->getQAORuntime(),
                     context->getComponent<MNetworking>().getRegistryId(),
                     spe::SYNC_ID_NEW
@@ -248,7 +248,7 @@ std::unique_ptr<spe::GameContext> MakeGameContext(GameMode aGameMode,
                 p->init(i, 20.f + i * 40.f, 80.f);
             }
             {
-                auto* p = QAO_PCreate<AlternatingPlayerCharacter>(
+                auto p = QAO_Create<AlternatingPlayerCharacter>(
                     context->getQAORuntime(),
                     context->getComponent<MNetworking>().getRegistryId(),
                     spe::SYNC_ID_NEW
@@ -256,7 +256,7 @@ std::unique_ptr<spe::GameContext> MakeGameContext(GameMode aGameMode,
                 p->init(i, 20.f + i * 40.f, 120.f);
             }
             {
-                auto* p = QAO_PCreate<AutodiffAlternatingPlayerCharacter>(
+                auto p = QAO_Create<AutodiffAlternatingPlayerCharacter>(
                     context->getQAORuntime(),
                     context->getComponent<MNetworking>().getRegistryId(),
                     spe::SYNC_ID_NEW

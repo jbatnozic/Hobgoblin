@@ -76,10 +76,10 @@ struct PlayerAvatar_VisibleState {
 
 class PlayerAvatar : public spe::SynchronizedObject<PlayerAvatar_VisibleState> {
 public:
-    PlayerAvatar(QAO_RuntimeRef aRuntimeRef,
+    PlayerAvatar(QAO_IKey aIKey,
                  spe::RegistryId aRegId,
                  spe::SyncId aSyncId)
-        : SyncObjSuper{aRuntimeRef, SPEMPE_TYPEID_SELF, PRIORITY_PLAYERAVATAR,
+        : SyncObjSuper{aIKey, SPEMPE_TYPEID_SELF, PRIORITY_PLAYERAVATAR,
                        "PlayerAvatar", aRegId, aSyncId}
     {
     }
@@ -181,10 +181,10 @@ struct SinclaireAvatar_VisibleState {
 
 class SinclaireAvatar : public spe::SynchronizedObject<SinclaireAvatar_VisibleState> {
 public:
-    SinclaireAvatar(QAO_RuntimeRef aRuntimeRef,
+    SinclaireAvatar(QAO_IKey aIKey,
                     spe::RegistryId aRegId,
                     spe::SyncId aSyncId)
-        : SyncObjSuper{aRuntimeRef, SPEMPE_TYPEID_SELF, PRIORITY_PLAYERAVATAR,
+        : SyncObjSuper{aIKey, SPEMPE_TYPEID_SELF, PRIORITY_PLAYERAVATAR,
         "SinclaireAvatar", aRegId, aSyncId}
     {
         _enableAlternatingUpdates();
@@ -298,8 +298,8 @@ class GameplayManager
     , public  spe::NonstateObject
     , private spe::NetworkingEventListener {
 public:
-    explicit GameplayManager(QAO_RuntimeRef aRuntimeRef)
-        : NonstateObject{aRuntimeRef, SPEMPE_TYPEID_SELF, PRIPRITY_GAMEPLAYMGR, "GameplayManager"}
+    explicit GameplayManager(QAO_IKey aIKey)
+        : NonstateObject{aIKey, SPEMPE_TYPEID_SELF, PRIPRITY_GAMEPLAYMGR, "GameplayManager"}
     {
         ccomp<MNetworking>().addEventListener(this);
     }
@@ -363,12 +363,12 @@ private:
             // HOST
             ev.visit(
                 [this](const RN_Event::Connected& ev) {
-                    QAO_PCreate<PlayerAvatar>(getRuntime(),
-                                              ccomp<MNetworking>().getRegistryId(),
-                                              spe::SYNC_ID_NEW)->init(*ev.clientIndex + 1);
-                    QAO_PCreate<SinclaireAvatar>(getRuntime(),
-                                                 ccomp<MNetworking>().getRegistryId(),
-                                                 spe::SYNC_ID_NEW)->init(*ev.clientIndex + 1);
+                    QAO_Create<PlayerAvatar>(getRuntime(),
+                                             ccomp<MNetworking>().getRegistryId(),
+                                             spe::SYNC_ID_NEW)->init(*ev.clientIndex + 1);
+                    QAO_Create<SinclaireAvatar>(getRuntime(),
+                                                ccomp<MNetworking>().getRegistryId(),
+                                                spe::SYNC_ID_NEW)->init(*ev.clientIndex + 1);
                 },
                 [](const RN_Event::Disconnected& ev) {
                     // TODO Remove player avatar
@@ -473,8 +473,8 @@ std::unique_ptr<spe::GameContext> MakeGameContext(GameMode aGameMode,
                                                        : spe::GameContext::Mode::Client);
 
     // Create and attach a Window manager
-    auto winMgr = std::make_unique<spe::DefaultWindowManager>(context->getQAORuntime().nonOwning(), 
-                                                              PRIORITY_WINDOWMGR);
+    auto winMgr = QAO_Create<spe::DefaultWindowManager>(context->getQAORuntime().nonOwning(), 
+                                                        PRIORITY_WINDOWMGR);
     if (aGameMode == GameMode::Server) {
         winMgr->setToHeadlessMode(
             spe::WindowManagerInterface::TimingConfig{
@@ -502,9 +502,9 @@ std::unique_ptr<spe::GameContext> MakeGameContext(GameMode aGameMode,
     context->attachAndOwnComponent(std::move(winMgr));
 
     // Create and attach a Networking manager
-    auto netMgr = std::make_unique<spe::DefaultNetworkingManager>(context->getQAORuntime().nonOwning(), 
-                                                                  PRIORITY_NETWORKMGR,
-                                                                  STATE_BUFFERING_LENGTH);
+    auto netMgr = QAO_Create<spe::DefaultNetworkingManager>(context->getQAORuntime().nonOwning(), 
+                                                            PRIORITY_NETWORKMGR,
+                                                            STATE_BUFFERING_LENGTH);
     if (aGameMode == GameMode::Server) {
         netMgr->setToServerMode(
             RN_Protocol::UDP,
@@ -539,8 +539,8 @@ std::unique_ptr<spe::GameContext> MakeGameContext(GameMode aGameMode,
     context->attachAndOwnComponent(std::move(netMgr));
 
     // Create and attack an Input sync manager
-    auto insMgr = std::make_unique<spe::DefaultInputSyncManager>(context->getQAORuntime().nonOwning(),
-                                                                 PRIORITY_INPUTMGR);
+    auto insMgr = QAO_Create<spe::DefaultInputSyncManager>(context->getQAORuntime().nonOwning(),
+                                                           PRIORITY_INPUTMGR);
 
     if (aGameMode == GameMode::Server) {
         insMgr->setToHostMode(aPlayerCount, STATE_BUFFERING_LENGTH);
@@ -562,8 +562,8 @@ std::unique_ptr<spe::GameContext> MakeGameContext(GameMode aGameMode,
     context->attachAndOwnComponent(std::move(insMgr));
 
     // Create and attach a varmap manager
-    auto svmMgr = std::make_unique<spe::DefaultSyncedVarmapManager>(context->getQAORuntime().nonOwning(),
-                                                                    PRIORITY_VARMAPMGR);
+    auto svmMgr = QAO_Create<spe::DefaultSyncedVarmapManager>(context->getQAORuntime().nonOwning(),
+                                                              PRIORITY_VARMAPMGR);
     if (aGameMode == GameMode::Server) {
         svmMgr->setToMode(spe::SyncedVarmapManagerInterface::Mode::Host);
         for (hg::PZInteger i = 0; i < aPlayerCount; i += 1) {
@@ -577,22 +577,22 @@ std::unique_ptr<spe::GameContext> MakeGameContext(GameMode aGameMode,
     context->attachAndOwnComponent(std::move(svmMgr));
 
     // Create and attach a lobby manager
-    auto lobbyMgr = std::make_unique<spe::DefaultLobbyBackendManager>(context->getQAORuntime().nonOwning(),
-                                                               PRIORITY_LOBBYMGR);
+    auto lobbyMgr = QAO_Create<spe::DefaultLobbyBackendManager>(context->getQAORuntime().nonOwning(),
+                                                                PRIORITY_LOBBYMGR);
 
     if (aGameMode == GameMode::Server) {
         lobbyMgr->setToHostMode(aPlayerCount);
     }
     else {
         lobbyMgr->setToClientMode(1);
-        lobbyMgr->setLocalName("player_" + std::to_string(reinterpret_cast<std::uintptr_t>(lobbyMgr.get()) % 10'000));
-        lobbyMgr->setLocalUniqueId("id_" + std::to_string(reinterpret_cast<std::uintptr_t>(lobbyMgr.get()) % 10'000));
+        lobbyMgr->setLocalName("player_" + std::to_string(reinterpret_cast<std::uintptr_t>(lobbyMgr.ptr()) % 10'000));
+        lobbyMgr->setLocalUniqueId("id_" + std::to_string(reinterpret_cast<std::uintptr_t>(lobbyMgr.ptr()) % 10'000));
     }
 
     context->attachAndOwnComponent(std::move(lobbyMgr));
 
     // Create and attach a Gameplay manager
-    auto gpMgr = std::make_unique<GameplayManager>(context->getQAORuntime().nonOwning());
+    auto gpMgr = QAO_Create<GameplayManager>(context->getQAORuntime().nonOwning());
     context->attachAndOwnComponent(std::move(gpMgr));
 
     return context;

@@ -13,7 +13,7 @@ class MainGameplayManager
     , public  spe::NonstateObject
     , private spe::NetworkingEventListener {
 public:
-    explicit MainGameplayManager(QAO_RuntimeRef aRuntimeRef, int aExecutionPriority);
+    explicit MainGameplayManager(QAO_IKey aIKey, int aExecutionPriority);
 
     ~MainGameplayManager() override;
 

@@ -15,7 +15,7 @@ class LobbyFrontendManager
     , public spe::NonstateObject
 {
 public:
-    LobbyFrontendManager(QAO_RuntimeRef aRuntimeRef, int aExecutionPriority);
+    LobbyFrontendManager(QAO_IKey aIKey, int aExecutionPriority);
     ~LobbyFrontendManager() override;
 
     void setToHeadlessHostMode() override;
