@@ -30,7 +30,7 @@ class DefaultLobbyBackendManager
     , private NetworkingEventListener
 {
 public:
-    DefaultLobbyBackendManager(hg::QAO_RuntimeRef aRuntimeRef, int aExecutionPriority);
+    DefaultLobbyBackendManager(hobgoblin::QAO_IKey aIKey, int aExecutionPriority);
 
     ~DefaultLobbyBackendManager() override;
 

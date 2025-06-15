@@ -36,7 +36,7 @@ add_compile_definitions($<$<CONFIG:Debug>:UHOBGOBLIN_DEBUG>)
 add_compile_definitions("UHOBGOBLIN_EXPORT")
 
 add_subdirectory("EngineCore")
-# add_subdirectory("Overlays")
+add_subdirectory("Overlays")
 
 # add_subdirectory("ProofOfConceptProjects")
 # add_subdirectory("Tools")

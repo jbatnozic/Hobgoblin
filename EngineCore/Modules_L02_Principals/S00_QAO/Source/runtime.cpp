@@ -38,7 +38,8 @@ void QAO_Runtime::attachObject(AvoidNull<QAO_GenericHandle> aHandle) {
     QAO_Base* const objRaw = aHandle.underlying().ptr();
     const auto      id     = _registry.insert(std::move(aHandle));
 
-    auto ordererInsertionResult = _orderer.insert(objRaw);
+    auto ordererInsertionResult =
+        _orderer.insert(qao_detail::QAO_HandleFactory::createHandle(objRaw, false));
     HG_HARD_ASSERT(ordererInsertionResult.second);
 
     objRaw->_context = {.stepOrdinal     = MIN_STEP_ORDINAL,
@@ -46,7 +47,7 @@ void QAO_Runtime::attachObject(AvoidNull<QAO_GenericHandle> aHandle) {
                         .ordererIterator = ordererInsertionResult.first,
                         .runtime         = this};
 
-    objRaw->_didAttach();
+    objRaw->_didAttach(SELF);
 }
 
 void QAO_Runtime::attachObject(AvoidNull<QAO_GenericHandle> aHandle, QAO_GenericId aSpecificId) {
@@ -55,7 +56,8 @@ void QAO_Runtime::attachObject(AvoidNull<QAO_GenericHandle> aHandle, QAO_Generic
     QAO_Base* const objRaw = aHandle.underlying().ptr();
     _registry.insertWithId(std::move(aHandle), aSpecificId);
 
-    auto ordererInsertionResult = _orderer.insert(objRaw);
+    auto ordererInsertionResult =
+        _orderer.insert(qao_detail::QAO_HandleFactory::createHandle(objRaw, false));
     HG_HARD_ASSERT(ordererInsertionResult.second);
 
     objRaw->_context = {.stepOrdinal     = MIN_STEP_ORDINAL,
@@ -63,7 +65,7 @@ void QAO_Runtime::attachObject(AvoidNull<QAO_GenericHandle> aHandle, QAO_Generic
                         .ordererIterator = ordererInsertionResult.first,
                         .runtime         = this};
 
-    objRaw->_didAttach();
+    objRaw->_didAttach(SELF);
 }
 
 AvoidNull<QAO_GenericHandle> QAO_Runtime::detachObject(QAO_GenericId aId) {
@@ -71,17 +73,17 @@ AvoidNull<QAO_GenericHandle> QAO_Runtime::detachObject(QAO_GenericId aId) {
     HG_VALIDATE_PRECONDITION(!handle.isNull() &&
                              "Object by given ID must exist attached to the Runtime.");
 
-    handle->_willDetach();
+    handle->_willDetach(SELF);
 
     const auto index = aId.getIndex();
 
     auto rv = _registry.remove(index);
 
     // If current _step_orderer_iterator points to released object, advance it first
-    if (_step_orderer_iterator != _orderer.end() && *_step_orderer_iterator == handle.ptr()) {
+    if (_step_orderer_iterator != _orderer.end() && _step_orderer_iterator->ptr() == handle.ptr()) {
         _step_orderer_iterator = std::next(_step_orderer_iterator);
     }
-    _orderer.erase(handle.ptr());
+    _orderer.erase(qao_detail::QAO_HandleFactory::createHandle(handle.ptr(), false));
 
     handle->_context = QAO_Base::Context{};
 
@@ -110,28 +112,16 @@ void QAO_Runtime::destroyAllOwnedObjects() {
     }
 }
 
-QAO_Base* QAO_Runtime::find(const std::string& name) const {
-    for (auto iter = cbegin(); iter != cend(); iter = std::next(iter)) {
-        if ((*iter)->getName() == name) {
-            return *iter;
-        }
-    }
-    return nullptr;
-}
+void QAO_Runtime::updateExecutionPriorityForObject(QAO_Base& object, int newPriority) {
+    assert(find(object.getId()).ptr() == &object);
 
-QAO_Base* QAO_Runtime::find(QAO_GenericId id) const {
-    return _registry.findObjectWithId(id).ptr();
-}
+    _orderer.erase(qao_detail::QAO_HandleFactory::createHandle(&object, false));
+    object._execution_priority = newPriority;
 
-void QAO_Runtime::updateExecutionPriorityForObject(QAO_Base* object, int newPriority) {
-    assert(object);
-    assert(find(object->getId()) == object);
-
-    _orderer.erase(object);
-    object->_execution_priority = newPriority;
-
-    const auto ord_pair              = _orderer.insert(object); // first = iterator, second = added_new
-    object->_context.ordererIterator = ord_pair.first;
+    const auto ord_pair = _orderer.insert(
+        qao_detail::QAO_HandleFactory::createHandle(&object,
+                                                    false)); // first = iterator, second = added_new
+    object._context.ordererIterator = ord_pair.first;
 }
 
 // Execution
@@ -155,7 +145,7 @@ void QAO_Runtime::advanceStep(bool& done, std::int32_t eventFlags) {
         _current_event = ev;
 
         while (curr != _orderer.end()) {
-            QAO_Base* const instance = *curr;
+            auto* const instance = curr->ptr();
 
             char currBeforeEvent[sizeof(curr)];
             std::memcpy(currBeforeEvent, &curr, sizeof(curr));

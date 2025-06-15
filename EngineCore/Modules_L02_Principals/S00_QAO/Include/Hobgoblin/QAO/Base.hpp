@@ -10,7 +10,6 @@
 #include <Hobgoblin/QAO/Id.hpp>
 #include <Hobgoblin/QAO/Instantiation_key.hpp>
 #include <Hobgoblin/QAO/Orderer.hpp>
-#include <Hobgoblin/QAO/Runtime.hpp>
 #include <Hobgoblin/Utility/Any_ptr.hpp>
 #include <Hobgoblin/Utility/No_copy_no_move.hpp>
 #include <Hobgoblin/Utility/Packet.hpp>
@@ -22,6 +21,8 @@
 
 HOBGOBLIN_NAMESPACE_BEGIN
 namespace qao {
+
+class QAO_Runtime;
 
 // Forward-declare the create function:
 template <class T, class... taArgs>
@@ -79,8 +80,8 @@ private:
     // Lifecycle callbacks
     virtual void _setUp() {}
     virtual void _tearDown() {}
-    virtual void _didAttach() {}
-    virtual void _willDetach() {}
+    virtual void _didAttach(QAO_Runtime& aRuntime) {}
+    virtual void _willDetach(QAO_Runtime& aRuntime) {}
 
     // Update
     virtual void _eventPreUpdate() {}

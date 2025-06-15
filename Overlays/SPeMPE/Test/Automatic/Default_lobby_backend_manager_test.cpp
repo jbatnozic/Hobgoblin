@@ -3,7 +3,6 @@
 
 // clang-format off
 
-
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/Logging.hpp>
 #include <SPeMPE/SPeMPE.hpp>
@@ -31,22 +30,22 @@ public:
         _ctx[HOST]->setToMode(GameContext::Mode::Server);
 
         // Add networking manager
-        _netMgr[HOST] = std::make_unique<DefaultNetworkingManager>(_ctx[HOST]->getQAORuntime().nonOwning(),
-                                                                   PRIORITY_NETMGR,
-                                                                   0);
+        _netMgr[HOST] = QAO_Create<DefaultNetworkingManager>(_ctx[HOST]->getQAORuntime().nonOwning(),
+                                                             PRIORITY_NETMGR,
+                                                             0);
         _netMgr[HOST]->setToServerMode(RN_Protocol::UDP, "pass", 2, 512, RN_NetworkingStack::Default);
         _netMgr[HOST]->getServer().start(0);
 
         _ctx[HOST]->attachComponent(*_netMgr[HOST]);
 
         // Add varmap manager
-        _svmMgr[HOST] = std::make_unique<DefaultSyncedVarmapManager>(_ctx[HOST]->getQAORuntime().nonOwning(), PRIORITY_SVMMGR);
+        _svmMgr[HOST] = QAO_Create<DefaultSyncedVarmapManager>(_ctx[HOST]->getQAORuntime().nonOwning(), PRIORITY_SVMMGR);
         _svmMgr[HOST]->setToMode(SyncedVarmapManagerInterface::Mode::Host);
 
         _ctx[HOST]->attachComponent(*_svmMgr[HOST]);
 
         // Add lobby manager
-        _lobbyMgr[HOST] = std::make_unique<DefaultLobbyBackendManager>(_ctx[HOST]->getQAORuntime().nonOwning(), PRIORITY_LOBMGR);
+        _lobbyMgr[HOST] = QAO_Create<DefaultLobbyBackendManager>(_ctx[HOST]->getQAORuntime().nonOwning(), PRIORITY_LOBMGR);
         _lobbyMgr[HOST]->setToHostMode(3);
 
         _ctx[HOST]->attachComponent(*_lobbyMgr[HOST]);
@@ -64,9 +63,9 @@ protected:
     constexpr static int PRIORITY_LOBMGR =  9;
 
     std::array<std::unique_ptr<GameContext>, 3> _ctx;
-    std::array<std::unique_ptr<NetworkingManagerInterface>, 3> _netMgr;
-    std::array<std::unique_ptr<DefaultSyncedVarmapManager>, 3> _svmMgr;
-    std::array<std::unique_ptr<DefaultLobbyBackendManager>, 3> _lobbyMgr;
+    std::array<QAO_Handle<DefaultNetworkingManager>, 3> _netMgr;
+    std::array<QAO_Handle<DefaultSyncedVarmapManager>, 3> _svmMgr;
+    std::array<QAO_Handle<DefaultLobbyBackendManager>, 3> _lobbyMgr;
 
     void _initClientContext(hg::PZInteger aContextIndex) {
         const auto pos = hg::pztos(aContextIndex);
@@ -76,22 +75,22 @@ protected:
         _ctx[pos]->setToMode(GameContext::Mode::Client);
 
         // Add networking manager
-        _netMgr[pos] = std::make_unique<DefaultNetworkingManager>(_ctx[pos]->getQAORuntime().nonOwning(),
-                                                                  PRIORITY_NETMGR,
-                                                                  0);
+        _netMgr[pos] = QAO_Create<DefaultNetworkingManager>(_ctx[pos]->getQAORuntime().nonOwning(),
+                                                            PRIORITY_NETMGR,
+                                                            0);
         _netMgr[pos]->setToClientMode(RN_Protocol::UDP, "pass", 512, RN_NetworkingStack::Default);
         _netMgr[pos]->getClient().connectLocal(_netMgr[HOST]->getServer());
 
         _ctx[pos]->attachComponent(*_netMgr[pos]);
 
         // Add varmap manager
-        _svmMgr[pos] = std::make_unique<DefaultSyncedVarmapManager>(_ctx[pos]->getQAORuntime().nonOwning(), PRIORITY_SVMMGR);
+        _svmMgr[pos] = QAO_Create<DefaultSyncedVarmapManager>(_ctx[pos]->getQAORuntime().nonOwning(), PRIORITY_SVMMGR);
         _svmMgr[pos]->setToMode(SyncedVarmapManagerInterface::Mode::Client);
 
         _ctx[pos]->attachComponent(*_svmMgr[pos]);
 
         // Add lobby manager
-        _lobbyMgr[pos] = std::make_unique<DefaultLobbyBackendManager>(_ctx[pos]->getQAORuntime().nonOwning(), PRIORITY_LOBMGR);
+        _lobbyMgr[pos] = QAO_Create<DefaultLobbyBackendManager>(_ctx[pos]->getQAORuntime().nonOwning(), PRIORITY_LOBMGR);
         _lobbyMgr[pos]->setToClientMode(1);
 
         _ctx[pos]->attachComponent(*_lobbyMgr[pos]);

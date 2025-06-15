@@ -4,6 +4,7 @@
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/QAO/Base.hpp>
+#include <Hobgoblin/QAO/Runtime.hpp>
 #include <Hobgoblin/Utility/Passkey.hpp>
 
 #include <Hobgoblin/QAO/Functions.hpp>
@@ -52,7 +53,7 @@ void QAO_Base::setExecutionPriority(int new_priority) {
         return;
     }
     if (_context.runtime != nullptr) {
-        _context.runtime->updateExecutionPriorityForObject(this, new_priority);
+        _context.runtime->updateExecutionPriorityForObject(SELF, new_priority);
     } else {
         _execution_priority = new_priority;
     }

@@ -1,13 +1,12 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-// clang-format off
-
 #ifndef SPEMPE_SPEMPE_HPP
 #define SPEMPE_SPEMPE_HPP
 
 // Game context
 
+#include <SPeMPE/GameContext/Context_component_handle.hpp>
 #include <SPeMPE/GameContext/Context_components.hpp>
 #include <SPeMPE/GameContext/Game_context.hpp>
 #include <SPeMPE/GameContext/Game_context_flag_validation.hpp>
@@ -47,5 +46,3 @@
 #include <SPeMPE/Utility/Window_input_tracker.hpp>
 
 #endif // !SPEMPE_SPEMPE_HPP
-
-// clang-format on

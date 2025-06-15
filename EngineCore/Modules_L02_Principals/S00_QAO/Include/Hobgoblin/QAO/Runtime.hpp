@@ -5,6 +5,7 @@
 #define UHOBGOBLIN_QAO_RUNTIME_HPP
 
 #include <Hobgoblin/Common.hpp>
+#include <Hobgoblin/QAO/Base.hpp>
 #include <Hobgoblin/QAO/Config.hpp>
 #include <Hobgoblin/QAO/Handle.hpp>
 #include <Hobgoblin/QAO/Id.hpp>
@@ -53,13 +54,16 @@ public:
 
     void destroyAllOwnedObjects();
 
-    QAO_Base* find(const std::string& name) const;
-    QAO_Base* find(QAO_GenericId id) const;
+    template <class T = QAO_Base>
+    QAO_Handle<T> find(const std::string& name) const;
+
+    template <class T = QAO_Base>
+    QAO_Handle<T> find(QAO_GenericId id) const;
 
     template <class T>
     T* find(QAO_Id<T> id) const;
 
-    void updateExecutionPriorityForObject(QAO_Base* object, int new_priority);
+    void updateExecutionPriorityForObject(QAO_Base& object, int new_priority);
 
     // Execution
     void            startStep();
@@ -105,6 +109,33 @@ private:
     QAO_OrdererIterator      _step_orderer_iterator;
     util::AnyPtr             _user_data;
 };
+
+template <class T>
+QAO_Handle<T> QAO_Runtime::find(const std::string& name) const {
+    for (auto iter = cbegin(); iter != cend(); iter = std::next(iter)) {
+        if ((*iter)->getName() != name) {
+            continue;
+        }
+        if constexpr (!std::is_same_v<T, QAO_Base>) {
+            if (dynamic_cast<T*>(iter->ptr()) == nullptr) {
+                continue;
+            }
+        }
+        return iter->downcastCopy<T>();
+    }
+    return {};
+}
+
+template <class T>
+QAO_Handle<T> QAO_Runtime::find(QAO_GenericId id) const {
+    auto handle = _registry.findObjectWithId(id);
+    if constexpr (!std::is_same_v<T, QAO_Base>) {
+        if (dynamic_cast<T*>(handle.ptr()) == nullptr) {
+            return {};
+        }
+    }
+    return handle.downcastCopy<T>();
+}
 
 template <class T>
 T* QAO_Runtime::find(QAO_Id<T> id) const {

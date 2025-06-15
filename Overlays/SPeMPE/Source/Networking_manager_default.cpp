@@ -17,10 +17,10 @@ namespace {
 constexpr const char* LOG_ID = "SPeMPE";
 } // namespace
 
-DefaultNetworkingManager::DefaultNetworkingManager(hg::QAO_RuntimeRef aRuntimeRef,
-                                                   int                aExecutionPriority,
-                                                   hg::PZInteger      aStateBufferingLength)
-    : NonstateObject{aRuntimeRef,
+DefaultNetworkingManager::DefaultNetworkingManager(hobgoblin::QAO_IKey aIKey,
+                                                   int                 aExecutionPriority,
+                                                   hg::PZInteger       aStateBufferingLength)
+    : NonstateObject{aIKey,
                      SPEMPE_TYPEID_SELF,
                      aExecutionPriority,
                      "::jbatnozic::spempe::DefaultNetworkingManager"}

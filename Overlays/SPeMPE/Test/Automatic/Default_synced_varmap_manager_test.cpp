@@ -26,14 +26,14 @@ public:
         _ctx2->setToMode(GameContext::Mode::Client);
 
         // Add networking managers
-        _netMgr1 = std::make_unique<DefaultNetworkingManager>(_ctx1->getQAORuntime().nonOwning(),
-                                                              PRIORITY_NETMGR,
-                                                              0);
+        _netMgr1 = QAO_Create<DefaultNetworkingManager>(_ctx1->getQAORuntime().nonOwning(),
+                                                        PRIORITY_NETMGR,
+                                                        0);
         _netMgr1->setToServerMode(hg::RN_Protocol::UDP, "pass", 2, 512, hg::RN_NetworkingStack::Default);
 
-        _netMgr2 = std::make_unique<DefaultNetworkingManager>(_ctx2->getQAORuntime().nonOwning(),
-                                                              PRIORITY_NETMGR,
-                                                              0);
+        _netMgr2 = QAO_Create<DefaultNetworkingManager>(_ctx2->getQAORuntime().nonOwning(),
+                                                        PRIORITY_NETMGR,
+                                                        0);
         _netMgr2->setToClientMode(hg::RN_Protocol::UDP, "pass", 512, hg::RN_NetworkingStack::Default);
 
         {
@@ -48,10 +48,10 @@ public:
         _ctx2->attachComponent(*_netMgr2);
 
         // Add varmap managers
-        _svmMgr1 = std::make_unique<DefaultSyncedVarmapManager>(_ctx1->getQAORuntime().nonOwning(), PRIORITY_SVMMGR);
+        _svmMgr1 = QAO_Create<DefaultSyncedVarmapManager>(_ctx1->getQAORuntime().nonOwning(), PRIORITY_SVMMGR);
         _svmMgr1->setToMode(SyncedVarmapManagerInterface::Mode::Host);
 
-        _svmMgr2 = std::make_unique<DefaultSyncedVarmapManager>(_ctx2->getQAORuntime().nonOwning(), PRIORITY_SVMMGR);
+        _svmMgr2 = QAO_Create<DefaultSyncedVarmapManager>(_ctx2->getQAORuntime().nonOwning(), PRIORITY_SVMMGR);
         _svmMgr2->setToMode(SyncedVarmapManagerInterface::Mode::Client);
 
         _ctx1->attachComponent(*_svmMgr1);
@@ -100,11 +100,11 @@ protected:
     std::unique_ptr<GameContext> _ctx1;
     std::unique_ptr<GameContext> _ctx2;
 
-    std::unique_ptr<NetworkingManagerInterface> _netMgr1;
-    std::unique_ptr<NetworkingManagerInterface> _netMgr2;
+    QAO_Handle<DefaultNetworkingManager> _netMgr1;
+    QAO_Handle<DefaultNetworkingManager> _netMgr2;
 
-    std::unique_ptr<DefaultSyncedVarmapManager> _svmMgr1;
-    std::unique_ptr<DefaultSyncedVarmapManager> _svmMgr2;
+    QAO_Handle<DefaultSyncedVarmapManager> _svmMgr1;
+    QAO_Handle<DefaultSyncedVarmapManager> _svmMgr2;
 };
 
 TEST_F(DefaultSyncedVarmapManagerTest, BasicFunctionalityTest) {

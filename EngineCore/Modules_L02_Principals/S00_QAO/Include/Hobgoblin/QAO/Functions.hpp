@@ -5,6 +5,7 @@
 #define UHOBGOBLIN_QAO_FUNC_HPP
 
 #include <Hobgoblin/HGExcept.hpp>
+#include <Hobgoblin/QAO/Base.hpp>
 #include <Hobgoblin/QAO/Handle.hpp>
 #include <Hobgoblin/QAO/Id.hpp>
 #include <Hobgoblin/QAO/Instantiation_key.hpp>
@@ -50,8 +51,7 @@ QAO_Handle<T> QAO_Create(QAO_RuntimeRef aRuntimeRef, taArgs&&... aArgs) {
 
 //! TODO: QAO_ICreate
 
-template <class T>
-void QAO_Destroy(QAO_Handle<T> aHandle) {
+inline void QAO_Destroy(QAO_GenericHandle aHandle) {
     if (!aHandle) {
         return;
     }
@@ -66,8 +66,29 @@ void QAO_Destroy(QAO_Handle<T> aHandle) {
                         "its runtime.");
     }
 
-    rt->detachObject(*object);
+    auto rtHandle = MoveToUnderlying(rt->detachObject(*object));
+    if (rtOwnsObject) {
+        HG_HARD_ASSERT(!rtHandle.isNull() && rtHandle.isOwning());
+        rtHandle.reset();
+    }
     aHandle.reset();
+}
+
+inline void QAO_Destroy(QAO_Base* aObject) {
+    if (!aObject) {
+        return;
+    }
+
+    auto*      rt           = aObject->getRuntime();
+    const bool rtOwnsObject = rt != nullptr && rt->ownsObject(*aObject);
+    if (!rtOwnsObject) {
+        HG_THROW_TRACED(InvalidArgumentError,
+                        0,
+                        "Passed pointer does not point to an object owned by its runtime.");
+    }
+
+    auto handle = rt->detachObject(*aObject);
+    MoveToUnderlying(std::move(handle)).reset();
 }
 
 } // namespace qao

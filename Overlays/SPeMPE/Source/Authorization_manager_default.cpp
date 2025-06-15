@@ -111,9 +111,9 @@ RN_DEFINE_RPC(SetLocalAuthToken, RN_ARGS(AuthToken&, aToken)) {
 
 #define AUTH_TOKEN_LENGTH 50
 
-DefaultAuthorizationManager::DefaultAuthorizationManager(hg::QAO_RuntimeRef aRuntimeRef,
+DefaultAuthorizationManager::DefaultAuthorizationManager(hobgoblin::QAO_IKey aIKey,
                                                          int aExecutionPriority)
-    : NonstateObject(aRuntimeRef, SPEMPE_TYPEID_SELF, aExecutionPriority, "jbatnozic::spempe::DefaultAuthorizationManager")
+    : NonstateObject(aIKey, SPEMPE_TYPEID_SELF, aExecutionPriority, "jbatnozic::spempe::DefaultAuthorizationManager")
 {
 }
 

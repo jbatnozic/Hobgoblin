@@ -343,16 +343,16 @@ void SynchronizedObjectRegistry::unregisterObject(SynchronizedObjectBase* object
 }
 
 void SynchronizedObjectRegistry::destroyAllRegisteredObjects() {
-    std::vector<SynchronizedObjectBase*> objectsToDelete;
+    std::vector<hg::QAO_GenericId> objectsToDelete;
     objectsToDelete.reserve(_mappings.size());
     for (const auto pair : _mappings) {
-        objectsToDelete.push_back(pair.second);
+        objectsToDelete.push_back(pair.second->getId());
     }
 
     auto& rt = _node->getUserDataOrThrow<GameContext>()->getQAORuntime();
-    for (auto* object : objectsToDelete) {
-        if (rt.ownsObject(object)) {
-            rt.eraseObject(object);
+    for (const auto& id : objectsToDelete) {
+        if (rt.ownsObject(id)) {
+            rt.detachObject(id);
         }
     }
 

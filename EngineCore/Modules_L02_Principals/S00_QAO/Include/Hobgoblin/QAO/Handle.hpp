@@ -26,6 +26,9 @@ public:
 
     QAO_Handle() = default;
 
+    QAO_Handle(std::nullptr_t)
+        : QAO_Handle{} {}
+
     ~QAO_Handle() {
         reset();
     }
@@ -150,6 +153,23 @@ public:
         } else {
             _object = nullptr;
         }
+    }
+
+    template <class T, T_ENABLE_IF(std::is_base_of_v<taObject, T>)>
+    QAO_Handle<T> downcastCopy() const {
+        QAO_Handle<T> result;
+        result._object = static_cast<T*>(_object);
+        return result;
+    }
+
+    template <class T, T_ENABLE_IF(std::is_base_of_v<taObject, T>)>
+    QAO_Handle<T> downcastMove() {
+        QAO_Handle<T> result;
+        result._object   = static_cast<T*>(_object);
+        result._isOwning = _isOwning;
+        _object          = nullptr;
+        _isOwning        = false;
+        return result;
     }
 
 private:

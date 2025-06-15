@@ -72,18 +72,23 @@ RN_DEFINE_RPC(USPEMPE_DefaultSyncedVarmapManager_RequestToSet,
 }
 } // namespace
 
-DefaultSyncedVarmapManager::DefaultSyncedVarmapManager(hg::QAO_RuntimeRef aRuntimeRef,
-                                                       int                aExecutionPriority)
-    : NonstateObject{aRuntimeRef,
+DefaultSyncedVarmapManager::DefaultSyncedVarmapManager(hobgoblin::QAO_IKey aIKey,
+                                                       int                 aExecutionPriority)
+    : NonstateObject{aIKey,
                      SPEMPE_TYPEID_SELF,
                      aExecutionPriority,
-                     "::jbatnozic::spempe::DefaultSyncedVarmapManager"}
-    , _netMgr{ccomp<NetworkingManagerInterface>()} {
-    _netMgr.addEventListener(this);
+                     "::jbatnozic::spempe::DefaultSyncedVarmapManager"} {}
+
+DefaultSyncedVarmapManager::~DefaultSyncedVarmapManager() = default;
+
+void DefaultSyncedVarmapManager::_didAttach(hobgoblin::QAO_Runtime& aRuntime) {
+    _netMgr = &ccomp<NetworkingManagerInterface>();
+    _netMgr->addEventListener(this);
 }
 
-DefaultSyncedVarmapManager::~DefaultSyncedVarmapManager() {
-    _netMgr.removeEventListener(this);
+void DefaultSyncedVarmapManager::_willDetach(hobgoblin::QAO_Runtime& aRuntime) {
+    _netMgr->removeEventListener(this);
+    _netMgr = nullptr;
 }
 
 void DefaultSyncedVarmapManager::setToMode(Mode aMode) {
@@ -114,7 +119,7 @@ void DefaultSyncedVarmapManager::onNetworkingEvent(const hg::RN_Event& aEvent) {
             // Don't care
         },
         [this](const RN_Event::Connected& aConnectedEvent) {
-            _netMgr.getNode().callIfServer([&, this](RN_ServerInterface& aServer) {
+            _netMgr->getNode().callIfServer([&, this](RN_ServerInterface& aServer) {
                 const auto clientIndex = *(aConnectedEvent.clientIndex);
                 if (aServer.getClientConnector(clientIndex).getStatus() ==
                     RN_ConnectorStatus::Connected) {
@@ -221,7 +226,7 @@ void DefaultSyncedVarmapManager::requestToSetInt64(const std::string& aKey, std:
 
     hobgoblin::util::Packet packet;
     _packValue(aKey, aValue, packet);
-    Compose_USPEMPE_DefaultSyncedVarmapManager_RequestToSet(_netMgr.getNode(),
+    Compose_USPEMPE_DefaultSyncedVarmapManager_RequestToSet(_netMgr->getNode(),
                                                             RN_COMPOSE_FOR_ALL,
                                                             packet);
 }
@@ -233,7 +238,7 @@ void DefaultSyncedVarmapManager::requestToSetDouble(const std::string& aKey, dou
 
     hobgoblin::util::Packet packet;
     _packValue(aKey, aValue, packet);
-    Compose_USPEMPE_DefaultSyncedVarmapManager_RequestToSet(_netMgr.getNode(),
+    Compose_USPEMPE_DefaultSyncedVarmapManager_RequestToSet(_netMgr->getNode(),
                                                             RN_COMPOSE_FOR_ALL,
                                                             packet);
 }
@@ -245,7 +250,7 @@ void DefaultSyncedVarmapManager::requestToSetString(const std::string& aKey, con
 
     hobgoblin::util::Packet packet;
     _packValue(aKey, aValue, packet);
-    Compose_USPEMPE_DefaultSyncedVarmapManager_RequestToSet(_netMgr.getNode(),
+    Compose_USPEMPE_DefaultSyncedVarmapManager_RequestToSet(_netMgr->getNode(),
                                                             RN_COMPOSE_FOR_ALL,
                                                             packet);
 }
@@ -306,7 +311,7 @@ void DefaultSyncedVarmapManager::stringSetClientWritePermission(const std::strin
 void DefaultSyncedVarmapManager::_eventEndUpdate() {
     using namespace hg::rn;
     if (_mode == Mode::Host) {
-        Compose_USPEMPE_DefaultSyncedVarmapManager_SetValues(_netMgr.getNode(),
+        Compose_USPEMPE_DefaultSyncedVarmapManager_SetValues(_netMgr->getNode(),
                                                              RN_COMPOSE_FOR_ALL,
                                                              _stateUpdates);
         _stateUpdates.clear();
@@ -431,7 +436,7 @@ void DefaultSyncedVarmapManager::_sendFullState(hg::PZInteger aClientIndex) cons
         }
     }
 
-    Compose_USPEMPE_DefaultSyncedVarmapManager_SetValues(_netMgr.getNode(), aClientIndex, packet);
+    Compose_USPEMPE_DefaultSyncedVarmapManager_SetValues(_netMgr->getNode(), aClientIndex, packet);
 }
 
 } // namespace spempe

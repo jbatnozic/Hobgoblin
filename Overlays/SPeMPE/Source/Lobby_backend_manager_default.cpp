@@ -209,8 +209,8 @@ bool DefaultLobbyBackendManager::ExtendedPlayerInfo::isSameAs(const hg::RN_Conne
     return (ip_ == ipAddress && port_ == port);
 }
 
-DefaultLobbyBackendManager::DefaultLobbyBackendManager(hg::QAO_RuntimeRef aRuntimeRef, int aExecutionPriority)
-    : NonstateObject(aRuntimeRef, SPEMPE_TYPEID_SELF, aExecutionPriority, "::jbatnozic::spempe::DefaultLobbyBackendManager")
+DefaultLobbyBackendManager::DefaultLobbyBackendManager(hobgoblin::QAO_IKey aIKey, int aExecutionPriority)
+    : NonstateObject(aIKey, SPEMPE_TYPEID_SELF, aExecutionPriority, "::jbatnozic::spempe::DefaultLobbyBackendManager")
 {    
 }
 

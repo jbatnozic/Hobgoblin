@@ -92,7 +92,7 @@ struct IfDummy  {};
 class SynchronizedObjectBase : public StateObject {
 public:
     //! Big scary constructor with way too many arguments.
-    SynchronizedObjectBase(hg::QAO_RuntimeRef aRuntimeRef,
+    SynchronizedObjectBase(hg::QAO_IKey aIKey,
                            const std::type_info& aTypeInfo,
                            int aExecutionPriority,
                            std::string aName,
@@ -257,13 +257,13 @@ public:
 protected:
     using SyncObjSuper = SynchronizedObject;
 
-    SynchronizedObject(hg::QAO_RuntimeRef aRuntimeRef,
+    SynchronizedObject(hg::QAO_IKey aIKey,
                        const std::type_info& aTypeInfo,
                        int aExecutionPriority,
                        std::string aName,
                        RegistryId aRegId,
                        SyncId aSyncId = SYNC_ID_NEW)
-        : SynchronizedObjectBase{ aRuntimeRef
+        : SynchronizedObjectBase{ aIKey
                                 , aTypeInfo
                                 , aExecutionPriority
                                 , std::move(aName)

@@ -27,7 +27,7 @@ class DefaultWindowManager
     : public WindowManagerInterface
     , public NonstateObject {
 public:
-    DefaultWindowManager(hg::QAO_RuntimeRef aRuntimeRef, int aExecutionPriority);
+    DefaultWindowManager(hobgoblin::QAO_IKey aIKey, int aExecutionPriority);
 
     ///////////////////////////////////////////////////////////////////////////
     // CONFIGURATION                                                         //
