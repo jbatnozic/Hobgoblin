@@ -49,7 +49,7 @@ public:
 };
 
 ///////////////////////////////////////////////////////////////////////////
-// NONSTATE OBJECTS                                                      //
+// MARK: NONSTATE OBJECTS                                                //
 ///////////////////////////////////////////////////////////////////////////
 
 //! I:
@@ -65,7 +65,7 @@ public:
 };
 
 ///////////////////////////////////////////////////////////////////////////
-// STATE OBJECTS                                                         //
+// MARK: STATE OBJECTS                                                   //
 ///////////////////////////////////////////////////////////////////////////
 
 //! Objects which are essential for the game's state, but will not be synchronized
@@ -77,7 +77,7 @@ public:
 };
 
 ///////////////////////////////////////////////////////////////////////////
-// SYNCHRONIZED OBJECTS                                                  //
+// MARK: SYNCHRONIZED OBJECTS                                            //
 ///////////////////////////////////////////////////////////////////////////
 
 enum class SyncUpdateStatus {
@@ -88,6 +88,8 @@ enum class SyncUpdateStatus {
 
 struct IfMaster {};
 struct IfDummy  {};
+
+// MARK: Virtual base
 
 class SynchronizedObjectBase : public StateObject {
 public:
@@ -240,6 +242,8 @@ public:
     //! \warning Internal implementation, do not call in user code!
     void __spempeimpl_setStateSchedulerDefaultDelay(hg::PZInteger aNewDefaultDelaySteps);
 };
+
+// MARK: Template
 
 //! Objects which are essential to the game's state, so they are both saved when
 //! writing game state, and synchronized with clients in multiplayer sessions.

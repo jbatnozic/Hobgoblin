@@ -25,8 +25,6 @@ class QAO_GenericId {
 public:
     QAO_GenericId();
     QAO_GenericId(std::nullptr_t p);
-    explicit QAO_GenericId(const QAO_Base* object);
-    explicit QAO_GenericId(const QAO_Base& object);
 
     bool operator==(const QAO_GenericId& other) const;
     bool operator!=(const QAO_GenericId& other) const;
