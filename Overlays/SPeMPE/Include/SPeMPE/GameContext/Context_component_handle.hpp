@@ -40,7 +40,8 @@ public:
         , _lifetimeManager{std::unique_ptr<taCComp>(nullptr)} {}
 
     //! Construction from nullptr is the same as default construction.
-    ContextComponentHandle(std::nullptr_t) : ContextComponentHandle{} {}
+    ContextComponentHandle(std::nullptr_t)
+        : ContextComponentHandle{} {}
 
     //! Construct from a unique_ptr to a ContextComponent.
     ContextComponentHandle(std::unique_ptr<taCComp> aUPtr)
@@ -64,7 +65,7 @@ public:
     }
 
     //! Prevent copy-construction.
-    ContextComponentHandle(const ContextComponentHandle& aOther) = delete;
+    ContextComponentHandle(const ContextComponentHandle& aOther)            = delete;
     ContextComponentHandle& operator=(const ContextComponentHandle& aOther) = delete;
 
     //! Move constructor.
@@ -94,10 +95,9 @@ public:
     template <class U,
               typename std::enable_if_t<std::is_convertible_v<U*, taCComp*>, bool> = true>
     // clang-format on
-    ContextComponentHandle(ContextComponentHandle<U>&& aOther) 
+    ContextComponentHandle(ContextComponentHandle<U>&& aOther)
         : _ccompPointer{aOther._ccompPointer}
-        , _lifetimeManager{std::move(aOther._lifetimeManager)}
-    {
+        , _lifetimeManager{std::move(aOther._lifetimeManager)} {
         aOther._ccompPointer    = nullptr;
         aOther._lifetimeManager = {};
     }
@@ -173,7 +173,7 @@ private:
 
     ContextComponent*                                                                  _ccompPointer;
     std::variant<std::unique_ptr<ContextComponent>, hobgoblin::qao::QAO_GenericHandle> _lifetimeManager;
-    
+
     static constexpr std::size_t VARIANT_UPOINTER  = 0;
     static constexpr std::size_t VARIANT_QAOHANDLE = 1;
 };

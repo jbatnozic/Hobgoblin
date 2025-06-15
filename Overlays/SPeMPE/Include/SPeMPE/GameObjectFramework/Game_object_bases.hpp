@@ -333,8 +333,8 @@ protected:
     };
 
     struct PacemakerPulse {
-        bool happened = false;
         hg::PZInteger delay;
+        bool happened = false;
     };
 
     hg::util::SimpleStateScheduler<SchedulerPair> _ssch;

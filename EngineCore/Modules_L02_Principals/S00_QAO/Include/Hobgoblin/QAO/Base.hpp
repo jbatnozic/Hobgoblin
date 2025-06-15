@@ -57,6 +57,13 @@ public:
 
     friend util::OutputStream& operator<<(util::OutputStreamExtender& ostream, const QAO_Base& self);
 
+protected:
+    // Lifecycle callbacks
+    virtual void _setUp() {}
+    virtual void _tearDown() {}
+    virtual void _didAttach(QAO_Runtime& aRuntime) {}
+    virtual void _willDetach(QAO_Runtime& aRuntime) {}
+
 private:
     // Befriend `QAO_Create` so that it can call `_setUp()` when needed.
     template <class T, class... taArgs>
@@ -76,12 +83,6 @@ private:
     Context               _context;
     const std::type_info& _typeInfo;
     int                   _execution_priority;
-
-    // Lifecycle callbacks
-    virtual void _setUp() {}
-    virtual void _tearDown() {}
-    virtual void _didAttach(QAO_Runtime& aRuntime) {}
-    virtual void _willDetach(QAO_Runtime& aRuntime) {}
 
     // Update
     virtual void _eventPreUpdate() {}

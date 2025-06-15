@@ -59,11 +59,11 @@ private:
 
     util::SlabIndexer _indexer;
     std::vector<Elem> _elements;
-    QAO_Serial      _serialCounter;
+    QAO_Serial        _serialCounter;
 
     std::unordered_map<QAO_Serial, QAO_Index> _serialToIndex;
 
-    void         _adjustSize();
+    void       _adjustSize();
     QAO_Serial _nextSerial();
 };
 

@@ -40,9 +40,9 @@ public:
     QAO_GenericId& operator=(QAO_GenericId&& other) = default;
 
     // Utility:
-    QAO_Index    getIndex() const noexcept;
+    QAO_Index  getIndex() const noexcept;
     QAO_Serial getSerial() const noexcept;
-    bool         isNull() const noexcept;
+    bool       isNull() const noexcept;
 
     template <class T>
     QAO_Id<T> cast() const noexcept;
@@ -54,7 +54,7 @@ protected:
 
 private:
     QAO_Serial _serial;
-    QAO_Index    _index;
+    QAO_Index  _index;
 };
 
 template <class T>

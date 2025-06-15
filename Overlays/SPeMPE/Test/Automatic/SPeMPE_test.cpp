@@ -158,8 +158,11 @@ public:
         if (isMasterObject()) {
             doSyncDestroy();
         }
+    }
 
-        hg::QAO_Create<AvatarDrop>(getRuntime())->customData = _getCurrentState().customData;
+    void _willDetach(hg::QAO_Runtime& aRuntime) override {
+        hg::QAO_Create<AvatarDrop>(aRuntime)->customData = _getCurrentState().customData;
+        SyncObjSuper::_willDetach(aRuntime);
     }
 
     int getCustomData() const {

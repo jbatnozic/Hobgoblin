@@ -72,8 +72,7 @@ RN_DEFINE_RPC(USPEMPE_DefaultSyncedVarmapManager_RequestToSet,
 }
 } // namespace
 
-DefaultSyncedVarmapManager::DefaultSyncedVarmapManager(hobgoblin::QAO_IKey aIKey,
-                                                       int                 aExecutionPriority)
+DefaultSyncedVarmapManager::DefaultSyncedVarmapManager(hobgoblin::QAO_IKey aIKey, int aExecutionPriority)
     : NonstateObject{aIKey,
                      SPEMPE_TYPEID_SELF,
                      aExecutionPriority,

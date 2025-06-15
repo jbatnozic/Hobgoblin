@@ -19,7 +19,7 @@ namespace qao {
 using QAO_Index = PZInteger;
 
 //! An invalid value for QAO_Index.
-static constexpr QAO_Index  QAO_NULL_INDEX  = std::numeric_limits<QAO_Index>::max();
+static constexpr QAO_Index QAO_NULL_INDEX = std::numeric_limits<QAO_Index>::max();
 
 //! Serial number of an object (derived from QAO_Base) attached to a QAO_Runtime.
 //! No two objects over the whole lifetime of the runtime can have the same serial number.
@@ -31,7 +31,7 @@ using QAO_Serial = std::uint64_t;
 static constexpr QAO_Serial QAO_NULL_SERIAL = std::numeric_limits<QAO_Serial>::max();
 
 //! Serial number assigned to the first object attached to a new runtime.
-static constexpr QAO_Serial QAO_STARTING_SERIAL  = 0;
+static constexpr QAO_Serial QAO_STARTING_SERIAL = 0;
 
 struct QAO_Event {
     enum Enum {

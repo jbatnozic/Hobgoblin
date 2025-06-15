@@ -8,8 +8,8 @@
 #include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/QAO.hpp>
 
-#include <SPeMPE/GameContext/Context_components.hpp>
 #include <SPeMPE/GameContext/Context_component_handle.hpp>
+#include <SPeMPE/GameContext/Context_components.hpp>
 #include <SPeMPE/GameObjectFramework/Synchronized_object_registry.hpp>
 #include <SPeMPE/Utility/Timing.hpp>
 
@@ -121,7 +121,7 @@ public:
     void attachAndOwnComponent(std::unique_ptr<taComponent> aComponent);
 
     template <class taComponent,
-              typename std::enable_if_t<std::is_base_of_v<hg::QAO_Base, taComponent> ,bool> = true>
+              typename std::enable_if_t<std::is_base_of_v<hg::QAO_Base, taComponent>, bool> = true>
     void attachAndOwnComponent(hobgoblin::QAO_Handle<taComponent> aComponent);
 
     //! Attempt to detach a context component from the context.
@@ -156,7 +156,7 @@ public:
     int runFor(int aIterations);
 
     //! Can be called by an instance from 'within' the context (if runFor has
-    //! been started) to stop the execution after the current step.
+    //! been started) to stop the execution after the current iteration.
     void stop();
 
     struct PerformanceInfo {

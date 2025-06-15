@@ -23,8 +23,8 @@
 
 // Managers
 
-#include <SPeMPE/Managers/Authorization_manager_interface.hpp>
 #include <SPeMPE/Managers/Authorization_manager_default.hpp>
+#include <SPeMPE/Managers/Authorization_manager_interface.hpp>
 #include <SPeMPE/Managers/Input_sync_manager_default.hpp>
 #include <SPeMPE/Managers/Input_sync_manager_interface.hpp>
 #include <SPeMPE/Managers/Lobby_backend_manager_default.hpp>
@@ -38,9 +38,9 @@
 
 // Utility
 
-#include <SPeMPE/Utility/Rpc_receiver_context_template.hpp>
 #include <SPeMPE/Utility/Event_loop_timing_reporter.hpp>
 #include <SPeMPE/Utility/Networking_telemetry_reporter.hpp>
+#include <SPeMPE/Utility/Rpc_receiver_context_template.hpp>
 #include <SPeMPE/Utility/Rpc_receiver_context_user.hpp>
 #include <SPeMPE/Utility/Window_frame_input_view.hpp>
 #include <SPeMPE/Utility/Window_input_tracker.hpp>
