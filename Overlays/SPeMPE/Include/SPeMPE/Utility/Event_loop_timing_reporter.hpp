@@ -48,6 +48,7 @@ private:
     std::chrono::nanoseconds _totalDisplayTime;
     hobgoblin::PZInteger _catchUpIterationCount;
 
+    void _didAttach(hobgoblin::QAO_Runtime& aRuntime) override;
     void _eventPreUpdate() override;
 
     void _resetCounters();

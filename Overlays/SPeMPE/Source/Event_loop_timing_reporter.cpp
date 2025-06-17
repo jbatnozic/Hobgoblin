@@ -36,6 +36,10 @@ EventLoopTimingReporter::EventLoopTimingReporter(hobgoblin::QAO_IKey aIKey,
     , _counter{0}
 {
     HG_VALIDATE_ARGUMENT(aConfig.cycleLength > 0);
+}
+
+void EventLoopTimingReporter::_didAttach(hobgoblin::QAO_Runtime& aRuntime) {
+    NonstateObject::_didAttach(aRuntime);
     _resetCounters();
 }
 
