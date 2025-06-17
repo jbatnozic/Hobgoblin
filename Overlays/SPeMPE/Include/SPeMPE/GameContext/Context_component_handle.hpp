@@ -151,13 +151,13 @@ public:
         return aSelf.ptr() != nullptr;
     }
 
-    ContextComponent* ptr() const {
-        return _ccompPointer;
-    }
-
     ///////////////////////////////////////////////////////////////////////////
     // MARK: DEREFERENCING                                                   //
     ///////////////////////////////////////////////////////////////////////////
+
+    ContextComponent* ptr() const {
+        return _ccompPointer;
+    }
 
     ContextComponent* operator->() const {
         return _ccompPointer;

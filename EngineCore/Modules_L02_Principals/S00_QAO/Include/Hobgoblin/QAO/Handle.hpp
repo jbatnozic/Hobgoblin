@@ -24,16 +24,25 @@ public:
     static_assert(std::is_base_of_v<QAO_Base, taObject>,
                   "QAO_Handle can only point to QAO_Base or its derived classes.");
 
+    ///////////////////////////////////////////////////////////////////////////
+    // MARK: CONSTRUCTION                                                    //
+    ///////////////////////////////////////////////////////////////////////////
+
     QAO_Handle() = default;
 
     QAO_Handle(std::nullptr_t)
         : QAO_Handle{} {}
 
+    //! Destructor.
+    //! If the handle references and owns an object at the time of destruction, it will also
+    //! detach that object from its runtime (if any) and destroy it, similar to a `std::unique_ptr`.
     ~QAO_Handle() {
         reset();
     }
 
     //! Copy constructor
+    //! \warning a copied `QAO_Handle` will ALWAYS be non-owning even if the original object (`aOther`)
+    //!          was owning!
     QAO_Handle(const QAO_Handle& aOther)
         : _object{aOther._object}
         , _isOwning{false} {}
@@ -115,6 +124,29 @@ public:
     template <class T, T_ENABLE_IF(!std::is_base_of_v<taObject, T>)>
     QAO_Handle& operator=(QAO_Handle<T>&& aOther) = delete;
 
+    //! Copy-construct and return a handle to `T`, where `T` is a subtype of `taObject`.
+    template <class T, T_ENABLE_IF(std::is_base_of_v<taObject, T>)>
+    QAO_Handle<T> downcastCopy() const {
+        QAO_Handle<T> result;
+        result._object = static_cast<T*>(_object);
+        return result;
+    }
+
+    //! Move-construct and return a handle to `T`, where `T` is a subtype of `taObject`.
+    template <class T, T_ENABLE_IF(std::is_base_of_v<taObject, T>)>
+    QAO_Handle<T> downcastMove() {
+        QAO_Handle<T> result;
+        result._object   = static_cast<T*>(_object);
+        result._isOwning = _isOwning;
+        _object          = nullptr;
+        _isOwning        = false;
+        return result;
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // MARK: NULL CHECKING                                                   //
+    ///////////////////////////////////////////////////////////////////////////
+
     bool isNull() const {
         return (_object == nullptr);
     }
@@ -131,6 +163,10 @@ public:
         return !isNull();
     }
 
+    ///////////////////////////////////////////////////////////////////////////
+    // MARK: DEREFERENCING                                                   //
+    ///////////////////////////////////////////////////////////////////////////
+
     taObject* ptr() const {
         return _object;
     }
@@ -142,6 +178,10 @@ public:
     taObject& operator*() const {
         return *_object;
     }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // MARK: MISC                                                            //
+    ///////////////////////////////////////////////////////////////////////////
 
     bool isOwning() const {
         return _isOwning;
@@ -155,23 +195,6 @@ public:
         }
     }
 
-    template <class T, T_ENABLE_IF(std::is_base_of_v<taObject, T>)>
-    QAO_Handle<T> downcastCopy() const {
-        QAO_Handle<T> result;
-        result._object = static_cast<T*>(_object);
-        return result;
-    }
-
-    template <class T, T_ENABLE_IF(std::is_base_of_v<taObject, T>)>
-    QAO_Handle<T> downcastMove() {
-        QAO_Handle<T> result;
-        result._object   = static_cast<T*>(_object);
-        result._isOwning = _isOwning;
-        _object          = nullptr;
-        _isOwning        = false;
-        return result;
-    }
-
 private:
     template <class T>
     friend class QAO_Handle;
@@ -180,7 +203,7 @@ private:
     void _deleteObject() {
         if (_object != nullptr) {
             _object->_tearDown();
-            delete _object;
+            delete _object; // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1 TODO DETACH -- use QAO_Destroy?
             _object = nullptr;
         }
         _isOwning = false;
