@@ -15,6 +15,8 @@ class QAO_Base;
 
 namespace qao_detail {
 class QAO_HandleFactory;
+
+void DetachFromRuntime(QAO_Base& aObject);
 } // namespace qao_detail
 
 //! TODO(add description)
@@ -202,8 +204,9 @@ private:
 
     void _deleteObject() {
         if (_object != nullptr) {
+            qao_detail::DetachFromRuntime(*_object);
             _object->_tearDown();
-            delete _object; // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1 TODO DETACH -- use QAO_Destroy?
+            delete _object;
             _object = nullptr;
         }
         _isOwning = false;

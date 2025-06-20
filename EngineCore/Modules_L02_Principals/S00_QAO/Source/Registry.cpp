@@ -32,7 +32,7 @@ QAO_GenericId QAO_Registry::insert(QAO_GenericHandle aHandle) {
 
     const auto id = QAO_GenericId{serial, index};
 
-    _elements[ToSz(index)] = Elem(id, std::move(aHandle));
+    _elements[ToSz(index)] = {id, std::move(aHandle)};
 
     return id;
 }

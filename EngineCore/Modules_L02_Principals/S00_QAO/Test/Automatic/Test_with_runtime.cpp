@@ -166,10 +166,28 @@ TEST_F(QAO_TestWithRuntime, DetachingObjectsReturnsNonOwningHandleWhenObjectIsNo
     ASSERT_EQ(_runtime.getObjectCount(), 0);
 }
 
-TEST_F(QAO_TestWithRuntime, ObjectCount) {
+TEST_F(QAO_TestWithRuntime, ObjectCount_WithQAO_Destroy_NonOwningHandle) {
     auto handle = QAO_Create<SimpleActiveObject>(&_runtime, _numbers, 0);
+    EXPECT_FALSE(handle.isOwning());
     ASSERT_EQ(_runtime.getObjectCount(), 1);
-    QAO_Destroy(handle);
+    QAO_Destroy(std::move(handle));
+    ASSERT_EQ(_runtime.getObjectCount(), 0);
+}
+
+TEST_F(QAO_TestWithRuntime, ObjectCount_WithQAO_Destroy_OwningHandle) {
+    auto handle = QAO_Create<SimpleActiveObject>(_runtime.nonOwning(), _numbers, 0);
+    EXPECT_TRUE(handle.isOwning());
+    ASSERT_EQ(_runtime.getObjectCount(), 1);
+    QAO_Destroy(std::move(handle));
+    ASSERT_EQ(_runtime.getObjectCount(), 0);
+}
+
+TEST_F(QAO_TestWithRuntime, ObjectCount_WithHandleGoingOutOfScope) {
+    {
+        auto handle = QAO_Create<SimpleActiveObject>(_runtime.nonOwning(), _numbers, 0);
+        EXPECT_TRUE(handle.isOwning());
+        ASSERT_EQ(_runtime.getObjectCount(), 1);
+    }
     ASSERT_EQ(_runtime.getObjectCount(), 0);
 }
 

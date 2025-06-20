@@ -214,7 +214,9 @@ DefaultLobbyBackendManager::DefaultLobbyBackendManager(hobgoblin::QAO_IKey aIKey
 {    
 }
 
-DefaultLobbyBackendManager::~DefaultLobbyBackendManager() {
+DefaultLobbyBackendManager::~DefaultLobbyBackendManager() = default;
+
+void DefaultLobbyBackendManager::_willDetach(hobgoblin::QAO_Runtime& aRuntime) {
     if (_mode == Mode::Host) {
         ccomp<NetworkingManagerInterface>().removeEventListener(this);
     }

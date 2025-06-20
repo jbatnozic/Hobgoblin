@@ -7,7 +7,6 @@
 #include <Hobgoblin/QAO/Runtime.hpp>
 #include <Hobgoblin/Utility/Passkey.hpp>
 
-#include <Hobgoblin/QAO/Functions.hpp>
 #include <Hobgoblin/QAO/Handle.hpp>
 
 #include <cassert>

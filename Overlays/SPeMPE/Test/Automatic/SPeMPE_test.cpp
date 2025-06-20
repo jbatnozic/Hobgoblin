@@ -278,7 +278,7 @@ TEST_F(SPeMPE_SynchronizedTest, BasicFunctionalityTest) {
 
         auto master = _serverCtx->getQAORuntime().find<Avatar>("Avatar");
         ASSERT_NE(master, nullptr);
-        hg::QAO_Destroy(master);
+        hg::QAO_Destroy(std::move(master));
 
         _serverCtx->runFor(1);
         _clientCtx->runFor(1);
@@ -288,10 +288,10 @@ TEST_F(SPeMPE_SynchronizedTest, BasicFunctionalityTest) {
 
         // Clean up drops:
         while (auto drop = _serverCtx->getQAORuntime().find("AvatarDrop")) {
-            hg::QAO_Destroy(drop);
+            hg::QAO_Destroy(std::move(drop));
         }
         while (auto drop = _clientCtx->getQAORuntime().find("AvatarDrop")) {
-            hg::QAO_Destroy(drop);
+            hg::QAO_Destroy(std::move(drop));
         }
     }
     {
@@ -301,7 +301,7 @@ TEST_F(SPeMPE_SynchronizedTest, BasicFunctionalityTest) {
                                       _serverCtx->getComponent<MNetworking>().getRegistryId(),
                                       SYNC_ID_NEW);
         obj->setCustomData(Avatar::VisibleState::CD_INITIAL + 12);
-        hg::QAO_Destroy(obj);
+        hg::QAO_Destroy(std::move(obj));
 
         _serverCtx->runFor(1);
         _clientCtx->runFor(1);
@@ -312,10 +312,10 @@ TEST_F(SPeMPE_SynchronizedTest, BasicFunctionalityTest) {
 
         // Clean up drops:
         while (auto drop = _serverCtx->getQAORuntime().find("AvatarDrop")) {
-            hg::QAO_Destroy(drop);
+            hg::QAO_Destroy(std::move(drop));
         }
         while (auto drop = _clientCtx->getQAORuntime().find("AvatarDrop")) {
-            hg::QAO_Destroy(drop);
+            hg::QAO_Destroy(std::move(drop));
         }
     }
     {
@@ -541,7 +541,7 @@ TEST_F(SPeMPE_SynchronizedTest, DeactivationTest) {
 
         auto master =_serverCtx->getQAORuntime().find<DeactivatingAvatar>("DeactivatingAvatar");
         ASSERT_NE(master, nullptr);
-        hg::QAO_Destroy(master);
+        hg::QAO_Destroy(std::move(master));
 
         _serverCtx->runFor(1);
         _clientCtx->runFor(1);

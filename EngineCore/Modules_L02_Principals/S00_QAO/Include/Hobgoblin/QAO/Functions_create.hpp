@@ -1,8 +1,8 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#ifndef UHOBGOBLIN_QAO_FUNC_HPP
-#define UHOBGOBLIN_QAO_FUNC_HPP
+#ifndef UHOBGOBLIN_QAO_FUNCTIONS_CREATE_HPP
+#define UHOBGOBLIN_QAO_FUNCTIONS_CREATE_HPP
 
 #include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/QAO/Base.hpp>
@@ -51,50 +51,10 @@ QAO_Handle<T> QAO_Create(QAO_RuntimeRef aRuntimeRef, taArgs&&... aArgs) {
 
 //! TODO: QAO_ICreate
 
-inline void QAO_Destroy(QAO_GenericHandle aHandle) {
-    if (!aHandle) {
-        return;
-    }
-
-    auto*      object       = aHandle.ptr();
-    auto*      rt           = object->getRuntime();
-    const bool rtOwnsObject = rt != nullptr && rt->ownsObject(*object);
-    if (!rtOwnsObject && !aHandle.isOwning()) {
-        HG_THROW_TRACED(InvalidArgumentError,
-                        0,
-                        "Passed handle does not own its object nor does it point to an object owned by "
-                        "its runtime.");
-    }
-
-    auto rtHandle = MoveToUnderlying(rt->detachObject(*object));
-    if (rtOwnsObject) {
-        HG_HARD_ASSERT(!rtHandle.isNull() && rtHandle.isOwning());
-        rtHandle.reset();
-    }
-    aHandle.reset();
-}
-
-inline void QAO_Destroy(QAO_Base* aObject) {
-    if (!aObject) {
-        return;
-    }
-
-    auto*      rt           = aObject->getRuntime();
-    const bool rtOwnsObject = rt != nullptr && rt->ownsObject(*aObject);
-    if (!rtOwnsObject) {
-        HG_THROW_TRACED(InvalidArgumentError,
-                        0,
-                        "Passed pointer does not point to an object owned by its runtime.");
-    }
-
-    auto handle = rt->detachObject(*aObject);
-    MoveToUnderlying(std::move(handle)).reset();
-}
-
 } // namespace qao
 HOBGOBLIN_NAMESPACE_END
 
 #include <Hobgoblin/Private/Pmacro_undef.hpp>
 #include <Hobgoblin/Private/Short_namespace.hpp>
 
-#endif // !UHOBGOBLIN_QAO_FUNC_HPP
+#endif // !UHOBGOBLIN_QAO_FUNCTIONS_CREATE_HPP

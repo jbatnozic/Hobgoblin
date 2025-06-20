@@ -9,6 +9,8 @@ set(COMPONENT_NAME "Hobgoblin.QAO")
 
 set(COMPONENT_SOURCES
   "Source/Base.cpp"
+  "Source/Functions_destroy.cpp"
+  "Source/Handle.cpp"
   "Source/Id.cpp"
   "Source/Orderer.cpp"
   "Source/Priority_resolver.cpp"

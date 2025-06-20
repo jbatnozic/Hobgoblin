@@ -24,7 +24,9 @@ QAO_Runtime::QAO_Runtime(util::AnyPtr userData)
     , _step_orderer_iterator{_orderer.end()}
     , _user_data{userData} {}
 
-QAO_Runtime::~QAO_Runtime() = default;
+QAO_Runtime::~QAO_Runtime() {
+    destroyAllOwnedObjects();
+}
 
 QAO_RuntimeRef QAO_Runtime::nonOwning() {
     QAO_RuntimeRef rv{this};
@@ -74,6 +76,7 @@ AvoidNull<QAO_GenericHandle> QAO_Runtime::detachObject(QAO_GenericId aId) {
                              "Object by given ID must exist attached to the Runtime.");
 
     handle->_willDetach(SELF);
+    handle->_context = QAO_Base::Context{};
 
     const auto index = aId.getIndex();
 
@@ -84,8 +87,6 @@ AvoidNull<QAO_GenericHandle> QAO_Runtime::detachObject(QAO_GenericId aId) {
         _step_orderer_iterator = std::next(_step_orderer_iterator);
     }
     _orderer.erase(qao_detail::QAO_HandleFactory::createHandle(handle.ptr(), false));
-
-    handle->_context = QAO_Base::Context{};
 
     return rv;
 }
