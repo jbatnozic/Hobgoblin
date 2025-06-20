@@ -27,6 +27,8 @@ class QAO_Runtime;
 // Forward-declare the create function:
 template <class T, class... taArgs>
 QAO_Handle<T> QAO_Create(QAO_RuntimeRef aRuntimeRef, taArgs&&... aArgs);
+// Forward-declare the destroy function:
+void QAO_Destroy(QAO_GenericHandle&& aHandle);
 
 class QAO_Base
     : NO_COPY
@@ -68,9 +70,8 @@ private:
     // Befriend `QAO_Create` so that it can call `_setUp()` when needed.
     template <class T, class... taArgs>
     friend QAO_Handle<T> QAO_Create(QAO_RuntimeRef aRuntimeRef, taArgs&&... aArgs);
-    // Befriend `QAO_Handle` so that it can call `_tearDown()` when needed.
-    template <class taObject>
-    friend class QAO_Handle;
+    // Befriend `QAO_Destroy` so that it can call `_tearDown()` when needed.
+    friend void QAO_Destroy(QAO_GenericHandle&& aHandle);
 
     struct Context {
         std::int64_t        stepOrdinal = 0;

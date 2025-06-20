@@ -5,6 +5,7 @@
 
 #include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/QAO/Base.hpp>
+#include <Hobgoblin/QAO/Handle.hpp>
 #include <Hobgoblin/QAO/Runtime.hpp>
 
 #include <utility>
@@ -19,22 +20,26 @@ void QAO_Destroy(QAO_GenericHandle&& aHandle) {
         return;
     }
 
-    auto*      object       = aHandle.ptr();
-    auto*      rt           = object->getRuntime();
-    const bool rtOwnsObject = rt != nullptr && rt->ownsObject(*object);
-    if (!rtOwnsObject && !aHandle.isOwning()) {
+    auto* object = aHandle.ptr();
+    auto* rt     = object->getRuntime();
+
+    auto rtHandle = rt ? MoveToUnderlying(rt->detachObject(*object)) : QAO_GenericHandle{};
+
+    if (aHandle.isOwning()) {
+        aHandle._object   = nullptr;
+        aHandle._isOwning = false;
+    } else if (rtHandle.isOwning()) {
+        rtHandle._object   = nullptr;
+        rtHandle._isOwning = false;
+    } else {
         HG_THROW_TRACED(InvalidArgumentError,
                         0,
                         "Passed handle does not own its object nor does it point to an object owned by "
                         "its runtime.");
     }
 
-    auto rtHandle = MoveToUnderlying(rt->detachObject(*object));
-    if (rtOwnsObject) {
-        HG_HARD_ASSERT(!rtHandle.isNull() && rtHandle.isOwning());
-        rtHandle.reset();
-    }
-    aHandle.reset();
+    object->_tearDown();
+    delete object;
 }
 
 void QAO_Destroy(QAO_Base* aObject) {
@@ -42,16 +47,16 @@ void QAO_Destroy(QAO_Base* aObject) {
         return;
     }
 
-    auto*      rt           = aObject->getRuntime();
-    const bool rtOwnsObject = rt != nullptr && rt->ownsObject(*aObject);
-    if (!rtOwnsObject) {
+    auto* rt       = aObject->getRuntime();
+    auto  rtHandle = rt ? MoveToUnderlying(rt->detachObject(*aObject)) : QAO_GenericHandle{};
+
+    if (rtHandle.isNull() || !rtHandle.isOwning()) {
         HG_THROW_TRACED(InvalidArgumentError,
                         0,
                         "Passed pointer does not point to an object owned by its runtime.");
     }
 
-    auto handle = rt->detachObject(*aObject);
-    MoveToUnderlying(std::move(handle)).reset();
+    // Letting the handle go out of scope will destroy the object
 }
 
 } // namespace qao

@@ -5,6 +5,7 @@
 #define UHOBGOBLIN_QAO_HANDLE_HPP
 
 #include <type_traits>
+#include <utility>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
@@ -13,13 +14,25 @@ namespace qao {
 
 class QAO_Base;
 
+template <class taObject>
+class QAO_Handle;
+
+void QAO_Destroy(QAO_Handle<QAO_Base>&& aHandle);
+
 namespace qao_detail {
 class QAO_HandleFactory;
-
-void DetachFromRuntime(QAO_Base& aObject);
 } // namespace qao_detail
 
-//! TODO(add description)
+//! An instance of this class can point to an object of a class derived from `QAO_Base`.
+//! As such, it can have 3 states:
+//! 1) NULL - it does not point to any object.
+//! 2) Non-NULL, non-owning - it points to an object but does not manage its lifetime. In
+//!    this case, the object is owned by its runtime or by another handle.
+//! 3) Non-NULL, owning - it points to an object and manages its lifetime.
+//!
+//! \warning be careful with non-owning handles as they can become dangling when the object
+//!          is destroyed! Consider letting the runtime own the object and referring to it
+//!          by its ID instead.
 template <class taObject>
 class QAO_Handle {
 public:
@@ -190,10 +203,11 @@ public:
     }
 
     void reset() {
-        if (_isOwning) {
-            _deleteObject();
+        if (_object != nullptr && _isOwning) {
+            QAO_Destroy(std::move(SELF));
         } else {
             _object = nullptr;
+            _isOwning = 0;
         }
     }
 
@@ -201,16 +215,7 @@ private:
     template <class T>
     friend class QAO_Handle;
     friend class qao_detail::QAO_HandleFactory;
-
-    void _deleteObject() {
-        if (_object != nullptr) {
-            qao_detail::DetachFromRuntime(*_object);
-            _object->_tearDown();
-            delete _object;
-            _object = nullptr;
-        }
-        _isOwning = false;
-    }
+    friend void QAO_Destroy(QAO_Handle<QAO_Base>&& aHandle);
 
     taObject* _object   = nullptr;
     bool      _isOwning = false;

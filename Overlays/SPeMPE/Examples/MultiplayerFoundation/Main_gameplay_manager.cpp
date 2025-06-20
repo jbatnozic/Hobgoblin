@@ -33,14 +33,16 @@ MainGameplayManager::MainGameplayManager(QAO_IKey aIKey, int aExecutionPriority)
 {
 }
 
-void MainGameplayManager::_didAttach(QAO_Runtime&) {
+void MainGameplayManager::_didAttach(QAO_Runtime& aRuntime) {
+    NonstateObject::_didAttach(aRuntime);
     auto& netMgr = ccomp<MNetworking>();
     netMgr.addEventListener(this);
     stateBufferingLength = netMgr.getStateBufferingLength();
 }
 
-void MainGameplayManager::_willDetach(QAO_Runtime&) {
+void MainGameplayManager::_willDetach(QAO_Runtime& aRuntime) {
     ccomp<MNetworking>().removeEventListener(this);
+    NonstateObject::_willDetach(aRuntime);
 }
 
 void MainGameplayManager::_eventUpdate1() {

@@ -1,6 +1,7 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
+#include "SPeMPE/GameObjectFramework/Game_object_bases.hpp"
 #include <SPeMPE/Managers/Networking_manager_interface.hpp>
 #include <SPeMPE/Managers/Synced_varmap_manager_default.hpp>
 #include <SPeMPE/Utility/Rpc_receiver_context_template.hpp>
@@ -81,6 +82,7 @@ DefaultSyncedVarmapManager::DefaultSyncedVarmapManager(hobgoblin::QAO_IKey aIKey
 DefaultSyncedVarmapManager::~DefaultSyncedVarmapManager() = default;
 
 void DefaultSyncedVarmapManager::_didAttach(hobgoblin::QAO_Runtime& aRuntime) {
+    NonstateObject::_didAttach(aRuntime);
     _netMgr = &ccomp<NetworkingManagerInterface>();
     _netMgr->addEventListener(this);
 }
@@ -88,6 +90,7 @@ void DefaultSyncedVarmapManager::_didAttach(hobgoblin::QAO_Runtime& aRuntime) {
 void DefaultSyncedVarmapManager::_willDetach(hobgoblin::QAO_Runtime& aRuntime) {
     _netMgr->removeEventListener(this);
     _netMgr = nullptr;
+    NonstateObject::_willDetach(aRuntime);
 }
 
 void DefaultSyncedVarmapManager::setToMode(Mode aMode) {

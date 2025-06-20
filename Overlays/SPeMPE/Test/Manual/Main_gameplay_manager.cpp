@@ -14,7 +14,9 @@ static constexpr auto LOG_ID = "SPeMPE.ManualTest";
 MainGameplayManagerBase::MainGameplayManagerBase(QAO_IKey aIKey)
     : spe::NonstateObject{aIKey, SPEMPE_TYPEID_SELF, PRIORITY_GAMEPLAYMGR, "MainGameplayManager"} {}
 
-void MainGameplayManagerBase::_didAttach(QAO_Runtime&) {
+void MainGameplayManagerBase::_didAttach(QAO_Runtime& aRuntime) {
+    spe::NonstateObject::_didAttach(aRuntime);
+
     const int execPriority = 10;  // not really important for these objects
     const int cycleLength  = 600; // 10 seconds @ 60fps
     {
