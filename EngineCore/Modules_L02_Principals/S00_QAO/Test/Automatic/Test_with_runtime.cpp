@@ -182,6 +182,14 @@ TEST_F(QAO_TestWithRuntime, ObjectCount_WithQAO_Destroy_OwningHandle) {
     ASSERT_EQ(_runtime.getObjectCount(), 0);
 }
 
+TEST_F(QAO_TestWithRuntime, ObjectCount_WithQAO_Destroy_Pointer) {
+    auto* object = QAO_Create<SimpleActiveObject>(_runtime, _numbers, 0).ptr();
+    EXPECT_NE(object, nullptr);
+    ASSERT_EQ(_runtime.getObjectCount(), 1);
+    QAO_Destroy(object);
+    ASSERT_EQ(_runtime.getObjectCount(), 0);
+}
+
 TEST_F(QAO_TestWithRuntime, ObjectCount_WithHandleGoingOutOfScope) {
     {
         auto handle = QAO_Create<SimpleActiveObject>(_runtime.nonOwning(), _numbers, 0);

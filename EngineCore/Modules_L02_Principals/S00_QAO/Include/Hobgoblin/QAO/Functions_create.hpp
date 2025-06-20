@@ -19,7 +19,16 @@
 HOBGOBLIN_NAMESPACE_BEGIN
 namespace qao {
 
-//! TODO: add description
+//! Use this function to create an instance of `T` on the heap, using `operator new`.
+//!
+//! \param aRuntimeRef reference to a runtime to which to attach the object.
+//!                    If NULL, the object will not be attached to any runtime.
+//! \param aArgs parameters that will be forwarded to the constructor of `T` after
+//!              the instantiation guard (`QAO_IKey`).
+//!
+//! \returns handle to the newly created object. If the passed runtime ref was non-NULL and
+//!          owning, the runtime will own the object; thus the returned handle will be
+//!          non-owning. Oherwise the returned handle will own the object.
 template <class T, class... taArgs>
 QAO_Handle<T> QAO_Create(QAO_RuntimeRef aRuntimeRef, taArgs&&... aArgs) {
     QAO_IKey ikey;

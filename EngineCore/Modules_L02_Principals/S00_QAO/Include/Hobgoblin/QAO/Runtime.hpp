@@ -105,9 +105,9 @@ private:
     qao_detail::QAO_Registry _registry;
     qao_detail::QAO_Orderer  _orderer;
     std::int64_t             _step_counter;
-    QAO_Event::Enum          _current_event;
+    QAO_Event::Enum          _currentEvent;
     QAO_OrdererIterator      _step_orderer_iterator;
-    util::AnyPtr             _user_data;
+    util::AnyPtr             _userData;
 };
 
 template <class T>
@@ -144,17 +144,17 @@ T* QAO_Runtime::find(QAO_Id<T> id) const {
 
 template <class T>
 void QAO_Runtime::setUserData(T* value) {
-    _user_data.reset(value);
+    _userData.reset(value);
 }
 
 template <class T>
 T* QAO_Runtime::getUserData() const {
-    return _user_data.get<T>();
+    return _userData.get<T>();
 }
 
 template <class T>
 T* QAO_Runtime::getUserDataOrThrow() const {
-    return _user_data.getOrThrow<T>();
+    return _userData.getOrThrow<T>();
 }
 
 } // namespace qao
