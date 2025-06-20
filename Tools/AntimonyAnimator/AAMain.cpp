@@ -147,8 +147,8 @@ private:
 
 class EditorDriver : public spe::NonstateObject {
 public:
-    EditorDriver(hg::QAO_RuntimeRef aRuntimeRef, int aExecutionPriority)
-        : spe::NonstateObject{aRuntimeRef, SPEMPE_TYPEID_SELF, aExecutionPriority, "EditorDriver"} {}
+    EditorDriver(hg::QAO_IKey aIKey, int aExecutionPriority)
+        : spe::NonstateObject{aIKey, SPEMPE_TYPEID_SELF, aExecutionPriority, "EditorDriver"} {}
 
     void init(Editor& aEditor) {
         _editor = &aEditor;
@@ -215,8 +215,8 @@ std::unique_ptr<spe::GameContext> CreateContex() {
     auto                            ctx = std::make_unique<spe::GameContext>(rtConfig);
 
     // Add a WindowManager
-    auto winMgr = std::make_unique<spe::DefaultWindowManager>(ctx->getQAORuntime().nonOwning(),
-                                                              PRIORITY_WINDOW_MANAGER);
+    auto winMgr = hg::QAO_Create<spe::DefaultWindowManager>(ctx->getQAORuntime().nonOwning(),
+                                                            PRIORITY_WINDOW_MANAGER);
     // clang-format off
     spe::WindowManagerInterface::WindowConfig windowConfig{
         hg::win::VideoMode::getDesktopMode(),
@@ -269,8 +269,8 @@ int main(int argc, char* argv[]) try {
     MasterLoader loader{spriteDir, spriteBaseName, masterCount};
     Editor       editor{loader, masterCount, lerpCount};
 
-    EditorDriver editorDriver{context->getQAORuntime().nonOwning(), PRIORITY_EDITOR_DRIVER};
-    editorDriver.init(editor);
+    auto editorDriver = hg::QAO_Create<EditorDriver>(context->getQAORuntime(), PRIORITY_EDITOR_DRIVER);
+    editorDriver->init(editor);
 
     const auto status = context->runFor(-1);
 
