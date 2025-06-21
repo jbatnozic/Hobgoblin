@@ -26,7 +26,7 @@ public:
     };
 
     NetworkingTelemetryReporter(
-        hobgoblin::QAO_RuntimeRef aRuntimeRef,
+        hobgoblin::QAO_IKey aIKey,
         int aExecutionPriority,
         const Config& aConfig
     );

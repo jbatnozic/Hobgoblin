@@ -6,10 +6,10 @@
 
 #include "Player_character_autodiff.hpp"
 
-AutodiffPlayerCharacter::AutodiffPlayerCharacter(QAO_RuntimeRef aRuntimeRef,
+AutodiffPlayerCharacter::AutodiffPlayerCharacter(QAO_IKey aIKey,
                                                  spe::RegistryId aRegId,
                                                  spe::SyncId aSyncId)
-    : SyncObjSuper{aRuntimeRef, SPEMPE_TYPEID_SELF, PRIORITY_PLAYERAVATAR,
+    : SyncObjSuper{aIKey, SPEMPE_TYPEID_SELF, PRIORITY_PLAYERAVATAR,
                    "AutodiffPlayerCharacter", aRegId, aSyncId}
 {
     if (isMasterObject()) {

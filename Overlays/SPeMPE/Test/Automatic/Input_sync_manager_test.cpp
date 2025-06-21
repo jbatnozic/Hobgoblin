@@ -58,11 +58,11 @@ protected:
     std::unique_ptr<GameContext> _ctx1;
     std::unique_ptr<GameContext> _ctx2;
 
-    std::unique_ptr<NetworkingManagerInterface> _netMgr1;
-    std::unique_ptr<NetworkingManagerInterface> _netMgr2;
+    QAO_Handle<DefaultNetworkingManager> _netMgr1;
+    QAO_Handle<DefaultNetworkingManager> _netMgr2;
 
-    std::unique_ptr<InputSyncManagerInterface> _insMgr1;
-    std::unique_ptr<InputSyncManagerInterface> _insMgr2;
+    QAO_Handle<DefaultInputSyncManager> _insMgr1;
+    QAO_Handle<DefaultInputSyncManager> _insMgr2;
 
     void _setUp(hg::PZInteger aStateBufferingLength) {
         GameContext::RuntimeConfig rc{};
@@ -72,14 +72,14 @@ protected:
         _ctx2->setToMode(GameContext::Mode::Client);
 
         // Add networking managers
-        _netMgr1 = std::make_unique<DefaultNetworkingManager>(_ctx1->getQAORuntime().nonOwning(),
-                                                              PRIORITY_NETMGR,
-                                                              aStateBufferingLength);
+        _netMgr1 = QAO_Create<DefaultNetworkingManager>(_ctx1->getQAORuntime().nonOwning(),
+                                                        PRIORITY_NETMGR,
+                                                        aStateBufferingLength);
         _netMgr1->setToServerMode(RN_Protocol::UDP, "pass", 2, 512, RN_NetworkingStack::Default);
 
-        _netMgr2 = std::make_unique<DefaultNetworkingManager>(_ctx2->getQAORuntime().nonOwning(),
-                                                              PRIORITY_NETMGR,
-                                                              aStateBufferingLength);
+        _netMgr2 = QAO_Create<DefaultNetworkingManager>(_ctx2->getQAORuntime().nonOwning(),
+                                                        PRIORITY_NETMGR,
+                                                        aStateBufferingLength);
         _netMgr2->setToClientMode(RN_Protocol::UDP, "pass", 512, RN_NetworkingStack::Default);
 
         {
@@ -94,12 +94,12 @@ protected:
         _ctx2->attachComponent(*_netMgr2);
 
         // Add input sync managers
-        _insMgr1 = std::make_unique<DefaultInputSyncManager>(_ctx1->getQAORuntime().nonOwning(), PRIORITY_INSMGR);
+        _insMgr1 = QAO_Create<DefaultInputSyncManager>(_ctx1->getQAORuntime().nonOwning(), PRIORITY_INSMGR);
         // aPlayerCount is 2 because player 0 is the local player and player 1 is the actual client
         _insMgr1->setToHostMode(2, aStateBufferingLength);
         _defineInputs(*_insMgr1);
 
-        _insMgr2 = std::make_unique<DefaultInputSyncManager>(_ctx2->getQAORuntime().nonOwning(), PRIORITY_INSMGR);
+        _insMgr2 = QAO_Create<DefaultInputSyncManager>(_ctx2->getQAORuntime().nonOwning(), PRIORITY_INSMGR);
         _insMgr2->setToClientMode();
         _defineInputs(*_insMgr2);
 

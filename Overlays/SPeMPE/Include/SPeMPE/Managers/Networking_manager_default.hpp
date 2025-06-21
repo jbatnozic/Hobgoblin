@@ -21,9 +21,9 @@ class DefaultNetworkingManager
     , public NonstateObject
     , private hg::RN_EventListener {
 public:
-    DefaultNetworkingManager(hg::QAO_RuntimeRef aRuntimeRef,
-                             int                aExecutionPriority,
-                             hg::PZInteger      aStateBufferingLength);
+    DefaultNetworkingManager(hobgoblin::QAO_IKey aIKey,
+                             int                 aExecutionPriority,
+                             hg::PZInteger       aStateBufferingLength);
 
     ~DefaultNetworkingManager() override;
 

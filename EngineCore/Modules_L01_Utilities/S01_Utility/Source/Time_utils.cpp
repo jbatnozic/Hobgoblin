@@ -104,8 +104,8 @@ void PreciseSleep(milliseconds aTimeToSleep) {
     Semaphore sem;
     auto*     semPtr = &sem;
     dispatch_source_set_event_handler(timer, ^{
-        semPtr->signal();
-        dispatch_source_cancel(timer); // prevent further calls of this event handler
+      semPtr->signal();
+      dispatch_source_cancel(timer); // prevent further calls of this event handler
     });
 
     dispatch_resume(timer); // start the timer

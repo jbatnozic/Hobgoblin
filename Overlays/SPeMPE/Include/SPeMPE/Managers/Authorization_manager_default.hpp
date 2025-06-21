@@ -35,7 +35,7 @@ class DefaultAuthorizationManager
     , public NonstateObject
 {
 public:
-    DefaultAuthorizationManager(hobgoblin::QAO_RuntimeRef aRuntimeRef, int aExecutionPriority);
+    DefaultAuthorizationManager(hobgoblin::QAO_IKey aIKey, int aExecutionPriority);
 
     ~DefaultAuthorizationManager() override;
 

@@ -32,8 +32,8 @@ GameContext::~GameContext() {
     //_postStepActions.clear(); TODO
 
     while (!_ownedComponents.empty()) {
-        ContextComponent& component = *_ownedComponents.back();
-        _components.detachComponent(component);
+        const auto& handle = _ownedComponents.back();
+        _components.detachComponent(*handle);
         _ownedComponents.pop_back();
     }
 }

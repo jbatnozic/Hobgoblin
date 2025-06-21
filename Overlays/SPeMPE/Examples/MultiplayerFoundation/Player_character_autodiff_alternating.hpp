@@ -19,7 +19,7 @@ class AutodiffAlternatingPlayerCharacter
     : public spe::SynchronizedObject<AutodiffAlternatingPlayerCharacter_VisibleState>
 {
 public:
-    AutodiffAlternatingPlayerCharacter(QAO_RuntimeRef aRuntimeRef, spe::RegistryId aRegId, spe::SyncId aSyncId);
+    AutodiffAlternatingPlayerCharacter(QAO_IKey aIKey, spe::RegistryId aRegId, spe::SyncId aSyncId);
 
     ~AutodiffAlternatingPlayerCharacter() override;
 

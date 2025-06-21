@@ -37,7 +37,7 @@ void DefaultSyncCreateHandler(hg::RN_NodeInterface& node, SyncId syncId) {
         auto& syncObjReg = *reinterpret_cast<detail::SynchronizedObjectRegistry*>(regId.address);
 
         if (syncObjReg.getMapping(syncId) == nullptr) {
-            hg::QAO_PCreate<taSyncObj>(&runtime, regId, syncId);
+            hg::QAO_Create<taSyncObj>(&runtime, regId, syncId);
         }
     });
 

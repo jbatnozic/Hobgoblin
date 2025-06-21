@@ -453,8 +453,8 @@ private:
 // LOBBY FRONTEND MANAGER                                                //
 ///////////////////////////////////////////////////////////////////////////
 
-LobbyFrontendManager::LobbyFrontendManager(QAO_RuntimeRef aRuntimeRef, int aExecutionPriority)
-    : NonstateObject(aRuntimeRef, SPEMPE_TYPEID_SELF, aExecutionPriority, "LobbyFrontendManager")
+LobbyFrontendManager::LobbyFrontendManager(QAO_IKey aIKey, int aExecutionPriority)
+    : NonstateObject(aIKey, SPEMPE_TYPEID_SELF, aExecutionPriority, "LobbyFrontendManager")
     , _impl{std::make_unique<Impl>(*this)} {}
 
 LobbyFrontendManager::~LobbyFrontendManager() = default;

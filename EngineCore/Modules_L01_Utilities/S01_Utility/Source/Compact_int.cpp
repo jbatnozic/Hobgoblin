@@ -132,8 +132,8 @@ void CompactIntImpl<taValueType>::validateValueRange() {
                             _value);
         }
     } else { // SIGNED
-        static constexpr std::int32_t  MIN_32 = -0x08'00'00'00;
-        static constexpr std::int32_t  MAX_32 = +0x07'FF'FF'FF;
+        static constexpr std::int32_t MIN_32 = -0x08'00'00'00;
+        static constexpr std::int32_t MAX_32 = +0x07'FF'FF'FF;
         static constexpr std::int64_t MIN_64 = -0x00'80'00'00'00'00'00'00;
         static constexpr std::int64_t MAX_64 = +0x00'7F'FF'FF'FF'FF'FF'FF;
 

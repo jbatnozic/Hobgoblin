@@ -20,7 +20,7 @@ namespace util {
 class SlabIndexer { 
 // TODO Separate into .hpp/.cpp
 // TODO Use std::size_t where appropriate
-// TODO This class is a mess
+// TODO This class is a mess -- go through QAO_Registry afterwards and update usage
 public:
     // Construction
     SlabIndexer(PZInteger capacity = 1);

@@ -23,7 +23,7 @@ std::unique_ptr<spe::GameContext> CreateHostGameContext() {
     context->setToMode(spe::GameContext::Mode::GameMaster);
 
     // Create and attach a Multiplayer manager
-    auto netMgr = std::make_unique<spe::DefaultNetworkingManager>(
+    auto netMgr = QAO_Create<spe::DefaultNetworkingManager>(
         context->getQAORuntime().nonOwning(), PRIORITY_NETWORKMGR, 0);
     netMgr->setToServerMode(
         hg::RN_Protocol::UDP, "pass", 3, 4096, hg::RN_NetworkingStack::Default);
@@ -34,8 +34,8 @@ std::unique_ptr<spe::GameContext> CreateHostGameContext() {
     context->attachAndOwnComponent(std::move(netMgr));
 
     // Create and attach a Window manager
-    auto winMgr = std::make_unique<spe::DefaultWindowManager>(context->getQAORuntime().nonOwning(),
-                                                              PRIORITY_WINDOWMGR);
+    auto winMgr = QAO_Create<spe::DefaultWindowManager>(context->getQAORuntime().nonOwning(),
+                                                        PRIORITY_WINDOWMGR);
     winMgr->setToNormalMode(
         spe::WindowManagerInterface::WindowConfig{
             hg::win::VideoMode{WINDOW_WIDTH, WINDOW_HEIGHT},
@@ -53,7 +53,7 @@ std::unique_ptr<spe::GameContext> CreateHostGameContext() {
     context->attachAndOwnComponent(std::move(winMgr));
 
     // Create and attach a Main gameplay manager
-    auto mainGameplayMgr = std::make_unique<MainGameplayManager>(
+    auto mainGameplayMgr = QAO_Create<MainGameplayManager>(
         context->getQAORuntime().nonOwning());
 
     context->attachAndOwnComponent(std::move(mainGameplayMgr));
@@ -68,7 +68,7 @@ std::unique_ptr<spe::GameContext> CreateClientGameContext(std::uint16_t aServerP
     context->setToMode(spe::GameContext::Mode::Client);
 
     // Create and attach a Multiplayer manager
-    auto netMgr = std::make_unique<spe::DefaultNetworkingManager>(
+    auto netMgr = QAO_Create<spe::DefaultNetworkingManager>(
         context->getQAORuntime().nonOwning(), PRIORITY_NETWORKMGR, 0);
     netMgr->setToClientMode(
         hg::RN_Protocol::UDP, "pass", 4096, hg::RN_NetworkingStack::Default);
@@ -79,7 +79,7 @@ std::unique_ptr<spe::GameContext> CreateClientGameContext(std::uint16_t aServerP
     context->attachAndOwnComponent(std::move(netMgr));
 
     // Create and attach a Window manager
-    auto winMgr = std::make_unique<spe::DefaultWindowManager>(context->getQAORuntime().nonOwning(),
+    auto winMgr = QAO_Create<spe::DefaultWindowManager>(context->getQAORuntime().nonOwning(),
                                                               PRIORITY_WINDOWMGR);
     winMgr->setToNormalMode(
         spe::WindowManagerInterface::WindowConfig{
@@ -98,7 +98,7 @@ std::unique_ptr<spe::GameContext> CreateClientGameContext(std::uint16_t aServerP
     context->attachAndOwnComponent(std::move(winMgr));
 
     // Create and attach a Main gameplay manager
-    auto mainGameplayMgr = std::make_unique<MainGameplayManager>(
+    auto mainGameplayMgr = QAO_Create<MainGameplayManager>(
         context->getQAORuntime().nonOwning());
 
     context->attachAndOwnComponent(std::move(mainGameplayMgr));

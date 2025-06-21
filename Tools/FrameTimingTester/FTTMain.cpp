@@ -73,8 +73,8 @@ std::unique_ptr<spe::GameContext> CreateContex() {
     auto                            ctx = std::make_unique<spe::GameContext>(rtConfig);
 
     // Add a WindowManager
-    auto winMgr = std::make_unique<spe::DefaultWindowManager>(ctx->getQAORuntime().nonOwning(),
-                                                              PRIORITY_WINDOW_MANAGER);
+    auto winMgr = hg::QAO_Create<spe::DefaultWindowManager>(ctx->getQAORuntime().nonOwning(),
+                                                            PRIORITY_WINDOW_MANAGER);
     // clang-format off
     spe::WindowManagerInterface::WindowConfig windowConfig{
         hg::win::VideoMode{800, 800},
@@ -107,10 +107,10 @@ std::unique_ptr<spe::GameContext> CreateContex() {
     return ctx;
 }
 
-class Driver : spe::NonstateObject {
+class Driver : public spe::NonstateObject {
 public:
-    Driver(hg::QAO_RuntimeRef aRuntimeRef, int aExecutionPriority)
-        : spe::NonstateObject{aRuntimeRef, SPEMPE_TYPEID_SELF, aExecutionPriority, "Driver"} {}
+    Driver(hg::QAO_IKey aIKey, int aExecutionPriority)
+        : spe::NonstateObject{aIKey, SPEMPE_TYPEID_SELF, aExecutionPriority, "Driver"} {}
 
     void _eventUpdate1() override {
         auto&       winMgr = ccomp<spe::WindowManagerInterface>();
@@ -136,7 +136,7 @@ public:
 void TestWithSPeMPE() {
     auto context = CreateContex();
 
-    Driver driver{context->getQAORuntime().nonOwning(), PRIORITY_EDITOR_DRIVER};
+    auto driver = hg::QAO_Create<Driver>(context->getQAORuntime(), PRIORITY_EDITOR_DRIVER);
 
     context->runFor(-1);
 }
