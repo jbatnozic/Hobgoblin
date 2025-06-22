@@ -13,7 +13,7 @@
 class MainGameplayManagerBase
     : public spe::NonstateObject {
 public:
-    MainGameplayManagerBase(QAO_IKey aIKey);
+    MainGameplayManagerBase(QAO_InstGuard aInstGuard);
 
 protected:
     void _didAttach(QAO_Runtime&) override;
@@ -28,7 +28,7 @@ class MainGameplayManager
     : public MainGameplayManagerInterface
     , public MainGameplayManagerBase {
 public:
-    MainGameplayManager(QAO_IKey aIKey);
+    MainGameplayManager(QAO_InstGuard aInstGuard);
 
 protected:
     void _didAttach(QAO_Runtime&) override;
@@ -42,7 +42,7 @@ class MainGameplayManager
     : public MainGameplayManagerInterface
     , public MainGameplayManagerBase {
 public:
-    MainGameplayManager(QAO_IKey aIKey);
+    MainGameplayManager(QAO_InstGuard aInstGuard);
 
 protected:
     void _didAttach(QAO_Runtime&) override;

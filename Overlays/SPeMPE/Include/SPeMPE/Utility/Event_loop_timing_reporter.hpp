@@ -31,7 +31,7 @@ public:
     };
 
     EventLoopTimingReporter(
-        hobgoblin::QAO_IKey aIKey,
+        hobgoblin::QAO_InstGuard aInstGuard,
         int aExecutionPriority,
         const Config& aConfig
     );

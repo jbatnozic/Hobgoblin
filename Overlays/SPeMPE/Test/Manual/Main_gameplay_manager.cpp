@@ -11,8 +11,8 @@
 
 static constexpr auto LOG_ID = "SPeMPE.ManualTest";
 
-MainGameplayManagerBase::MainGameplayManagerBase(QAO_IKey aIKey)
-    : spe::NonstateObject{aIKey, SPEMPE_TYPEID_SELF, PRIORITY_GAMEPLAYMGR, "MainGameplayManager"} {}
+MainGameplayManagerBase::MainGameplayManagerBase(QAO_InstGuard aInstGuard)
+    : spe::NonstateObject{aInstGuard, SPEMPE_TYPEID_SELF, PRIORITY_GAMEPLAYMGR, "MainGameplayManager"} {}
 
 void MainGameplayManagerBase::_didAttach(QAO_Runtime& aRuntime) {
     spe::NonstateObject::_didAttach(aRuntime);
@@ -39,8 +39,8 @@ void MainGameplayManagerBase::_eventPreUpdate() {
 
 namespace singleplayer {
 
-MainGameplayManager::MainGameplayManager(QAO_IKey aIKey)
-    : MainGameplayManagerBase{aIKey} {}
+MainGameplayManager::MainGameplayManager(QAO_InstGuard aInstGuard)
+    : MainGameplayManagerBase{aInstGuard} {}
 
 void MainGameplayManager::_didAttach(QAO_Runtime& aRuntime) {
     MainGameplayManagerBase::_didAttach(aRuntime);
@@ -55,8 +55,8 @@ void MainGameplayManager::_didAttach(QAO_Runtime& aRuntime) {
 
 namespace multiplayer {
 
-MainGameplayManager::MainGameplayManager(QAO_IKey aIKey)
-    : MainGameplayManagerBase{aIKey} {}
+MainGameplayManager::MainGameplayManager(QAO_InstGuard aInstGuard)
+    : MainGameplayManagerBase{aInstGuard} {}
 
 void MainGameplayManager::_didAttach(QAO_Runtime& aRuntime) {
     MainGameplayManagerBase::_didAttach(aRuntime);

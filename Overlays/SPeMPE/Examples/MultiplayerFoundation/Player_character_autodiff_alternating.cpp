@@ -9,10 +9,10 @@
 #include <Hobgoblin/Logging.hpp>
 #include <iostream>
 
-AutodiffAlternatingPlayerCharacter::AutodiffAlternatingPlayerCharacter(QAO_IKey aIKey,
+AutodiffAlternatingPlayerCharacter::AutodiffAlternatingPlayerCharacter(QAO_InstGuard aInstGuard,
                                                                        spe::RegistryId aRegId,
                                                                        spe::SyncId aSyncId)
-    : SyncObjSuper{aIKey, SPEMPE_TYPEID_SELF, PRIORITY_PLAYERAVATAR,
+    : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, PRIORITY_PLAYERAVATAR,
                    "AutodiffAlternatingPlayerCharacter", aRegId, aSyncId}
 {
     if (isMasterObject()) {

@@ -13,8 +13,8 @@
 namespace jbatnozic {
 namespace spempe {
 
-DefaultWindowManager::DefaultWindowManager(hobgoblin::QAO_IKey aIKey, int aExecutionPriority)
-    : NonstateObject{aIKey,
+DefaultWindowManager::DefaultWindowManager(hobgoblin::QAO_InstGuard aInstGuard, int aExecutionPriority)
+    : NonstateObject{aInstGuard,
                      SPEMPE_TYPEID_SELF,
                      aExecutionPriority,
                      "::jbatnozic::spempe::DefaultWindowManager"}

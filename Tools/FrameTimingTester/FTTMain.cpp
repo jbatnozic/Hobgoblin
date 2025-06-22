@@ -109,8 +109,8 @@ std::unique_ptr<spe::GameContext> CreateContex() {
 
 class Driver : public spe::NonstateObject {
 public:
-    Driver(hg::QAO_IKey aIKey, int aExecutionPriority)
-        : spe::NonstateObject{aIKey, SPEMPE_TYPEID_SELF, aExecutionPriority, "Driver"} {}
+    Driver(hg::QAO_InstGuard aInstGuard, int aExecutionPriority)
+        : spe::NonstateObject{aInstGuard, SPEMPE_TYPEID_SELF, aExecutionPriority, "Driver"} {}
 
     void _eventUpdate1() override {
         auto&       winMgr = ccomp<spe::WindowManagerInterface>();

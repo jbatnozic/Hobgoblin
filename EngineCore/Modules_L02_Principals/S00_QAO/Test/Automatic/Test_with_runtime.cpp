@@ -36,8 +36,8 @@ protected:
 
 class SimpleActiveObject : public QAO_Base {
 public:
-    SimpleActiveObject(QAO_IKey aIKey, std::vector<int>& vec, int number)
-        : QAO_Base{aIKey, TYPEID_SELF, 0, "SimpleActiveObject"}
+    SimpleActiveObject(QAO_InstGuard aInstGuard, std::vector<int>& vec, int number)
+        : QAO_Base{aInstGuard, TYPEID_SELF, 0, "SimpleActiveObject"}
         , _myVec{vec}
         , _myNumber{number} {}
 
@@ -244,8 +244,8 @@ TEST_F(QAO_TestWithRuntime, Ordering) {
 namespace {
 class SimpleActiveObjectWhichDeletesItself : public QAO_Base {
 public:
-    SimpleActiveObjectWhichDeletesItself(QAO_IKey aIKey)
-        : QAO_Base{aIKey, TYPEID_SELF, 0, "SimpleActiveObjectWhichDeletesItself"} {}
+    SimpleActiveObjectWhichDeletesItself(QAO_InstGuard aInstGuard)
+        : QAO_Base{aInstGuard, TYPEID_SELF, 0, "SimpleActiveObjectWhichDeletesItself"} {}
 
     void _eventUpdate1() override {
         if (getRuntime()->ownsObject(*this)) {

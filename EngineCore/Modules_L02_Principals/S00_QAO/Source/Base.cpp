@@ -19,7 +19,10 @@ namespace qao {
 
 static constexpr auto LOG_ID = "Hobgoblin.QAO";
 
-QAO_Base::QAO_Base(QAO_IKey, const std::type_info& typeInfo, int executionPriority, std::string name)
+QAO_Base::QAO_Base(QAO_InstGuard,
+                   const std::type_info& typeInfo,
+                   int                   executionPriority,
+                   std::string           name)
     : _instanceName{std::move(name)}
     , _typeInfo{typeInfo}
     , _executionPriority{executionPriority} {}

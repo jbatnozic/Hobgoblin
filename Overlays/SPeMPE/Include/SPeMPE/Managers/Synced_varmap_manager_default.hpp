@@ -25,7 +25,7 @@ class DefaultSyncedVarmapManager
     , public NonstateObject
     , private NetworkingEventListener {
 public:
-    DefaultSyncedVarmapManager(hobgoblin::QAO_IKey aIKey, int aExecutionPriority);
+    DefaultSyncedVarmapManager(hobgoblin::QAO_InstGuard aInstGuard, int aExecutionPriority);
 
     ~DefaultSyncedVarmapManager() override;
 

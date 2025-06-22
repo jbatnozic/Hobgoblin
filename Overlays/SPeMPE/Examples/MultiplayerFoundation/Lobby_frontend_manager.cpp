@@ -414,7 +414,7 @@ private:
         }
 
         try {
-            // clang-format off
+// clang-format off
             #define THROW_IF_FALSE(_val_)                                                              \
                 do {                                                                                   \
                     if (!(_val_)) {                                                                    \
@@ -453,8 +453,8 @@ private:
 // LOBBY FRONTEND MANAGER                                                //
 ///////////////////////////////////////////////////////////////////////////
 
-LobbyFrontendManager::LobbyFrontendManager(QAO_IKey aIKey, int aExecutionPriority)
-    : NonstateObject(aIKey, SPEMPE_TYPEID_SELF, aExecutionPriority, "LobbyFrontendManager")
+LobbyFrontendManager::LobbyFrontendManager(QAO_InstGuard aInstGuard, int aExecutionPriority)
+    : NonstateObject(aInstGuard, SPEMPE_TYPEID_SELF, aExecutionPriority, "LobbyFrontendManager")
     , _impl{std::make_unique<Impl>(*this)} {}
 
 LobbyFrontendManager::~LobbyFrontendManager() = default;

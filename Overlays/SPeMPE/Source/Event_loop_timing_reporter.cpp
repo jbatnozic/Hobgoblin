@@ -25,10 +25,10 @@ double MsCount(taDuration aDuration) {
 }
 } // namespace
 
-EventLoopTimingReporter::EventLoopTimingReporter(hobgoblin::QAO_IKey aIKey,
+EventLoopTimingReporter::EventLoopTimingReporter(hobgoblin::QAO_InstGuard aInstGuard,
                                                  int aExecutionPriority,
                                                  const Config& aConfig)
-    : NonstateObject{aIKey,
+    : NonstateObject{aInstGuard,
                      SPEMPE_TYPEID_SELF,
                      aExecutionPriority,
                      "EventLoopTimingReporter"}

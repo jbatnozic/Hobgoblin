@@ -23,7 +23,7 @@ class AutodiffPlayerCharacter
     : public spe::SynchronizedObject<AutodiffPlayerCharacter_VisibleState>
 {
 public:
-    AutodiffPlayerCharacter(QAO_IKey aIKey, spe::RegistryId aRegId, spe::SyncId aSyncId);
+    AutodiffPlayerCharacter(QAO_InstGuard aInstGuard, spe::RegistryId aRegId, spe::SyncId aSyncId);
 
     ~AutodiffPlayerCharacter() override;
 

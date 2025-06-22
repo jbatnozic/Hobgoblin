@@ -6,10 +6,10 @@
 
 #include "Player_character_basic.hpp"
 
-BasicPlayerCharacter::BasicPlayerCharacter(QAO_IKey aIKey,
+BasicPlayerCharacter::BasicPlayerCharacter(QAO_InstGuard aInstGuard,
                                            spe::RegistryId aRegId,
                                            spe::SyncId aSyncId)
-    : SyncObjSuper{aIKey, SPEMPE_TYPEID_SELF, PRIORITY_PLAYERAVATAR,
+    : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, PRIORITY_PLAYERAVATAR,
                    "BasicPlayerCharacter", aRegId, aSyncId}
 {
 }

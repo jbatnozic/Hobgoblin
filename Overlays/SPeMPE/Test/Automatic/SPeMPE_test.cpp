@@ -130,8 +130,8 @@ protected:
 //! "Dropped" when an Avatar object dies.
 class AvatarDrop : public NonstateObject {
 public:
-    AvatarDrop(hg::QAO_IKey aIKey)
-        : NonstateObject(aIKey, SPEMPE_TYPEID_SELF, 0, "AvatarDrop")
+    AvatarDrop(hg::QAO_InstGuard aInstGuard)
+        : NonstateObject(aInstGuard, SPEMPE_TYPEID_SELF, 0, "AvatarDrop")
     {
     }
 
@@ -147,10 +147,10 @@ struct Avatar_VisibleState {
 
 class Avatar : public SynchronizedObject<Avatar_VisibleState> {
 public:
-    Avatar(hg::QAO_IKey aIKey,
+    Avatar(hg::QAO_InstGuard aInstGuard,
            RegistryId aRegId,
            SyncId aSyncId)
-        : SyncObjSuper{aIKey, SPEMPE_TYPEID_SELF, 0, "Avatar", aRegId, aSyncId}
+        : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, 0, "Avatar", aRegId, aSyncId}
     {
     }
 
@@ -339,10 +339,10 @@ struct DeactivatingAvatar_VisibleState {
 
 class DeactivatingAvatar : public SynchronizedObject<DeactivatingAvatar_VisibleState> {
 public:
-    DeactivatingAvatar(hg::QAO_IKey aIKey,
+    DeactivatingAvatar(hg::QAO_InstGuard aInstGuard,
                        RegistryId aRegId,
                        SyncId aSyncId)
-        : SyncObjSuper{aIKey, SPEMPE_TYPEID_SELF, 0, "DeactivatingAvatar", aRegId, aSyncId}
+        : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, 0, "DeactivatingAvatar", aRegId, aSyncId}
     {
     }
 
@@ -581,10 +581,10 @@ SPEMPE_DEFINE_AUTODIFF_STATE(AutodiffDeactivatingAvatar_VisibleState,
 class AutodiffDeactivatingAvatar
     : public SynchronizedObject<AutodiffDeactivatingAvatar_VisibleState> {
 public:
-    AutodiffDeactivatingAvatar(hg::QAO_IKey aIKey,
+    AutodiffDeactivatingAvatar(hg::QAO_InstGuard aInstGuard,
                                RegistryId aRegId,
                                SyncId aSyncId)
-        : SyncObjSuper{aIKey, SPEMPE_TYPEID_SELF, 0, "AutodiffDeactivatingAvatar", aRegId, aSyncId}
+        : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, 0, "AutodiffDeactivatingAvatar", aRegId, aSyncId}
     {
         if (isMasterObject()) {
             _getCurrentState().initMirror();

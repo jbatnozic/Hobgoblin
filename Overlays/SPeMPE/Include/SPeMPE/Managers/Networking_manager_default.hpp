@@ -21,7 +21,7 @@ class DefaultNetworkingManager
     , public NonstateObject
     , private hg::RN_EventListener {
 public:
-    DefaultNetworkingManager(hobgoblin::QAO_IKey aIKey,
+    DefaultNetworkingManager(hobgoblin::QAO_InstGuard aInstGuard,
                              int                 aExecutionPriority,
                              hg::PZInteger       aStateBufferingLength);
 
