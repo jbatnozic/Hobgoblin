@@ -9,10 +9,10 @@
 #include <Hobgoblin/Logging.hpp>
 #include <iostream>
 
-AlternatingPlayerCharacter::AlternatingPlayerCharacter(QAO_IKey aIKey,
+AlternatingPlayerCharacter::AlternatingPlayerCharacter(QAO_InstGuard aInstGuard,
                                                        spe::RegistryId aRegId,
                                                        spe::SyncId aSyncId)
-    : SyncObjSuper{aIKey, SPEMPE_TYPEID_SELF, PRIORITY_PLAYERAVATAR,
+    : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, PRIORITY_PLAYERAVATAR,
                    "AlternatingCharacterAlt", aRegId, aSyncId}
 {
     _enableAlternatingUpdates();

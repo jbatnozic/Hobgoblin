@@ -18,8 +18,8 @@
 
 SPEMPE_GENERATE_DEFAULT_SYNC_HANDLERS(BasicActor, (CREATE, UPDATE, DESTROY));
 
-BasicActor::BasicActor(hg::QAO_IKey aIKey, spe::RegistryId aRegId, spe::SyncId aSyncId)
-  : SyncObjSuper{aIKey, SPEMPE_TYPEID_SELF, PRIORITY_ACTOR,
+BasicActor::BasicActor(hg::QAO_InstGuard aInstGuard, spe::RegistryId aRegId, spe::SyncId aSyncId)
+  : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, PRIORITY_ACTOR,
                  "BasicActor", aRegId, aSyncId}
 {
 }
@@ -105,8 +105,8 @@ void BasicActor::_syncDestroyImpl(spe::SyncControlDelegate& aSyncCtrl) const {
 
 SPEMPE_GENERATE_DEFAULT_SYNC_HANDLERS(AutodiffActor, (CREATE, UPDATE, DESTROY));
 
-AutodiffActor::AutodiffActor(hg::QAO_IKey aIKey, spe::RegistryId aRegId, spe::SyncId aSyncId)
-  : SyncObjSuper{aIKey, SPEMPE_TYPEID_SELF, PRIORITY_ACTOR,
+AutodiffActor::AutodiffActor(hg::QAO_InstGuard aInstGuard, spe::RegistryId aRegId, spe::SyncId aSyncId)
+  : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, PRIORITY_ACTOR,
                  "AutodiffActor", aRegId, aSyncId}
 {
     if (isMasterObject()) {
@@ -200,8 +200,8 @@ void AutodiffActor::_syncDestroyImpl(spe::SyncControlDelegate& aSyncCtrl) const 
 
 SPEMPE_GENERATE_DEFAULT_SYNC_HANDLERS(AlternatingActor, (CREATE, UPDATE, DESTROY));
 
-AlternatingActor::AlternatingActor(hg::QAO_IKey aIKey, spe::RegistryId aRegId, spe::SyncId aSyncId)
-  : SyncObjSuper{aIKey, SPEMPE_TYPEID_SELF, PRIORITY_ACTOR,
+AlternatingActor::AlternatingActor(hg::QAO_InstGuard aInstGuard, spe::RegistryId aRegId, spe::SyncId aSyncId)
+  : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, PRIORITY_ACTOR,
                  "AlternatingActor", aRegId, aSyncId}
 {
     _enableAlternatingUpdates();
@@ -292,8 +292,8 @@ void AlternatingActor::_syncDestroyImpl(spe::SyncControlDelegate& aSyncCtrl) con
 
 SPEMPE_GENERATE_DEFAULT_SYNC_HANDLERS(AlternatingAutodiffActor, (CREATE, UPDATE, DESTROY));
 
-AlternatingAutodiffActor::AlternatingAutodiffActor(hg::QAO_IKey aIKey, spe::RegistryId aRegId, spe::SyncId aSyncId)
-  : SyncObjSuper{aIKey, SPEMPE_TYPEID_SELF, PRIORITY_ACTOR,
+AlternatingAutodiffActor::AlternatingAutodiffActor(hg::QAO_InstGuard aInstGuard, spe::RegistryId aRegId, spe::SyncId aSyncId)
+  : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, PRIORITY_ACTOR,
                  "AlternatingAutodiffActor", aRegId, aSyncId}
 {
     _enableAlternatingUpdates();

@@ -21,7 +21,7 @@ class DefaultInputSyncManager
     : public InputSyncManagerInterface
     , public NonstateObject {
 public:
-    DefaultInputSyncManager(hobgoblin::QAO_IKey aIKey, int aExecutionPriority);
+    DefaultInputSyncManager(hobgoblin::QAO_InstGuard aInstGuard, int aExecutionPriority);
 
     void setToHostMode(hg::PZInteger aClientCount, hg::PZInteger aStateBufferingLength) override;
     void setToClientMode() override;

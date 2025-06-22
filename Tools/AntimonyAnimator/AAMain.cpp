@@ -147,8 +147,8 @@ private:
 
 class EditorDriver : public spe::NonstateObject {
 public:
-    EditorDriver(hg::QAO_IKey aIKey, int aExecutionPriority)
-        : spe::NonstateObject{aIKey, SPEMPE_TYPEID_SELF, aExecutionPriority, "EditorDriver"} {}
+    EditorDriver(hg::QAO_InstGuard aInstGuard, int aExecutionPriority)
+        : spe::NonstateObject{aInstGuard, SPEMPE_TYPEID_SELF, aExecutionPriority, "EditorDriver"} {}
 
     void init(Editor& aEditor) {
         _editor = &aEditor;

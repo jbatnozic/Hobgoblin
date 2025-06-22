@@ -58,8 +58,8 @@ RN_DEFINE_RPC(USPEMPE_DefaultInputSyncManager_SendInput, RN_ARGS(hg::util::Packe
         });
 }
 
-DefaultInputSyncManager::DefaultInputSyncManager(hobgoblin::QAO_IKey aIKey, int aExecutionPriority) 
-    : NonstateObject{aIKey, SPEMPE_TYPEID_SELF, aExecutionPriority, "::jbatnozic::spempe::DefaultInputSyncManager"}
+DefaultInputSyncManager::DefaultInputSyncManager(hobgoblin::QAO_InstGuard aInstGuard, int aExecutionPriority) 
+    : NonstateObject{aInstGuard, SPEMPE_TYPEID_SELF, aExecutionPriority, "::jbatnozic::spempe::DefaultInputSyncManager"}
 {
 }
 

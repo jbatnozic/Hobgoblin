@@ -8,7 +8,7 @@
 #include <Hobgoblin/QAO/Config.hpp>
 #include <Hobgoblin/QAO/Handle.hpp>
 #include <Hobgoblin/QAO/Id.hpp>
-#include <Hobgoblin/QAO/Instantiation_key.hpp>
+#include <Hobgoblin/QAO/Instantiation_guard.hpp>
 #include <Hobgoblin/QAO/Orderer.hpp>
 #include <Hobgoblin/Utility/Any_ptr.hpp>
 #include <Hobgoblin/Utility/No_copy_no_move.hpp>
@@ -37,7 +37,7 @@ class QAO_Base
 public:
     QAO_Base() = delete;
 
-    QAO_Base(QAO_IKey              aInstantiationKey,
+    QAO_Base(QAO_InstGuard         aInstGuard,
              const std::type_info& aTypeInfo,
              int                   aExecutionPriority,
              std::string           aName);

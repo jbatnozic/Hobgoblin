@@ -26,7 +26,7 @@ class AlternatingPlayerCharacter
     : public spe::SynchronizedObject<AlternatingPlayerCharacter_VisibleState>
 {
 public:
-    AlternatingPlayerCharacter(QAO_IKey aIKey, spe::RegistryId aRegId, spe::SyncId aSyncId);
+    AlternatingPlayerCharacter(QAO_InstGuard aInstGuard, spe::RegistryId aRegId, spe::SyncId aSyncId);
 
     ~AlternatingPlayerCharacter() override;
 

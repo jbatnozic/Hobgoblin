@@ -13,7 +13,7 @@ class MainGameplayManager
     , public  spe::NonstateObject
     , private spe::NetworkingEventListener {
 public:
-    explicit MainGameplayManager(QAO_IKey aIKey, int aExecutionPriority);
+    explicit MainGameplayManager(QAO_InstGuard aInstGuard, int aExecutionPriority);
 
 private:
     hg::PZInteger stateBufferingLength = 0;

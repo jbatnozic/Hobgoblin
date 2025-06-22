@@ -49,7 +49,7 @@ std::ostream& operator<<(std::ostream& aOS, const AutodiffVisibleState& aVS) {
 
 class BasicActor : public spe::SynchronizedObject<VisibleState> {
 public:
-  BasicActor(hg::QAO_IKey aIKey, spe::RegistryId aRegId, spe::SyncId aSyncId);
+  BasicActor(hg::QAO_InstGuard aInstGuard, spe::RegistryId aRegId, spe::SyncId aSyncId);
   ~BasicActor();
 
   void init(float aX, float aY, hg::gr::Color aColor, std::int8_t aIndex);
@@ -85,7 +85,7 @@ private:
 
 class AutodiffActor : public spe::SynchronizedObject<AutodiffVisibleState> {
 public:
-  AutodiffActor(hg::QAO_IKey aIKey, spe::RegistryId aRegId, spe::SyncId aSyncId);
+  AutodiffActor(hg::QAO_InstGuard aInstGuard, spe::RegistryId aRegId, spe::SyncId aSyncId);
   ~AutodiffActor();
 
   void init(float aX, float aY, hg::gr::Color aColor, std::int8_t aIndex);
@@ -122,7 +122,7 @@ private:
 
 class AlternatingActor : public spe::SynchronizedObject<VisibleState> {
 public:
-  AlternatingActor(hg::QAO_IKey aIKey, spe::RegistryId aRegId, spe::SyncId aSyncId);
+  AlternatingActor(hg::QAO_InstGuard aInstGuard, spe::RegistryId aRegId, spe::SyncId aSyncId);
   ~AlternatingActor();
 
   void init(float aX, float aY, hg::gr::Color aColor, std::int8_t aIndex);
@@ -158,7 +158,7 @@ private:
 
 class AlternatingAutodiffActor : public spe::SynchronizedObject<AutodiffVisibleState> {
 public:
-  AlternatingAutodiffActor(hg::QAO_IKey aIKey, spe::RegistryId aRegId, spe::SyncId aSyncId);
+  AlternatingAutodiffActor(hg::QAO_InstGuard aInstGuard, spe::RegistryId aRegId, spe::SyncId aSyncId);
   ~AlternatingAutodiffActor();
 
   void init(float aX, float aY, hg::gr::Color aColor, std::int8_t aIndex);

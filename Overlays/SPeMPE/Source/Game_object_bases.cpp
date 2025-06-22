@@ -17,13 +17,13 @@ namespace spempe {
 // SYNCHRONIZED OBJECT BASE                                              //
 ///////////////////////////////////////////////////////////////////////////
 
-SynchronizedObjectBase::SynchronizedObjectBase(hg::QAO_IKey aIKey,
+SynchronizedObjectBase::SynchronizedObjectBase(hg::QAO_InstGuard aInstGuard,
                                                const std::type_info& aTypeInfo,
                                                int aExecutionPriority,
                                                std::string aName,
                                                RegistryId aRegId,
                                                SyncId aSyncId)
-    : StateObject{aIKey, aTypeInfo, aExecutionPriority, std::move(aName)}
+    : StateObject{aInstGuard, aTypeInfo, aExecutionPriority, std::move(aName)}
     , _syncObjReg{*reinterpret_cast<detail::SynchronizedObjectRegistry*>(aRegId.address)}
     , _syncId{(aSyncId == SYNC_ID_NEW) ? _syncObjReg.registerMasterObject(this) : aSyncId}
 {

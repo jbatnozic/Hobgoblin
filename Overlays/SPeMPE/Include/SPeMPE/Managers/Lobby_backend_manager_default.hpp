@@ -30,7 +30,7 @@ class DefaultLobbyBackendManager
     , private NetworkingEventListener
 {
 public:
-    DefaultLobbyBackendManager(hobgoblin::QAO_IKey aIKey, int aExecutionPriority);
+    DefaultLobbyBackendManager(hobgoblin::QAO_InstGuard aInstGuard, int aExecutionPriority);
 
     ~DefaultLobbyBackendManager() override;
 

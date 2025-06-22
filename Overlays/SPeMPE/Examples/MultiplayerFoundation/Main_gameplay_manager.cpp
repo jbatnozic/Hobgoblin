@@ -28,8 +28,8 @@ RN_DEFINE_RPC(SetGlobalStateBufferingLength, RN_ARGS(unsigned, aNewLength)) {
         });
 }
 
-MainGameplayManager::MainGameplayManager(QAO_IKey aIKey, int aExecutionPriority)
-    : NonstateObject{aIKey, SPEMPE_TYPEID_SELF, aExecutionPriority, "GameplayManager"}
+MainGameplayManager::MainGameplayManager(QAO_InstGuard aInstGuard, int aExecutionPriority)
+    : NonstateObject{aInstGuard, SPEMPE_TYPEID_SELF, aExecutionPriority, "GameplayManager"}
 {
 }
 

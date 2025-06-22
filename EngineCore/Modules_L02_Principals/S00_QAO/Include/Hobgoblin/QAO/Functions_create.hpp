@@ -8,7 +8,7 @@
 #include <Hobgoblin/QAO/Base.hpp>
 #include <Hobgoblin/QAO/Handle.hpp>
 #include <Hobgoblin/QAO/Id.hpp>
-#include <Hobgoblin/QAO/Instantiation_key.hpp>
+#include <Hobgoblin/QAO/Instantiation_guard.hpp>
 #include <Hobgoblin/QAO/Runtime.hpp>
 #include <Hobgoblin/QAO/Runtime_ref.hpp>
 
@@ -24,15 +24,15 @@ namespace qao {
 //! \param aRuntimeRef reference to a runtime to which to attach the object.
 //!                    If NULL, the object will not be attached to any runtime.
 //! \param aArgs parameters that will be forwarded to the constructor of `T` after
-//!              the instantiation guard (`QAO_IKey`).
+//!              the instantiation guard (`QAO_InstGuard`).
 //!
 //! \returns handle to the newly created object. If the passed runtime ref was non-NULL and
 //!          owning, the runtime will own the object; thus the returned handle will be
 //!          non-owning. Oherwise the returned handle will own the object.
 template <class T, class... taArgs>
 QAO_Handle<T> QAO_Create(QAO_RuntimeRef aRuntimeRef, taArgs&&... aArgs) {
-    QAO_IKey ikey;
-    T*       object = new T(ikey, std::forward<taArgs>(aArgs)...);
+    QAO_InstGuard instGuard;
+    T*            object = new T(instGuard, std::forward<taArgs>(aArgs)...);
 
     bool didSetUp = false;
     try {
