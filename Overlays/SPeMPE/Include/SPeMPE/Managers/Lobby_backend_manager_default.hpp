@@ -121,6 +121,7 @@ private:
 
     void onNetworkingEvent(const hobgoblin::RN_Event& aEvent) override;
 
+    void _didAttach(hobgoblin::QAO_Runtime&) override {};
     void _willDetach(hobgoblin::QAO_Runtime& aRuntime) override; 
 
     void _eventBeginUpdate() override;

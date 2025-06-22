@@ -2,12 +2,15 @@
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
 #include <Hobgoblin/Common.hpp>
+#include <Hobgoblin/Format.hpp>
 #include <Hobgoblin/HGExcept.hpp>
+#include <Hobgoblin/Logging.hpp>
 #include <Hobgoblin/QAO/Base.hpp>
 #include <Hobgoblin/QAO/Runtime.hpp>
 
 #include <cassert>
 #include <cstring>
+#include <exception>
 #include <limits>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
@@ -15,7 +18,10 @@
 HOBGOBLIN_NAMESPACE_BEGIN
 namespace qao {
 
+namespace {
+constexpr auto         LOG_ID           = "Hobgoblin.QAO";
 constexpr std::int64_t MIN_STEP_ORDINAL = std::numeric_limits<std::int64_t>::min(); // TODO to config.hpp
+} // namespace
 
 QAO_Runtime::QAO_Runtime()
     : QAO_Runtime{nullptr} {}
@@ -27,7 +33,7 @@ QAO_Runtime::QAO_Runtime(util::AnyPtr userData)
     , _userData{userData} {}
 
 QAO_Runtime::~QAO_Runtime() {
-    destroyAllOwnedObjects();
+    destroyAllOwnedObjects(NO_PROPAGATE_EXCEPTIONS);
 }
 
 QAO_RuntimeRef QAO_Runtime::nonOwning() {
@@ -156,8 +162,7 @@ AvoidNull<QAO_GenericHandle> QAO_Runtime::detachObject(NeverNull<QAO_GenericHand
     return detachObject(*aObject);
 }
 
-// TODO: option to swallow all exceptions
-void QAO_Runtime::destroyAllOwnedObjects() {
+void QAO_Runtime::destroyAllOwnedObjects(bool aPropagateExceptions) {
     std::vector<QAO_GenericId> objectsToErase;
     for (auto& object : SELF) {
         const auto id = object->getId();
@@ -166,7 +171,40 @@ void QAO_Runtime::destroyAllOwnedObjects() {
         }
     }
     for (auto& id : objectsToErase) {
-        detachObject(id);
+        std::string objectInfo = "?";
+        try {
+            auto handle = MoveToUnderlying(detachObject(id));
+            objectInfo  = fmt::format(FMT_STRING("'{}' of type '{}'"),
+                                     handle->getName(),
+                                     handle->getTypeInfo().name());
+            handle.reset();
+        } catch (const TracedException& ex) {
+            HG_LOG_ERROR(LOG_ID,
+                         "destroyAllOwnedObjects - Encountered an error while detaching and/or "
+                         "destroying object ({}). Details: {}",
+                         objectInfo,
+                         ex.getFormattedDescription());
+            if (aPropagateExceptions) {
+                throw;
+            }
+        } catch (const std::exception& ex) {
+            HG_LOG_ERROR(LOG_ID,
+                         "destroyAllOwnedObjects - Encountered an error while detaching and/or "
+                         "destroying object ({}). Details: {}",
+                         objectInfo,
+                         ex.what());
+            if (aPropagateExceptions) {
+                throw;
+            }
+        } catch (...) {
+            HG_LOG_ERROR(LOG_ID,
+                         "destroyAllOwnedObjects - Encountered an error while detaching and/or "
+                         "destroying object ({}). Details: n/a",
+                         objectInfo);
+            if (aPropagateExceptions) {
+                throw;
+            }
+        }
     }
 }
 
