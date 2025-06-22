@@ -1,6 +1,8 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
+#include <Hobgoblin/Common.hpp>
+#include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/QAO/Base.hpp>
 #include <Hobgoblin/QAO/Runtime.hpp>
 
@@ -35,6 +37,17 @@ QAO_RuntimeRef QAO_Runtime::nonOwning() {
 }
 
 void QAO_Runtime::attachObject(AvoidNull<QAO_GenericHandle> aHandle) {
+    if (HG_UNLIKELY_CONDITION((aHandle->_flags & QAO_Base::SET_UP_PROPERLY) == 0)) {
+        HG_UNLIKELY_BRANCH;
+        HG_THROW_TRACED(AssertionFailedError,
+                        0,
+                        "Object to attach ('{}' of type '{}') wasn't set up properly. Do all derived "
+                        "classes call the "
+                        "_setUp() method of their superclasses?",
+                        aHandle->getName(),
+                        aHandle->getTypeInfo().name());
+    }
+
     HG_VALIDATE_PRECONDITION(aHandle->getRuntime() == nullptr);
 
     QAO_Base* const objRaw = aHandle.underlying().ptr();
@@ -50,9 +63,31 @@ void QAO_Runtime::attachObject(AvoidNull<QAO_GenericHandle> aHandle) {
                         .runtime         = this};
 
     objRaw->_didAttach(SELF);
+
+    if (HG_UNLIKELY_CONDITION((objRaw->_flags & QAO_Base::ATTACHED_PROPERLY) == 0)) {
+        HG_UNLIKELY_BRANCH;
+        HG_THROW_TRACED(AssertionFailedError,
+                        0,
+                        "Object to attach ('{}' of type '{}') wasn't attached properly. Do all derived "
+                        "classes call the "
+                        "_didAttach() method of their superclasses?",
+                        objRaw->getName(),
+                        objRaw->getTypeInfo().name());
+    }
 }
 
 void QAO_Runtime::attachObject(AvoidNull<QAO_GenericHandle> aHandle, QAO_GenericId aSpecificId) {
+    if (HG_UNLIKELY_CONDITION((aHandle->_flags & QAO_Base::SET_UP_PROPERLY) == 0)) {
+        HG_UNLIKELY_BRANCH;
+        HG_THROW_TRACED(AssertionFailedError,
+                        0,
+                        "Object to attach ('{}' of type '{}') wasn't set up properly. Do all derived "
+                        "classes call the "
+                        "_setUp() method of their superclasses?",
+                        aHandle->getName(),
+                        aHandle->getTypeInfo().name());
+    }
+
     HG_VALIDATE_PRECONDITION(aHandle->getRuntime() == nullptr);
 
     QAO_Base* const objRaw = aHandle.underlying().ptr();
@@ -68,6 +103,17 @@ void QAO_Runtime::attachObject(AvoidNull<QAO_GenericHandle> aHandle, QAO_Generic
                         .runtime         = this};
 
     objRaw->_didAttach(SELF);
+
+    if (HG_UNLIKELY_CONDITION((aHandle->_flags & QAO_Base::ATTACHED_PROPERLY) == 0)) {
+        HG_UNLIKELY_BRANCH;
+        HG_THROW_TRACED(AssertionFailedError,
+                        0,
+                        "Object to attach ('{}' of type '{}') wasn't attached properly. Do all derived "
+                        "classes call the "
+                        "_didAttach() method of their superclasses?",
+                        aHandle->getName(),
+                        aHandle->getTypeInfo().name());
+    }
 }
 
 AvoidNull<QAO_GenericHandle> QAO_Runtime::detachObject(QAO_GenericId aId) {
@@ -76,6 +122,16 @@ AvoidNull<QAO_GenericHandle> QAO_Runtime::detachObject(QAO_GenericId aId) {
                              "Object by given ID must exist attached to the Runtime.");
 
     handle->_willDetach(SELF);
+    if (HG_UNLIKELY_CONDITION((handle->_flags & QAO_Base::DETACHED_PROPERLY) == 0)) {
+        HG_UNLIKELY_BRANCH;
+        HG_THROW_TRACED(AssertionFailedError,
+                        0,
+                        "Object to detach ('{}' of type '{}') wasn't detached properly. Do all derived "
+                        "classes call the "
+                        "_willDetach() method of their superclasses?",
+                        handle->getName(),
+                        handle->getTypeInfo().name());
+    }
     handle->_context = QAO_Base::Context{};
 
     const auto index = aId.getIndex();
@@ -100,6 +156,7 @@ AvoidNull<QAO_GenericHandle> QAO_Runtime::detachObject(NeverNull<QAO_GenericHand
     return detachObject(*aObject);
 }
 
+// TODO: option to swallow all exceptions
 void QAO_Runtime::destroyAllOwnedObjects() {
     std::vector<QAO_GenericId> objectsToErase;
     for (auto& object : SELF) {
@@ -117,7 +174,7 @@ void QAO_Runtime::updateExecutionPriorityForObject(QAO_Base& object, int newPrio
     assert(find(object.getId()).ptr() == &object);
 
     _orderer.erase(qao_detail::QAO_HandleFactory::createHandle(&object, false));
-    object._execution_priority = newPriority;
+    object._executionPriority = newPriority;
 
     const auto ord_pair = _orderer.insert(
         qao_detail::QAO_HandleFactory::createHandle(&object,

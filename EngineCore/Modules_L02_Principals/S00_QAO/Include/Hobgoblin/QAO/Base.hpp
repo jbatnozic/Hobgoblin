@@ -14,6 +14,7 @@
 #include <Hobgoblin/Utility/No_copy_no_move.hpp>
 #include <Hobgoblin/Utility/Packet.hpp>
 
+#include <cstdint>
 #include <string>
 #include <typeinfo>
 
@@ -61,10 +62,10 @@ public:
 
 protected:
     // Lifecycle callbacks
-    virtual void _setUp() {}
-    virtual void _tearDown() {}
-    virtual void _didAttach(QAO_Runtime& aRuntime) {}
-    virtual void _willDetach(QAO_Runtime& aRuntime) {}
+    virtual void _setUp();
+    virtual void _tearDown();
+    virtual void _didAttach(QAO_Runtime& aRuntime);
+    virtual void _willDetach(QAO_Runtime& aRuntime);
 
 private:
     // Befriend `QAO_Create` so that it can call `_setUp()` when needed.
@@ -83,7 +84,15 @@ private:
     std::string           _instanceName;
     Context               _context;
     const std::type_info& _typeInfo;
-    int                   _execution_priority;
+    std::int32_t          _executionPriority;
+    std::uint32_t         _flags = 0;
+
+    enum Flags : std::uint32_t {
+        SET_UP_PROPERLY    = (1u << 31u),
+        TORN_DOWN_PROPERLY = (1u << 30u),
+        ATTACHED_PROPERLY  = (1u << 29u),
+        DETACHED_PROPERLY  = (1u << 28u)
+    };
 
     // Update
     virtual void _eventPreUpdate() {}

@@ -3,6 +3,7 @@
 
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/HGExcept.hpp>
+#include <Hobgoblin/Logging.hpp>
 #include <Hobgoblin/QAO/Base.hpp>
 #include <Hobgoblin/QAO/Runtime.hpp>
 #include <Hobgoblin/Utility/Passkey.hpp>
@@ -16,19 +17,54 @@
 HOBGOBLIN_NAMESPACE_BEGIN
 namespace qao {
 
+static constexpr auto LOG_ID = "Hobgoblin.QAO";
+
 QAO_Base::QAO_Base(QAO_IKey, const std::type_info& typeInfo, int executionPriority, std::string name)
     : _instanceName{std::move(name)}
     , _typeInfo{typeInfo}
-    , _execution_priority{executionPriority} {}
+    , _executionPriority{executionPriority} {}
 
-QAO_Base::~QAO_Base() = default;
+QAO_Base::~QAO_Base() {
+    if (HG_UNLIKELY_CONDITION((_flags & TORN_DOWN_PROPERLY) == 0)) {
+        HG_UNLIKELY_BRANCH;
+
+        HG_LOG_ERROR(LOG_ID,
+                     "Object to destroy ('{}' of type '{}') wasn't torn down properly. Do all derived "
+                     "classes call the "
+                     "_tearDown() method of their superclasses?",
+                     getName(),
+                     getTypeInfo().name());
+
+        assert(false && "Object to destroy wasn't torn down properly. Do all derived "
+                        "classes call the "
+                        "_tearDown() method of their superclasses?");
+    }
+}
+
+void QAO_Base::_setUp() {
+    _flags |= SET_UP_PROPERLY;
+}
+
+void QAO_Base::_tearDown() {
+    _flags |= TORN_DOWN_PROPERLY;
+}
+
+void QAO_Base::_didAttach(QAO_Runtime&) {
+    _flags |= ATTACHED_PROPERLY;
+    _flags &= ~DETACHED_PROPERLY;
+}
+
+void QAO_Base::_willDetach(QAO_Runtime&) {
+    _flags |= DETACHED_PROPERLY;
+    _flags &= ~ATTACHED_PROPERLY;
+}
 
 QAO_Runtime* QAO_Base::getRuntime() const noexcept {
     return _context.runtime;
 }
 
 int QAO_Base::getExecutionPriority() const noexcept {
-    return _execution_priority;
+    return _executionPriority;
 }
 
 std::string QAO_Base::getName() const {
@@ -48,13 +84,13 @@ bool QAO_Base::message(int tag, util::AnyPtr context) {
 }
 
 void QAO_Base::setExecutionPriority(int new_priority) {
-    if (_execution_priority == new_priority) {
+    if (_executionPriority == new_priority) {
         return;
     }
     if (_context.runtime != nullptr) {
         _context.runtime->updateExecutionPriorityForObject(SELF, new_priority);
     } else {
-        _execution_priority = new_priority;
+        _executionPriority = new_priority;
     }
 }
 

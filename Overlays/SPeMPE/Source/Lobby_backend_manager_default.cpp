@@ -220,6 +220,7 @@ void DefaultLobbyBackendManager::_willDetach(hobgoblin::QAO_Runtime& aRuntime) {
     if (_mode == Mode::Host) {
         ccomp<NetworkingManagerInterface>().removeEventListener(this);
     }
+    NonstateObject::_willDetach(aRuntime);
 }
 
 void DefaultLobbyBackendManager::setToHostMode(hobgoblin::PZInteger aLobbySize) {
