@@ -52,7 +52,10 @@ public:
     AvoidNull<QAO_GenericHandle> detachObject(QAO_Base& aObject);
     AvoidNull<QAO_GenericHandle> detachObject(NeverNull<QAO_GenericHandle> aObject);
 
-    void destroyAllOwnedObjects();
+    static constexpr bool PROPAGATE_EXCEPTIONS = true;
+    static constexpr bool NO_PROPAGATE_EXCEPTIONS = false;
+
+    void destroyAllOwnedObjects(bool aPropagateExceptions = PROPAGATE_EXCEPTIONS);
 
     template <class T = QAO_Base>
     QAO_Handle<T> find(const std::string& name) const;
