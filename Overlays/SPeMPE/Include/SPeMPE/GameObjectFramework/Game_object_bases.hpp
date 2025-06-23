@@ -6,8 +6,6 @@
 #ifndef SPEMPE_GAME_OBJECT_FRAMEWORK_GAME_OBJECT_BASES_HPP
 #define SPEMPE_GAME_OBJECT_FRAMEWORK_GAME_OBJECT_BASES_HPP
 
-#include "Hobgoblin/Common/Positive_or_zero_integer.hpp"
-#include "Hobgoblin/QAO/Runtime.hpp"
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/QAO.hpp>
 #include <Hobgoblin/Utility/Dynamic_bitset.hpp>
@@ -183,10 +181,6 @@ protected:
     //! states only after a sync.
     bool _didAlternatingUpdatesSync() const;
 
-    hg::PZInteger _getOptimalDelay() const {
-        return _syncObjReg->getDefaultDelay();
-    }
-
 private:
     detail::SynchronizedObjectRegistry* _syncObjReg = nullptr;
     SyncId _syncId = 0;
@@ -282,8 +276,7 @@ protected:
                                 , std::move(aName)
                                 , aSyncId
                                 }
-        , _ssch{0}
-    {}
+        , _ssch{0} {}
 
     taVisibleState& _getCurrentState() {
         assert(isMasterObject() || !isDeactivated());
@@ -311,8 +304,7 @@ protected:
 protected:
     // Lifecycle
     void _didAttach(hg::QAO_Runtime& aRuntime) override {
-        SynchronizedObjectBase::_didAttach(aRuntime);
-        
+        SynchronizedObjectBase::_didAttach(aRuntime);   
         _ssch.getCurrentState().status.isDeactivated = !isMasterObject();
     }
 

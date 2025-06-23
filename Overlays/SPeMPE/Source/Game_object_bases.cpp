@@ -1,12 +1,12 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#include "SPeMPE/GameContext/Game_context.hpp"
-#include "SPeMPE/GameObjectFramework/Synchronized_object_registry.hpp"
-#include "SPeMPE/Managers/Networking_manager_interface.hpp"
-#include <SPeMPE/GameObjectFramework/Game_object_bases.hpp>
-
 #include <Hobgoblin/HGExcept.hpp>
+
+#include <SPeMPE/GameContext/Game_context.hpp>
+#include <SPeMPE/GameObjectFramework/Game_object_bases.hpp>
+#include <SPeMPE/GameObjectFramework/Synchronized_object_registry.hpp>
+#include <SPeMPE/Managers/Networking_manager_interface.hpp>
 
 #include <algorithm>
 
