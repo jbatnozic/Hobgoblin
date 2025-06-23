@@ -6,6 +6,7 @@
 #pragma once
 
 #include "Engine.h"
+#include "SPeMPE/GameObjectFramework/Sync_id.hpp"
 
 #include <Hobgoblin/Utility/Autopack.hpp>
 
@@ -26,7 +27,7 @@ class AlternatingPlayerCharacter
     : public spe::SynchronizedObject<AlternatingPlayerCharacter_VisibleState>
 {
 public:
-    AlternatingPlayerCharacter(QAO_InstGuard aInstGuard, spe::SyncId aSyncId = 0);
+    AlternatingPlayerCharacter(QAO_InstGuard aInstGuard, spe::SyncId aSyncId = spe::SYNC_ID_NEW);
 
     void init(int aOwningPlayerIndex, float aX, float aY);
 

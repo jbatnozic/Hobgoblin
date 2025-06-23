@@ -1,6 +1,7 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
+#include "SPeMPE/GameObjectFramework/Sync_id.hpp"
 #include <Hobgoblin/HGExcept.hpp>
 
 #include <SPeMPE/GameContext/Game_context.hpp>
@@ -29,13 +30,14 @@ SynchronizedObjectBase::~SynchronizedObjectBase() = default;
 void SynchronizedObjectBase::_didAttach(hg::QAO_Runtime& aRuntime) {
     StateObject::_didAttach(aRuntime);
 
-    auto& context = *aRuntime.getUserDataOrThrow<GameContext>();
+    auto& context = *aRuntime.getUserData<GameContext>();
     auto& netMgr  = context.getComponent<NetworkingManagerInterface>();
 
     _syncObjReg = static_cast<detail::SynchronizedObjectRegistry*>(
         netMgr.__spempeimpl_getRegistryAddress().copy());
 
     if (context.isPrivileged()) {
+        assert(_syncId == SYNC_ID_NEW);
         _syncId = _syncObjReg->registerMasterObject(this);
     } else {
         _syncObjReg->registerDummyObject(this, _syncId);
@@ -52,11 +54,12 @@ void SynchronizedObjectBase::_willDetach(hg::QAO_Runtime& aRuntime) {
     _syncObjReg->unregisterObject(this);
 
     _syncObjReg = nullptr;
-    _syncId     = 0;
+    _syncId     = SYNC_ID_NEW;
 
     StateObject::_willDetach(aRuntime);
 }
 
+//! Lowest bit of SyncId 1 on master objects and 0 on dummy objects
 constexpr SyncId SYNC_ID_1 = 1;
 
 SyncId SynchronizedObjectBase::getSyncId() const noexcept {

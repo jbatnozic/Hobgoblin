@@ -6,6 +6,7 @@
 #pragma once
 
 #include "Engine.h"
+#include "SPeMPE/GameObjectFramework/Sync_id.hpp"
 
 #include <cstdint>
 
@@ -19,7 +20,7 @@ class AutodiffAlternatingPlayerCharacter
     : public spe::SynchronizedObject<AutodiffAlternatingPlayerCharacter_VisibleState>
 {
 public:
-    AutodiffAlternatingPlayerCharacter(QAO_InstGuard aInstGuard, spe::SyncId aSyncId = 0);
+    AutodiffAlternatingPlayerCharacter(QAO_InstGuard aInstGuard, spe::SyncId aSyncId = spe::SYNC_ID_NEW);
 
     void init(int aOwningPlayerIndex, float aX, float aY);
 

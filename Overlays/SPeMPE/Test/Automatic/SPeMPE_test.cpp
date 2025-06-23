@@ -147,7 +147,7 @@ struct Avatar_VisibleState {
 
 class Avatar : public SynchronizedObject<Avatar_VisibleState> {
 public:
-    Avatar(hg::QAO_InstGuard aInstGuard, SyncId aSyncId = 0)
+    Avatar(hg::QAO_InstGuard aInstGuard, SyncId aSyncId = SYNC_ID_NEW)
         : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, 0, "Avatar", aSyncId} {}
 
     void _willDetach(hg::QAO_Runtime& aRuntime) override {
@@ -325,7 +325,7 @@ struct DeactivatingAvatar_VisibleState {
 
 class DeactivatingAvatar : public SynchronizedObject<DeactivatingAvatar_VisibleState> {
 public:
-    DeactivatingAvatar(hg::QAO_InstGuard aInstGuard, SyncId aSyncId = 0)
+    DeactivatingAvatar(hg::QAO_InstGuard aInstGuard, SyncId aSyncId = SYNC_ID_NEW)
         : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, 0, "DeactivatingAvatar", aSyncId} {}
 
     int getCustomData() const {
@@ -555,7 +555,7 @@ SPEMPE_DEFINE_AUTODIFF_STATE(AutodiffDeactivatingAvatar_VisibleState,
 class AutodiffDeactivatingAvatar
     : public SynchronizedObject<AutodiffDeactivatingAvatar_VisibleState> {
 public:
-    AutodiffDeactivatingAvatar(hg::QAO_InstGuard aInstGuard, SyncId aSyncId = 0)
+    AutodiffDeactivatingAvatar(hg::QAO_InstGuard aInstGuard, SyncId aSyncId = SYNC_ID_NEW)
         : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, 0, "AutodiffDeactivatingAvatar", aSyncId} {}
 
     int getI0() const {

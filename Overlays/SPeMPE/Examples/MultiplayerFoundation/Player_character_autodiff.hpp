@@ -23,7 +23,7 @@ class AutodiffPlayerCharacter
     : public spe::SynchronizedObject<AutodiffPlayerCharacter_VisibleState>
 {
 public:
-    AutodiffPlayerCharacter(QAO_InstGuard aInstGuard, spe::SyncId aSyncId = 0);
+    AutodiffPlayerCharacter(QAO_InstGuard aInstGuard, spe::SyncId aSyncId = spe::SYNC_ID_NEW);
 
     void init(int aOwningPlayerIndex, float aX, float aY);
 

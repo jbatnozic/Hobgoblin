@@ -26,7 +26,7 @@ class BasicPlayerCharacter
     : public spe::SynchronizedObject<BasicPlayerCharacter_VisibleState>
 {
 public:
-    BasicPlayerCharacter(QAO_InstGuard aInstGuard, spe::SyncId aSyncId = 0);
+    BasicPlayerCharacter(QAO_InstGuard aInstGuard, spe::SyncId aSyncId = spe::SYNC_ID_NEW);
 
     void init(int aOwningPlayerIndex, float aX, float aY);
 

@@ -183,7 +183,7 @@ protected:
 
 private:
     detail::SynchronizedObjectRegistry* _syncObjReg = nullptr;
-    SyncId _syncId = 0;
+    SyncId _syncId;
 
     //! [0] = is it skipped for client 0?
     //! [1] = is it deactivated for client 0?
@@ -309,7 +309,6 @@ protected:
     }
 
 private:
-//protected:
     struct DummyStatus {
         bool isDeactivated = true;
 
