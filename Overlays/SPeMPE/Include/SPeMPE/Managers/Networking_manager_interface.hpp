@@ -81,8 +81,6 @@ public:
     // SYNCHRONIZATION                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    virtual RegistryId getRegistryId() = 0;
-
     virtual hg::PZInteger getStateBufferingLength() const = 0;
 
     //! buffering = 0: no delay, everything displayed immediately
@@ -123,6 +121,9 @@ public:
     ///////////////////////////////////////////////////////////////////////////
 
     virtual int getLocalClientIndex() const = 0;
+
+    //! \warning Internal implementation, do not call in user code!
+    virtual hg::NeverNull<void*> __spempeimpl_getRegistryAddress() = 0;
 
 private:
     SPEMPE_CTXCOMP_TAG("jbatnozic::spempe::NetworkingManagerInterface");

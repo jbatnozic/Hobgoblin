@@ -6,6 +6,7 @@
 #pragma once
 
 #include "Engine.h"
+#include "Hobgoblin/QAO/Runtime.hpp"
 
 #include <cstdint>
 
@@ -19,13 +20,13 @@ class AutodiffAlternatingPlayerCharacter
     : public spe::SynchronizedObject<AutodiffAlternatingPlayerCharacter_VisibleState>
 {
 public:
-    AutodiffAlternatingPlayerCharacter(QAO_InstGuard aInstGuard, spe::RegistryId aRegId, spe::SyncId aSyncId);
-
-    ~AutodiffAlternatingPlayerCharacter() override;
+    AutodiffAlternatingPlayerCharacter(QAO_InstGuard aInstGuard, spe::SyncId aSyncId = 0);
 
     void init(int aOwningPlayerIndex, float aX, float aY);
 
 private:
+    void _didAttach(QAO_Runtime& aRuntime) override;
+
     void _eventUpdate1(spe::IfMaster) override;
     void _eventPostUpdate(spe::IfMaster) override;
     void _eventDraw1() override;

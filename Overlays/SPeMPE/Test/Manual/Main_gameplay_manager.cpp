@@ -45,9 +45,7 @@ MainGameplayManager::MainGameplayManager(QAO_InstGuard aInstGuard)
 void MainGameplayManager::_didAttach(QAO_Runtime& aRuntime) {
     MainGameplayManagerBase::_didAttach(aRuntime);
 
-    auto p = QAO_Create<BasicActor>(aRuntime,
-                                    ccomp<spe::NetworkingManagerInterface>().getRegistryId(),
-                                    spe::SYNC_ID_NEW);
+    auto p = QAO_Create<BasicActor>(aRuntime);
     p->init(32.f, 32.f, hg::gr::COLOR_PURPLE, 0);
 }
 
@@ -62,22 +60,21 @@ void MainGameplayManager::_didAttach(QAO_Runtime& aRuntime) {
     MainGameplayManagerBase::_didAttach(aRuntime);
 
     if (ctx().isPrivileged()) {
-        const auto regId = ccomp<spe::NetworkingManagerInterface>().getRegistryId();
 #if 1
-        auto basicActor = QAO_Create<BasicActor>(aRuntime, regId, spe::SYNC_ID_NEW);
+        auto basicActor = QAO_Create<BasicActor>(aRuntime);
         basicActor->init(32.f, 32.f, hg::gr::COLOR_PURPLE, 0);
 #endif
 #if 1
-        auto autodiffActor = QAO_Create<AutodiffActor>(aRuntime, regId, spe::SYNC_ID_NEW);
+        auto autodiffActor = QAO_Create<AutodiffActor>(aRuntime);
         autodiffActor->init(32.f, 96.f, hg::gr::COLOR_ORANGE, 0);
 #endif
 #if 1
-        auto alternatingActor = QAO_Create<AlternatingActor>(aRuntime, regId, spe::SYNC_ID_NEW);
+        auto alternatingActor = QAO_Create<AlternatingActor>(aRuntime);
         alternatingActor->init(32.f, 160.f, hg::gr::COLOR_ROYAL_BLUE, 0);
 #endif
 #if 1
         auto alternatingAutodiffActor =
-            QAO_Create<AlternatingAutodiffActor>(aRuntime, regId, spe::SYNC_ID_NEW);
+            QAO_Create<AlternatingAutodiffActor>(aRuntime);
         alternatingAutodiffActor->init(32.f, 224.f, hg::gr::COLOR_FOREST_GREEN, 0);
 #endif
     }

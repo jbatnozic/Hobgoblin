@@ -239,7 +239,7 @@ public:
     explicit Impl(LobbyFrontendManager& aLobbyFrontendManager)
         : _super{aLobbyFrontendManager} {}
 
-    ~Impl() {
+    void cleanUp() {
         if (_document) {
             CCOMP<MWindow>().getGUIContext().UnloadDocument(_document);
             _document = nullptr;
@@ -469,6 +469,11 @@ void LobbyFrontendManager::setToClientMode(const std::string& aName, const std::
 
 LobbyFrontendManager::Mode LobbyFrontendManager::getMode() const {
     return _impl->getMode();
+}
+
+void LobbyFrontendManager::_willDetach(QAO_Runtime& aRuntime) {
+    _impl->cleanUp();
+    NonstateObject::_willDetach(aRuntime);
 }
 
 void LobbyFrontendManager::_eventBeginUpdate() {

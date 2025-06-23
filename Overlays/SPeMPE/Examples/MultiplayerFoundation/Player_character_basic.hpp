@@ -26,9 +26,7 @@ class BasicPlayerCharacter
     : public spe::SynchronizedObject<BasicPlayerCharacter_VisibleState>
 {
 public:
-    BasicPlayerCharacter(QAO_InstGuard aInstGuard, spe::RegistryId aRegId, spe::SyncId aSyncId);
-
-    ~BasicPlayerCharacter() override;
+    BasicPlayerCharacter(QAO_InstGuard aInstGuard, spe::SyncId aSyncId = 0);
 
     void init(int aOwningPlayerIndex, float aX, float aY);
 

@@ -233,33 +233,25 @@ std::unique_ptr<spe::GameContext> MakeGameContext(GameMode aGameMode,
             if (i == 0) continue; // host doesn't need a character
             {
                 auto p = QAO_Create<BasicPlayerCharacter>(
-                    context->getQAORuntime(),
-                    context->getComponent<MNetworking>().getRegistryId(),
-                    spe::SYNC_ID_NEW
+                    context->getQAORuntime()
                 );
                 p->init(i, 20.f + i * 40.f, 40.f);
             }
             {
                 auto p = QAO_Create<AutodiffPlayerCharacter>(
-                    context->getQAORuntime(),
-                    context->getComponent<MNetworking>().getRegistryId(),
-                    spe::SYNC_ID_NEW
+                    context->getQAORuntime()
                 );
                 p->init(i, 20.f + i * 40.f, 80.f);
             }
             {
                 auto p = QAO_Create<AlternatingPlayerCharacter>(
-                    context->getQAORuntime(),
-                    context->getComponent<MNetworking>().getRegistryId(),
-                    spe::SYNC_ID_NEW
+                    context->getQAORuntime()
                 );
                 p->init(i, 20.f + i * 40.f, 120.f);
             }
             {
                 auto p = QAO_Create<AutodiffAlternatingPlayerCharacter>(
-                    context->getQAORuntime(),
-                    context->getComponent<MNetworking>().getRegistryId(),
-                    spe::SYNC_ID_NEW
+                    context->getQAORuntime()
                 );
                 p->init(i, 20.f + i * 40.f, 160.f);
             }

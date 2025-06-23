@@ -1,47 +1,32 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-// clang-format off
-
 #include "Actors.hpp"
 #include "Config.hpp"
-#include "Hobgoblin/Graphics/Circle_shape.hpp"
-#include "Hobgoblin/HGExcept/Common_exceptions.hpp"
-#include "Hobgoblin/Math/Angle.hpp"
-#include "SPeMPE/GameObjectFramework/Game_object_bases.hpp"
 
 #include <Hobgoblin/Graphics.hpp>
 
 ///////////////////////////////////////////////////////////////////////////
-// BASIC ACTOR                                                           //
+// MARK: BASIC ACTOR                                                     //
 ///////////////////////////////////////////////////////////////////////////
 
 SPEMPE_GENERATE_DEFAULT_SYNC_HANDLERS(BasicActor, (CREATE, UPDATE, DESTROY));
 
-BasicActor::BasicActor(hg::QAO_InstGuard aInstGuard, spe::RegistryId aRegId, spe::SyncId aSyncId)
-  : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, PRIORITY_ACTOR,
-                 "BasicActor", aRegId, aSyncId}
-{
-}
-
-BasicActor::~BasicActor() {
-    if (isMasterObject()) {
-        doSyncDestroy();
-    }
-}
+BasicActor::BasicActor(hg::QAO_InstGuard aInstGuard, spe::SyncId aSyncId)
+    : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, PRIORITY_ACTOR, "BasicActor", aSyncId} {}
 
 void BasicActor::init(float aX, float aY, hg::gr::Color aColor, std::int8_t aIndex) {
     HG_HARD_ASSERT(isMasterObject());
     auto& self = _getCurrentState();
-    self.x = aX;
-    self.y = aY;
+    self.x     = aX;
+    self.y     = aY;
     self.color = aColor.toInt();
     self.index = aIndex;
 }
 
 void BasicActor::_eventUpdate1(spe::IfMaster) {
-    auto& self = _getCurrentState();
-    int stateDuration = 0;
+    auto& self          = _getCurrentState();
+    int   stateDuration = 0;
     switch (_state) {
     case State::WAIT_LEFT:
         stateDuration = STATE_DURATION_WAIT;
@@ -67,13 +52,15 @@ void BasicActor::_eventUpdate1(spe::IfMaster) {
 
     _durationCounter += 1;
     if (_durationCounter >= stateDuration) {
-        _state = static_cast<State>(((int)_state + 1) % (int)State::STATE_COUNT);
+        _state           = static_cast<State>(((int)_state + 1) % (int)State::STATE_COUNT);
         _durationCounter = 0;
     }
 }
 
 void BasicActor::_eventDraw1() {
-    if (this->isDeactivated()) return;
+    if (this->isDeactivated()) {
+        return;
+    }
 
     auto& winMgr = ccomp<spe::WindowManagerInterface>();
     auto& canvas = winMgr.getCanvas();
@@ -100,38 +87,34 @@ void BasicActor::_syncDestroyImpl(spe::SyncControlDelegate& aSyncCtrl) const {
 }
 
 ///////////////////////////////////////////////////////////////////////////
-// AUTODIFF ACTOR                                                        //
+// MARK: AUTODIFF ACTOR                                                  //
 ///////////////////////////////////////////////////////////////////////////
 
 SPEMPE_GENERATE_DEFAULT_SYNC_HANDLERS(AutodiffActor, (CREATE, UPDATE, DESTROY));
 
-AutodiffActor::AutodiffActor(hg::QAO_InstGuard aInstGuard, spe::RegistryId aRegId, spe::SyncId aSyncId)
-  : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, PRIORITY_ACTOR,
-                 "AutodiffActor", aRegId, aSyncId}
-{
+AutodiffActor::AutodiffActor(hg::QAO_InstGuard aInstGuard, spe::SyncId aSyncId)
+    : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, PRIORITY_ACTOR, "AutodiffActor", aSyncId} {}
+
+void AutodiffActor::_didAttach(hg::QAO_Runtime& aRuntime) {
+    SyncObjSuper::_didAttach(aRuntime);
+
     if (isMasterObject()) {
         _getCurrentState().initMirror();
-    }
-}
-
-AutodiffActor::~AutodiffActor() {
-    if (isMasterObject()) {
-        doSyncDestroy();
     }
 }
 
 void AutodiffActor::init(float aX, float aY, hg::gr::Color aColor, std::int8_t aIndex) {
     HG_HARD_ASSERT(isMasterObject());
     auto& self = _getCurrentState();
-    self.x = aX;
-    self.y = aY;
+    self.x     = aX;
+    self.y     = aY;
     self.color = aColor.toInt();
     self.index = aIndex;
 }
 
 void AutodiffActor::_eventUpdate1(spe::IfMaster) {
-    auto& self = _getCurrentState();
-    int stateDuration = 0;
+    auto& self          = _getCurrentState();
+    int   stateDuration = 0;
     switch (_state) {
     case State::WAIT_LEFT:
         stateDuration = STATE_DURATION_WAIT;
@@ -157,7 +140,7 @@ void AutodiffActor::_eventUpdate1(spe::IfMaster) {
 
     _durationCounter += 1;
     if (_durationCounter >= stateDuration) {
-        _state = static_cast<State>(((int)_state + 1) % (int)State::STATE_COUNT);
+        _state           = static_cast<State>(((int)_state + 1) % (int)State::STATE_COUNT);
         _durationCounter = 0;
     }
 }
@@ -167,7 +150,9 @@ void AutodiffActor::_eventPostUpdate(spe::IfMaster) {
 }
 
 void AutodiffActor::_eventDraw1() {
-    if (this->isDeactivated()) return;
+    if (this->isDeactivated()) {
+        return;
+    }
 
     auto& winMgr = ccomp<spe::WindowManagerInterface>();
     auto& canvas = winMgr.getCanvas();
@@ -193,38 +178,32 @@ void AutodiffActor::_syncDestroyImpl(spe::SyncControlDelegate& aSyncCtrl) const 
     SPEMPE_SYNC_DESTROY_DEFAULT_IMPL(AutodiffActor, aSyncCtrl);
 }
 
-
 ///////////////////////////////////////////////////////////////////////////
-// ALTERNATING ACTOR                                                     //
+// MARK: ALTERNATING ACTOR                                               //
 ///////////////////////////////////////////////////////////////////////////
 
 SPEMPE_GENERATE_DEFAULT_SYNC_HANDLERS(AlternatingActor, (CREATE, UPDATE, DESTROY));
 
-AlternatingActor::AlternatingActor(hg::QAO_InstGuard aInstGuard, spe::RegistryId aRegId, spe::SyncId aSyncId)
-  : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, PRIORITY_ACTOR,
-                 "AlternatingActor", aRegId, aSyncId}
-{
-    _enableAlternatingUpdates();
-}
+AlternatingActor::AlternatingActor(hg::QAO_InstGuard aInstGuard, spe::SyncId aSyncId)
+    : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, PRIORITY_ACTOR, "AlternatingActor", aSyncId} {}
 
-AlternatingActor::~AlternatingActor() {
-    if (isMasterObject()) {
-        doSyncDestroy();
-    }
+void AlternatingActor::_didAttach(hg::QAO_Runtime& aRuntime) {
+    SyncObjSuper::_didAttach(aRuntime);
+    _enableAlternatingUpdates();
 }
 
 void AlternatingActor::init(float aX, float aY, hg::gr::Color aColor, std::int8_t aIndex) {
     HG_HARD_ASSERT(isMasterObject());
     auto& self = _getCurrentState();
-    self.x = aX;
-    self.y = aY;
+    self.x     = aX;
+    self.y     = aY;
     self.color = aColor.toInt();
     self.index = aIndex;
 }
 
 void AlternatingActor::_eventUpdate1(spe::IfMaster) {
-    auto& self = _getCurrentState();
-    int stateDuration = 0;
+    auto& self          = _getCurrentState();
+    int   stateDuration = 0;
     switch (_state) {
     case State::WAIT_LEFT:
         stateDuration = STATE_DURATION_WAIT;
@@ -250,13 +229,15 @@ void AlternatingActor::_eventUpdate1(spe::IfMaster) {
 
     _durationCounter += 1;
     if (_durationCounter >= stateDuration) {
-        _state = static_cast<State>(((int)_state + 1) % (int)State::STATE_COUNT);
+        _state           = static_cast<State>(((int)_state + 1) % (int)State::STATE_COUNT);
         _durationCounter = 0;
     }
 }
 
 void AlternatingActor::_eventDraw1() {
-    if (this->isDeactivated()) return;
+    if (this->isDeactivated()) {
+        return;
+    }
 
     auto& winMgr = ccomp<spe::WindowManagerInterface>();
     auto& canvas = winMgr.getCanvas();
@@ -267,10 +248,7 @@ void AlternatingActor::_eventDraw1() {
     hg::gr::CircleShape circle{32.f};
     circle.setOrigin(32.f, 32.f);
     circle.setFillColor(hg::gr::Color{self_curr.color});
-    circle.setPosition(
-        (self_curr.x + self_next.x) / 2.0,
-        (self_curr.y + self_next.y) / 2.0
-    );
+    circle.setPosition((self_curr.x + self_next.x) / 2.0, (self_curr.y + self_next.y) / 2.0);
     canvas.draw(circle);
 }
 
@@ -287,39 +265,36 @@ void AlternatingActor::_syncDestroyImpl(spe::SyncControlDelegate& aSyncCtrl) con
 }
 
 ///////////////////////////////////////////////////////////////////////////
-// ALTERNATING AUTODIFF ACTOR                                            //
+// MARK: ALTERNATING AUTODIFF ACTOR                                      //
 ///////////////////////////////////////////////////////////////////////////
 
 SPEMPE_GENERATE_DEFAULT_SYNC_HANDLERS(AlternatingAutodiffActor, (CREATE, UPDATE, DESTROY));
 
-AlternatingAutodiffActor::AlternatingAutodiffActor(hg::QAO_InstGuard aInstGuard, spe::RegistryId aRegId, spe::SyncId aSyncId)
-  : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, PRIORITY_ACTOR,
-                 "AlternatingAutodiffActor", aRegId, aSyncId}
-{
+AlternatingAutodiffActor::AlternatingAutodiffActor(hg::QAO_InstGuard aInstGuard, spe::SyncId aSyncId)
+    : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, PRIORITY_ACTOR, "AlternatingAutodiffActor", aSyncId} {
     _enableAlternatingUpdates();
-    if (isMasterObject()) {
-        _getCurrentState().initMirror();
-    }
 }
 
-AlternatingAutodiffActor::~AlternatingAutodiffActor() {
+void AlternatingAutodiffActor::_didAttach(hg::QAO_Runtime& aRuntime) {
+    SyncObjSuper::_didAttach(aRuntime);
+
     if (isMasterObject()) {
-        doSyncDestroy();
+        _getCurrentState().initMirror();
     }
 }
 
 void AlternatingAutodiffActor::init(float aX, float aY, hg::gr::Color aColor, std::int8_t aIndex) {
     HG_HARD_ASSERT(isMasterObject());
     auto& self = _getCurrentState();
-    self.x = aX;
-    self.y = aY;
+    self.x     = aX;
+    self.y     = aY;
     self.color = aColor.toInt();
     self.index = aIndex;
 }
 
 void AlternatingAutodiffActor::_eventUpdate1(spe::IfMaster) {
-    auto& self = _getCurrentState();
-    int stateDuration = 0;
+    auto& self          = _getCurrentState();
+    int   stateDuration = 0;
     switch (_state) {
     case State::WAIT_LEFT:
         stateDuration = STATE_DURATION_WAIT;
@@ -345,7 +320,7 @@ void AlternatingAutodiffActor::_eventUpdate1(spe::IfMaster) {
 
     _durationCounter += 1;
     if (_durationCounter >= stateDuration) {
-        _state = static_cast<State>(((int)_state + 1) % (int)State::STATE_COUNT);
+        _state           = static_cast<State>(((int)_state + 1) % (int)State::STATE_COUNT);
         _durationCounter = 0;
     }
 }
@@ -357,7 +332,9 @@ void AlternatingAutodiffActor::_eventPostUpdate(spe::IfMaster) {
 }
 
 void AlternatingAutodiffActor::_eventDraw1() {
-    if (this->isDeactivated()) return;
+    if (this->isDeactivated()) {
+        return;
+    }
 
     auto& winMgr = ccomp<spe::WindowManagerInterface>();
     auto& canvas = winMgr.getCanvas();
@@ -368,10 +345,7 @@ void AlternatingAutodiffActor::_eventDraw1() {
     hg::gr::CircleShape circle{32.f};
     circle.setOrigin(32.f, 32.f);
     circle.setFillColor(hg::gr::Color{self_curr.color});
-    circle.setPosition(
-        (self_curr.x + self_next.x) / 2.0,
-        (self_curr.y + self_next.y) / 2.0
-    );
+    circle.setPosition((self_curr.x + self_next.x) / 2.0, (self_curr.y + self_next.y) / 2.0);
     canvas.draw(circle);
 }
 
@@ -386,5 +360,3 @@ void AlternatingAutodiffActor::_syncUpdateImpl(spe::SyncControlDelegate& aSyncCt
 void AlternatingAutodiffActor::_syncDestroyImpl(spe::SyncControlDelegate& aSyncCtrl) const {
     SPEMPE_SYNC_DESTROY_DEFAULT_IMPL(AlternatingAutodiffActor, aSyncCtrl);
 }
-
-// clang-format on

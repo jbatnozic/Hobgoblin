@@ -150,10 +150,6 @@ void DefaultNetworkingManager::removeEventListener(
 // SYNCHRONIZATION                                                       //
 ///////////////////////////////////////////////////////////////////////////
 
-RegistryId DefaultNetworkingManager::getRegistryId() {
-    return {reinterpret_cast< decltype(std::declval<RegistryId>().address) >(&_syncObjReg)};
-}
-
 hg::PZInteger DefaultNetworkingManager::getStateBufferingLength() const {
     return _syncObjReg.getDefaultDelay();
 }
@@ -212,6 +208,10 @@ hg::RN_Telemetry DefaultNetworkingManager::getTelemetry(hg::PZInteger aCycleCoun
 
 int DefaultNetworkingManager::getLocalClientIndex() const {
     return _localClientIndex;
+}
+
+hg::NeverNull<void*> DefaultNetworkingManager::__spempeimpl_getRegistryAddress() {
+    return &_syncObjReg;
 }
 
 ///////////////////////////////////////////////////////////////////////////
