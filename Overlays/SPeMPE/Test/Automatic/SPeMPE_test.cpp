@@ -147,18 +147,8 @@ struct Avatar_VisibleState {
 
 class Avatar : public SynchronizedObject<Avatar_VisibleState> {
 public:
-    Avatar(hg::QAO_InstGuard aInstGuard,
-           RegistryId aRegId,
-           SyncId aSyncId)
-        : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, 0, "Avatar", aRegId, aSyncId}
-    {
-    }
-
-    ~Avatar() override {
-        if (isMasterObject()) {
-            doSyncDestroy();
-        }
-    }
+    Avatar(hg::QAO_InstGuard aInstGuard, SyncId aSyncId = 0)
+        : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, 0, "Avatar", aSyncId} {}
 
     void _willDetach(hg::QAO_Runtime& aRuntime) override {
         hg::QAO_Create<AvatarDrop>(aRuntime)->customData = _getCurrentState().customData;
@@ -248,9 +238,7 @@ TEST_F(SPeMPE_SynchronizedTest, BasicFunctionalityTest) {
     {
         SCOPED_TRACE("Add a synchronized Avatar instance to server");
 
-        hg::QAO_Create<Avatar>(&_serverCtx->getQAORuntime(), 
-                               _serverCtx->getComponent<MNetworking>().getRegistryId(),
-                               SYNC_ID_NEW);
+        hg::QAO_Create<Avatar>(&_serverCtx->getQAORuntime());
 
         _serverCtx->runFor(1);
         _clientCtx->runFor(1);
@@ -297,9 +285,7 @@ TEST_F(SPeMPE_SynchronizedTest, BasicFunctionalityTest) {
     {
         SCOPED_TRACE("Check instant sync. obj. destruction after creation");
 
-        auto obj = QAO_Create<Avatar>(&_serverCtx->getQAORuntime(), 
-                                      _serverCtx->getComponent<MNetworking>().getRegistryId(),
-                                      SYNC_ID_NEW);
+        auto obj = QAO_Create<Avatar>(&_serverCtx->getQAORuntime());
         obj->setCustomData(Avatar::VisibleState::CD_INITIAL + 12);
         hg::QAO_Destroy(std::move(obj));
 
@@ -339,18 +325,8 @@ struct DeactivatingAvatar_VisibleState {
 
 class DeactivatingAvatar : public SynchronizedObject<DeactivatingAvatar_VisibleState> {
 public:
-    DeactivatingAvatar(hg::QAO_InstGuard aInstGuard,
-                       RegistryId aRegId,
-                       SyncId aSyncId)
-        : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, 0, "DeactivatingAvatar", aRegId, aSyncId}
-    {
-    }
-
-    ~DeactivatingAvatar() override {
-        if (isMasterObject()) {
-            doSyncDestroy();
-        }
-    }
+    DeactivatingAvatar(hg::QAO_InstGuard aInstGuard, SyncId aSyncId = 0)
+        : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, 0, "DeactivatingAvatar", aSyncId} {}
 
     int getCustomData() const {
         return _getCurrentState().customData;
@@ -435,9 +411,7 @@ TEST_F(SPeMPE_SynchronizedTest, DeactivationTest) {
     {
         SCOPED_TRACE("Add a synchronized DeactivatingAvatar instance to server");
 
-        hg::QAO_Create<DeactivatingAvatar>(&_serverCtx->getQAORuntime(),
-                                           _serverCtx->getComponent<MNetworking>().getRegistryId(),
-                                           SYNC_ID_NEW);
+        hg::QAO_Create<DeactivatingAvatar>(&_serverCtx->getQAORuntime());
 
         _serverCtx->runFor(1);
         _clientCtx->runFor(1);
@@ -581,21 +555,8 @@ SPEMPE_DEFINE_AUTODIFF_STATE(AutodiffDeactivatingAvatar_VisibleState,
 class AutodiffDeactivatingAvatar
     : public SynchronizedObject<AutodiffDeactivatingAvatar_VisibleState> {
 public:
-    AutodiffDeactivatingAvatar(hg::QAO_InstGuard aInstGuard,
-                               RegistryId aRegId,
-                               SyncId aSyncId)
-        : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, 0, "AutodiffDeactivatingAvatar", aRegId, aSyncId}
-    {
-        if (isMasterObject()) {
-            _getCurrentState().initMirror();
-        }
-    }
-
-    ~AutodiffDeactivatingAvatar() override {
-        if (isMasterObject()) {
-            doSyncDestroy();
-        }
-    }
+    AutodiffDeactivatingAvatar(hg::QAO_InstGuard aInstGuard, SyncId aSyncId = 0)
+        : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, 0, "AutodiffDeactivatingAvatar", aSyncId} {}
 
     int getI0() const {
         return _getCurrentState().i0;
@@ -620,6 +581,14 @@ public:
     SyncFilterStatus syncInstruction = SyncFilterStatus::REGULAR_SYNC;
 
 private:
+    void _didAttach(hg::QAO_Runtime& aRuntime) override {
+        SyncObjSuper::_didAttach(aRuntime);
+
+        if (isMasterObject()) {
+            _getCurrentState().initMirror();
+        }
+    }
+
     void _syncCreateImpl(SyncControlDelegate& aSyncCtrl) const override;
     void _syncUpdateImpl(SyncControlDelegate& aSyncCtrl) const override;
     void _syncDestroyImpl(SyncControlDelegate& aSyncCtrl) const override;
@@ -691,9 +660,7 @@ TEST_P(SPeMPE_ParametrizedSynchronizedTest, DeactivationWithAutodiffStateTest) {
     {
         SCOPED_TRACE("Add a synchronized AutodiffDeactivatingAvatar instance to server");
 
-        hg::QAO_Create<AutodiffDeactivatingAvatar>(&_serverCtx->getQAORuntime(),
-                                                   _serverCtx->getComponent<MNetworking>().getRegistryId(),
-                                                   SYNC_ID_NEW);
+        hg::QAO_Create<AutodiffDeactivatingAvatar>(&_serverCtx->getQAORuntime());
 
         _serverCtx->runFor(1);
         _clientCtx->runFor(1);

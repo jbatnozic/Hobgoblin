@@ -70,8 +70,6 @@ public:
     // SYNCHRONIZATION                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    RegistryId getRegistryId() override;
-
     hg::PZInteger getStateBufferingLength() const override;
 
     void setStateBufferingLength(hg::PZInteger aNewStateBufferingLength) override;
@@ -95,6 +93,8 @@ public:
     ///////////////////////////////////////////////////////////////////////////
 
     int getLocalClientIndex() const override;
+
+    hg::NeverNull<void*> __spempeimpl_getRegistryAddress() override;
 
 protected:
     void _eventPreUpdate() override;

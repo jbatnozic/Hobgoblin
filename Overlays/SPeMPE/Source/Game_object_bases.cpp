@@ -1,12 +1,12 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-// clang-format off
-
-
-#include <SPeMPE/GameObjectFramework/Game_object_bases.hpp>
-
 #include <Hobgoblin/HGExcept.hpp>
+
+#include <SPeMPE/GameContext/Game_context.hpp>
+#include <SPeMPE/GameObjectFramework/Game_object_bases.hpp>
+#include <SPeMPE/GameObjectFramework/Synchronized_object_registry.hpp>
+#include <SPeMPE/Managers/Networking_manager_interface.hpp>
 
 #include <algorithm>
 
@@ -14,26 +14,47 @@ namespace jbatnozic {
 namespace spempe {
 
 ///////////////////////////////////////////////////////////////////////////
-// SYNCHRONIZED OBJECT BASE                                              //
+// MARK: SYNCHRONIZED OBJECT BASE                                        //
 ///////////////////////////////////////////////////////////////////////////
 
-SynchronizedObjectBase::SynchronizedObjectBase(hg::QAO_InstGuard aInstGuard,
+SynchronizedObjectBase::SynchronizedObjectBase(hg::QAO_InstGuard     aInstGuard,
                                                const std::type_info& aTypeInfo,
-                                               int aExecutionPriority,
-                                               std::string aName,
-                                               RegistryId aRegId,
-                                               SyncId aSyncId)
-    : StateObject{aInstGuard, aTypeInfo, aExecutionPriority, std::move(aName)}
-    , _syncObjReg{*reinterpret_cast<detail::SynchronizedObjectRegistry*>(aRegId.address)}
-    , _syncId{(aSyncId == SYNC_ID_NEW) ? _syncObjReg.registerMasterObject(this) : aSyncId}
-{
-    if (!isMasterObject()) {
-        _syncObjReg.registerDummyObject(this, _syncId);
+                                               int                   aExecutionPriority,
+                                               std::string           aName,
+                                               SyncId                aSyncId)
+    : StateObject{aInstGuard, aTypeInfo, aExecutionPriority, std::move(aName)}, _syncId(aSyncId) {}
+
+SynchronizedObjectBase::~SynchronizedObjectBase() = default;
+
+void SynchronizedObjectBase::_didAttach(hg::QAO_Runtime& aRuntime) {
+    StateObject::_didAttach(aRuntime);
+
+    auto& context = *aRuntime.getUserDataOrThrow<GameContext>();
+    auto& netMgr  = context.getComponent<NetworkingManagerInterface>();
+
+    _syncObjReg = static_cast<detail::SynchronizedObjectRegistry*>(
+        netMgr.__spempeimpl_getRegistryAddress().copy());
+
+    if (context.isPrivileged()) {
+        _syncId = _syncObjReg->registerMasterObject(this);
+    } else {
+        _syncObjReg->registerDummyObject(this, _syncId);
     }
+
+    _setStateSchedulerDefaultDelay(_syncObjReg->getDefaultDelay());
 }
 
-SynchronizedObjectBase::~SynchronizedObjectBase() {
-    _syncObjReg.unregisterObject(this);
+void SynchronizedObjectBase::_willDetach(hg::QAO_Runtime& aRuntime) {
+    if (isMasterObject()) {
+        _doSyncDestroy();
+    }
+
+    _syncObjReg->unregisterObject(this);
+
+    _syncObjReg = nullptr;
+    _syncId     = 0;
+
+    StateObject::_willDetach(aRuntime);
 }
 
 constexpr SyncId SYNC_ID_1 = 1;
@@ -55,7 +76,7 @@ void SynchronizedObjectBase::__spempeimpl_destroySelfIn(int aStepCount) {
         _deathCounter = 0;
         return;
     }
-    
+
     if (_deathCounter >= 0 && _deathCounter < aStepCount) {
         return;
     }
@@ -63,25 +84,25 @@ void SynchronizedObjectBase::__spempeimpl_destroySelfIn(int aStepCount) {
     _deathCounter = aStepCount;
 }
 
-void SynchronizedObjectBase::doSyncCreate() const {
+void SynchronizedObjectBase::_doSyncCreate() const {
     if (!isMasterObject()) {
         HG_THROW_TRACED(hg::TracedLogicError, 0, "Dummy objects cannot request synchronization.");
     }
-    _syncObjReg.syncObjectCreate(this);
+    _syncObjReg->syncObjectCreate(this);
 }
 
-void SynchronizedObjectBase::doSyncUpdate() const {
+void SynchronizedObjectBase::_doSyncUpdate() const {
     if (!isMasterObject()) {
         HG_THROW_TRACED(hg::TracedLogicError, 0, "Dummy objects cannot request synchronization.");
     }
-    _syncObjReg.syncObjectUpdate(this);
+    _syncObjReg->syncObjectUpdate(this);
 }
 
-void SynchronizedObjectBase::doSyncDestroy() const {
+void SynchronizedObjectBase::_doSyncDestroy() const {
     if (!isMasterObject()) {
         HG_THROW_TRACED(hg::TracedLogicError, 0, "Dummy objects cannot request synchronization");
     }
-    _syncObjReg.syncObjectDestroy(this);
+    _syncObjReg->syncObjectDestroy(this);
 }
 
 bool SynchronizedObjectBase::_willUpdateDeleteThis() const {
@@ -90,22 +111,24 @@ bool SynchronizedObjectBase::_willUpdateDeleteThis() const {
 
 void SynchronizedObjectBase::_enableAlternatingUpdates() {
     _alternatingUpdatesEnabled = true;
-    _setStateSchedulerDefaultDelay(_syncObjReg.getDefaultDelay());
+    if (_syncObjReg != nullptr) {
+        _setStateSchedulerDefaultDelay(_syncObjReg->getDefaultDelay());
+    }
 }
 
 bool SynchronizedObjectBase::_didAlternatingUpdatesSync() const {
     if (ctx().getQAORuntime().getCurrentEvent() != hg::QAO_Event::POST_UPDATE) {
-        HG_THROW_TRACED(hg::TracedLogicError, 0,
+        HG_THROW_TRACED(hg::TracedLogicError,
+                        0,
                         "This method may only be called during the POST_UPDATE event.");
     }
-    return _syncObjReg.getAlternatingUpdatesFlag();
+    return _syncObjReg->getAlternatingUpdatesFlag();
 }
 
 void SynchronizedObjectBase::_eventPreUpdate() {
     if (isMasterObject()) {
         _eventPreUpdate(IfMaster{});
-    }
-    else {
+    } else {
         _eventPreUpdate(IfDummy{});
     }
 }
@@ -113,8 +136,7 @@ void SynchronizedObjectBase::_eventPreUpdate() {
 void SynchronizedObjectBase::_eventBeginUpdate() {
     if (isMasterObject()) {
         _eventBeginUpdate(IfMaster{});
-    }
-    else {
+    } else {
         _eventBeginUpdate(IfDummy{});
     }
 }
@@ -122,14 +144,12 @@ void SynchronizedObjectBase::_eventBeginUpdate() {
 void SynchronizedObjectBase::_eventUpdate1() {
     if (isMasterObject()) {
         _eventUpdate1(IfMaster{});
-    }
-    else {
+    } else {
         _advanceDummyAndScheduleNewStates();
 
         if (_deathCounter > 0) {
             _deathCounter -= 1;
-        }
-        else if (_deathCounter == 0) {
+        } else if (_deathCounter == 0) {
             QAO_Destroy(this);
             return;
         }
@@ -141,8 +161,7 @@ void SynchronizedObjectBase::_eventUpdate1() {
 void SynchronizedObjectBase::_eventUpdate2() {
     if (isMasterObject()) {
         _eventUpdate2(IfMaster{});
-    }
-    else {
+    } else {
         _eventUpdate2(IfDummy{});
     }
 }
@@ -150,8 +169,7 @@ void SynchronizedObjectBase::_eventUpdate2() {
 void SynchronizedObjectBase::_eventEndUpdate() {
     if (isMasterObject()) {
         _eventEndUpdate(IfMaster{});
-    }
-    else {
+    } else {
         _eventEndUpdate(IfDummy{});
     }
 }
@@ -159,8 +177,7 @@ void SynchronizedObjectBase::_eventEndUpdate() {
 void SynchronizedObjectBase::_eventPostUpdate() {
     if (isMasterObject()) {
         _eventPostUpdate(IfMaster{});
-    }
-    else {
+    } else {
         _eventPostUpdate(IfDummy{});
     }
 }
@@ -168,8 +185,7 @@ void SynchronizedObjectBase::_eventPostUpdate() {
 void SynchronizedObjectBase::_eventPreDraw() {
     if (isMasterObject()) {
         _eventPreDraw(IfMaster{});
-    }
-    else {
+    } else {
         _eventPreDraw(IfDummy{});
     }
 }
@@ -177,8 +193,7 @@ void SynchronizedObjectBase::_eventPreDraw() {
 void SynchronizedObjectBase::_eventDraw1() {
     if (isMasterObject()) {
         _eventDraw1(IfMaster{});
-    }
-    else {
+    } else {
         _eventDraw1(IfDummy{});
     }
 }
@@ -186,8 +201,7 @@ void SynchronizedObjectBase::_eventDraw1() {
 void SynchronizedObjectBase::_eventDraw2() {
     if (isMasterObject()) {
         _eventDraw2(IfMaster{});
-    }
-    else {
+    } else {
         _eventDraw2(IfDummy{});
     }
 }
@@ -195,8 +209,7 @@ void SynchronizedObjectBase::_eventDraw2() {
 void SynchronizedObjectBase::_eventDrawGUI() {
     if (isMasterObject()) {
         _eventDrawGUI(IfMaster{});
-    }
-    else {
+    } else {
         _eventDrawGUI(IfDummy{});
     }
 }
@@ -204,8 +217,7 @@ void SynchronizedObjectBase::_eventDrawGUI() {
 void SynchronizedObjectBase::_eventPostDraw() {
     if (isMasterObject()) {
         _eventPostDraw(IfMaster{});
-    }
-    else {
+    } else {
         _eventPostDraw(IfDummy{});
     }
 }
@@ -213,8 +225,7 @@ void SynchronizedObjectBase::_eventPostDraw() {
 void SynchronizedObjectBase::_eventDisplay() {
     if (isMasterObject()) {
         _eventDisplay(IfMaster{});
-    }
-    else {
+    } else {
         _eventDisplay(IfDummy{});
     }
 }
@@ -234,7 +245,8 @@ void SynchronizedObjectBase::__spempeimpl_syncDestroyImpl(SyncControlDelegate& a
 //! Deactivated, Skipped, Autodiff-Skipped
 #define PER_CLIENT_FLAG_COUNT 3
 
-void SynchronizedObjectBase::__spempeimpl_setDeactivationFlagForClient(hg::PZInteger aClientIdx, bool aFlag) const {
+void SynchronizedObjectBase::__spempeimpl_setDeactivationFlagForClient(hg::PZInteger aClientIdx,
+                                                                       bool          aFlag) const {
     const auto bitIdx = (aClientIdx * PER_CLIENT_FLAG_COUNT) + 0;
     if (aFlag) {
         _remoteSyncStatuses.setBit(bitIdx);
@@ -248,7 +260,8 @@ bool SynchronizedObjectBase::__spempeimpl_getDeactivationFlagForClient(hg::PZInt
     return _remoteSyncStatuses.getBit(bitIdx);
 }
 
-void SynchronizedObjectBase::__spempeimpl_setSkipFlagForClient(hg::PZInteger aClientIdx, bool aFlag) const {
+void SynchronizedObjectBase::__spempeimpl_setSkipFlagForClient(hg::PZInteger aClientIdx,
+                                                               bool          aFlag) const {
     const auto bitIdx = (aClientIdx * PER_CLIENT_FLAG_COUNT) + 1;
     if (aFlag) {
         _remoteSyncStatuses.setBit(bitIdx);
@@ -262,7 +275,8 @@ bool SynchronizedObjectBase::__spempeimpl_getSkipFlagForClient(hg::PZInteger aCl
     return _remoteSyncStatuses.getBit(bitIdx);
 }
 
-void SynchronizedObjectBase::__spempeimpl_setNoDiffSkipFlagForClient(hg::PZInteger aClientIdx, bool aFlag) const {
+void SynchronizedObjectBase::__spempeimpl_setNoDiffSkipFlagForClient(hg::PZInteger aClientIdx,
+                                                                     bool          aFlag) const {
     const auto bitIdx = (aClientIdx * PER_CLIENT_FLAG_COUNT) + 2;
     if (aFlag) {
         _remoteSyncStatuses.setBit(bitIdx);
@@ -276,11 +290,10 @@ bool SynchronizedObjectBase::__spempeimpl_getNoDiffSkipFlagForClient(hg::PZInteg
     return _remoteSyncStatuses.getBit(bitIdx);
 }
 
-void SynchronizedObjectBase::__spempeimpl_setStateSchedulerDefaultDelay(hg::PZInteger aNewDefaultDelaySteps) {
+void SynchronizedObjectBase::__spempeimpl_setStateSchedulerDefaultDelay(
+    hg::PZInteger aNewDefaultDelaySteps) {
     _setStateSchedulerDefaultDelay(aNewDefaultDelaySteps);
 }
 
 } // namespace spempe
 } // namespace jbatnozic
-
-// clang-format on

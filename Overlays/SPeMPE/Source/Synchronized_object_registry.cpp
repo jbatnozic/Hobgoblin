@@ -28,8 +28,8 @@ RN_DEFINE_RPC(USPEMPE_DeactivateObject, RN_ARGS(SyncId, aSyncId)) {
     RN_NODE_IN_HANDLER().callIfClient(
         [=](hg::RN_ClientInterface& aClient) {
             const auto rc    = SPEMPE_GET_RPC_RECEIVER_CONTEXT(aClient);
-            auto  regId      = rc.netwMgr.getRegistryId();
-            auto& syncObjReg = *reinterpret_cast<detail::SynchronizedObjectRegistry*>(regId.address);
+            auto  regAddr    = rc.netwMgr.__spempeimpl_getRegistryAddress();
+            auto& syncObjReg = *static_cast<detail::SynchronizedObjectRegistry*>(regAddr.copy());
 
             syncObjReg.deactivateObject(aSyncId, rc.pessimisticLatencyInSteps);
         });

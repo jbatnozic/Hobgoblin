@@ -10,18 +10,11 @@
 #include <iostream>
 
 AlternatingPlayerCharacter::AlternatingPlayerCharacter(QAO_InstGuard aInstGuard,
-                                                       spe::RegistryId aRegId,
                                                        spe::SyncId aSyncId)
     : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, PRIORITY_PLAYERAVATAR,
-                   "AlternatingCharacterAlt", aRegId, aSyncId}
+                   "AlternatingCharacterAlt", aSyncId}
 {
     _enableAlternatingUpdates();
-}
-
-AlternatingPlayerCharacter::~AlternatingPlayerCharacter() {
-    if (isMasterObject()) {
-        doSyncDestroy();
-    }
 }
 
 void AlternatingPlayerCharacter::init(int aOwningPlayerIndex, float aX, float aY) {

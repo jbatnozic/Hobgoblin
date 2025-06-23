@@ -3,23 +3,19 @@
 
 // clang-format off
 
-
 #include "Player_character_autodiff.hpp"
 
 AutodiffPlayerCharacter::AutodiffPlayerCharacter(QAO_InstGuard aInstGuard,
-                                                 spe::RegistryId aRegId,
                                                  spe::SyncId aSyncId)
     : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, PRIORITY_PLAYERAVATAR,
-                   "AutodiffPlayerCharacter", aRegId, aSyncId}
+                   "AutodiffPlayerCharacter", aSyncId}
 {
-    if (isMasterObject()) {
-        _getCurrentState().initMirror();
-    }
 }
 
-AutodiffPlayerCharacter::~AutodiffPlayerCharacter() {
+void AutodiffPlayerCharacter::_didAttach(QAO_Runtime& aRuntime) {
+    SyncObjSuper::_didAttach(aRuntime);
     if (isMasterObject()) {
-        doSyncDestroy();
+        _getCurrentState().initMirror();
     }
 }
 

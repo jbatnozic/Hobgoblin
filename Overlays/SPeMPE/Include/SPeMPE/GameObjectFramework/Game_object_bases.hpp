@@ -94,12 +94,11 @@ struct IfDummy  {};
 class SynchronizedObjectBase : public StateObject {
 public:
     //! Big scary constructor with way too many arguments.
-    SynchronizedObjectBase(hg::QAO_InstGuard aInstGuard,
+    SynchronizedObjectBase(hg::QAO_InstGuard     aInstGuard,
                            const std::type_info& aTypeInfo,
-                           int aExecutionPriority,
-                           std::string aName,
-                           RegistryId aRegId,
-                           SyncId aSyncId);
+                           int                   aExecutionPriority,
+                           std::string           aName,
+                           SyncId                aSyncId);
 
     ~SynchronizedObjectBase() override;
 
@@ -112,9 +111,14 @@ public:
 protected:
     // Call the following to sync this object's creation/update/destruction right away.
 
-    void doSyncCreate() const;
-    void doSyncUpdate() const;
-    void doSyncDestroy() const;
+    void _doSyncCreate() const;
+    void _doSyncUpdate() const;
+    void _doSyncDestroy() const;
+
+    // Lifecycle
+
+    void _didAttach(hg::QAO_Runtime& aRuntime) override;
+    void _willDetach(hg::QAO_Runtime& aRuntime) override;
 
     // These overloads will be called if the object is a Master object 
     // (that is, executing in a Privileged context).
@@ -178,8 +182,8 @@ protected:
     bool _didAlternatingUpdatesSync() const;
 
 private:
-    detail::SynchronizedObjectRegistry& _syncObjReg;
-    const SyncId _syncId;
+    detail::SynchronizedObjectRegistry* _syncObjReg = nullptr;
+    SyncId _syncId = 0;
 
     //! [0] = is it skipped for client 0?
     //! [1] = is it deactivated for client 0?
@@ -261,28 +265,18 @@ public:
 protected:
     using SyncObjSuper = SynchronizedObject;
 
-    SynchronizedObject(hg::QAO_InstGuard aInstGuard,
+    SynchronizedObject(hg::QAO_InstGuard     aInstGuard,
                        const std::type_info& aTypeInfo,
-                       int aExecutionPriority,
-                       std::string aName,
-                       RegistryId aRegId,
-                       SyncId aSyncId = SYNC_ID_NEW)
+                       int                   aExecutionPriority,
+                       std::string           aName,
+                       SyncId                aSyncId = SYNC_ID_NEW)
         : SynchronizedObjectBase{ aInstGuard
                                 , aTypeInfo
                                 , aExecutionPriority
                                 , std::move(aName)
-                                , aRegId
                                 , aSyncId
                                 }
-        , _ssch{
-            isMasterObject() ? 0 // Masters don't need state scheduling
-                             : reinterpret_cast<detail::SynchronizedObjectRegistry*>(
-                                   aRegId.address
-                               )->getDefaultDelay()
-        }
-    {
-        _ssch.getCurrentState().status.isDeactivated = !isMasterObject();
-    }
+        , _ssch{0} {}
 
     taVisibleState& _getCurrentState() {
         assert(isMasterObject() || !isDeactivated());
@@ -307,8 +301,15 @@ protected:
         return const_cast<SynchronizedObject*>(this)->_getFollowingState();
     }
 
-//private:
 protected:
+    // Lifecycle
+    void _didAttach(hg::QAO_Runtime& aRuntime) override {
+        SynchronizedObjectBase::_didAttach(aRuntime);   
+        _ssch.getCurrentState().status.isDeactivated = !isMasterObject();
+    }
+
+private:
+//protected:
     struct DummyStatus {
         bool isDeactivated = true;
 
