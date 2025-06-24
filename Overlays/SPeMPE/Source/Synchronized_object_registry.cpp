@@ -28,8 +28,8 @@ RN_DEFINE_RPC(USPEMPE_DeactivateObject, RN_ARGS(SyncId, aSyncId)) {
     RN_NODE_IN_HANDLER().callIfClient(
         [=](hg::RN_ClientInterface& aClient) {
             const auto rc    = SPEMPE_GET_RPC_RECEIVER_CONTEXT(aClient);
-            auto  regId      = rc.netwMgr.getRegistryId();
-            auto& syncObjReg = *reinterpret_cast<detail::SynchronizedObjectRegistry*>(regId.address);
+            auto  regAddr    = rc.netwMgr.__spempeimpl_getRegistryAddress();
+            auto& syncObjReg = *static_cast<detail::SynchronizedObjectRegistry*>(regAddr.copy());
 
             syncObjReg.deactivateObject(aSyncId, rc.pessimisticLatencyInSteps);
         });
@@ -343,16 +343,16 @@ void SynchronizedObjectRegistry::unregisterObject(SynchronizedObjectBase* object
 }
 
 void SynchronizedObjectRegistry::destroyAllRegisteredObjects() {
-    std::vector<SynchronizedObjectBase*> objectsToDelete;
+    std::vector<hg::QAO_GenericId> objectsToDelete;
     objectsToDelete.reserve(_mappings.size());
     for (const auto pair : _mappings) {
-        objectsToDelete.push_back(pair.second);
+        objectsToDelete.push_back(pair.second->getId());
     }
 
     auto& rt = _node->getUserDataOrThrow<GameContext>()->getQAORuntime();
-    for (auto* object : objectsToDelete) {
-        if (rt.ownsObject(object)) {
-            rt.eraseObject(object);
+    for (const auto& id : objectsToDelete) {
+        if (rt.ownsObject(id)) {
+            rt.detachObject(id);
         }
     }
 

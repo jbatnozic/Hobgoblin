@@ -17,10 +17,10 @@ namespace {
 constexpr const char* LOG_ID = "SPeMPE";
 } // namespace
 
-DefaultNetworkingManager::DefaultNetworkingManager(hg::QAO_RuntimeRef aRuntimeRef,
-                                                   int                aExecutionPriority,
-                                                   hg::PZInteger      aStateBufferingLength)
-    : NonstateObject{aRuntimeRef,
+DefaultNetworkingManager::DefaultNetworkingManager(hobgoblin::QAO_InstGuard aInstGuard,
+                                                   int                      aExecutionPriority,
+                                                   hg::PZInteger            aStateBufferingLength)
+    : NonstateObject{aInstGuard,
                      SPEMPE_TYPEID_SELF,
                      aExecutionPriority,
                      "::jbatnozic::spempe::DefaultNetworkingManager"}
@@ -150,10 +150,6 @@ void DefaultNetworkingManager::removeEventListener(
 // SYNCHRONIZATION                                                       //
 ///////////////////////////////////////////////////////////////////////////
 
-RegistryId DefaultNetworkingManager::getRegistryId() {
-    return {reinterpret_cast< decltype(std::declval<RegistryId>().address) >(&_syncObjReg)};
-}
-
 hg::PZInteger DefaultNetworkingManager::getStateBufferingLength() const {
     return _syncObjReg.getDefaultDelay();
 }
@@ -212,6 +208,10 @@ hg::RN_Telemetry DefaultNetworkingManager::getTelemetry(hg::PZInteger aCycleCoun
 
 int DefaultNetworkingManager::getLocalClientIndex() const {
     return _localClientIndex;
+}
+
+hg::NeverNull<void*> DefaultNetworkingManager::__spempeimpl_getRegistryAddress() {
+    return &_syncObjReg;
 }
 
 ///////////////////////////////////////////////////////////////////////////

@@ -21,9 +21,9 @@ class DefaultNetworkingManager
     , public NonstateObject
     , private hg::RN_EventListener {
 public:
-    DefaultNetworkingManager(hg::QAO_RuntimeRef aRuntimeRef,
-                             int                aExecutionPriority,
-                             hg::PZInteger      aStateBufferingLength);
+    DefaultNetworkingManager(hobgoblin::QAO_InstGuard aInstGuard,
+                             int                 aExecutionPriority,
+                             hg::PZInteger       aStateBufferingLength);
 
     ~DefaultNetworkingManager() override;
 
@@ -70,8 +70,6 @@ public:
     // SYNCHRONIZATION                                                       //
     ///////////////////////////////////////////////////////////////////////////
 
-    RegistryId getRegistryId() override;
-
     hg::PZInteger getStateBufferingLength() const override;
 
     void setStateBufferingLength(hg::PZInteger aNewStateBufferingLength) override;
@@ -95,6 +93,8 @@ public:
     ///////////////////////////////////////////////////////////////////////////
 
     int getLocalClientIndex() const override;
+
+    hg::NeverNull<void*> __spempeimpl_getRegistryAddress() override;
 
 protected:
     void _eventPreUpdate() override;

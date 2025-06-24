@@ -239,7 +239,7 @@ public:
     explicit Impl(LobbyFrontendManager& aLobbyFrontendManager)
         : _super{aLobbyFrontendManager} {}
 
-    ~Impl() {
+    void cleanUp() {
         if (_document) {
             CCOMP<MWindow>().getGUIContext().UnloadDocument(_document);
             _document = nullptr;
@@ -414,7 +414,7 @@ private:
         }
 
         try {
-            // clang-format off
+// clang-format off
             #define THROW_IF_FALSE(_val_)                                                              \
                 do {                                                                                   \
                     if (!(_val_)) {                                                                    \
@@ -453,8 +453,8 @@ private:
 // LOBBY FRONTEND MANAGER                                                //
 ///////////////////////////////////////////////////////////////////////////
 
-LobbyFrontendManager::LobbyFrontendManager(QAO_RuntimeRef aRuntimeRef, int aExecutionPriority)
-    : NonstateObject(aRuntimeRef, SPEMPE_TYPEID_SELF, aExecutionPriority, "LobbyFrontendManager")
+LobbyFrontendManager::LobbyFrontendManager(QAO_InstGuard aInstGuard, int aExecutionPriority)
+    : NonstateObject(aInstGuard, SPEMPE_TYPEID_SELF, aExecutionPriority, "LobbyFrontendManager")
     , _impl{std::make_unique<Impl>(*this)} {}
 
 LobbyFrontendManager::~LobbyFrontendManager() = default;
@@ -469,6 +469,11 @@ void LobbyFrontendManager::setToClientMode(const std::string& aName, const std::
 
 LobbyFrontendManager::Mode LobbyFrontendManager::getMode() const {
     return _impl->getMode();
+}
+
+void LobbyFrontendManager::_willDetach(QAO_Runtime& aRuntime) {
+    _impl->cleanUp();
+    NonstateObject::_willDetach(aRuntime);
 }
 
 void LobbyFrontendManager::_eventBeginUpdate() {

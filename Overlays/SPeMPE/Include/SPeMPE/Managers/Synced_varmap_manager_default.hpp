@@ -25,7 +25,7 @@ class DefaultSyncedVarmapManager
     , public NonstateObject
     , private NetworkingEventListener {
 public:
-    DefaultSyncedVarmapManager(hg::QAO_RuntimeRef aRuntimeRef, int aExecutionPriority);
+    DefaultSyncedVarmapManager(hobgoblin::QAO_InstGuard aInstGuard, int aExecutionPriority);
 
     ~DefaultSyncedVarmapManager() override;
 
@@ -87,7 +87,7 @@ private:
         hobgoblin::util::DynamicBitset permissions = {};
     };
 
-    NetworkingManagerInterface& _netMgr;
+    NetworkingManagerInterface* _netMgr = nullptr;
 
     Mode _mode = Mode::Uninitialized;
 
@@ -97,6 +97,8 @@ private:
 
     hobgoblin::util::Packet _stateUpdates;
 
+    void _didAttach(hobgoblin::QAO_Runtime& aRuntime) override;
+    void _willDetach(hobgoblin::QAO_Runtime& aRuntime) override;
     void _eventEndUpdate() override;
 
     static void _packValue(const std::string& aKey, 

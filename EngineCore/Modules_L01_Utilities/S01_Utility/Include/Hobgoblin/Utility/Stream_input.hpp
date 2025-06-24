@@ -355,7 +355,7 @@ inline std::int64_t InputStream::read(NeverNull<void*> aDestination,
                                       std::int64_t     aByteCount,
                                       bool             aAllowPartal) {
     const auto result = _read(aDestination, aByteCount, aAllowPartal);
-    if (result > 0) {
+    if (result > 0 || (result == 0 && aByteCount == 0)) {
         // Do nothing
     } else if (result == E_FAILURE || (!aAllowPartal && result == 0)) {
         _setReadError();

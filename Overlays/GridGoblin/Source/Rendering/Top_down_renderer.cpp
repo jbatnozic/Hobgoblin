@@ -191,7 +191,7 @@ void TopDownRenderer::CellToRenderedObjectAdapter::render(hg::gr::Canvas& aCanva
 
         sprite.setScale(xscale, yscale);
     }
-    
+
     aCanvas.draw(sprite);
 }
 

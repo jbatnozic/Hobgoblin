@@ -209,15 +209,18 @@ bool DefaultLobbyBackendManager::ExtendedPlayerInfo::isSameAs(const hg::RN_Conne
     return (ip_ == ipAddress && port_ == port);
 }
 
-DefaultLobbyBackendManager::DefaultLobbyBackendManager(hg::QAO_RuntimeRef aRuntimeRef, int aExecutionPriority)
-    : NonstateObject(aRuntimeRef, SPEMPE_TYPEID_SELF, aExecutionPriority, "::jbatnozic::spempe::DefaultLobbyBackendManager")
+DefaultLobbyBackendManager::DefaultLobbyBackendManager(hobgoblin::QAO_InstGuard aInstGuard, int aExecutionPriority)
+    : NonstateObject(aInstGuard, SPEMPE_TYPEID_SELF, aExecutionPriority, "::jbatnozic::spempe::DefaultLobbyBackendManager")
 {    
 }
 
-DefaultLobbyBackendManager::~DefaultLobbyBackendManager() {
+DefaultLobbyBackendManager::~DefaultLobbyBackendManager() = default;
+
+void DefaultLobbyBackendManager::_willDetach(hobgoblin::QAO_Runtime& aRuntime) {
     if (_mode == Mode::Host) {
         ccomp<NetworkingManagerInterface>().removeEventListener(this);
     }
+    NonstateObject::_willDetach(aRuntime);
 }
 
 void DefaultLobbyBackendManager::setToHostMode(hobgoblin::PZInteger aLobbySize) {

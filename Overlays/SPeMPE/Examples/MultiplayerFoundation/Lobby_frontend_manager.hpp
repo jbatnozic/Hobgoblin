@@ -1,8 +1,6 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-// clang-format off
-
 #pragma once
 
 #include "Engine.h"
@@ -12,10 +10,9 @@
 
 class LobbyFrontendManager
     : public LobbyFrontendManagerInterface
-    , public spe::NonstateObject
-{
+    , public spe::NonstateObject {
 public:
-    LobbyFrontendManager(QAO_RuntimeRef aRuntimeRef, int aExecutionPriority);
+    LobbyFrontendManager(QAO_InstGuard aInstGuard, int aExecutionPriority);
     ~LobbyFrontendManager() override;
 
     void setToHeadlessHostMode() override;
@@ -27,11 +24,11 @@ private:
     friend Impl;
     std::unique_ptr<Impl> _impl;
 
+    void _willDetach(QAO_Runtime& aRuntime) override;
+
     void _eventBeginUpdate() override;
     void _eventUpdate1() override;
     void _eventDrawGUI() override;
 
     friend void ActivateCommand(LobbyFrontendManager& aMgr, int aCommand, void* aArgs);
 };
-
-// clang-format on

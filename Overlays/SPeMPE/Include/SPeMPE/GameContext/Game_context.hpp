@@ -8,6 +8,7 @@
 #include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/QAO.hpp>
 
+#include <SPeMPE/GameContext/Context_component_handle.hpp>
 #include <SPeMPE/GameContext/Context_components.hpp>
 #include <SPeMPE/GameObjectFramework/Synchronized_object_registry.hpp>
 #include <SPeMPE/Utility/Timing.hpp>
@@ -18,6 +19,7 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <type_traits>
 #include <vector>
 
 namespace jbatnozic {
@@ -113,7 +115,14 @@ public:
 
     //! Throws hg::TracedLogicError in case of tagHash clash.
     template <class taComponent>
+    void attachAndOwnComponent(ContextComponentHandle<taComponent> aComponent);
+
+    template <class taComponent>
     void attachAndOwnComponent(std::unique_ptr<taComponent> aComponent);
+
+    template <class taComponent,
+              typename std::enable_if_t<std::is_base_of_v<hg::QAO_Base, taComponent>, bool> = true>
+    void attachAndOwnComponent(hobgoblin::QAO_Handle<taComponent> aComponent);
 
     //! Attempt to detach a context component from the context.
     //! One of three things can happen:
@@ -126,7 +135,7 @@ public:
     //! - If component is not found:
     //!   `aDetachStatus` set to `DetachStatus::NOT_FOUND`, nullptr returned.
     template <class taComponent>
-    std::unique_ptr<taComponent> detachComponent(hg::NeverNull<DetachStatus*> aDetachStatus);
+    ContextComponentHandle<taComponent> detachComponent(hg::NeverNull<DetachStatus*> aDetachStatus);
 
     //! Throws hg::TracedLogicError if the component isn't present.
     template <class taComponent>
@@ -147,7 +156,7 @@ public:
     int runFor(int aIterations);
 
     //! Can be called by an instance from 'within' the context (if runFor has
-    //! been started) to stop the execution after the current step.
+    //! been started) to stop the execution after the current iteration.
     void stop();
 
     struct PerformanceInfo {
@@ -252,8 +261,8 @@ private:
     hg::QAO_Runtime _qaoRuntime;
 
     // Context components:
-    std::vector<std::unique_ptr<ContextComponent>> _ownedComponents;
-    detail::ComponentTable                         _components;
+    std::vector<ContextComponentHandle<>> _ownedComponents;
+    detail::ComponentTable                _components;
 
     // Execution:
     PerformanceInfo   _performanceInfo;
@@ -270,6 +279,8 @@ private:
                          hg::NeverNull<int*>         aReturnValue,
                          int                         aMaxIterations,
                          bool                        aDebugLoggingActive = false);
+
+    static ContextComponent* _getCCompPtr(const ContextComponentHandle<>);
 };
 
 template <class taComponent>
@@ -278,35 +289,49 @@ void GameContext::attachComponent(taComponent& aComponent) {
 }
 
 template <class taComponent>
-void GameContext::attachAndOwnComponent(std::unique_ptr<taComponent> aComponent) {
-    HG_VALIDATE_ARGUMENT(aComponent != nullptr, "Cannot attach null component.");
+void GameContext::attachAndOwnComponent(ContextComponentHandle<taComponent> aComponent) {
+    auto* ccompPtr = aComponent.ptr();
+    HG_VALIDATE_ARGUMENT(ccompPtr != nullptr, "Cannot attach null component.");
 
-    _components.attachComponent(*aComponent);
+    _components.attachComponent(*static_cast<taComponent*>(ccompPtr));
     _ownedComponents.push_back(std::move(aComponent));
 }
 
 template <class taComponent>
-std::unique_ptr<taComponent> GameContext::detachComponent(hg::NeverNull<DetachStatus*> aDetachStatus) {
+void GameContext::attachAndOwnComponent(std::unique_ptr<taComponent> aComponent) {
+    ContextComponentHandle<taComponent> handle{std::move(aComponent)};
+    attachAndOwnComponent<taComponent>(std::move(handle));
+}
+
+template <class taComponent,
+          typename std::enable_if_t<std::is_base_of_v<hg::QAO_Base, taComponent>, bool>>
+void GameContext::attachAndOwnComponent(hobgoblin::QAO_Handle<taComponent> aComponent) {
+    ContextComponentHandle<taComponent> handle{std::move(aComponent)};
+    attachAndOwnComponent<taComponent>(std::move(handle));
+}
+
+template <class taComponent>
+ContextComponentHandle<taComponent> GameContext::detachComponent(
+    hg::NeverNull<DetachStatus*> aDetachStatus) //
+{
     auto* ptr = getComponentPtr<taComponent>();
     if (ptr == nullptr) {
         *aDetachStatus = DetachStatus::NOT_FOUND;
-        return nullptr;
+        return {};
     }
 
     const auto iter = std::find_if(_ownedComponents.begin(),
                                    _ownedComponents.end(),
-                                   [ptr](std::unique_ptr<ContextComponent>& aCurr) {
-                                       return aCurr.get() == ptr;
+                                   [ptr](ContextComponentHandle<>& aCurr) {
+                                       return aCurr.ptr() == ptr;
                                    });
     if (iter == _ownedComponents.end()) {
         _components.detachComponent(*ptr);
         *aDetachStatus = DetachStatus::NOT_OWNED_BY_CONTEXT;
-        return nullptr;
+        return {};
     }
 
-    std::unique_ptr<ContextComponent> temp = std::move(*iter);
-    std::unique_ptr<taComponent>      result =
-        std::unique_ptr<taComponent>{static_cast<taComponent*>(temp.release())};
+    auto result = iter->template downcastMove<taComponent>();
     _components.detachComponent(*result);
     _ownedComponents.erase(iter);
     *aDetachStatus = DetachStatus::OK;

@@ -3,27 +3,23 @@
 
 // clang-format off
 
-
 #include "Player_character_autodiff_alternating.hpp"
 
 #include <Hobgoblin/Logging.hpp>
 #include <iostream>
 
-AutodiffAlternatingPlayerCharacter::AutodiffAlternatingPlayerCharacter(QAO_RuntimeRef aRuntimeRef,
-                                                                       spe::RegistryId aRegId,
+AutodiffAlternatingPlayerCharacter::AutodiffAlternatingPlayerCharacter(QAO_InstGuard aInstGuard,
                                                                        spe::SyncId aSyncId)
-    : SyncObjSuper{aRuntimeRef, SPEMPE_TYPEID_SELF, PRIORITY_PLAYERAVATAR,
-                   "AutodiffAlternatingPlayerCharacter", aRegId, aSyncId}
+    : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, PRIORITY_PLAYERAVATAR,
+                   "AutodiffAlternatingPlayerCharacter", aSyncId}
 {
-    if (isMasterObject()) {
-        _getCurrentState().initMirror();
-    }
     _enableAlternatingUpdates();
 }
 
-AutodiffAlternatingPlayerCharacter::~AutodiffAlternatingPlayerCharacter() {
+void AutodiffAlternatingPlayerCharacter::_didAttach(QAO_Runtime& aRuntime) {
+    SyncObjSuper::_didAttach(aRuntime);
     if (isMasterObject()) {
-        doSyncDestroy();
+        _getCurrentState().initMirror();
     }
 }
 

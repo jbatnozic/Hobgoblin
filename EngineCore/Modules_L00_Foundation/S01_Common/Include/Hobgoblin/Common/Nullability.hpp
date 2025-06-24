@@ -22,10 +22,8 @@
 #define UHOBGOBLIN_COMMON_NULLABILITY_HPP
 
 #include <cassert>
-#include <cstdint>
 #include <iostream>
 #include <stdexcept>
-#include <string>
 #include <type_traits>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
@@ -58,12 +56,14 @@ public:
 template <class taPointer>
 class NeverNull {
 public:
+    static_assert(!std::is_same_v<taPointer, std::nullptr_t>);
+
     //! Construct from a value of type `T` which is convertible to `taPointer`.
     //!
     //! If `aValue` compares equal to `nullptr`, then:
     //! 1) If standard assertions are enabled, an assertion failure will be generated.
     //! 2) A `NullPointerException` will be thrown.
-    template <typename T, typename = std::enable_if_t<std::is_convertible<T, taPointer>::value>>
+    template <typename T, T_ENABLE_IF(std::is_convertible_v<T, taPointer>)>
     constexpr NeverNull(T&& aValue)
         : _ptr{std::forward<T>(aValue)} {
         assert(_ptr != nullptr);
@@ -75,12 +75,11 @@ public:
     }
 
     //! Construct from a value of type `NeverNull<U>` where `U` is convertible to `taPointer`.
-    template <typename U, typename = std::enable_if_t<std::is_convertible<U, taPointer>::value>>
+    template <typename U, T_ENABLE_IF(std::is_convertible_v<U, taPointer>)>
     constexpr NeverNull(const NeverNull<U>& aOther)
         : _ptr{aOther._ptr} {}
 
     //! ???
-    template <typename = std::enable_if_t<!std::is_same<std::nullptr_t, taPointer>::value>>
     constexpr NeverNull(taPointer aValue)
         : _ptr{std::move(aValue)} {
         assert(_ptr != nullptr);
@@ -96,6 +95,16 @@ public:
 
     //! Default copy assignment operator.
     NeverNull& operator=(const NeverNull& aOther) = default;
+
+    //! Returns a copy of the underlying pointer (will not compile if the type is not copyable).
+    taPointer copy() const {
+        return _ptr;
+    }
+
+    //! Returns a const reference to the underlying pointer.
+    const taPointer& underlying() const {
+        return _ptr;
+    }
 
     //! Returns the underlying pointer (or a const reference to it if it's not copyable).
     constexpr std::
@@ -141,8 +150,6 @@ public:
     // static_assert(details::is_comparable_to_nullptr<taPointer>::value, "T cannot be compared to
     // nullptr.");
 };
-
-#define HG_NEVER_NULL(...) ::jbatnozic::hobgoblin::NeverNull<__VA_ARGS__>
 
 template <class T>
 auto MakeNeverNull(T&& t) {
@@ -269,16 +276,34 @@ public:
         return SELF;
     }
 
+    constexpr operator taPointer() const& {
+        return NeverNull<taPointer>::get();
+    }
+
+    constexpr operator taPointer() && {
+        taPointer temp = std::move(NeverNull<taPointer>::_ptr);
+        return temp;
+    }
+
     template <typename U, typename = std::enable_if_t<std::is_convertible<U, taPointer>::value>>
     constexpr AvoidNull(const NeverNull<U>& aOther)
         : NeverNull<taPointer>{aOther.get()} {}
 };
 
-#define HG_AVOID_NULL(...) ::jbatnozic::hobgoblin::AvoidNull<__VA_ARGS__>
-
 template <class T>
 auto MakeAvoidNull(T&& t) {
     return AvoidNull<std::remove_cv_t<std::remove_reference_t<T>>>{std::forward<T>(t)};
+}
+
+//! Contructs and returns an instance of `T` (with `T` being the underlying type of `AvoidNull<T>`),
+//! by performing a MOVE operation.
+//! \warning This leaves the original object in an UNSPECIFIED and UNUSABLE but valid state.
+//! \warning After an instance of `AvoidNull<T>` is moved from, YOU MUST NOT USE IT
+//!          ANYMORE. Consider the move as ending its lifetime.
+template <class T>
+T MoveToUnderlying(AvoidNull<T> aPtr) {
+    T rv = static_cast<AvoidNull<T>&&>(aPtr);
+    return rv;
 }
 
 HOBGOBLIN_NAMESPACE_END

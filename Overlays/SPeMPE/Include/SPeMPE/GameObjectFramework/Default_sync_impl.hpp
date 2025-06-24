@@ -31,13 +31,13 @@ namespace detail {
 template <class taSyncObj, class taNetwMgr>
 void DefaultSyncCreateHandler(hg::RN_NodeInterface& node, SyncId syncId) {
     node.callIfClient([&](hg::RN_ClientInterface& client) {
-        auto& ctx        = *client.getUserDataOrThrow<GameContext>();
-        auto& runtime    = ctx.getQAORuntime();
-        auto  regId      = ctx.getComponent<NetworkingManagerInterface>().getRegistryId();
-        auto& syncObjReg = *reinterpret_cast<detail::SynchronizedObjectRegistry*>(regId.address);
+        auto  rc         = SPEMPE_GET_RPC_RECEIVER_CONTEXT(client);
+        auto& runtime    = rc.gameContext.getQAORuntime();
+        auto* regAddr    = rc.netwMgr.__spempeimpl_getRegistryAddress().copy();
+        auto& syncObjReg = *static_cast<detail::SynchronizedObjectRegistry*>(regAddr);
 
         if (syncObjReg.getMapping(syncId) == nullptr) {
-            hg::QAO_PCreate<taSyncObj>(&runtime, regId, syncId);
+            hg::QAO_Create<taSyncObj>(&runtime, syncId);
         }
     });
 
@@ -55,8 +55,8 @@ void DefaultSyncUpdateHandler(
 {
     node.callIfClient([&](hg::RN_ClientInterface& client) {
         auto  rc         = SPEMPE_GET_RPC_RECEIVER_CONTEXT(client);
-        auto  regId      = rc.netwMgr.getRegistryId();
-        auto& syncObjReg = *reinterpret_cast<detail::SynchronizedObjectRegistry*>(regId.address);
+        auto* regAddr    = rc.netwMgr.__spempeimpl_getRegistryAddress().copy();
+        auto& syncObjReg = *static_cast<detail::SynchronizedObjectRegistry*>(regAddr);
         auto* object     = static_cast<taSyncObj*>(syncObjReg.getMapping(syncId));
 
         if (object) {
@@ -77,8 +77,8 @@ template <class taSyncObj, class taNetwMgr>
 void DefaultSyncDestroyHandler(hg::RN_NodeInterface& node, SyncId syncId) {
     node.callIfClient([&](hg::RN_ClientInterface& client) {
         auto  rc         = SPEMPE_GET_RPC_RECEIVER_CONTEXT(client);
-        auto  regId      = rc.gameContext.template getComponent<taNetwMgr>().getRegistryId();
-        auto& syncObjReg = *reinterpret_cast<detail::SynchronizedObjectRegistry*>(regId.address);
+        auto* regAddr    = rc.netwMgr.__spempeimpl_getRegistryAddress().copy();
+        auto& syncObjReg = *static_cast<detail::SynchronizedObjectRegistry*>(regAddr);
         auto* object     = static_cast<taSyncObj*>(syncObjReg.getMapping(syncId));
 
         if (object) {

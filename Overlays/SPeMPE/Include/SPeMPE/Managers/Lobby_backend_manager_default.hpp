@@ -30,7 +30,7 @@ class DefaultLobbyBackendManager
     , private NetworkingEventListener
 {
 public:
-    DefaultLobbyBackendManager(hg::QAO_RuntimeRef aRuntimeRef, int aExecutionPriority);
+    DefaultLobbyBackendManager(hobgoblin::QAO_InstGuard aInstGuard, int aExecutionPriority);
 
     ~DefaultLobbyBackendManager() override;
 
@@ -120,6 +120,8 @@ private:
     std::deque<LobbyBackendEvent> _eventQueue;
 
     void onNetworkingEvent(const hobgoblin::RN_Event& aEvent) override;
+
+    void _willDetach(hobgoblin::QAO_Runtime& aRuntime) override; 
 
     void _eventBeginUpdate() override;
     void _eventPostUpdate() override;

@@ -49,7 +49,7 @@ public:
 };
 
 ///////////////////////////////////////////////////////////////////////////
-// NONSTATE OBJECTS                                                      //
+// MARK: NONSTATE OBJECTS                                                //
 ///////////////////////////////////////////////////////////////////////////
 
 //! I:
@@ -65,7 +65,7 @@ public:
 };
 
 ///////////////////////////////////////////////////////////////////////////
-// STATE OBJECTS                                                         //
+// MARK: STATE OBJECTS                                                   //
 ///////////////////////////////////////////////////////////////////////////
 
 //! Objects which are essential for the game's state, but will not be synchronized
@@ -77,7 +77,7 @@ public:
 };
 
 ///////////////////////////////////////////////////////////////////////////
-// SYNCHRONIZED OBJECTS                                                  //
+// MARK: SYNCHRONIZED OBJECTS                                            //
 ///////////////////////////////////////////////////////////////////////////
 
 enum class SyncUpdateStatus {
@@ -89,15 +89,16 @@ enum class SyncUpdateStatus {
 struct IfMaster {};
 struct IfDummy  {};
 
+// MARK: Virtual base
+
 class SynchronizedObjectBase : public StateObject {
 public:
     //! Big scary constructor with way too many arguments.
-    SynchronizedObjectBase(hg::QAO_RuntimeRef aRuntimeRef,
+    SynchronizedObjectBase(hg::QAO_InstGuard     aInstGuard,
                            const std::type_info& aTypeInfo,
-                           int aExecutionPriority,
-                           std::string aName,
-                           RegistryId aRegId,
-                           SyncId aSyncId);
+                           int                   aExecutionPriority,
+                           std::string           aName,
+                           SyncId                aSyncId);
 
     ~SynchronizedObjectBase() override;
 
@@ -110,9 +111,14 @@ public:
 protected:
     // Call the following to sync this object's creation/update/destruction right away.
 
-    void doSyncCreate() const;
-    void doSyncUpdate() const;
-    void doSyncDestroy() const;
+    void _doSyncCreate() const;
+    void _doSyncUpdate() const;
+    void _doSyncDestroy() const;
+
+    // Lifecycle
+
+    void _didAttach(hg::QAO_Runtime& aRuntime) override;
+    void _willDetach(hg::QAO_Runtime& aRuntime) override;
 
     // These overloads will be called if the object is a Master object 
     // (that is, executing in a Privileged context).
@@ -176,8 +182,8 @@ protected:
     bool _didAlternatingUpdatesSync() const;
 
 private:
-    detail::SynchronizedObjectRegistry& _syncObjReg;
-    const SyncId _syncId;
+    detail::SynchronizedObjectRegistry* _syncObjReg = nullptr;
+    SyncId _syncId;
 
     //! [0] = is it skipped for client 0?
     //! [1] = is it deactivated for client 0?
@@ -241,6 +247,8 @@ public:
     void __spempeimpl_setStateSchedulerDefaultDelay(hg::PZInteger aNewDefaultDelaySteps);
 };
 
+// MARK: Template
+
 //! Objects which are essential to the game's state, so they are both saved when
 //! writing game state, and synchronized with clients in multiplayer sessions.
 //! For example, units, terrain, interactible items (and, basically, most other 
@@ -257,28 +265,18 @@ public:
 protected:
     using SyncObjSuper = SynchronizedObject;
 
-    SynchronizedObject(hg::QAO_RuntimeRef aRuntimeRef,
+    SynchronizedObject(hg::QAO_InstGuard     aInstGuard,
                        const std::type_info& aTypeInfo,
-                       int aExecutionPriority,
-                       std::string aName,
-                       RegistryId aRegId,
-                       SyncId aSyncId = SYNC_ID_NEW)
-        : SynchronizedObjectBase{ aRuntimeRef
+                       int                   aExecutionPriority,
+                       std::string           aName,
+                       SyncId                aSyncId = SYNC_ID_NEW)
+        : SynchronizedObjectBase{ aInstGuard
                                 , aTypeInfo
                                 , aExecutionPriority
                                 , std::move(aName)
-                                , aRegId
                                 , aSyncId
                                 }
-        , _ssch{
-            isMasterObject() ? 0 // Masters don't need state scheduling
-                             : reinterpret_cast<detail::SynchronizedObjectRegistry*>(
-                                   aRegId.address
-                               )->getDefaultDelay()
-        }
-    {
-        _ssch.getCurrentState().status.isDeactivated = !isMasterObject();
-    }
+        , _ssch{0} {}
 
     taVisibleState& _getCurrentState() {
         assert(isMasterObject() || !isDeactivated());
@@ -303,8 +301,14 @@ protected:
         return const_cast<SynchronizedObject*>(this)->_getFollowingState();
     }
 
-//private:
 protected:
+    // Lifecycle
+    void _didAttach(hg::QAO_Runtime& aRuntime) override {
+        SynchronizedObjectBase::_didAttach(aRuntime);   
+        _ssch.getCurrentState().status.isDeactivated = !isMasterObject();
+    }
+
+private:
     struct DummyStatus {
         bool isDeactivated = true;
 
@@ -333,8 +337,8 @@ protected:
     };
 
     struct PacemakerPulse {
-        bool happened = false;
         hg::PZInteger delay;
+        bool happened = false;
     };
 
     hg::util::SimpleStateScheduler<SchedulerPair> _ssch;

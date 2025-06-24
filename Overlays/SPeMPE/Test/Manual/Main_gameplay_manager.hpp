@@ -13,9 +13,12 @@
 class MainGameplayManagerBase
     : public spe::NonstateObject {
 public:
-    MainGameplayManagerBase(QAO_RuntimeRef aRuntimeRef);
+    MainGameplayManagerBase(QAO_InstGuard aInstGuard);
 
-private:
+protected:
+    void _didAttach(QAO_Runtime&) override;
+
+private:    
     void _eventPreUpdate() override;
 };
 
@@ -25,7 +28,10 @@ class MainGameplayManager
     : public MainGameplayManagerInterface
     , public MainGameplayManagerBase {
 public:
-    MainGameplayManager(QAO_RuntimeRef aRuntimeRef);
+    MainGameplayManager(QAO_InstGuard aInstGuard);
+
+protected:
+    void _didAttach(QAO_Runtime&) override;
 };
 
 } // namespace singleplayer
@@ -36,7 +42,10 @@ class MainGameplayManager
     : public MainGameplayManagerInterface
     , public MainGameplayManagerBase {
 public:
-    MainGameplayManager(QAO_RuntimeRef aRuntimeRef);
+    MainGameplayManager(QAO_InstGuard aInstGuard);
+
+protected:
+    void _didAttach(QAO_Runtime&) override;
 };
 
 } // namespace multiplayer

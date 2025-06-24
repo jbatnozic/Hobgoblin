@@ -231,7 +231,7 @@ and use `QAO_Base` directly in SPeMPE, it would work, there's just no benefit to
 from one another, other than serving as tag interfaces.
 
 Same as with bare QAO, the recommended way to create an object inheriting from any of the 3 classes listed above is to
-use `QAO_PCreate`, `QAO_ICreate` and friends.
+use `QAO_Create`, `QAO_ICreate` and friends.
 
 ### Synchronized Objects
 
@@ -249,10 +249,10 @@ synced to the state of the Master object at all times, automatically (until the 
 Dummies will also be destroyed), and even with lag compensation if you turn it on (which you should, because it provides
 a very smooth experience for the players). This requires assistance from SPeMPE's NetworkingManager (read below for more
 info on that) which, apart from keeping the local RigelNet node running, also holds a registry which keeps track of all
-synchronized objects currently in the game (note: when instantiating a synchronized object, you will need to provide a
-registry ID so it knows which registry to hook up to). The final thing to note here is that you can, and should, provide
-different implementations for all the QAO events to be executed when the object is a Master as opposed to when it's a
-Dummy - in general, the idea is that Masters will hold all the data required to "run" the object and execute its
+synchronized objects currently in the game (note: new synchronized objects will register themselves in this registry
+automatically upon being attached to the runtime/context). The final thing to note here is that you can, and should,
+provide different implementations for all the QAO events to be executed when the object is a Master as opposed to when
+it's a Dummy - in general, the idea is that Masters will hold all the data required to "run" the object and execute its
 logic, while Dummies will only display the states (_visible_ states, see below) received from their Masters and run no
 logic of their own.
 
@@ -276,8 +276,8 @@ struct Enemy_VisibleState {
 Your visible state struct may look like something above, except this isn't enough. As this struct is going to be sent
 over the network, we must also define serialization and deserialization functions for it. This was already touched upon
 in the RigelNet guide and it comes down to providing operators `<<` and `>>` for your type and
-`hobgoblin::util::Packet`; and this is easiest if you use Hobgoblin's autopack feature - so let's use that and
-fix our struct.
+`hobgoblin::util::Packet` (or, more generally, `hobgoblin::util::OutputStream`); and this is easiest if you use
+Hobgoblin's autopack feature - so let's use that and fix our struct.
 
 ```cpp
 #include <Hobgoblin/Utility/Autopack.hpp>
@@ -299,7 +299,7 @@ class Enemy
     : public spe::SynchronizedObject<Enemy_VisibleState> // SynchronizedObject is actually a template
 {
 public:
-    Enemy(QAO_RuntimeRef aRuntimeRef, spe::RegistryId aRegId, spe::SyncId aSyncId);
+    Enemy(QAO_RuntimeRef aRuntimeRef, spe::SyncId aSyncId);
 
     void init(float aXCoord, float aYCoord);
     // ...
@@ -308,18 +308,17 @@ public:
 
 For SPeMPE to be able to create a Dummy counterpart (on the client side) to the Master object (on the server side)
 automatically, the constructor has to follow this specific pattern:
-`Constructor(QAO_RuntimeRef aRuntimeRef, spe::RegistryId aRegId, spe::SyncId aSyncId);`. In furhter text I will call
-this the "canonical" constructor. It, however, has the unfortunate side-effect of forcing us to use two-step
-initialization with `init` methods, but this is not _that_ bad. You can wrap it all in factory functions or convenience
+`Constructor(QAO_RuntimeRef aRuntimeRef, spe::SyncId aSyncId);`. In further text I will call this the
+"canonical" constructor. It, however, has the unfortunate side-effect of forcing us to use two-step initialization
+with `init` methods, but this is not _that_ bad. You can wrap it all in factory functions or convenience
 constructors if you wish.
 
 The typical creation and initialization of a synchronized object on the server-side should look something like:
 
 ```cpp
 spe::GameContext& context = ...; // get a reference to the context somehow
-auto* obj = QAO_PCreate<Enemy>(context.getQAORuntime(),
-                               context.getComponent<spe::NetworkingManagerInterface>().getRegistryId(),
-                               SYNC_ID_NEW /* we always use SYNC_ID_NEW to create a new Master object */);
+auto obj = QAO_Create<Enemy>(context.getQAORuntime(),
+                             SYNC_ID_NEW /* we always use SYNC_ID_NEW to create a new Master object */);
 obj->init(xCoord, yCoord);
 ```
 
@@ -331,7 +330,7 @@ spe::GameContext& context = ...;
 Enemy::create(context, xCoord, yCoord);
 ```
 
-You'll notice that the constructor of `spe::SynchronizedObject` has a scary parameter list of six(!):
+You'll notice that the constructor of `spe::SynchronizedObject` has a parameter list of five:
 
 ```cpp
 // Too many parameters...
@@ -339,20 +338,18 @@ SynchronizedObject(hg::QAO_RuntimeRef aRuntimeRef,
                    const std::type_info& aTypeInfo,
                    int aExecutionPriority,
                    std::string aName,
-                   RegistryId aRegId,
                    SyncId aSyncId = SYNC_ID_NEW);
 ```
 
 But calling it from the cannonical constructor actually isn't that hard:
 
 ```cpp
-Enemy::Enemy(QAO_RuntimeRef aRuntimeRef, spe::RegistryId aRegId, spe::SyncId aSyncId)
+Enemy::Enemy(QAO_RuntimeRef aRuntimeRef, spe::SyncId aSyncId)
     : SyncObjSuper{ // SyncObjSuper is a convenience alias provided by SynchronizedObject
                    aRuntimeRef,
                    SPEMPE_TYPEID_SELF, // Convenience macro provided by SPeMPE
                    PRIORITY_ENEMY,     // You will have to define this yourself
                    "<put whatever you want here>",
-                   aRegId,
                    aSyncId} { ... }
 ```
 
@@ -366,40 +363,38 @@ Before continuing with building the synchronized Enemy, we should go over all th
 #### Overriding _event methods (from QAO) in SynchronizedObjects
 
 Each object inheriting from `spe::SynchronizedObject` transitively inherits from `QAO_Base` and as such it can respond
-to all the QAO events (`_eventStartFrame`, `_eventUpdate` etc.). However, each object inheriting from
+to all the QAO events (`_eventPreUpdate`, `_eventUpdate1` etc.). However, each object inheriting from
 `spe::SynchronizedObject` has two extra sets of these virtual methods:
 
 ```cpp
-virtual void _eventStartFrame(spe::IfMaster);
+virtual void _eventPreUpdate(spe::IfMaster);
 virtual void _eventBeginUpdate(spe::IfMaster);
-virtual void _eventUpdate(spe::IfMaster);
+virtual void _eventUpdate1(spe::IfMaster);
 ...
 virtual void _eventDisplay(spe::IfMaster);
 
-virtual void _eventStartFrame(spe::IfDummy);
+virtual void _eventPreUpdate(spe::IfDummy);
 virtual void _eventBeginUpdate(spe::IfDummy);
-virtual void _eventUpdate(spe::IfDummy);
+virtual void _eventUpdate1(spe::IfDummy);
 ...
 virtual void _eventDisplay(spe::IfDummy);
 ```
 
-By overriding, for example, `_eventUpdate(spe::IfMaster)` you are defining the update event behaviour this object
-will have only when it is a Master object, and, analogously to that, by overriding `_eventUpdate(spe::IfDummy)` you
+By overriding, for example, `_eventUpdate2(spe::IfMaster)` you are defining the update event behaviour this object
+will have only when it is a Master object, and, analogously to that, by overriding `_eventUpdate2(spe::IfDummy)` you
 are defining the update event behaviour this object will have only when it is a Dummy object.
 
 A lot of the time, the Dummy object will have only draw events defined, as it doesn't need to execute any logic, and
 the Master object will have its update events defined but not draw events, as it executes all the logic but lives on
 a Server which doesn't have a window to display any of it.
 
-**Note:** You still _can_ override general `_event*()` methods (for example `_eventStartFrame()`), in which case you
+**Note:** You still _can_ override general `_event*()` methods (for example `_eventPreUpdate()`), in which case you
 will be defining the behaviour for both Master and Dummy objects, and the `spe::IfMaster`/`spe::IfDummy` variants
 will NEVER be called (unless you call them manually). So, this is generally not recommended. One final caveat here is
-that if you choose to override `_eventUpdate()` (specifically the update event, and not any of the others), you will
-need to put `SPEMPE_SYNCOBJ_BEGIN_EVENT_UPDATE_OVERRIDE();` at the beginning of the event method body, or your object
-will not behave properly. Thus, overriding `_eventUpdate()` is _doubly_ not recommended. 
+that `_eventUpdate1()` is `final` in `SynchronizedObjectBase`, because it's special, so it cannot be overriden.
 
 **TODO:** destructor, default sync implementations, sinclaire (alternating updates),
-pacemaker pulses, skipping updates, deactivation, custom syncing (so many...) _getSurrentState
+pacemaker pulses, skipping updates, deactivation, custom syncing (so many...) _getCurrentState
 
 ## SPeMPE Managers
 

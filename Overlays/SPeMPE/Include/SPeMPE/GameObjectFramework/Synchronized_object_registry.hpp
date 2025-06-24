@@ -24,10 +24,6 @@ namespace spempe {
 
 namespace hg = ::jbatnozic::hobgoblin;
 
-struct RegistryId {
-    std::intptr_t address;
-};
-
 class SynchronizedObjectBase;
 
 namespace detail {

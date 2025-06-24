@@ -6,18 +6,11 @@
 
 #include "Player_character_basic.hpp"
 
-BasicPlayerCharacter::BasicPlayerCharacter(QAO_RuntimeRef aRuntimeRef,
-                                           spe::RegistryId aRegId,
+BasicPlayerCharacter::BasicPlayerCharacter(QAO_InstGuard aInstGuard,
                                            spe::SyncId aSyncId)
-    : SyncObjSuper{aRuntimeRef, SPEMPE_TYPEID_SELF, PRIORITY_PLAYERAVATAR,
-                   "BasicPlayerCharacter", aRegId, aSyncId}
+    : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, PRIORITY_PLAYERAVATAR,
+                   "BasicPlayerCharacter", aSyncId}
 {
-}
-
-BasicPlayerCharacter::~BasicPlayerCharacter() {
-    if (isMasterObject()) {
-        doSyncDestroy();
-    }
 }
 
 void BasicPlayerCharacter::init(int aOwningPlayerIndex, float aX, float aY) {

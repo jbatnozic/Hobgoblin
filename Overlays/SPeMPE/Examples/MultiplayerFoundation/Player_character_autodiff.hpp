@@ -23,13 +23,13 @@ class AutodiffPlayerCharacter
     : public spe::SynchronizedObject<AutodiffPlayerCharacter_VisibleState>
 {
 public:
-    AutodiffPlayerCharacter(QAO_RuntimeRef aRuntimeRef, spe::RegistryId aRegId, spe::SyncId aSyncId);
-
-    ~AutodiffPlayerCharacter() override;
+    AutodiffPlayerCharacter(QAO_InstGuard aInstGuard, spe::SyncId aSyncId = spe::SYNC_ID_NEW);
 
     void init(int aOwningPlayerIndex, float aX, float aY);
 
 private:
+    void _didAttach(QAO_Runtime& aRuntime) override;
+
     void _eventUpdate1(spe::IfMaster) override;
     void _eventPostUpdate(spe::IfMaster) override;
     void _eventDraw1() override; 

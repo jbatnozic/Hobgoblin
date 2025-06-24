@@ -8,13 +8,15 @@ set(COMPONENT_NAME "Hobgoblin.QAO")
 # ===== GATHER SOURCES ======
 
 set(COMPONENT_SOURCES
-  "Source/base.cpp"
-  "Source/id.cpp"
-  "Source/orderer.cpp"
+  "Source/Base.cpp"
+  "Source/Functions_destroy.cpp"
+  "Source/Handle.cpp"
+  "Source/Id.cpp"
+  "Source/Orderer.cpp"
   "Source/Priority_resolver.cpp"
   "Source/Priority_resolver2.cpp"
-  "Source/registry.cpp"
-  "Source/runtime.cpp"
+  "Source/Registry.cpp"
+  "Source/Runtime.cpp"
 )
 
 # ===== TARGET SETUP =====
@@ -34,3 +36,5 @@ PUBLIC
 )
 
 add_library("Hobgoblin_L02_S00_QAO" ALIAS ${COMPONENT_NAME})
+
+add_subdirectory("Test")

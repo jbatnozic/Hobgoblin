@@ -15,10 +15,10 @@ namespace spempe {
 
 static constexpr auto LOG_ID = "SPeMPE";
 
-NetworkingTelemetryReporter::NetworkingTelemetryReporter(hobgoblin::QAO_RuntimeRef aRuntimeRef,
+NetworkingTelemetryReporter::NetworkingTelemetryReporter(hobgoblin::QAO_InstGuard aInstGuard,
                                                          int aExecutionPriority,
                                                          const Config& aConfig)
-    : NonstateObject{aRuntimeRef,
+    : NonstateObject{aInstGuard,
                      SPEMPE_TYPEID_SELF,
                      aExecutionPriority,
                      "NetworkingTelemetryReporter"}

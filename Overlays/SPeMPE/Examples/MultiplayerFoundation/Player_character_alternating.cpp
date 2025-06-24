@@ -9,19 +9,12 @@
 #include <Hobgoblin/Logging.hpp>
 #include <iostream>
 
-AlternatingPlayerCharacter::AlternatingPlayerCharacter(QAO_RuntimeRef aRuntimeRef,
-                                                       spe::RegistryId aRegId,
+AlternatingPlayerCharacter::AlternatingPlayerCharacter(QAO_InstGuard aInstGuard,
                                                        spe::SyncId aSyncId)
-    : SyncObjSuper{aRuntimeRef, SPEMPE_TYPEID_SELF, PRIORITY_PLAYERAVATAR,
-                   "AlternatingCharacterAlt", aRegId, aSyncId}
+    : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, PRIORITY_PLAYERAVATAR,
+                   "AlternatingCharacterAlt", aSyncId}
 {
     _enableAlternatingUpdates();
-}
-
-AlternatingPlayerCharacter::~AlternatingPlayerCharacter() {
-    if (isMasterObject()) {
-        doSyncDestroy();
-    }
 }
 
 void AlternatingPlayerCharacter::init(int aOwningPlayerIndex, float aX, float aY) {

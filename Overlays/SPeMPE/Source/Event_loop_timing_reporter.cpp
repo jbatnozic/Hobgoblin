@@ -25,10 +25,10 @@ double MsCount(taDuration aDuration) {
 }
 } // namespace
 
-EventLoopTimingReporter::EventLoopTimingReporter(hobgoblin::QAO_RuntimeRef aRuntimeRef,
+EventLoopTimingReporter::EventLoopTimingReporter(hobgoblin::QAO_InstGuard aInstGuard,
                                                  int aExecutionPriority,
                                                  const Config& aConfig)
-    : NonstateObject{aRuntimeRef,
+    : NonstateObject{aInstGuard,
                      SPEMPE_TYPEID_SELF,
                      aExecutionPriority,
                      "EventLoopTimingReporter"}
@@ -36,6 +36,10 @@ EventLoopTimingReporter::EventLoopTimingReporter(hobgoblin::QAO_RuntimeRef aRunt
     , _counter{0}
 {
     HG_VALIDATE_ARGUMENT(aConfig.cycleLength > 0);
+}
+
+void EventLoopTimingReporter::_didAttach(hobgoblin::QAO_Runtime& aRuntime) {
+    NonstateObject::_didAttach(aRuntime);
     _resetCounters();
 }
 
