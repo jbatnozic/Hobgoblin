@@ -33,6 +33,7 @@ add_library(${PROJECT_NAME}
 
     # World
     "Source/World/Active_area.cpp"
+    "Source/World/World_config.cpp"
     "Source/World/World.cpp"
 
     # Other

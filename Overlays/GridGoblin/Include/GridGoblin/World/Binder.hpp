@@ -18,7 +18,7 @@
 namespace jbatnozic {
 namespace gridgoblin {
 
-namespace gh = ::jbatnozic::hobgoblin;
+namespace hg = ::jbatnozic::hobgoblin;
 
 //! This class contains a number of callbacks which can be overriden to 'bind'
 //! a GridGoblin World to its enclosing application and help them interoperate better.
@@ -69,9 +69,10 @@ public:
         hg::math::Vector2pz cellId; //! Identifies a cell by its X and Y position in the World grid.
 
         enum EditIdentifiers {
-            UNKNOWN = 0x00,
-            FLOOR   = 0x01,
-            WALL    = 0x02,
+            UNKNOWN   = 0x00,
+            FLOOR     = 0x01,
+            WALL      = 0x02,
+            USER_DATA = 0x04
         };
 
         int what = UNKNOWN; //! Identifies what in the cell was edited.

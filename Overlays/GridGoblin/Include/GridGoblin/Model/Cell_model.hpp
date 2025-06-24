@@ -10,12 +10,11 @@
 
 #include <cassert>
 #include <cstdint>
+#include <optional>
 #include <tuple>
 
 namespace jbatnozic {
 namespace gridgoblin {
-
-namespace hg = jbatnozic::hobgoblin;
 
 //! A single cell of a GridGoblin World.
 class CellModel {
@@ -65,9 +64,15 @@ public:
     //! \warning it is undefined what is returned if `isFloorInitialized() == false`!
     const Floor& getFloor() const;
 
+    //! Returns the Floor structure of this Cell, or `std::nullopt` if the floor is not initialized.
+    std::optional<Floor> getFloorOpt() const;
+
     //! Returns the Wall structure of this Cell.
     //! \warning it is undefined what is returned if `isWallInitialized() == false`!
     const Wall& getWall() const;
+
+    //! Returns the Wall structure of this Cell, or `std::nullopt` if the wall is not initialized.
+    std::optional<Wall> getWallOpt() const;
 
     //! Sets a new value for the Floor structure of this Cell
     //! and marks it as initialized.
@@ -187,9 +192,23 @@ inline const CellModel::Floor& CellModel::getFloor() const {
     return _floor;
 }
 
+inline std::optional<CellModel::Floor> CellModel::getFloorOpt() const {
+    if (isFloorInitialized()) {
+        return getFloor();
+    }
+    return std::nullopt;
+}
+
 inline const CellModel::Wall& CellModel::getWall() const {
     assert(isWallInitialized());
     return _wall;
+}
+
+inline std::optional<CellModel::Wall> CellModel::getWallOpt() const {
+    if (isWallInitialized()) {
+        return getWall();
+    }
+    return std::nullopt;
 }
 
 inline void CellModel::setFloor(Floor aFloor) {
