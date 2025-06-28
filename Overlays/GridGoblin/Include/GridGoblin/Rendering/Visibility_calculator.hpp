@@ -40,7 +40,7 @@ class VisibilityCalculator : public VisibilityProvider {
 public:
     VisibilityCalculator(const World& aWorld, const VisibilityCalculatorConfig& aConfig = {});
 
-    void calc(PositionInWorld aViewCenter, hg::math::Vector2f aViewSize, PositionInWorld aPointOfView);
+    void calc(PositionInWorld aViewCenter, hg::math::Vector2d aViewSize, PositionInWorld aPointOfView);
 
     struct CalculationStats {
         //! Number of rings that were resolved in high detail.
@@ -67,9 +67,9 @@ private:
 
     // ===== Configuration =====
 
-    const float _cr;     //!< Cell resolution (known from _world).
-    const float _xLimit; //!< Maximum for X values (known from _world).
-    const float _yLimit; //!< Maximum for Y values (known from _world).
+    const double _cr;     //!< Cell resolution (known from _world).
+    const double _xLimit; //!< Maximum for X values (known from _world).
+    const double _yLimit; //!< Maximum for Y values (known from _world).
 
     hg::PZInteger _minRingsBeforeRaycasting;
     hg::PZInteger _minTrianglesBeforeRaycasting;
@@ -78,28 +78,28 @@ private:
 
     // ===== Calculation context =====
 
-    hg::math::Rectangle<float> _processedRingsBbox;
+    hg::math::Rectangle<double> _processedRingsBbox;
 
-    hg::math::Rectangle<float> _viewBbox;
-    hg::math::Vector2pz        _viewTopLeftCell;
-    hg::math::Vector2pz        _viewBottomRightCell;
+    hg::math::Rectangle<double> _viewBbox;
+    hg::math::Vector2pz         _viewTopLeftCell;
+    hg::math::Vector2pz         _viewBottomRightCell;
 
-    hg::math::Vector2f  _lineOfSightOrigin;
+    hg::math::Vector2d  _lineOfSightOrigin;
     hg::math::Vector2pz _lineOfSightOriginCell;
 
-    float         _triangleSideLength;
-    float         _rayRadius;
+    double        _triangleSideLength;
+    double        _rayRadius;
     hg::PZInteger _maxPointsPerRay;
     bool          _rayCheckingEnabled;
 
     // ===== Data structures =====
 
-    struct Triangle : public hg::math::TriangleF {
-        Triangle(hg::math::Vector2f aA,
-                 hg::math::Vector2f aB,
-                 hg::math::Vector2f aC,
+    struct Triangle : public hg::math::TriangleD {
+        Triangle(hg::math::Vector2d aA,
+                 hg::math::Vector2d aB,
+                 hg::math::Vector2d aC,
                  std::uint16_t      aFlags)
-            : jbatnozic::hobgoblin::math::TriangleF{aA, aB, aC}
+            : hg::math::TriangleD{aA, aB, aC}
             , flags{aFlags} {}
 
         std::uint16_t flags;
@@ -107,7 +107,7 @@ private:
 
     std::vector<Triangle> _triangles;
 
-    std::vector<float> _rays;
+    std::vector<double> _rays;
 
     // ===== Statistics =====
 
@@ -120,12 +120,12 @@ private:
     void _resetData();
 
     void _setInitialCalculationContext(PositionInWorld    aViewCenter,
-                                       hg::math::Vector2f aViewSize,
+                                       hg::math::Vector2d aViewSize,
                                        PositionInWorld    aLineOfSightOrigin);
 
     std::uint16_t _calcEdgesOfInterest(hg::math::Vector2pz aCell) const;
 
-    bool _areAnyVerticesVisible(const std::array<hg::math::Vector2f, 8>& aVertices,
+    bool _areAnyVerticesVisible(const std::array<hg::math::Vector2d, 8>& aVertices,
                                 std::size_t                              aVertCount,
                                 std::uint16_t                            aEdgesOfInterest) const;
 
@@ -133,7 +133,7 @@ private:
 
     void _processCell(hg::math::Vector2pz aCell, hg::PZInteger aRingIndex);
 
-    void _setRaysFromTriangles(hg::math::AngleF aAngle1, hg::math::AngleF aAngle2);
+    void _setRaysFromTriangles(hg::math::AngleD aAngle1, hg::math::AngleD aAngle2);
 
     void _processRays();
 

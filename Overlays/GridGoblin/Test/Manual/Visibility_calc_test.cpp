@@ -163,7 +163,7 @@ void RunVisibilityCalculatorTestImpl() {
     hg::gr::Image        vcImage;
     hg::gr::Texture      vcTexture;
 
-    const auto generateLoS = [&](hg::math::Vector2f pos) {
+    const auto generateLoS = [&](hg::math::Vector2d pos) {
         HG_LOG_INFO(LOG_ID, "===============================================");
         HG_LOG_INFO(LOG_ID, "Running calc()...");
         {
@@ -185,7 +185,7 @@ void RunVisibilityCalculatorTestImpl() {
             vcImage.create(hg::ToPz(CELL_COUNT_X * CELLRES), hg::ToPz(CELL_COUNT_Y * CELLRES));
             for (int y = 0; y < hg::ToPz(CELL_COUNT_X * CELLRES); y += 1) {
                 for (int x = 0; x < hg::ToPz(CELL_COUNT_Y * CELLRES); x += 1) {
-                    const auto v = visCalc.testVisibilityAt({(float)x, (float)y});
+                    const auto v = visCalc.testVisibilityAt({(double)x, (double)y});
                     if (!v.has_value() || *v == false) {
                         vcImage.setPixel(x, y, hg::gr::COLOR_BLACK.withAlpha(150));
                     } else {
@@ -230,7 +230,7 @@ void RunVisibilityCalculatorTestImpl() {
                     if (aButton.button == hg::in::MB_LEFT) {
                         const auto coords = window.mapPixelToCoords({aButton.x, aButton.y});
                         HG_LOG_INFO(LOG_ID, "Coords = {}, {}", coords.x, coords.y);
-                        generateLoS(coords);
+                        generateLoS(hobgoblin::math::Vector2d{coords.x, coords.y}); // FTODO
                         mouseLClick = true;
                     }
                 });

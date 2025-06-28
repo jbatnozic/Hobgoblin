@@ -72,13 +72,13 @@ void TopDownLineOfSightRenderer::start(PositionInWorld    aPosInView,
 
     _recommendedScale = largerDimension * _sizeMultiplier / _renderTexture.getSize().x;
     _losOrigin        = aLineOfSightOrigin;
-    _viewCenterOffset = *aPosInView - _renderTexture.getView().getCenter();
+    _viewCenterOffset = *aPosInView - hg::math::Vector2d{_renderTexture.getView().getCenter()};
 
     const float virtualSquareEdge = ceil(largerDimension * _sizeMultiplier);
 
     hg::gr::View view;
     view.setSize({virtualSquareEdge, virtualSquareEdge});
-    view.setCenter(*aPosInView);
+    view.setCenter(aPosInView->x, aPosInView->y); // FTODO
     view.setViewport({0.f, 0.f, 1.f, 1.f});
     _renderTexture.setView(view);
 
@@ -115,7 +115,8 @@ void TopDownLineOfSightRenderer::render() {
 }
 
 std::optional<bool> TopDownLineOfSightRenderer::testVisibilityAt(PositionInWorld aPos) const {
-    const auto pixelPos = _renderTexture.mapCoordsToPixel(*aPos + _viewCenterOffset, 0);
+    const auto temp = *aPos + _viewCenterOffset; // FTODO
+    const auto pixelPos = _renderTexture.mapCoordsToPixel({(float)temp.x, (float)temp.y}, 0); // FTODO
 
     if (pixelPos.x < 0 || pixelPos.x >= _textureSize || pixelPos.y < 0 || pixelPos.y >= _textureSize) {
         return {};
@@ -170,16 +171,16 @@ void TopDownLineOfSightRenderer::_renderOcclusion() {
             if (const auto* cell = _world.getCellAtUnchecked(x, y);
                 cell != nullptr && cell->isWallInitialized()) {
                 // clang-format off
-                vertices[0].position = { x      * cellResolution,  y      * cellResolution};
-                vertices[2].position = { x      * cellResolution, (y + 1) * cellResolution};
-                vertices[4].position = {(x + 1) * cellResolution, (y + 1) * cellResolution};
-                vertices[6].position = {(x + 1) * cellResolution,  y      * cellResolution};
+                vertices[0].position = {static_cast<float>( x      * cellResolution), static_cast<float>( y      * cellResolution)}; // FTODO
+                vertices[2].position = {static_cast<float>( x      * cellResolution), static_cast<float>((y + 1) * cellResolution)};
+                vertices[4].position = {static_cast<float>((x + 1) * cellResolution), static_cast<float>((y + 1) * cellResolution)};
+                vertices[6].position = {static_cast<float>((x + 1) * cellResolution), static_cast<float>( y      * cellResolution)};
                 vertices[8] = vertices[0];
                 // clang-format on
 
                 for (int i = 1; i < 10; i += 2) {
-                    hg::math::Vector2f diff = {vertices[i - 1].position.x - _losOrigin->x,
-                                               vertices[i - 1].position.y - _losOrigin->y};
+                    hg::math::Vector2f diff = {static_cast<float>(vertices[i - 1].position.x - _losOrigin->x),
+                                               static_cast<float>(vertices[i - 1].position.y - _losOrigin->y)}; // FTODO
                     diff.x *= 2000.f; // TODO: magic number
                     diff.y *= 2000.f; // TODO: magic number
 

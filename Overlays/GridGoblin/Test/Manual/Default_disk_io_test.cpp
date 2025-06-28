@@ -53,7 +53,7 @@ public:
         switch (aButton) {
         case hg::in::MB_LEFT:
             {
-                const auto  cellXY = _world.posToCell(aPos);
+                const auto  cellXY = _world.posToCell(aPos.x, aPos.y);
                 const auto* cell   = _world.getCellAtUnchecked(cellXY);
                 if (cell) {
                     if (!cell->isWallInitialized()) {
@@ -71,7 +71,7 @@ public:
 
         case hg::in::MB_RIGHT:
             {
-                const auto cell    = _world.posToCell(aPos);
+                const auto cell    = _world.posToCell(aPos.x, aPos.y);
                 const auto chunkId = _world.cellToChunkIdUnchecked(cell);
 
                 const auto iter = std::find(_activeChunks.begin(), _activeChunks.end(), chunkId);
@@ -114,13 +114,13 @@ private:
                 .chunkCountY                 = 4,
                 .cellsPerChunkX              = 8,
                 .cellsPerChunkY              = 8,
-                .cellResolution              = 32.f,
+                .cellResolution              = 32.0,
                 .maxCellOpenness             = 5,
                 .maxLoadedNonessentialChunks = 0};
     }
 
     void _drawChunk(hg::gr::Canvas& aCanvas, const Chunk& aChunk, ChunkId aChunkId) const {
-        const auto         cellRes = _world.getCellResolution();
+        const auto         cellRes = (float)_world.getCellResolution();
         hg::math::Vector2f start{aChunkId.x * aChunk.getCellCountX() * cellRes,
                                  aChunkId.y * aChunk.getCellCountY() * cellRes};
 

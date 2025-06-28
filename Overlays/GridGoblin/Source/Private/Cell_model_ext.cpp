@@ -12,7 +12,7 @@ namespace detail {
 namespace predicate {
 namespace {
 
-constexpr float Half(float aVal) {
+constexpr double Half(double aVal) {
     return aVal * 0.5;
 }
 
@@ -20,7 +20,7 @@ bool IsPovCloserThanCell(PositionInWorld aCellTopLeft, PositionInWorld aPointOfV
     return ((aCellTopLeft->x - aCellTopLeft->y) > (aPointOfView->x - aPointOfView->y));
 }
 
-DrawingData FullWhenPovIsCloserToCamera(float           aCellResolution,
+DrawingData FullWhenPovIsCloserToCamera(double          aCellResolution,
                                         PositionInWorld aCellTopLeft,
                                         PositionInWorld aPointOfView) {
     if (IsPovCloserThanCell(aCellTopLeft, aPointOfView)) {
@@ -29,14 +29,14 @@ DrawingData FullWhenPovIsCloserToCamera(float           aCellResolution,
     return {DrawingData::REDUCED};
 }
 
-DrawingData X1(float aCellResolution, PositionInWorld aCellTopLeft, PositionInWorld aPointOfView) {
+DrawingData X1(double aCellResolution, PositionInWorld aCellTopLeft, PositionInWorld aPointOfView) {
     if (aPointOfView->y <= aCellTopLeft->y || aPointOfView->x >= aCellTopLeft->x + aCellResolution) {
         return {DrawingData::REDUCED};
     }
     return {DrawingData::FULL};
 }
 
-DrawingData FullWhenPovIsSouthOrCloserToCamera(float           aCellResolution,
+DrawingData FullWhenPovIsSouthOrCloserToCamera(double          aCellResolution,
                                                PositionInWorld aCellTopLeft,
                                                PositionInWorld aPointOfView) {
     if ((aPointOfView->y >= aCellTopLeft->y + aCellResolution) ||
@@ -46,7 +46,7 @@ DrawingData FullWhenPovIsSouthOrCloserToCamera(float           aCellResolution,
     return {DrawingData::REDUCED};
 }
 
-DrawingData FullWhenPovIsWestOrCloserToCamera(float           aCellResolution,
+DrawingData FullWhenPovIsWestOrCloserToCamera(double          aCellResolution,
                                               PositionInWorld aCellTopLeft,
                                               PositionInWorld aPointOfView) {
     if ((aPointOfView->x <= aCellTopLeft->x) || IsPovCloserThanCell(aCellTopLeft, aPointOfView)) {
@@ -55,7 +55,7 @@ DrawingData FullWhenPovIsWestOrCloserToCamera(float           aCellResolution,
     return {DrawingData::REDUCED};
 }
 
-DrawingData FullWhenPovIsWestOrSouth(float           aCellResolution,
+DrawingData FullWhenPovIsWestOrSouth(double          aCellResolution,
                                      PositionInWorld aCellTopLeft,
                                      PositionInWorld aPointOfView) {
     if ((aPointOfView->x <= aCellTopLeft->x) || (aPointOfView->y >= aCellTopLeft->y + aCellResolution)) {
@@ -64,7 +64,7 @@ DrawingData FullWhenPovIsWestOrSouth(float           aCellResolution,
     return {DrawingData::REDUCED};
 }
 
-DrawingData FullWhenPovIsWest(float           aCellResolution,
+DrawingData FullWhenPovIsWest(double          aCellResolution,
                               PositionInWorld aCellTopLeft,
                               PositionInWorld aPointOfView) {
     if (aPointOfView->x <= aCellTopLeft->x) {
@@ -73,7 +73,7 @@ DrawingData FullWhenPovIsWest(float           aCellResolution,
     return {DrawingData::REDUCED};
 }
 
-DrawingData FullWhenPovIsWest2(float           aCellResolution,
+DrawingData FullWhenPovIsWest2(double          aCellResolution,
                                PositionInWorld aCellTopLeft,
                                PositionInWorld aPointOfView) {
     if (aPointOfView->x <= aCellTopLeft->x + aCellResolution) {
@@ -82,7 +82,7 @@ DrawingData FullWhenPovIsWest2(float           aCellResolution,
     return {DrawingData::REDUCED};
 }
 
-DrawingData FullWhenPovIsSouth(float           aCellResolution,
+DrawingData FullWhenPovIsSouth(double          aCellResolution,
                                PositionInWorld aCellTopLeft,
                                PositionInWorld aPointOfView) {
     if (aPointOfView->y >= aCellTopLeft->y + aCellResolution) {
@@ -91,7 +91,7 @@ DrawingData FullWhenPovIsSouth(float           aCellResolution,
     return {DrawingData::REDUCED};
 }
 
-DrawingData FullWhenPovIsSouth2(float           aCellResolution,
+DrawingData FullWhenPovIsSouth2(double          aCellResolution,
                                 PositionInWorld aCellTopLeft,
                                 PositionInWorld aPointOfView) {
     if (aPointOfView->y >= aCellTopLeft->y + aCellResolution) {
@@ -100,7 +100,7 @@ DrawingData FullWhenPovIsSouth2(float           aCellResolution,
     return {DrawingData::REDUCED};
 }
 
-DrawingData FullWhenPovIsSouthAndCloserToCamera(float           aCellResolution,
+DrawingData FullWhenPovIsSouthAndCloserToCamera(double          aCellResolution,
                                                 PositionInWorld aCellTopLeft,
                                                 PositionInWorld aPointOfView) {
     if ((aPointOfView->y >= aCellTopLeft->y + aCellResolution) &&
@@ -110,7 +110,7 @@ DrawingData FullWhenPovIsSouthAndCloserToCamera(float           aCellResolution,
     return {DrawingData::REDUCED};
 }
 
-DrawingData FullWhenPovIsWestAndCloserToCamera(float           aCellResolution,
+DrawingData FullWhenPovIsWestAndCloserToCamera(double          aCellResolution,
                                                PositionInWorld aCellTopLeft,
                                                PositionInWorld aPointOfView) {
     if ((aPointOfView->x <= aCellTopLeft->x) && IsPovCloserThanCell(aCellTopLeft, aPointOfView)) {
@@ -119,13 +119,13 @@ DrawingData FullWhenPovIsWestAndCloserToCamera(float           aCellResolution,
     return {DrawingData::REDUCED};
 }
 
-DrawingData AlwaysLowered(float           aCellResolution,
+DrawingData AlwaysLowered(double          aCellResolution,
                           PositionInWorld aCellTopLeft,
                           PositionInWorld aPointOfView) {
     return {DrawingData::REDUCED};
 }
 
-DrawingData AlwaysNone(float           aCellResolution,
+DrawingData AlwaysNone(double          aCellResolution,
                        PositionInWorld aCellTopLeft,
                        PositionInWorld aPointOfView) {
     return {DrawingData::NONE};
@@ -320,7 +320,7 @@ void CellModelExt::ExtensionData::refresh(const CellModelExt* aNorthNeighbour,
     _pointerStorage.drawingDataPredicate = predicate::SELECTION_TABLE[selector];
 }
 
-DrawingData CellModelExt::ExtensionData::getDrawingData(float           aCellResolution,
+DrawingData CellModelExt::ExtensionData::getDrawingData(double          aCellResolution,
                                                         PositionInWorld aCellTopLeft,
                                                         PositionInWorld aPointOfView) const {
     HG_ASSERT(!_holdingExtension);

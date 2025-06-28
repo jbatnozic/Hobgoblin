@@ -32,11 +32,11 @@ struct WorldConfig {
     hg::PZInteger cellsPerChunkY;
 
     //! The width and height of a single cell, in pixels. Must be positive.
-    float cellResolution = 32.f;
+    double cellResolution = 32.0;
 
     //! The implied height of all walls, in pixels. Note that this isn't the height of sprites, but
     //! the 'logical' height of walls. This value is needed for proper rendering.
-    float wallHeight = 96.f;
+    double wallHeight = 96.0;
 
     //! The 'openness' of a cell is defined as follows (openness = N, for brevity):
     //! - if `N == 0`, then the cell is solid.

@@ -31,7 +31,7 @@ void TopDownRenderer::startPrepareToRender(const hg::gr::View&       aView,
     (void)aPointOfView;
     (void)aVisProv;
 
-    _viewData.center   = PositionInView{aView.getCenter()};
+    _viewData.center   = PositionInView{aView.getCenter().x, aView.getCenter().y}; // FTODO
     _viewData.size     = aView.getSize();
     _viewData.overdraw = aOverdrawAmounts;
 
@@ -176,7 +176,7 @@ void TopDownRenderer::CellToRenderedObjectAdapter::render(hg::gr::Canvas& aCanva
     auto& sprite = _renderer._getSprite(spriteId);
 
     sprite.setColor(hg::gr::COLOR_WHITE);
-    sprite.setPosition(*aScreenPosition);
+    sprite.setPosition(aScreenPosition->x, aScreenPosition->y); // FTODO
 
     {
         float xscale = 1.f;

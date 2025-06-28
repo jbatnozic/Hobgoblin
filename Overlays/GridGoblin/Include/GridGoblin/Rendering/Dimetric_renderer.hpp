@@ -26,7 +26,7 @@ struct WallReductionConfig {
     std::uint16_t upperBound   = 900; //! Above this value, the wall is at fully reduced
     float         maxReduction = 1.f; //! Normalized to range [0.f, 1.f]
 
-    float reductionDistanceLimit = 640.f;
+    double reductionDistanceLimit = 640.f;
 
     // TODO: boolean choice - fade or lower
 };

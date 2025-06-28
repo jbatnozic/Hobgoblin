@@ -28,12 +28,14 @@ template <class taCallable>
 void DimetricRenderer::_diagonalTraverse(const World&                      aWorld,
                                          const DimetricRenderer::ViewData& aViewData,
                                          taCallable&&                      aFunc) {
-    const float cellRes = aWorld.getCellResolution();
+    const double cellRes = aWorld.getCellResolution();
 
     const int cellsPerRow =
-        (aViewData.size.x + aViewData.overdraw.left + aViewData.overdraw.right) / (cellRes * 2.f) + 1;
-    const int cellsPerColumn =
-        (aViewData.size.y + aViewData.overdraw.top + aViewData.overdraw.bottom) * 2.f / cellRes;
+        1 + static_cast<int>((aViewData.size.x + aViewData.overdraw.left + aViewData.overdraw.right) /
+                             (cellRes * 2.0));
+
+    const int cellsPerColumn = static_cast<int>(
+        (aViewData.size.y + aViewData.overdraw.top + aViewData.overdraw.bottom) * 2.0 / cellRes);
 
     int startX = static_cast<int>(trunc(aViewData.topLeft->x / cellRes));
     int startY = static_cast<int>(trunc(aViewData.topLeft->y / cellRes));
@@ -81,7 +83,7 @@ void DimetricRenderer::startPrepareToRender(const hg::gr::View&       aView,
                                             const VisibilityProvider* aVisProv) {
     HG_VALIDATE_ARGUMENT(!!(aRenderFlags & REDUCE_WALLS_BASED_ON_VISIBILITY) == !!aVisProv);
 
-    _viewData.center   = PositionInView{aView.getCenter()};
+    _viewData.center   = PositionInView{aView.getCenter().x, aView.getCenter().y}; // FTODO
     _viewData.size     = aView.getSize();
     _viewData.overdraw = aOverdrawAmounts;
 
@@ -158,8 +160,8 @@ void DimetricRenderer::_reduceCellsBelowIfCellIsVisible(hg::math::Vector2pz     
                                                         const VisibilityProvider& aVisProv) {
     const auto cr = _world.getCellResolution();
 
-    static constexpr float   PADDING      = 1.f;
-    const hg::math::Vector2f positions[4] = {
+    static constexpr double   PADDING      = 1.f;
+    const hg::math::Vector2d positions[4] = {
         {(aCell.x + 0) * cr + PADDING, (aCell.y + 0) * cr + PADDING},
         {(aCell.x + 1) * cr - PADDING, (aCell.y + 0) * cr + PADDING},
         {(aCell.x + 1) * cr - PADDING, (aCell.y + 1) * cr - PADDING},
@@ -311,7 +313,7 @@ std::uint16_t DimetricRenderer::_updateFadeValueOfCellRendererMask(
 
     const auto cr = _world.getCellResolution();
     const auto cellPos =
-        hg::math::Vector2f{(aCellInfo.gridX + 0.5f) * cr, (aCellInfo.gridY + 0.5f) * cr};
+        hg::math::Vector2d{(aCellInfo.gridX + 0.5) * cr, (aCellInfo.gridY + 0.5) * cr};
 
     if (hg::math::EuclideanDist(cellPos, *_viewData.pointOfView) >
         _config.wallReductionConfig.reductionDistanceLimit) //
@@ -357,7 +359,7 @@ std::uint16_t DimetricRenderer::_updateFadeValueOfCellRendererMask(
         }
     }
 
-    mask = (mask & ~RM_REDUCTION_COUNTER_MASK) | reductionCounter;
+    mask = static_cast<std::uint16_t>((mask & ~RM_REDUCTION_COUNTER_MASK) | reductionCounter);
 
     ext.setRendererMask(mask);
     return mask;
@@ -381,7 +383,7 @@ void DimetricRenderer::CellToRenderedObjectAdapter::render(hg::gr::Canvas& aCanv
     case Layer::FLOOR:
         {
             auto& sprite = _renderer._getSprite(_cell.getFloor().spriteId);
-            sprite.setPosition(*aScreenPosition);
+            sprite.setPosition(aScreenPosition->x, aScreenPosition->y); // FTODO
             sprite.setColor(hg::gr::COLOR_WHITE);
             aCanvas.draw(sprite);
         }
@@ -409,7 +411,7 @@ void DimetricRenderer::CellToRenderedObjectAdapter::render(hg::gr::Canvas& aCanv
             if (opacity < 255) {
                 auto& reducedSprite = _renderer._getSprite(_cell.getWall().spriteId_reduced);
 
-                reducedSprite.setPosition(*aScreenPosition);
+                reducedSprite.setPosition(aScreenPosition->x, aScreenPosition->y); // FTODO
                 reducedSprite.setColor(hg::gr::COLOR_WHITE);
                 aCanvas.draw(reducedSprite);
             }
@@ -417,7 +419,7 @@ void DimetricRenderer::CellToRenderedObjectAdapter::render(hg::gr::Canvas& aCanv
             if (opacity > 0) {
                 auto& fullSprite = _renderer._getSprite(_cell.getWall().spriteId);
 
-                fullSprite.setPosition(*aScreenPosition);
+                fullSprite.setPosition(aScreenPosition->x, aScreenPosition->y); // FTODO
                 fullSprite.setColor(hg::gr::COLOR_WHITE.withAlpha(opacity));
                 aCanvas.draw(fullSprite);
             }

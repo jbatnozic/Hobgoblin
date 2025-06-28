@@ -10,7 +10,6 @@ namespace gridgoblin {
 
 namespace hg = ::jbatnozic::hobgoblin;
 
-// TODO: rename -> PositionInView
 class PositionInView {
 public:
     PositionInView()                                 = default;
@@ -19,32 +18,32 @@ public:
     PositionInView(PositionInView&&)                 = default;
     PositionInView& operator=(PositionInView&&)      = default;
 
-    explicit PositionInView(float aX, float aY)
+    explicit PositionInView(double aX, double aY)
         : pos{aX, aY} {}
 
-    explicit PositionInView(hg::math::Vector2f aPos)
+    explicit PositionInView(hg::math::Vector2d aPos)
         : pos{aPos} {}
 
-    hg::math::Vector2f pos;
+    hg::math::Vector2d pos;
 
-    hg::math::Vector2f& operator*() {
+    hg::math::Vector2d& operator*() {
         return pos;
     }
 
-    const hg::math::Vector2f& operator*() const {
+    const hg::math::Vector2d& operator*() const {
         return pos;
     }
 
-    hg::math::Vector2f* operator->() {
+    hg::math::Vector2d* operator->() {
         return &pos;
     }
 
-    const hg::math::Vector2f* operator->() const {
+    const hg::math::Vector2d* operator->() const {
         return &pos;
     }
 };
 
-static_assert(sizeof(PositionInView) <= sizeof(void*));
+static_assert(sizeof(PositionInView) <= 2* sizeof(void*));
 
 } // namespace gridgoblin
 } // namespace jbatnozic

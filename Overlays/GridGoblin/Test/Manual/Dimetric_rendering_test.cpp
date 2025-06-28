@@ -145,7 +145,8 @@ void RunDimetricRenderingTestImpl() {
 
         const auto mouseWindowPos = hg::win::GetMousePositionRelativeToWindow(window);
         const auto cursorInWorld =
-            dimetric::ToPositionInWorld(PositionInView{window.mapPixelToCoords(mouseWindowPos)});
+            dimetric::ToPositionInWorld(PositionInView{window.mapPixelToCoords(mouseWindowPos).x,
+                                                       window.mapPixelToCoords(mouseWindowPos).y}); // FTODO
 
         // Edit the world
         {
@@ -177,8 +178,10 @@ void RunDimetricRenderingTestImpl() {
                                           DimetricRenderer::REDUCE_WALLS_BASED_ON_POSITION,
                                           nullptr);
         } else {
-            visCalc.calc(dimetric::ToPositionInWorld(PositionInView{window.getView(0).getCenter()}),
-                         window.getView(0).getSize(),
+            auto c = window.getView(0).getCenter(); // FTODO
+            auto s = window.getView(0).getSize(); // FTODO
+            visCalc.calc(dimetric::ToPositionInWorld(PositionInView{c.x, c.y}),
+                         {s.x, s.y},
                          cursorInWorld);
             renderer.startPrepareToRender(window.getView(0),
                                           {.top = 32.f, .bottom = 256.f, .left = 32.f, .right = 32.f},

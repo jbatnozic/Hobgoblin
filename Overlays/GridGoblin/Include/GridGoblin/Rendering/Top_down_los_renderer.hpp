@@ -50,7 +50,7 @@ private:
     float              _sizeMultiplier;
     float              _recommendedScale = 1.f;
     PositionInWorld    _losOrigin;
-    hg::math::Vector2f _viewCenterOffset;
+    hg::math::Vector2d _viewCenterOffset;
 
     //! Texture to which visibility is rendered.
     hg::gr::RenderTexture _renderTexture;
@@ -68,7 +68,7 @@ private:
     //! Counter used to know which PBO to write to and which PBO to read from.
     //! - In even-numbered steps, we start writing to pbo[0] and read from pbo[1],
     //! - In odd-numbered steps, we start writing to pbo[1] and read from pbo[0].
-    unsigned int _stepCounter = -1;
+    unsigned int _stepCounter = static_cast<unsigned int>(-1);
 
     void _renderOcclusion();
 };
