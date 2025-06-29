@@ -116,7 +116,8 @@ private:
                 .cellsPerChunkY              = 8,
                 .cellResolution              = 32.0,
                 .maxCellOpenness             = 5,
-                .maxLoadedNonessentialChunks = 0};
+                .maxLoadedNonessentialChunks = 0,
+                .chunkDirectoryPath          = "GGManualTest_WorkDir"};
     }
 
     void _drawChunk(hg::gr::Canvas& aCanvas, const Chunk& aChunk, ChunkId aChunkId) const {
@@ -241,6 +242,6 @@ void RunDefaultDiskIoTest() {
 } // namespace gridgoblin
 } // namespace jbatnozic
 
-void RunDefaultDiskIoTest() {
+void RunDefaultDiskIoTest(int, const char**) {
     jbatnozic::gridgoblin::RunDefaultDiskIoTest();
 }

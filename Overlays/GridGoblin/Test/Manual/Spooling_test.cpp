@@ -188,7 +188,7 @@ public:
 };
 } // namespace
 
-void RunSpoolingTest() {
+void RunSpoolingTest(int, const char**) {
     Fixture fixture;
 
     hg::gr::RenderWindow window;

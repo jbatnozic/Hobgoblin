@@ -73,7 +73,8 @@ void RunDimetricRenderingTestImpl() {
                        .cellsPerChunkY              = 8,
                        .cellResolution              = 32.f,
                        .maxCellOpenness             = 3,
-                       .maxLoadedNonessentialChunks = 64};
+                       .maxLoadedNonessentialChunks = 64,
+                       .chunkDirectoryPath          = "GGManualTest_WorkDir"};
 
     World world{config};
 
@@ -211,6 +212,6 @@ void RunDimetricRenderingTestImpl() {
 } // namespace gridgoblin
 } // namespace jbatnozic
 
-void RunDimetricRenderingTest() {
+void RunDimetricRenderingTest(int, const char**) {
     jbatnozic::gridgoblin::RunDimetricRenderingTestImpl();
 }

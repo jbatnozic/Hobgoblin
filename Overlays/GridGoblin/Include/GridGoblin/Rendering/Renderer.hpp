@@ -23,7 +23,7 @@ public:
         REDUCE_WALLS_BASED_ON_VISIBILITY = 0x02,
     };
 
-    struct OverdrawAmounts {
+    struct OverdrawAmounts { // FTODO
         float top    = 0.f;
         float bottom = 0.f;
         float left   = 0.f;

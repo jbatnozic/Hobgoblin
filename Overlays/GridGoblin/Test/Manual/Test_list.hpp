@@ -3,9 +3,9 @@
 
 #pragma once
 
-void RunSpoolingTest();
-void RunStorageHandlerTest();
-void RunOpennessTest();
-void RunDefaultDiskIoTest();
-void RunDimetricRenderingTest();
-void RunVisibilityCalculatorTest();
+void RunSpoolingTest(int, const char**);
+void RunStorageHandlerTest(int, const char**);
+void RunOpennessTest(int, const char**);
+void RunDefaultDiskIoTest(int, const char**);
+void RunDimetricRenderingTest(int, const char**);
+void RunVisibilityCalculatorTest(int, const char**);

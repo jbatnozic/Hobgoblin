@@ -31,7 +31,9 @@ std::size_t GetUnobstructedVertices(const CellModel&         aCell,
                                     bool                     aAllEdgesOverride,
                                     double                   aCellResolution,
                                     std::array<Vector2d, 8>& aVertices) {
-    const double offset = (0.25 / 32.0) * aCellResolution;
+    // We divide by aCellResolution because later we will multiply by it and
+    // then the offset ends up always being 0.25 pixels.
+    const double offset = 0.25 / aCellResolution;
 
     const auto cnt =
         GetVisibilityVertices(aCell, aEdgesOfInterest, aAllEdgesOverride, offset, aVertices);

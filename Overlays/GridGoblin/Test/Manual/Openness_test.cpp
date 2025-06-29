@@ -111,7 +111,8 @@ private:
                 .cellsPerChunkY              = 8,
                 .cellResolution              = 32.f,
                 .maxCellOpenness             = 5,
-                .maxLoadedNonessentialChunks = 0};
+                .maxLoadedNonessentialChunks = 0,
+                .chunkDirectoryPath          = "GGManualTest_WorkDir"};
     }
 
     void _drawChunk(hg::gr::Canvas& aCanvas, const Chunk& aChunk, ChunkId aChunkId) const {
@@ -184,6 +185,6 @@ void OpennessTestImpl() {
 } // namespace gridgoblin
 } // namespace jbatnozic
 
-void RunOpennessTest() {
+void RunOpennessTest(int, const char**) {
     jbatnozic::gridgoblin::OpennessTestImpl();
 }

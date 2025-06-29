@@ -117,7 +117,8 @@ void RunVisibilityCalculatorTestImpl() {
                        .cellsPerChunkY              = CELL_COUNT_Y,
                        .cellResolution              = CELLRES,
                        .maxCellOpenness             = 3,
-                       .maxLoadedNonessentialChunks = 1};
+                       .maxLoadedNonessentialChunks = 1,
+                       .chunkDirectoryPath          = "GGManualTest_WorkDir"};
 
     World world{config};
 
@@ -253,6 +254,6 @@ void RunVisibilityCalculatorTestImpl() {
 } // namespace gridgoblin
 } // namespace jbatnozic
 
-void RunVisibilityCalculatorTest() {
+void RunVisibilityCalculatorTest(int, const char**) {
     jbatnozic::gridgoblin::RunVisibilityCalculatorTestImpl();
 }
