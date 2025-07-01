@@ -23,7 +23,7 @@ namespace jbatnozic {
 namespace gridgoblin {
 namespace {
 
-#define LOG_ID "LoSTest"
+#define LOG_ID "GridGoblin.ManualTest"
 
 namespace hg = jbatnozic::hobgoblin;
 
@@ -239,7 +239,14 @@ void RunVisibilityCalculatorTestImpl() {
 
         window.clear(hg::gr::Color{155, 155, 155});
 
-        renderer.startPrepareToRender(window.getView(0), {}, {}, 0, nullptr);
+        const Renderer::RenderParameters renderParams{
+            .viewCenter  = PositionInWorld{hg::math::VectorCast<double>(window.getView(0).getCenter())},
+            .viewSize    = hg::math::VectorCast<double>(window.getView(0).getSize()),
+            .pointOfView = {},
+            .xOffset     = 0.0,
+            .yOffset     = 0.0};
+
+        renderer.startPrepareToRender(renderParams, 0, nullptr);
         renderer.endPrepareToRender();
         renderer.render(window);
 

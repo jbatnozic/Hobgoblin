@@ -9,6 +9,7 @@
 #include <Hobgoblin/Math.hpp>
 #include <Hobgoblin/Utility/Grids.hpp>
 
+#include <GridGoblin/Rendering/Visibility_provider.hpp>
 #include <GridGoblin/Spatial/Position_in_world.hpp>
 #include <GridGoblin/World/World.hpp>
 
@@ -21,7 +22,7 @@ namespace gridgoblin {
 
 namespace hg = jbatnozic::hobgoblin;
 
-class TopDownLineOfSightRenderer {
+class TopDownLineOfSightRenderer : public VisibilityProvider {
 public:
     enum Purpose {
         FOR_TOPDOWN,
@@ -39,7 +40,7 @@ public:
 
     void render();
 
-    std::optional<bool> testVisibilityAt(PositionInWorld aPos) const;
+    std::optional<bool> testVisibilityAt(PositionInWorld aPos) const override;
 
     //! For debug purposes only.
     const hg::gr::Texture& __ggimpl_getTexture(hg::math::Vector2f* aRecommendedScale = nullptr) const;

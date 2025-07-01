@@ -35,6 +35,11 @@ Vector2<T> operator+(const Vector2<T>& aLhs, const Vector2<T>& aRhs) {
 }
 #endif
 
+template <class T, class U>
+Vector2<T> VectorCast(const Vector2<U>& aVec) {
+    return Vector2<T>(static_cast<U>(aVec.x), static_cast<U>(aVec.y));
+}
+
 ///////////////////////////////////////////////////////////////////////////
 // VECTOR 3                                                              //
 ///////////////////////////////////////////////////////////////////////////

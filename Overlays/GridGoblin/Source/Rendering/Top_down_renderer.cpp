@@ -23,17 +23,10 @@ TopDownRenderer::TopDownRenderer(const World&                 aWorld,
     : _world{aWorld}
     , _spriteLoader{aSpriteLoader} {}
 
-void TopDownRenderer::startPrepareToRender(const hg::gr::View&       aView,
-                                           const OverdrawAmounts&    aOverdrawAmounts,
-                                           PositionInWorld           aPointOfView,
+void TopDownRenderer::startPrepareToRender(const RenderParameters&   aRenderParams,
                                            std::int32_t              aRenderFlags,
                                            const VisibilityProvider* aVisProv) {
-    (void)aPointOfView;
-    (void)aVisProv;
-
-    _viewData.center   = PositionInView{aView.getCenter().x, aView.getCenter().y}; // FTODO
-    _viewData.size     = aView.getSize();
-    _viewData.overdraw = aOverdrawAmounts;
+    _renderParams = aRenderParams;
 
     _objectsToRender.clear();
     _cellAdapters.clear();
@@ -76,7 +69,10 @@ void TopDownRenderer::endPrepareToRender() {
 void TopDownRenderer::render(hg::gr::Canvas& aCanvas) {
     for (const auto& object : _objectsToRender) {
         const auto& spatialInfo = object->getSpatialInfo();
-        object->render(aCanvas, topdown::ToPositionInView(spatialInfo.getCenter()));
+        auto        posInView   = topdown::ToPositionInView(spatialInfo.getCenter());
+        posInView->x += _renderParams.xOffset;
+        posInView->y += _renderParams.yOffset;
+        object->render(aCanvas, posInView);
     }
 }
 
@@ -95,16 +91,16 @@ hg::gr::Sprite& TopDownRenderer::_getSprite(SpriteId aSpriteId) const {
     return newIter.first->second;
 }
 
-void TopDownRenderer::_prepareCells(std::int32_t aRenderFlags, const VisibilityProvider* aVisProv) {
+void TopDownRenderer::_prepareCells(std::int32_t aRenderFlags, const VisibilityProvider* /*aVisProv*/) {
     const auto cr = _world.getCellResolution();
 
     const auto topLeft = topdown::ToPositionInWorld(
-        PositionInView{_viewData.center->x - (_viewData.size.x / 2.f) - _viewData.overdraw.left,
-                       _viewData.center->y - (_viewData.size.y / 2.f) - _viewData.overdraw.top});
+        PositionInView{_renderParams.viewCenter->x - (_renderParams.viewSize.x * 0.5),
+                       _renderParams.viewCenter->y - (_renderParams.viewSize.y * 0.5)});
 
     const auto bottomRight = topdown::ToPositionInWorld(
-        PositionInView{_viewData.center->x + (_viewData.size.x / 2.f) + _viewData.overdraw.right,
-                       _viewData.center->y + (_viewData.size.y / 2.f) + _viewData.overdraw.bottom});
+        PositionInView{_renderParams.viewCenter->x + (_renderParams.viewSize.x * 0.5),
+                       _renderParams.viewCenter->y + (_renderParams.viewSize.y * 0.5)});
 
     const int startX = std::max(0, static_cast<int>(topLeft->x / cr));
     const int startY = std::max(0, static_cast<int>(topLeft->y / cr));
@@ -176,7 +172,7 @@ void TopDownRenderer::CellToRenderedObjectAdapter::render(hg::gr::Canvas& aCanva
     auto& sprite = _renderer._getSprite(spriteId);
 
     sprite.setColor(hg::gr::COLOR_WHITE);
-    sprite.setPosition(aScreenPosition->x, aScreenPosition->y); // FTODO
+    sprite.setPosition(hg::math::VectorCast<float>(*aScreenPosition));
 
     {
         float xscale = 1.f;

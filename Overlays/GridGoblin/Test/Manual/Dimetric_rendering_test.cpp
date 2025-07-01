@@ -12,7 +12,6 @@
 
 #include <GL/glew.h>
 
-#include <array>
 #include <chrono>
 #include <iostream>
 
@@ -172,10 +171,27 @@ void RunDimetricRenderingTestImpl() {
 
         const auto t1 = std::chrono::steady_clock::now();
 
+        const double overdrawLeft  = 32.0;
+        const double overdrawRight = 32.0;
+        const double overdrawUp    = 32.0;
+        const double overdrawDown  = 256.0;
+
+        const auto viewCenter =
+            hg::math::VectorCast<double>(window.getView(0).getCenter()) +
+            hg::math::Vector2d{(overdrawRight - overdrawLeft) * 0.5, (overdrawDown - overdrawUp) * 0.5};
+
+        const auto viewSize =
+            hg::math::VectorCast<double>(window.getView(0).getSize()) +
+            hg::math::Vector2d{overdrawLeft + overdrawRight, overdrawUp + overdrawDown};
+
+        const Renderer::RenderParameters renderParams{.viewCenter  = PositionInWorld{viewCenter},
+                                                      .viewSize    = viewSize,
+                                                      .pointOfView = cursorInWorld,
+                                                      .xOffset     = 0.0,
+                                                      .yOffset     = 0.0};
+
         if (!hg::in::CheckPressedVK(hg::in::VK_SPACE)) {
-            renderer.startPrepareToRender(window.getView(0),
-                                          {.top = 32.f, .bottom = 256.f, .left = 32.f, .right = 32.f},
-                                          cursorInWorld,
+            renderer.startPrepareToRender(renderParams,
                                           DimetricRenderer::REDUCE_WALLS_BASED_ON_POSITION,
                                           nullptr);
         } else {
@@ -184,9 +200,7 @@ void RunDimetricRenderingTestImpl() {
             visCalc.calc(dimetric::ToPositionInWorld(PositionInView{c.x, c.y}),
                          {s.x, s.y},
                          cursorInWorld);
-            renderer.startPrepareToRender(window.getView(0),
-                                          {.top = 32.f, .bottom = 256.f, .left = 32.f, .right = 32.f},
-                                          cursorInWorld,
+            renderer.startPrepareToRender(renderParams,
                                           DimetricRenderer::REDUCE_WALLS_BASED_ON_POSITION |
                                               DimetricRenderer::REDUCE_WALLS_BASED_ON_VISIBILITY,
                                           &visCalc);
