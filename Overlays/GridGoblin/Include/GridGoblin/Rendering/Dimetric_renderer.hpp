@@ -26,7 +26,7 @@ struct WallReductionConfig {
     std::uint16_t upperBound   = 900; //! Above this value, the wall is at fully reduced
     float         maxReduction = 1.f; //! Normalized to range [0.f, 1.f]
 
-    float reductionDistanceLimit = 640.f;
+    double reductionDistanceLimit = 640.f;
 
     // TODO: boolean choice - fade or lower
 };
@@ -41,9 +41,7 @@ public:
                      const hg::gr::SpriteLoader&   aSpriteLoader,
                      const DimetricRendererConfig& aConfig = {});
 
-    void startPrepareToRender(const hg::gr::View&       aView,
-                              const OverdrawAmounts&    aOverdrawAmounts,
-                              PositionInWorld           aPointOfView,
+    void startPrepareToRender(const RenderParameters&   aRenderParams,
                               std::int32_t              aRenderFlags,
                               const VisibilityProvider* aVisProv) override;
 
@@ -69,16 +67,11 @@ private:
 
     // ===== View data =====
 
-    struct ViewData {
-        PositionInView     center;
-        hg::math::Vector2f size;
-        OverdrawAmounts    overdraw;
-
+    struct RenderParametersExt : RenderParameters {
         PositionInWorld topLeft;
-        PositionInWorld pointOfView;
     };
 
-    ViewData _viewData;
+    RenderParametersExt _renderParams;
 
     // ===== Cell info =====
 
@@ -124,7 +117,9 @@ private:
     hg::gr::Sprite& _getSprite(SpriteId aSpriteId) const;
 
     template <class taCallable>
-    void _diagonalTraverse(const World& aWorld, const ViewData& aViewData, taCallable&& aFunc);
+    void _diagonalTraverse(const World&               aWorld,
+                           const RenderParametersExt& aRenderParams,
+                           taCallable&&               aFunc);
 
     void _reduceCellsBelowIfCellIsVisible(hg::math::Vector2pz       aCell,
                                           PositionInView            aCellPosInView,

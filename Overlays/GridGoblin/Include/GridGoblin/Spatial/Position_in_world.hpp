@@ -10,7 +10,6 @@ namespace gridgoblin {
 
 namespace hg = ::jbatnozic::hobgoblin;
 
-// TODO: rename -> PositionInWorld
 class PositionInWorld {
 public:
     PositionInWorld()                                  = default;
@@ -19,32 +18,32 @@ public:
     PositionInWorld(PositionInWorld&&)                 = default;
     PositionInWorld& operator=(PositionInWorld&&)      = default;
 
-    PositionInWorld(float aX, float aY)
+    PositionInWorld(double aX, double aY)
         : pos{aX, aY} {}
 
-    explicit PositionInWorld(hg::math::Vector2f aPos)
+    explicit PositionInWorld(hg::math::Vector2d aPos)
         : pos{aPos} {}
 
-    hg::math::Vector2f pos;
+    hg::math::Vector2d pos;
 
-    hg::math::Vector2f& operator*() {
+    hg::math::Vector2d& operator*() {
         return pos;
     }
 
-    const hg::math::Vector2f& operator*() const {
+    const hg::math::Vector2d& operator*() const {
         return pos;
     }
 
-    hg::math::Vector2f* operator->() {
+    hg::math::Vector2d* operator->() {
         return &pos;
     }
 
-    const hg::math::Vector2f* operator->() const {
+    const hg::math::Vector2d* operator->() const {
         return &pos;
     }
 };
 
-static_assert(sizeof(PositionInWorld) <= sizeof(void*));
+static_assert(sizeof(PositionInWorld) <= 2 * sizeof(void*));
 
 } // namespace gridgoblin
 } // namespace jbatnozic

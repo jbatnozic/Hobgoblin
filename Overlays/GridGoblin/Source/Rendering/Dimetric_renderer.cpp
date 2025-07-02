@@ -15,6 +15,8 @@
 namespace jbatnozic {
 namespace gridgoblin {
 
+#define vector_cast hg::math::VectorCast
+
 // MARK: Cell renderer mask bits
 
 #define RM_REDUCTION_COUNTER_MASK 0x03FF
@@ -25,18 +27,16 @@ namespace gridgoblin {
 // MARK: Templates
 
 template <class taCallable>
-void DimetricRenderer::_diagonalTraverse(const World&                      aWorld,
-                                         const DimetricRenderer::ViewData& aViewData,
-                                         taCallable&&                      aFunc) {
-    const float cellRes = aWorld.getCellResolution();
+void DimetricRenderer::_diagonalTraverse(const World&                                 aWorld,
+                                         const DimetricRenderer::RenderParametersExt& aRenderParams,
+                                         taCallable&&                                 aFunc) {
+    const double cellRes = aWorld.getCellResolution();
 
-    const int cellsPerRow =
-        (aViewData.size.x + aViewData.overdraw.left + aViewData.overdraw.right) / (cellRes * 2.f) + 1;
-    const int cellsPerColumn =
-        (aViewData.size.y + aViewData.overdraw.top + aViewData.overdraw.bottom) * 2.f / cellRes;
+    const int cellsPerRow    = static_cast<int>((aRenderParams.viewSize.x) / (2.0 * cellRes)) + 1;
+    const int cellsPerColumn = static_cast<int>((aRenderParams.viewSize.y) * 2.0 / cellRes);
 
-    int startX = static_cast<int>(trunc(aViewData.topLeft->x / cellRes));
-    int startY = static_cast<int>(trunc(aViewData.topLeft->y / cellRes));
+    int startX = static_cast<int>(trunc(aRenderParams.topLeft->x / cellRes));
+    int startY = static_cast<int>(trunc(aRenderParams.topLeft->y / cellRes));
 
     for (int row = 0; row < cellsPerColumn; row += 1) {
         for (int col = 0; col < cellsPerRow; col += 1) {
@@ -46,8 +46,9 @@ void DimetricRenderer::_diagonalTraverse(const World&                      aWorl
             if (x >= 0 && x < aWorld.getCellCountX() && y >= 0 && y < aWorld.getCellCountY()) {
                 const auto* cell = aWorld.getCellAtUnchecked(x, y);
 
-                const auto posInWorld = PositionInWorld{(x + 0.5f) * cellRes, (y + 0.5f) * cellRes};
-                const auto posInView  = dimetric::ToPositionInView(posInWorld);
+                const auto posInWorld =
+                    PositionInWorld{((float)x + 0.5f) * cellRes, ((float)y + 0.5f) * cellRes};
+                const auto posInView = dimetric::ToPositionInView(posInWorld);
 
                 aFunc(CellInfo{cell, x, y}, posInView);
             }
@@ -74,22 +75,16 @@ DimetricRenderer::DimetricRenderer(const World&                  aWorld,
                          aConfig.wallReductionConfig.upperBound);
 }
 
-void DimetricRenderer::startPrepareToRender(const hg::gr::View&       aView,
-                                            const OverdrawAmounts&    aOverdrawAmounts,
-                                            PositionInWorld           aPointOfView,
+void DimetricRenderer::startPrepareToRender(const RenderParameters&   aRenderParams,
                                             std::int32_t              aRenderFlags,
                                             const VisibilityProvider* aVisProv) {
     HG_VALIDATE_ARGUMENT(!!(aRenderFlags & REDUCE_WALLS_BASED_ON_VISIBILITY) == !!aVisProv);
 
-    _viewData.center   = PositionInView{aView.getCenter()};
-    _viewData.size     = aView.getSize();
-    _viewData.overdraw = aOverdrawAmounts;
+    static_cast<RenderParameters&>(_renderParams) = aRenderParams;
 
-    _viewData.topLeft = dimetric::ToPositionInWorld(
-        PositionInView{_viewData.center->x - (_viewData.size.x / 2.f) - _viewData.overdraw.left,
-                       _viewData.center->y - (_viewData.size.y / 2.f) - _viewData.overdraw.top});
-
-    _viewData.pointOfView = aPointOfView;
+    _renderParams.topLeft = dimetric::ToPositionInWorld(
+        PositionInView{_renderParams.viewCenter->x - (_renderParams.viewSize.x * 0.5),
+                       _renderParams.viewCenter->y - (_renderParams.viewSize.y * 0.5)});
 
     _objectsToRender.clear();
     _cellAdapters.clear();
@@ -134,7 +129,10 @@ void DimetricRenderer::endPrepareToRender() {
 void DimetricRenderer::render(hg::gr::Canvas& aCanvas) {
     for (const auto& object : _objectsToRender) {
         const auto& spatialInfo = object->getSpatialInfo();
-        object->render(aCanvas, dimetric::ToPositionInView(spatialInfo.getCenter()));
+        auto        posInView   = dimetric::ToPositionInView(spatialInfo.getCenter());
+        posInView->x += _renderParams.xOffset;
+        posInView->y += _renderParams.yOffset;
+        object->render(aCanvas, posInView);
     }
 }
 
@@ -158,8 +156,8 @@ void DimetricRenderer::_reduceCellsBelowIfCellIsVisible(hg::math::Vector2pz     
                                                         const VisibilityProvider& aVisProv) {
     const auto cr = _world.getCellResolution();
 
-    static constexpr float   PADDING      = 1.f;
-    const hg::math::Vector2f positions[4] = {
+    static constexpr double   PADDING      = 1.f;
+    const hg::math::Vector2d positions[4] = {
         {(aCell.x + 0) * cr + PADDING, (aCell.y + 0) * cr + PADDING},
         {(aCell.x + 1) * cr - PADDING, (aCell.y + 0) * cr + PADDING},
         {(aCell.x + 1) * cr - PADDING, (aCell.y + 1) * cr - PADDING},
@@ -190,7 +188,7 @@ void DimetricRenderer::_reduceCellsBelowIfCellIsVisible(hg::math::Vector2pz     
         return;
     }
 
-    const auto screenPov = dimetric::ToPositionInView(_viewData.pointOfView);
+    const auto screenPov = dimetric::ToPositionInView(_renderParams.pointOfView);
     const auto limit     = static_cast<int>(_world.getWallHeight() / cr);
     for (int i = 0; i < limit; i += 1) {
         if (screenPov->x > aCellPosInView->x) {
@@ -225,7 +223,7 @@ void DimetricRenderer::_prepareCells(std::int32_t aRenderFlags, const Visibility
 
     _diagonalTraverse(
         _world,
-        _viewData,
+        _renderParams,
         [this, cr, aRenderFlags, aVisProv](const CellInfo& aCellInfo, PositionInView aPosInView) {
             if (aCellInfo.cell == nullptr) {
                 return;
@@ -245,7 +243,7 @@ void DimetricRenderer::_prepareCells(std::int32_t aRenderFlags, const Visibility
             const auto drawingData = GetExtensionData(*aCellInfo.cell)
                                          .getDrawingData(cr,
                                                          {aCellInfo.gridX * cr, aCellInfo.gridY * cr},
-                                                         _viewData.pointOfView);
+                                                         _renderParams.pointOfView);
 
             mask = _updateFadeValueOfCellRendererMask(aCellInfo, drawingData, aRenderFlags);
 
@@ -311,9 +309,9 @@ std::uint16_t DimetricRenderer::_updateFadeValueOfCellRendererMask(
 
     const auto cr = _world.getCellResolution();
     const auto cellPos =
-        hg::math::Vector2f{(aCellInfo.gridX + 0.5f) * cr, (aCellInfo.gridY + 0.5f) * cr};
+        hg::math::Vector2d{(aCellInfo.gridX + 0.5) * cr, (aCellInfo.gridY + 0.5) * cr};
 
-    if (hg::math::EuclideanDist(cellPos, *_viewData.pointOfView) >
+    if (hg::math::EuclideanDist(cellPos, *_renderParams.pointOfView) >
         _config.wallReductionConfig.reductionDistanceLimit) //
     {
         mask &= ~RM_SHOULD_REDUCE;
@@ -357,7 +355,7 @@ std::uint16_t DimetricRenderer::_updateFadeValueOfCellRendererMask(
         }
     }
 
-    mask = (mask & ~RM_REDUCTION_COUNTER_MASK) | reductionCounter;
+    mask = static_cast<std::uint16_t>((mask & ~RM_REDUCTION_COUNTER_MASK) | reductionCounter);
 
     ext.setRendererMask(mask);
     return mask;
@@ -381,7 +379,7 @@ void DimetricRenderer::CellToRenderedObjectAdapter::render(hg::gr::Canvas& aCanv
     case Layer::FLOOR:
         {
             auto& sprite = _renderer._getSprite(_cell.getFloor().spriteId);
-            sprite.setPosition(*aScreenPosition);
+            sprite.setPosition(vector_cast<float>(*aScreenPosition));
             sprite.setColor(hg::gr::COLOR_WHITE);
             aCanvas.draw(sprite);
         }
@@ -400,16 +398,16 @@ void DimetricRenderer::CellToRenderedObjectAdapter::render(hg::gr::Canvas& aCanv
             } else {
                 const auto stepCount        = wrConfig.upperBound - wrConfig.lowerBound;
                 const auto stepsTaken       = reductionCounter - wrConfig.lowerBound;
-                const auto reductionPerStep = wrConfig.maxReduction / stepCount;
+                const auto reductionPerStep = wrConfig.maxReduction / (float)stepCount;
 
                 opacity = static_cast<std::uint8_t>(
-                    hg::math::Clamp(255.f * (1.f - stepsTaken * reductionPerStep), 0.f, 255.f));
+                    hg::math::Clamp(255.f * (1.f - (float)stepsTaken * reductionPerStep), 0.f, 255.f));
             }
 
             if (opacity < 255) {
                 auto& reducedSprite = _renderer._getSprite(_cell.getWall().spriteId_reduced);
 
-                reducedSprite.setPosition(*aScreenPosition);
+                reducedSprite.setPosition(vector_cast<float>(*aScreenPosition));
                 reducedSprite.setColor(hg::gr::COLOR_WHITE);
                 aCanvas.draw(reducedSprite);
             }
@@ -417,7 +415,7 @@ void DimetricRenderer::CellToRenderedObjectAdapter::render(hg::gr::Canvas& aCanv
             if (opacity > 0) {
                 auto& fullSprite = _renderer._getSprite(_cell.getWall().spriteId);
 
-                fullSprite.setPosition(*aScreenPosition);
+                fullSprite.setPosition(vector_cast<float>(*aScreenPosition));
                 fullSprite.setColor(hg::gr::COLOR_WHITE.withAlpha(opacity));
                 aCanvas.draw(fullSprite);
             }

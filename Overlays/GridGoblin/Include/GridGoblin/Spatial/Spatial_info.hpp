@@ -21,11 +21,11 @@ public:
     SpatialInfo() = default;
 
     static SpatialInfo fromCenterAndSize(PositionInWorld    aCenter,
-                                         hg::math::Vector2f aSize,
+                                         hg::math::Vector2d aSize,
                                          Layer              aLayer);
 
     static SpatialInfo fromTopLeftAndSize(PositionInWorld    aTopLeft,
-                                          hg::math::Vector2f aSize,
+                                          hg::math::Vector2d aSize,
                                           Layer              aLayer);
 
     void setCenter(PositionInWorld aPoint);
@@ -33,17 +33,17 @@ public:
     void setTopLeft(PositionInWorld aPoint);
 
     // Maintains the top-left corner, not the center!
-    void setSize(hg::math::Vector2f aSize);
+    void setSize(hg::math::Vector2d aSize);
 
-    void setSizeMaintainingCenter(hg::math::Vector2f aSize);
+    void setSizeMaintainingCenter(hg::math::Vector2d aSize);
 
     PositionInWorld getCenter() const;
 
     PositionInWorld getTopLeft() const;
 
-    const hg::math::Rectangle<float>& getBoundingBox() const;
+    const hg::math::Rectangle<double>& getBoundingBox() const;
 
-    hg::math::Vector2f getSize() const;
+    hg::math::Vector2d getSize() const;
 
     Layer getLayer() const;
     void  setLayer(Layer aLayer);
@@ -51,9 +51,9 @@ public:
 private:
     SpatialInfo(Layer aLayer);
 
-    hg::math::Rectangle<float> _bbox;
-    PositionInWorld            _center;
-    Layer                      _layer = Layer::FLOOR;
+    hg::math::Rectangle<double> _bbox;
+    PositionInWorld             _center;
+    Layer                       _layer = Layer::FLOOR;
 };
 
 inline PositionInWorld SpatialInfo::getCenter() const {
@@ -66,11 +66,11 @@ inline PositionInWorld SpatialInfo::getTopLeft() const {
     };
 }
 
-inline const hg::math::Rectangle<float>& SpatialInfo::getBoundingBox() const {
+inline const hg::math::Rectangle<double>& SpatialInfo::getBoundingBox() const {
     return _bbox;
 }
 
-inline hg::math::Vector2f SpatialInfo::getSize() const {
+inline hg::math::Vector2d SpatialInfo::getSize() const {
     return {_bbox.w, _bbox.h};
 }
 

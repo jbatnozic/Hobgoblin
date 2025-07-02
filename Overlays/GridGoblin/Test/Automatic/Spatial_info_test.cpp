@@ -14,17 +14,17 @@ namespace gridgoblin {
 TEST(GridGoblinSpatialInfoDrawingOrderTest, FourSeparateRectangles) {
     std::array<SpatialInfo, 4> infos;
 
-    infos[0].setTopLeft({6.5f, 1.f});
-    infos[0].setSize({1.5f, 1.5f});
+    infos[0].setTopLeft({6.5, 1.0});
+    infos[0].setSize({1.5, 1.5});
 
-    infos[1].setTopLeft({2.f, 3.f});
-    infos[1].setSize({4.f, 2.f});
+    infos[1].setTopLeft({2.0, 3.0});
+    infos[1].setSize({4.0, 2.0});
 
-    infos[2].setTopLeft({4.5f, 7.f});
-    infos[2].setSize({2.f, 3.f});
+    infos[2].setTopLeft({4.5, 7.0});
+    infos[2].setSize({2.0, 3.0});
 
-    infos[3].setTopLeft({1.f, 6.f});
-    infos[3].setSize({3.f, 3.f});
+    infos[3].setTopLeft({1.0, 6.0});
+    infos[3].setSize({3.0, 3.0});
 
     for (unsigned i = 0; i < 4; i += 1) {
         for (unsigned t = i + 1; t < 4; t += 1) {
@@ -37,17 +37,17 @@ TEST(GridGoblinSpatialInfoDrawingOrderTest, FourSeparateRectangles) {
 TEST(GridGoblinSpatialInfoDrawingOrderTest, TouchingRectanglesCycle) {
     std::array<SpatialInfo, 4> infos;
 
-    infos[0].setTopLeft({2.0f, 0.f});
-    infos[0].setSize({6.f, 2.f});
+    infos[0].setTopLeft({2.0, 0.0});
+    infos[0].setSize({6.0, 2.0});
 
-    infos[1].setTopLeft({6.f, 2.f});
-    infos[1].setSize({2.f, 6.f});
+    infos[1].setTopLeft({6.0, 2.0});
+    infos[1].setSize({2.0, 6.0});
 
-    infos[2].setTopLeft({0.f, 0.f});
-    infos[2].setSize({2.f, 6.f});
+    infos[2].setTopLeft({0.0, 0.0});
+    infos[2].setSize({2.0, 6.0});
 
-    infos[3].setTopLeft({0.f, 6.f});
-    infos[3].setSize({6.f, 2.f});
+    infos[3].setTopLeft({0.0, 6.0});
+    infos[3].setSize({6.0, 2.0});
 
     for (unsigned i = 0; i < 4; i += 1) {
         for (unsigned t = i + 1; t < 4; t += 1) {
@@ -65,21 +65,21 @@ TEST(GridGoblinSpatialInfoDrawingOrderTest, CircleOrbitingAnotherCircle) {
     // boxes of those circles.
     // Pivot orbits the axis with a distance of 4 between their centres.
 
-    const float R       = 2.f; // circle radius
-    const float centreX = 8.f;
-    const float centreY = 8.f;
+    const double R       = 2.0; // circle radius
+    const double centreX = 8.0;
+    const double centreY = 8.0;
 
     SpatialInfo axis;
     axis.setCenter({centreX, centreX});
-    axis.setSizeMaintainingCenter({2.f * R, 2.f * R});
+    axis.setSizeMaintainingCenter({2.0 * R, 2.0 * R});
 
     SpatialInfo pivot;
-    pivot.setSizeMaintainingCenter({2.f * R, 2.f * R});
+    pivot.setSizeMaintainingCenter({2.0 * R, 2.0 * R});
 
     for (int i = 0; i < 360; i += 1) {
-        const auto  angle = hg::math::AngleF::fromDegrees(static_cast<float>(i - 45));
-        const float x     = centreX + angle.cos() * 4.f;
-        const float y     = centreY - angle.sin() * 4.f;
+        const auto   angle = hg::math::AngleD::fromDegrees(static_cast<double>(i - 45));
+        const double x     = centreX + angle.cos() * 4.0;
+        const double y     = centreY - angle.sin() * 4.0;
         pivot.setCenter({x, y});
 
         const auto order = dimetric::CheckDrawingOrder(pivot, axis);

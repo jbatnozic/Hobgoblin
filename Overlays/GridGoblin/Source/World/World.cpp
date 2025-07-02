@@ -247,24 +247,24 @@ void World::prune() {
 // CONVERSIONS                                                           //
 ///////////////////////////////////////////////////////////////////////////
 
-hg::math::Vector2pz World::posToCell(float aX, float aY) const {
-    HG_VALIDATE_ARGUMENT(aX >= 0.f && aX < _config.cellCountX * _config.cellResolution);
-    HG_VALIDATE_ARGUMENT(aY >= 0.f && aY < _config.cellCountY * _config.cellResolution);
+hg::math::Vector2pz World::posToCell(double aX, double aY) const {
+    HG_VALIDATE_ARGUMENT(aX >= 0.0 && aX < _config.cellCountX * _config.cellResolution);
+    HG_VALIDATE_ARGUMENT(aY >= 0.0 && aY < _config.cellCountY * _config.cellResolution);
     return posToCellUnchecked(aX, aY);
 }
 
-hg::math::Vector2pz World::posToCell(hg::math::Vector2f aPos) const {
-    HG_VALIDATE_ARGUMENT(aPos.x >= 0.f && aPos.x < _config.cellCountX * _config.cellResolution);
-    HG_VALIDATE_ARGUMENT(aPos.y >= 0.f && aPos.y < _config.cellCountY * _config.cellResolution);
+hg::math::Vector2pz World::posToCell(hg::math::Vector2d aPos) const {
+    HG_VALIDATE_ARGUMENT(aPos.x >= 0.0 && aPos.x < _config.cellCountX * _config.cellResolution);
+    HG_VALIDATE_ARGUMENT(aPos.y >= 0.0 && aPos.y < _config.cellCountY * _config.cellResolution);
     return posToCellUnchecked(aPos);
 }
 
-hg::math::Vector2pz World::posToCellUnchecked(float aX, float aY) const {
+hg::math::Vector2pz World::posToCellUnchecked(double aX, double aY) const {
     return {static_cast<hg::PZInteger>(aX / _config.cellResolution),
             static_cast<hg::PZInteger>(aY / _config.cellResolution)};
 }
 
-hg::math::Vector2pz World::posToCellUnchecked(hg::math::Vector2f aPos) const {
+hg::math::Vector2pz World::posToCellUnchecked(hg::math::Vector2d aPos) const {
     return {static_cast<hg::PZInteger>(aPos.x / _config.cellResolution),
             static_cast<hg::PZInteger>(aPos.y / _config.cellResolution)};
 }
@@ -305,11 +305,11 @@ std::unique_ptr<World::EditPermission> World::getPermissionToEdit() {
 // CELL GETTERS                                                          //
 ///////////////////////////////////////////////////////////////////////////
 
-float World::getCellResolution() const {
+double World::getCellResolution() const {
     return _config.cellResolution;
 }
 
-float World::getWallHeight() const {
+double World::getWallHeight() const {
     return _config.wallHeight;
 }
 
@@ -651,9 +651,8 @@ std::uint16_t GetNeighborObstruction(const CellModel* aCell, ObstructionFlags aR
         return 0;
     }
 
-    return (static_cast<std::uint16_t>(SHAPE_OBSTRUCTION_FLAGS[hg::ToSz(aCell->getWall().shape)] &
-                                       aRelevantFlags)
-            << FLAG_LS);
+    return static_cast<std::uint16_t>(
+        (SHAPE_OBSTRUCTION_FLAGS[hg::ToSz(aCell->getWall().shape)] & aRelevantFlags) << FLAG_LS);
 }
 } // namespace
 
@@ -687,7 +686,7 @@ void World::_refreshCellAtUnchecked(hg::PZInteger aX, hg::PZInteger aY) {
             return res;
         }();
 
-        cell->setOpenness(openness);
+        cell->setOpenness(static_cast<std::uint8_t>(openness));
         cell->setObstructedByFlags(neighborObstruction);
 
         // GetMutableExtensionData(cell).refresh(

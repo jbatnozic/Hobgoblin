@@ -29,9 +29,7 @@ public:
                     const hg::gr::SpriteLoader&  aSpriteLoader,
                     const TopDownRendererConfig& aConfig = {});
 
-    void startPrepareToRender(const hg::gr::View&       aView,
-                              const OverdrawAmounts&    aOverdrawAmounts,
-                              PositionInWorld           aPointOfView,
+    void startPrepareToRender(const RenderParameters&   aRenderParams,
                               std::int32_t              aRenderFlags,
                               const VisibilityProvider* aVisProv) override;
 
@@ -47,15 +45,9 @@ private:
     const World&                _world;
     const hg::gr::SpriteLoader& _spriteLoader;
 
-    // ===== View data =====
+    // ===== Render parameters =====
 
-    struct ViewData {
-        PositionInView     center;
-        hg::math::Vector2f size;
-        OverdrawAmounts    overdraw;
-    };
-
-    ViewData _viewData;
+    RenderParameters _renderParams;
 
     // ===== Cell adapters =====
 

@@ -7,8 +7,8 @@ namespace jbatnozic {
 namespace gridgoblin {
 
 namespace {
-constexpr float Half(float aF) {
-    return aF / 2.f;
+constexpr double Half(double aF) {
+    return aF * 0.5;
 }
 } // namespace
 
@@ -16,7 +16,7 @@ SpatialInfo::SpatialInfo(Layer aLayer)
     : _layer{aLayer} {}
 
 SpatialInfo SpatialInfo::fromCenterAndSize(PositionInWorld    aCenter,
-                                           hg::math::Vector2f aSize,
+                                           hg::math::Vector2d aSize,
                                            Layer              aLayer) {
     SpatialInfo result{aLayer};
     result._center = aCenter;
@@ -25,7 +25,7 @@ SpatialInfo SpatialInfo::fromCenterAndSize(PositionInWorld    aCenter,
 }
 
 SpatialInfo SpatialInfo::fromTopLeftAndSize(PositionInWorld    aTopLeft,
-                                            hg::math::Vector2f aSize,
+                                            hg::math::Vector2d aSize,
                                             Layer              aLayer) {
     SpatialInfo result{aLayer};
     result._bbox.x = aTopLeft->x;
@@ -50,7 +50,7 @@ void SpatialInfo::setTopLeft(PositionInWorld aPoint) {
     _center->y = aPoint->y + Half(_bbox.h);
 }
 
-void SpatialInfo::setSize(hg::math::Vector2f aSize) {
+void SpatialInfo::setSize(hg::math::Vector2d aSize) {
     _bbox.w = aSize.x;
     _bbox.h = aSize.y;
 
@@ -58,7 +58,7 @@ void SpatialInfo::setSize(hg::math::Vector2f aSize) {
     _center->y = _bbox.y + Half(aSize.y);
 }
 
-void SpatialInfo::setSizeMaintainingCenter(hg::math::Vector2f aSize) {
+void SpatialInfo::setSizeMaintainingCenter(hg::math::Vector2d aSize) {
     _bbox.w = aSize.x;
     _bbox.h = aSize.y;
 

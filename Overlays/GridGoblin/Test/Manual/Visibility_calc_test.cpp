@@ -23,9 +23,11 @@ namespace jbatnozic {
 namespace gridgoblin {
 namespace {
 
-#define LOG_ID "LoSTest"
+#define LOG_ID "GridGoblin.ManualTest"
 
 namespace hg = jbatnozic::hobgoblin;
+
+#define vector_cast hg::math::VectorCast
 
 #define CELL_COUNT_X     40
 #define CELL_COUNT_Y     40
@@ -117,7 +119,8 @@ void RunVisibilityCalculatorTestImpl() {
                        .cellsPerChunkY              = CELL_COUNT_Y,
                        .cellResolution              = CELLRES,
                        .maxCellOpenness             = 3,
-                       .maxLoadedNonessentialChunks = 1};
+                       .maxLoadedNonessentialChunks = 1,
+                       .chunkDirectoryPath          = "GGManualTest_WorkDir"};
 
     World world{config};
 
@@ -163,7 +166,7 @@ void RunVisibilityCalculatorTestImpl() {
     hg::gr::Image        vcImage;
     hg::gr::Texture      vcTexture;
 
-    const auto generateLoS = [&](hg::math::Vector2f pos) {
+    const auto generateLoS = [&](hg::math::Vector2d pos) {
         HG_LOG_INFO(LOG_ID, "===============================================");
         HG_LOG_INFO(LOG_ID, "Running calc()...");
         {
@@ -185,7 +188,7 @@ void RunVisibilityCalculatorTestImpl() {
             vcImage.create(hg::ToPz(CELL_COUNT_X * CELLRES), hg::ToPz(CELL_COUNT_Y * CELLRES));
             for (int y = 0; y < hg::ToPz(CELL_COUNT_X * CELLRES); y += 1) {
                 for (int x = 0; x < hg::ToPz(CELL_COUNT_Y * CELLRES); x += 1) {
-                    const auto v = visCalc.testVisibilityAt({(float)x, (float)y});
+                    const auto v = visCalc.testVisibilityAt({(double)x, (double)y});
                     if (!v.has_value() || *v == false) {
                         vcImage.setPixel(x, y, hg::gr::COLOR_BLACK.withAlpha(150));
                     } else {
@@ -230,7 +233,7 @@ void RunVisibilityCalculatorTestImpl() {
                     if (aButton.button == hg::in::MB_LEFT) {
                         const auto coords = window.mapPixelToCoords({aButton.x, aButton.y});
                         HG_LOG_INFO(LOG_ID, "Coords = {}, {}", coords.x, coords.y);
-                        generateLoS(coords);
+                        generateLoS(vector_cast<double>(coords));
                         mouseLClick = true;
                     }
                 });
@@ -238,7 +241,14 @@ void RunVisibilityCalculatorTestImpl() {
 
         window.clear(hg::gr::Color{155, 155, 155});
 
-        renderer.startPrepareToRender(window.getView(0), {}, {}, 0, nullptr);
+        const Renderer::RenderParameters renderParams{
+            .viewCenter  = PositionInWorld{vector_cast<double>(window.getView(0).getCenter())},
+            .viewSize    = vector_cast<double>(window.getView(0).getSize()),
+            .pointOfView = {},
+            .xOffset     = 0.0,
+            .yOffset     = 0.0};
+
+        renderer.startPrepareToRender(renderParams, 0, nullptr);
         renderer.endPrepareToRender();
         renderer.render(window);
 
@@ -253,6 +263,6 @@ void RunVisibilityCalculatorTestImpl() {
 } // namespace gridgoblin
 } // namespace jbatnozic
 
-void RunVisibilityCalculatorTest() {
+void RunVisibilityCalculatorTest(int, const char**) {
     jbatnozic::gridgoblin::RunVisibilityCalculatorTestImpl();
 }

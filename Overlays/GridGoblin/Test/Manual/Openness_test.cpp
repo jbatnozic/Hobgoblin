@@ -47,7 +47,7 @@ public:
         switch (aButton) {
         case hg::in::MB_LEFT:
             {
-                const auto  cellXY = _world.posToCell(aPos);
+                const auto  cellXY = _world.posToCell(aPos.x, aPos.y);
                 const auto* cell   = _world.getCellAtUnchecked(cellXY);
                 if (cell) {
                     if (!cell->isWallInitialized()) {
@@ -65,7 +65,7 @@ public:
 
         case hg::in::MB_RIGHT:
             {
-                const auto cell    = _world.posToCell(aPos);
+                const auto cell    = _world.posToCell(aPos.x, aPos.y);
                 const auto chunkId = _world.cellToChunkIdUnchecked(cell);
 
                 const auto iter = std::find(_activeChunks.begin(), _activeChunks.end(), chunkId);
@@ -111,11 +111,12 @@ private:
                 .cellsPerChunkY              = 8,
                 .cellResolution              = 32.f,
                 .maxCellOpenness             = 5,
-                .maxLoadedNonessentialChunks = 0};
+                .maxLoadedNonessentialChunks = 0,
+                .chunkDirectoryPath          = "GGManualTest_WorkDir"};
     }
 
     void _drawChunk(hg::gr::Canvas& aCanvas, const Chunk& aChunk, ChunkId aChunkId) const {
-        const auto         cellRes = _world.getCellResolution();
+        const auto         cellRes = (float)_world.getCellResolution();
         hg::math::Vector2f start{aChunkId.x * aChunk.getCellCountX() * cellRes,
                                  aChunkId.y * aChunk.getCellCountY() * cellRes};
 
@@ -184,6 +185,6 @@ void OpennessTestImpl() {
 } // namespace gridgoblin
 } // namespace jbatnozic
 
-void RunOpennessTest() {
+void RunOpennessTest(int, const char**) {
     jbatnozic::gridgoblin::OpennessTestImpl();
 }

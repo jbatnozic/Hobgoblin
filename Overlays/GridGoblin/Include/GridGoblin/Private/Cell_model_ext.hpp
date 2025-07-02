@@ -55,12 +55,12 @@ public:
                      const CellModelExt* aSouthNeighbour);
 
         //! \warning caling this is UB when `hasChunkExtensionPointer()` returns `true`.
-        DrawingData getDrawingData(float           aCellResolution,
+        DrawingData getDrawingData(double          aCellResolution,
                                    PositionInWorld aCellTopLeft,
                                    PositionInWorld aPointOfView) const;
 
     private:
-        using DrawingDataPredicate = DrawingData (*)(float           aCellResolution,
+        using DrawingDataPredicate = DrawingData (*)(double          aCellResolution,
                                                      PositionInWorld aCellTopLeft,
                                                      PositionInWorld aPointOfView);
 

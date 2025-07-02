@@ -102,13 +102,13 @@ public:
     // positions >= 0.0f and < 32.0f belong to cell 0, positions >= 32.0f and < 64.0f belong
     // to cell 1, and so on (the same principle applies to both X and Y axis).
 
-    hg::math::Vector2pz posToCell(float aX, float aY) const;
+    hg::math::Vector2pz posToCell(double aX, double aY) const;
 
-    hg::math::Vector2pz posToCell(hg::math::Vector2f aPos) const;
+    hg::math::Vector2pz posToCell(hg::math::Vector2d aPos) const;
 
-    hg::math::Vector2pz posToCellUnchecked(float aX, float aY) const;
+    hg::math::Vector2pz posToCellUnchecked(double aX, double aY) const;
 
-    hg::math::Vector2pz posToCellUnchecked(hg::math::Vector2f aPos) const;
+    hg::math::Vector2pz posToCellUnchecked(hg::math::Vector2d aPos) const;
 
     // Use the following methods to convert from the coordinates of a single cell to the
     // corresponding chunk. For example, if the chunk width (as defined by the world config) is
@@ -143,9 +143,9 @@ public:
     // CELL GETTERS                                                          //
     ///////////////////////////////////////////////////////////////////////////
 
-    float getCellResolution() const;
+    double getCellResolution() const;
 
-    float getWallHeight() const;
+    double getWallHeight() const;
 
     hg::PZInteger getCellCountX() const;
 

@@ -18,30 +18,28 @@ namespace gridgoblin {
 namespace {
 using CellFlags = std::underlying_type_t<CellModel::Flags>;
 
-using hg::math::AngleF;
+using hg::math::AngleD;
 using hg::math::Clamp;
 using hg::math::Sign;
 using hg::math::Sqr;
-using hg::math::Vector2f;
+using hg::math::Vector2d;
 using hg::math::Vector2pz;
 
 std::size_t GetUnobstructedVertices(const CellModel&         aCell,
                                     Vector2pz                aCellCoords,
                                     CellFlags                aEdgesOfInterest,
                                     bool                     aAllEdgesOverride,
-                                    float                    aCellResolution,
-                                    std::array<Vector2f, 8>& aVertices) {
-    const float OFFSET = 0.25 / aCellResolution;
+                                    double                   aCellResolution,
+                                    std::array<Vector2d, 8>& aVertices) {
+    // We divide by aCellResolution because later we will multiply by it and
+    // then the offset ends up always being 0.25 pixels.
+    const double offset = 0.25 / aCellResolution;
 
-    const auto cnt = GetVisibilityVertices(aCell.getWall().shape,
-                                           aCell,
-                                           aEdgesOfInterest,
-                                           aAllEdgesOverride,
-                                           OFFSET,
-                                           aVertices);
+    const auto cnt =
+        GetVisibilityVertices(aCell, aEdgesOfInterest, aAllEdgesOverride, offset, aVertices);
 
     const auto tlCorner =
-        hg::math::Vector2f{aCellCoords.x * aCellResolution, aCellCoords.y * aCellResolution};
+        hg::math::Vector2d{aCellCoords.x * aCellResolution, aCellCoords.y * aCellResolution};
 
     for (std::size_t i = 0; i < cnt; i += 1) {
         aVertices[i] = tlCorner + (aVertices[i] * aCellResolution);
@@ -50,13 +48,13 @@ std::size_t GetUnobstructedVertices(const CellModel&         aCell,
     return cnt;
 }
 
-void ProjectRay(/*  in */ Vector2f          aOrigin,
-                /*  in */ Vector2f          aPassesThrough,
-                /*  in */ float             aLength,
-                /* out */ Vector2f&         aRayEnd,
-                /* out */ hg::math::AngleF& aRayAngle) {
+void ProjectRay(/*  in */ Vector2d  aOrigin,
+                /*  in */ Vector2d  aPassesThrough,
+                /*  in */ double    aLength,
+                /* out */ Vector2d& aRayEnd,
+                /* out */ AngleD&   aRayAngle) {
     aPassesThrough -= aOrigin;
-    aRayAngle = AngleF::fromVector(aPassesThrough.x, aPassesThrough.y);
+    aRayAngle = AngleD::fromVector(aPassesThrough.x, aPassesThrough.y);
     aRayEnd   = aOrigin + aRayAngle.asNormalizedVector() * aLength;
 }
 
@@ -67,8 +65,8 @@ VisibilityCalculator::VisibilityCalculator(const World&                      aWo
                                            const VisibilityCalculatorConfig& aConfig)
     : _world{aWorld}
     , _cr{_world.getCellResolution()}
-    , _xLimit{std::nextafter(_world.getCellCountX() * _cr, 0.f)}
-    , _yLimit{std::nextafter(_world.getCellCountY() * _cr, 0.f)}
+    , _xLimit{std::nextafter(_world.getCellCountX() * _cr, 0.0)}
+    , _yLimit{std::nextafter(_world.getCellCountY() * _cr, 0.0)}
     , _minRingsBeforeRaycasting{aConfig.minRingsBeforeRaycasting}
     , _minTrianglesBeforeRaycasting{aConfig.minTrianglesBeforeRaycasting}
     , _rayCount{aConfig.rayCount}
@@ -85,7 +83,7 @@ std::optional<bool> VisibilityCalculator::testVisibilityAt(PositionInWorld aPos)
 }
 
 void VisibilityCalculator::calc(PositionInWorld aViewCenter,
-                                Vector2f        aViewSize,
+                                Vector2d        aViewSize,
                                 PositionInWorld aLineOfSightOrigin) {
     _resetData();
     _setInitialCalculationContext(aViewCenter, aViewSize, aLineOfSightOrigin);
@@ -134,12 +132,12 @@ void VisibilityCalculator::_resetData() {
 }
 
 void VisibilityCalculator::_setInitialCalculationContext(PositionInWorld    aViewCenter,
-                                                         hg::math::Vector2f aViewSize,
+                                                         hg::math::Vector2d aViewSize,
                                                          PositionInWorld    aLineOfSightOrigin) {
-    _processedRingsBbox = {0.f, 0.f, 0.f, 0.f};
+    _processedRingsBbox = {0.0, 0.0, 0.0, 0.0};
 
-    _viewBbox = {Clamp(aViewCenter->x - aViewSize.x * 0.5f, 0.f, _xLimit),
-                 Clamp(aViewCenter->y - aViewSize.y * 0.5f, 0.f, _yLimit),
+    _viewBbox = {Clamp(aViewCenter->x - aViewSize.x * 0.5f, 0.0, _xLimit),
+                 Clamp(aViewCenter->y - aViewSize.y * 0.5f, 0.0, _yLimit),
                  aViewSize.x,
                  aViewSize.y};
 
@@ -160,11 +158,11 @@ void VisibilityCalculator::_setInitialCalculationContext(PositionInWorld    aVie
     _triangleSideLength = std::sqrt(Sqr(_viewBbox.w) + Sqr(_viewBbox.h));
 
     _rayRadius = _minRingsBeforeRaycasting * _cr -
-                 std::max(std::abs(_lineOfSightOrigin.x - (_lineOfSightOriginCell.x + 0.5f) * _cr),
-                          std::abs(_lineOfSightOrigin.y - (_lineOfSightOriginCell.y + 0.5f) * _cr));
+                 std::max(std::abs(_lineOfSightOrigin.x - (_lineOfSightOriginCell.x + 0.5) * _cr),
+                          std::abs(_lineOfSightOrigin.y - (_lineOfSightOriginCell.y + 0.5) * _cr));
 
     // equal to _triangleSideLength / (_cr / _rayPointsPerCell)
-    _maxPointsPerRay = _triangleSideLength * _rayPointsPerCell / _cr;
+    _maxPointsPerRay = hg::ToPz(_triangleSideLength * _rayPointsPerCell / _cr);
 
     _rayCheckingEnabled = false;
 }
@@ -196,7 +194,7 @@ std::uint16_t VisibilityCalculator::_calcEdgesOfInterest(Vector2pz aCell) const 
     return edgesOfInterest;
 }
 
-bool VisibilityCalculator::_areAnyVerticesVisible(const std::array<Vector2f, 8>& aVertices,
+bool VisibilityCalculator::_areAnyVerticesVisible(const std::array<Vector2d, 8>& aVertices,
                                                   std::size_t                    aVertCount,
                                                   std::uint16_t aEdgesOfInterest) const //
 {
@@ -294,7 +292,7 @@ void VisibilityCalculator::_processCell(Vector2pz aCell, hg::PZInteger aRingInde
     const auto edgesOfInterest  = _calcEdgesOfInterest(aCell);
     const bool allEdgesOverride = (aRingIndex <= 1);
 
-    std::array<Vector2f, 8> vertices;
+    std::array<Vector2d, 8> vertices;
     const auto              vertCnt =
         GetUnobstructedVertices(*cell, aCell, edgesOfInterest, allEdgesOverride, _cr, vertices);
 
@@ -307,8 +305,8 @@ void VisibilityCalculator::_processCell(Vector2pz aCell, hg::PZInteger aRingInde
     }
 
     for (std::size_t i = 0; i < vertCnt; i += 2) {
-        Vector2f ray1End, ray2End;
-        AngleF   a1, a2;
+        Vector2d ray1End, ray2End;
+        AngleD   a1, a2;
 
         ProjectRay(_lineOfSightOrigin, vertices[i + 0], _triangleSideLength, ray1End, a1);
         ProjectRay(_lineOfSightOrigin, vertices[i + 1], _triangleSideLength, ray2End, a2);
@@ -320,17 +318,17 @@ void VisibilityCalculator::_processCell(Vector2pz aCell, hg::PZInteger aRingInde
     }
 }
 
-void VisibilityCalculator::_setRaysFromTriangles(hg::math::AngleF aAngle1, hg::math::AngleF aAngle2) {
+void VisibilityCalculator::_setRaysFromTriangles(AngleD aAngle1, AngleD aAngle2) {
     if (aAngle2 < aAngle1) {
         std::swap(aAngle1, aAngle2);
     }
 
-    const auto angleToRayIndex = [this](hg::math::AngleF aAngle) -> hg::PZInteger {
-        return hg::ToPz(std::round(_rayCount * (aAngle / AngleF::fullCircle())));
+    const auto angleToRayIndex = [this](AngleD aAngle) -> hg::PZInteger {
+        return hg::ToPz(std::round(_rayCount * (aAngle / AngleD::fullCircle())));
     };
 
-    if (HG_UNLIKELY_CONDITION(aAngle1 <= AngleF::halfCircle() * 0.5 &&
-                              aAngle2 >= AngleF::halfCircle() * 1.5)) {
+    if (HG_UNLIKELY_CONDITION(aAngle1 <= AngleD::halfCircle() * 0.5 &&
+                              aAngle2 >= AngleD::halfCircle() * 1.5)) {
         HG_UNLIKELY_BRANCH;
         // This branch deals with the unlikely case that the triangle crosses angle 0
         // (direction to the right)
@@ -359,20 +357,20 @@ void VisibilityCalculator::_processRays() {
 }
 
 void VisibilityCalculator::_castRay(hg::PZInteger aRayIndex) {
-    const auto direction         = AngleF::fullCircle() * aRayIndex / _rayCount;
+    const auto direction         = AngleD::fullCircle() * aRayIndex / _rayCount;
     const auto incrementDistance = _world.getCellResolution() / _rayPointsPerCell;
     const auto incrementVector   = direction.asNormalizedVector() * incrementDistance;
 
     Vector2pz     prevCoords   = {};
     hg::PZInteger prevOpenness = 3; // cell with an openness of 3+ surely has no neighbouring walls
 
-    Vector2f point = _lineOfSightOrigin + direction.asNormalizedVector() * _rayRadius;
+    Vector2d point = _lineOfSightOrigin + direction.asNormalizedVector() * _rayRadius;
     for (hg::PZInteger t = 0; t < _maxPointsPerRay; t += 1) {
         point += incrementVector;
-        if (HG_UNLIKELY_CONDITION(point.x < 0.f || point.y < 0.f || point.x >= _xLimit ||
+        if (HG_UNLIKELY_CONDITION(point.x < 0.0 || point.y < 0.0 || point.x >= _xLimit ||
                                   point.y >= _yLimit)) {
             HG_UNLIKELY_BRANCH;
-            _rays[aRayIndex] = _rayRadius + (t + 1) * incrementDistance;
+            _rays[hg::pztos(aRayIndex)] = _rayRadius + (t + 1) * incrementDistance;
             break;
         }
 
@@ -381,7 +379,7 @@ void VisibilityCalculator::_castRay(hg::PZInteger aRayIndex) {
 
         if (HG_UNLIKELY_CONDITION(cell == nullptr)) {
             HG_UNLIKELY_BRANCH;
-            _rays[aRayIndex] = _rayRadius + (t + 1) * incrementDistance;
+            _rays[hg::pztos(aRayIndex)] = _rayRadius + (t + 1) * incrementDistance;
             break;
         }
 
@@ -393,7 +391,7 @@ void VisibilityCalculator::_castRay(hg::PZInteger aRayIndex) {
 
             if ((!diagonalNeighbour1 || diagonalNeighbour1->isWallInitialized()) &&
                 (!diagonalNeighbour2 || diagonalNeighbour2->isWallInitialized())) {
-                _rays[aRayIndex] = _rayRadius + t * incrementDistance;
+                _rays[hg::pztos(aRayIndex)] = _rayRadius + t * incrementDistance;
                 return;
             }
         }
@@ -401,7 +399,7 @@ void VisibilityCalculator::_castRay(hg::PZInteger aRayIndex) {
         prevOpenness = openness;
 
         if (cell->isWallInitialized()) {
-            _rays[aRayIndex] = _rayRadius + (t + 1) * incrementDistance;
+            _rays[hg::pztos(aRayIndex)] = _rayRadius + (t + 1) * incrementDistance;
             return;
         }
     }
@@ -409,10 +407,12 @@ void VisibilityCalculator::_castRay(hg::PZInteger aRayIndex) {
 
 bool VisibilityCalculator::_isPointVisible(PositionInWorld aPosInWorld, std::uint16_t aFlags) const {
     if (_rayCheckingEnabled && !_processedRingsBbox.overlaps(*aPosInWorld)) {
-        const float dist = hg::math::EuclideanDist(*aPosInWorld, _lineOfSightOrigin);
-        Vector2f   diff = {aPosInWorld->x - _lineOfSightOrigin.x, aPosInWorld->y - _lineOfSightOrigin.y};
-        const auto angle = AngleF::fromVector(diff.x, diff.y);
-        const int  idx   = hg::ToPz(std::round(_rayCount * (angle / AngleF::fullCircle())));
+        const double   dist  = hg::math::EuclideanDist(*aPosInWorld, _lineOfSightOrigin);
+        const Vector2d diff  = {aPosInWorld->x - _lineOfSightOrigin.x,
+                                aPosInWorld->y - _lineOfSightOrigin.y};
+        const auto     angle = AngleD::fromVector(diff.x, diff.y);
+        const auto     idx =
+            static_cast<std::size_t>(std::round(_rayCount * (angle / AngleD::fullCircle())));
         if (dist > _rays[idx]) {
             return false;
         }
@@ -445,7 +445,7 @@ bool VisibilityCalculator::_isPointVisible(PositionInWorld aPosInWorld, std::uin
         //   produce 0 (0 because it has no set bits; ..0001000.. - 1 => ..0000111..; and so on).
         //
         //   Note: I tried std::popcnt, it was too slow.
-        const auto mask = _triangles[i].flags & aFlags;
+        const auto mask = _triangles[static_cast<std::size_t>(i)].flags & aFlags;
         if (HG_LIKELY_CONDITION((mask & (mask - 1)) == 0)) {
             HG_LIKELY_BRANCH;
             continue;
@@ -453,7 +453,7 @@ bool VisibilityCalculator::_isPointVisible(PositionInWorld aPosInWorld, std::uin
         if (_calcOngoing) {
             _stats.triangleCheckCount += 1;
         }
-        if (hg::math::IsPointInsideTriangle(*aPosInWorld, _triangles[i])) {
+        if (hg::math::IsPointInsideTriangle(*aPosInWorld, _triangles[static_cast<std::size_t>(i)])) {
             return false;
         }
     }
@@ -469,7 +469,7 @@ bool VisibilityCalculator::_isLineVisible(PositionInWorld aP1,
         return false;
     }
 
-    const auto p = (*aP1 + *aP2) / 2.f;
+    const auto p = (*aP1 + *aP2) / 2.0;
 
     if (_isPointVisible(PositionInWorld{p}, aFlags)) {
         return true;

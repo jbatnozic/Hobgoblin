@@ -39,6 +39,8 @@ add_library(${PROJECT_NAME}
     "Source/Detail_access.hpp"
 )
 
+target_compile_options(${PROJECT_NAME} PRIVATE -Wconversion)
+
 target_link_libraries(${PROJECT_NAME}
 PUBLIC
     # Foundation

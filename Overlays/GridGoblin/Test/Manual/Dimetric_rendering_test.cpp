@@ -12,7 +12,6 @@
 
 #include <GL/glew.h>
 
-#include <array>
 #include <chrono>
 #include <iostream>
 
@@ -23,6 +22,8 @@ namespace gridgoblin {
 namespace {
 
 namespace hg = jbatnozic::hobgoblin;
+
+#define vector_cast hg::math::VectorCast
 
 void DrawIsometricSquareAt(hg::gr::Canvas&    aCanvas,
                            float              aSize,
@@ -73,7 +74,8 @@ void RunDimetricRenderingTestImpl() {
                        .cellsPerChunkY              = 8,
                        .cellResolution              = 32.f,
                        .maxCellOpenness             = 3,
-                       .maxLoadedNonessentialChunks = 64};
+                       .maxLoadedNonessentialChunks = 64,
+                       .chunkDirectoryPath          = "GGManualTest_WorkDir"};
 
     World world{config};
 
@@ -110,6 +112,8 @@ void RunDimetricRenderingTestImpl() {
 
     VisibilityCalculator visCalc{world};
     DimetricRenderer     renderer{world, loader};
+    double               renderingXOffset = 0.0;
+    double               renderingYOffset = 0.0;
 
     hg::util::Stopwatch swatch;
 
@@ -140,12 +144,19 @@ void RunDimetricRenderingTestImpl() {
             const auto ud = (float)CheckPressedPK(PK_S) - (float)CheckPressedPK(PK_W);
             window.getView().move({lr * 4.f, ud * 4.f});
         }
+        {
+            using namespace hg::in;
+            const auto lr = (double)CheckPressedPK(PK_L) - (double)CheckPressedPK(PK_J);
+            const auto ud = (double)CheckPressedPK(PK_K) - (double)CheckPressedPK(PK_I);
+            renderingXOffset += lr * 4.0;
+            renderingYOffset += ud * 4.0;
+        }
 
         window.clear(hg::gr::Color{0, 0, 55});
 
         const auto mouseWindowPos = hg::win::GetMousePositionRelativeToWindow(window);
-        const auto cursorInWorld =
-            dimetric::ToPositionInWorld(PositionInView{window.mapPixelToCoords(mouseWindowPos)});
+        const auto cursorInWorld  = dimetric::ToPositionInWorld(
+            PositionInView{vector_cast<double>(window.mapPixelToCoords(mouseWindowPos))});
 
         // Edit the world
         {
@@ -170,19 +181,35 @@ void RunDimetricRenderingTestImpl() {
 
         const auto t1 = std::chrono::steady_clock::now();
 
+        const double overdrawLeft  = 32.0;
+        const double overdrawRight = 32.0;
+        const double overdrawUp    = 32.0;
+        const double overdrawDown  = 256.0;
+
+        const auto viewCenter =
+            vector_cast<double>(window.getView(0).getCenter()) +
+            hg::math::Vector2d{(overdrawRight - overdrawLeft) * 0.5, (overdrawDown - overdrawUp) * 0.5};
+
+        const auto viewSize =
+            vector_cast<double>(window.getView(0).getSize()) +
+            hg::math::Vector2d{overdrawLeft + overdrawRight, overdrawUp + overdrawDown};
+
+        const Renderer::RenderParameters renderParams{.viewCenter  = PositionInWorld{viewCenter},
+                                                      .viewSize    = viewSize,
+                                                      .pointOfView = cursorInWorld,
+                                                      .xOffset     = renderingXOffset,
+                                                      .yOffset     = renderingYOffset};
+
         if (!hg::in::CheckPressedVK(hg::in::VK_SPACE)) {
-            renderer.startPrepareToRender(window.getView(0),
-                                          {.top = 32.f, .bottom = 256.f, .left = 32.f, .right = 32.f},
-                                          cursorInWorld,
+            renderer.startPrepareToRender(renderParams,
                                           DimetricRenderer::REDUCE_WALLS_BASED_ON_POSITION,
                                           nullptr);
         } else {
-            visCalc.calc(dimetric::ToPositionInWorld(PositionInView{window.getView(0).getCenter()}),
-                         window.getView(0).getSize(),
+            visCalc.calc(dimetric::ToPositionInWorld(
+                             PositionInView{vector_cast<double>(window.getView(0).getCenter())}),
+                         vector_cast<double>(window.getView(0).getSize()),
                          cursorInWorld);
-            renderer.startPrepareToRender(window.getView(0),
-                                          {.top = 32.f, .bottom = 256.f, .left = 32.f, .right = 32.f},
-                                          cursorInWorld,
+            renderer.startPrepareToRender(renderParams,
                                           DimetricRenderer::REDUCE_WALLS_BASED_ON_POSITION |
                                               DimetricRenderer::REDUCE_WALLS_BASED_ON_VISIBILITY,
                                           &visCalc);
@@ -208,6 +235,6 @@ void RunDimetricRenderingTestImpl() {
 } // namespace gridgoblin
 } // namespace jbatnozic
 
-void RunDimetricRenderingTest() {
+void RunDimetricRenderingTest(int, const char**) {
     jbatnozic::gridgoblin::RunDimetricRenderingTestImpl();
 }

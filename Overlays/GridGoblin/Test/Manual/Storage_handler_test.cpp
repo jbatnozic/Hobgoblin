@@ -109,7 +109,8 @@ private:
                 .cellsPerChunkY              = 1,
                 .cellResolution              = 32.f,
                 .maxCellOpenness             = 4,
-                .maxLoadedNonessentialChunks = 32};
+                .maxLoadedNonessentialChunks = 32,
+                .chunkDirectoryPath          = "GGManualTest_WorkDir"};
     }
 };
 
@@ -125,7 +126,7 @@ public:
 };
 } // namespace
 
-void RunStorageHandlerTest() {
+void RunStorageHandlerTest(int, const char**) {
     Fixture fixture;
 
     hg::gr::RenderWindow window;
