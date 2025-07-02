@@ -13,6 +13,7 @@
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
 HOBGOBLIN_NAMESPACE_BEGIN
+namespace {
 
 class ManualTestRunner {
 public:
@@ -89,6 +90,7 @@ private:
 #define HG_ADD_MANUAL_TEST(_runner_, _test_function_) \
     (_runner_).addTestCase(#_test_function_, _test_function_)
 
+} // namespace
 HOBGOBLIN_NAMESPACE_END
 
 #include <Hobgoblin/Private/Pmacro_undef.hpp>

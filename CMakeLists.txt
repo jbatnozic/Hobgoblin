@@ -21,7 +21,7 @@ if(MSVC)
     # It is also possible (but not recommended) to silence this warning from all sources.
     # add_compile_options("/wd4996")
 else()
-    add_compile_options("-Wno-attributes")
+    add_compile_options("-Wno-attributes") # TODO: temporarily disabled
 endif()
 
 # ===== IMPORT CUSTOM FUNCTIONS =====

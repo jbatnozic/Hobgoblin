@@ -3,14 +3,13 @@
 
 #include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/Logging.hpp>
+#include <Hobgoblin/Private/Manual_test_framework.hpp>
 
 #include <iostream>
 #include <stdexcept>
 #include <filesystem>
 
 #include "Test_list.hpp"
-
-#include "Manual_test_framework.hpp"
 
 namespace hg = jbatnozic::hobgoblin;
 
