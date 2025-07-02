@@ -129,7 +129,10 @@ void DimetricRenderer::endPrepareToRender() {
 void DimetricRenderer::render(hg::gr::Canvas& aCanvas) {
     for (const auto& object : _objectsToRender) {
         const auto& spatialInfo = object->getSpatialInfo();
-        object->render(aCanvas, dimetric::ToPositionInView(spatialInfo.getCenter()));
+        auto        posInView   = dimetric::ToPositionInView(spatialInfo.getCenter());
+        posInView->x += _renderParams.xOffset;
+        posInView->y += _renderParams.yOffset;
+        object->render(aCanvas, posInView);
     }
 }
 

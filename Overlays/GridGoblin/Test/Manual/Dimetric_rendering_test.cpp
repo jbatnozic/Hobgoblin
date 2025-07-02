@@ -112,6 +112,8 @@ void RunDimetricRenderingTestImpl() {
 
     VisibilityCalculator visCalc{world};
     DimetricRenderer     renderer{world, loader};
+    double               renderingXOffset = 0.0;
+    double               renderingYOffset = 0.0;
 
     hg::util::Stopwatch swatch;
 
@@ -141,6 +143,13 @@ void RunDimetricRenderingTestImpl() {
             const auto lr = (float)CheckPressedPK(PK_D) - (float)CheckPressedPK(PK_A);
             const auto ud = (float)CheckPressedPK(PK_S) - (float)CheckPressedPK(PK_W);
             window.getView().move({lr * 4.f, ud * 4.f});
+        }
+        {
+            using namespace hg::in;
+            const auto lr = (double)CheckPressedPK(PK_L) - (double)CheckPressedPK(PK_J);
+            const auto ud = (double)CheckPressedPK(PK_K) - (double)CheckPressedPK(PK_I);
+            renderingXOffset += lr * 4.0;
+            renderingYOffset += ud * 4.0;
         }
 
         window.clear(hg::gr::Color{0, 0, 55});
@@ -188,8 +197,8 @@ void RunDimetricRenderingTestImpl() {
         const Renderer::RenderParameters renderParams{.viewCenter  = PositionInWorld{viewCenter},
                                                       .viewSize    = viewSize,
                                                       .pointOfView = cursorInWorld,
-                                                      .xOffset     = 0.0,
-                                                      .yOffset     = 0.0};
+                                                      .xOffset     = renderingXOffset,
+                                                      .yOffset     = renderingYOffset};
 
         if (!hg::in::CheckPressedVK(hg::in::VK_SPACE)) {
             renderer.startPrepareToRender(renderParams,
