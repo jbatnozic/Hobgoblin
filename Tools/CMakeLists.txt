@@ -3,3 +3,4 @@
 
 add_subdirectory("AntimonyAnimator")
 add_subdirectory("FrameTimingTester")
+add_subdirectory("GridGoblinEditor")

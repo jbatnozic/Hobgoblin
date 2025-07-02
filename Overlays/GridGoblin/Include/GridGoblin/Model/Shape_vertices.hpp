@@ -13,6 +13,8 @@
 namespace jbatnozic {
 namespace gridgoblin {
 
+namespace hg = ::jbatnozic::hobgoblin;
+
 //! Get vertices of the lines of a shape that can block visibility.
 //!
 //! Every pair of two consecutive vertices makes a line which blocks visibility ([0] and [1] make the
