@@ -15,6 +15,8 @@
 namespace jbatnozic {
 namespace gridgoblin {
 
+#define vector_cast hg::math::VectorCast
+
 // MARK: Cell renderer mask bits
 
 #define RM_REDUCTION_COUNTER_MASK 0x03FF
@@ -44,8 +46,9 @@ void DimetricRenderer::_diagonalTraverse(const World&                           
             if (x >= 0 && x < aWorld.getCellCountX() && y >= 0 && y < aWorld.getCellCountY()) {
                 const auto* cell = aWorld.getCellAtUnchecked(x, y);
 
-                const auto posInWorld = PositionInWorld{(x + 0.5f) * cellRes, (y + 0.5f) * cellRes};
-                const auto posInView  = dimetric::ToPositionInView(posInWorld);
+                const auto posInWorld =
+                    PositionInWorld{((float)x + 0.5f) * cellRes, ((float)y + 0.5f) * cellRes};
+                const auto posInView = dimetric::ToPositionInView(posInWorld);
 
                 aFunc(CellInfo{cell, x, y}, posInView);
             }
@@ -373,7 +376,7 @@ void DimetricRenderer::CellToRenderedObjectAdapter::render(hg::gr::Canvas& aCanv
     case Layer::FLOOR:
         {
             auto& sprite = _renderer._getSprite(_cell.getFloor().spriteId);
-            sprite.setPosition(hg::math::VectorCast<float>(*aScreenPosition));
+            sprite.setPosition(vector_cast<float>(*aScreenPosition));
             sprite.setColor(hg::gr::COLOR_WHITE);
             aCanvas.draw(sprite);
         }
@@ -392,16 +395,16 @@ void DimetricRenderer::CellToRenderedObjectAdapter::render(hg::gr::Canvas& aCanv
             } else {
                 const auto stepCount        = wrConfig.upperBound - wrConfig.lowerBound;
                 const auto stepsTaken       = reductionCounter - wrConfig.lowerBound;
-                const auto reductionPerStep = wrConfig.maxReduction / stepCount;
+                const auto reductionPerStep = wrConfig.maxReduction / (float)stepCount;
 
                 opacity = static_cast<std::uint8_t>(
-                    hg::math::Clamp(255.f * (1.f - stepsTaken * reductionPerStep), 0.f, 255.f));
+                    hg::math::Clamp(255.f * (1.f - (float)stepsTaken * reductionPerStep), 0.f, 255.f));
             }
 
             if (opacity < 255) {
                 auto& reducedSprite = _renderer._getSprite(_cell.getWall().spriteId_reduced);
 
-                reducedSprite.setPosition(aScreenPosition->x, aScreenPosition->y); // FTODO
+                reducedSprite.setPosition(vector_cast<float>(*aScreenPosition));
                 reducedSprite.setColor(hg::gr::COLOR_WHITE);
                 aCanvas.draw(reducedSprite);
             }
@@ -409,7 +412,7 @@ void DimetricRenderer::CellToRenderedObjectAdapter::render(hg::gr::Canvas& aCanv
             if (opacity > 0) {
                 auto& fullSprite = _renderer._getSprite(_cell.getWall().spriteId);
 
-                fullSprite.setPosition(aScreenPosition->x, aScreenPosition->y); // FTODO
+                fullSprite.setPosition(vector_cast<float>(*aScreenPosition));
                 fullSprite.setColor(hg::gr::COLOR_WHITE.withAlpha(opacity));
                 aCanvas.draw(fullSprite);
             }

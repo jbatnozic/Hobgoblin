@@ -23,6 +23,8 @@ namespace {
 
 namespace hg = jbatnozic::hobgoblin;
 
+#define vector_cast hg::math::VectorCast
+
 void DrawIsometricSquareAt(hg::gr::Canvas&    aCanvas,
                            float              aSize,
                            hg::gr::Color      aColor,
@@ -144,9 +146,8 @@ void RunDimetricRenderingTestImpl() {
         window.clear(hg::gr::Color{0, 0, 55});
 
         const auto mouseWindowPos = hg::win::GetMousePositionRelativeToWindow(window);
-        const auto cursorInWorld =
-            dimetric::ToPositionInWorld(PositionInView{window.mapPixelToCoords(mouseWindowPos).x,
-                                                       window.mapPixelToCoords(mouseWindowPos).y}); // FTODO
+        const auto cursorInWorld  = dimetric::ToPositionInWorld(
+            PositionInView{vector_cast<double>(window.mapPixelToCoords(mouseWindowPos))});
 
         // Edit the world
         {
@@ -177,11 +178,11 @@ void RunDimetricRenderingTestImpl() {
         const double overdrawDown  = 256.0;
 
         const auto viewCenter =
-            hg::math::VectorCast<double>(window.getView(0).getCenter()) +
+            vector_cast<double>(window.getView(0).getCenter()) +
             hg::math::Vector2d{(overdrawRight - overdrawLeft) * 0.5, (overdrawDown - overdrawUp) * 0.5};
 
         const auto viewSize =
-            hg::math::VectorCast<double>(window.getView(0).getSize()) +
+            vector_cast<double>(window.getView(0).getSize()) +
             hg::math::Vector2d{overdrawLeft + overdrawRight, overdrawUp + overdrawDown};
 
         const Renderer::RenderParameters renderParams{.viewCenter  = PositionInWorld{viewCenter},
@@ -195,10 +196,9 @@ void RunDimetricRenderingTestImpl() {
                                           DimetricRenderer::REDUCE_WALLS_BASED_ON_POSITION,
                                           nullptr);
         } else {
-            auto c = window.getView(0).getCenter(); // FTODO
-            auto s = window.getView(0).getSize(); // FTODO
-            visCalc.calc(dimetric::ToPositionInWorld(PositionInView{c.x, c.y}),
-                         {s.x, s.y},
+            visCalc.calc(dimetric::ToPositionInWorld(
+                             PositionInView{vector_cast<double>(window.getView(0).getCenter())}),
+                         vector_cast<double>(window.getView(0).getSize()),
                          cursorInWorld);
             renderer.startPrepareToRender(renderParams,
                                           DimetricRenderer::REDUCE_WALLS_BASED_ON_POSITION |

@@ -139,7 +139,7 @@ const hg::gr::Texture& TopDownLineOfSightRenderer::__ggimpl_getTexture(
 }
 
 void TopDownLineOfSightRenderer::_renderOcclusion() {
-    const auto cellResolution = _world.getCellResolution();
+    const auto cellResolution = (float)_world.getCellResolution();
     const auto position       = _renderTexture.getView().getCenter();
     const auto size           = _renderTexture.getView().getSize();
 
@@ -171,10 +171,10 @@ void TopDownLineOfSightRenderer::_renderOcclusion() {
             if (const auto* cell = _world.getCellAtUnchecked(x, y);
                 cell != nullptr && cell->isWallInitialized()) {
                 // clang-format off
-                vertices[0].position = {static_cast<float>( x      * cellResolution), static_cast<float>( y      * cellResolution)}; // FTODO
-                vertices[2].position = {static_cast<float>( x      * cellResolution), static_cast<float>((y + 1) * cellResolution)};
-                vertices[4].position = {static_cast<float>((x + 1) * cellResolution), static_cast<float>((y + 1) * cellResolution)};
-                vertices[6].position = {static_cast<float>((x + 1) * cellResolution), static_cast<float>( y      * cellResolution)};
+                vertices[0].position = { x      * cellResolution,  y      * cellResolution}; // FTODO
+                vertices[2].position = { x      * cellResolution, (y + 1) * cellResolution};
+                vertices[4].position = {(x + 1) * cellResolution, (y + 1) * cellResolution};
+                vertices[6].position = {(x + 1) * cellResolution,  y      * cellResolution};
                 vertices[8] = vertices[0];
                 // clang-format on
 

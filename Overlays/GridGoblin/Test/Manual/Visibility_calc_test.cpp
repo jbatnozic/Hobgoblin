@@ -27,6 +27,8 @@ namespace {
 
 namespace hg = jbatnozic::hobgoblin;
 
+#define vector_cast hg::math::VectorCast
+
 #define CELL_COUNT_X     40
 #define CELL_COUNT_Y     40
 #define CELLRES          32.f
@@ -231,7 +233,7 @@ void RunVisibilityCalculatorTestImpl() {
                     if (aButton.button == hg::in::MB_LEFT) {
                         const auto coords = window.mapPixelToCoords({aButton.x, aButton.y});
                         HG_LOG_INFO(LOG_ID, "Coords = {}, {}", coords.x, coords.y);
-                        generateLoS(hobgoblin::math::Vector2d{coords.x, coords.y}); // FTODO
+                        generateLoS(vector_cast<double>(coords));
                         mouseLClick = true;
                     }
                 });
@@ -240,8 +242,8 @@ void RunVisibilityCalculatorTestImpl() {
         window.clear(hg::gr::Color{155, 155, 155});
 
         const Renderer::RenderParameters renderParams{
-            .viewCenter  = PositionInWorld{hg::math::VectorCast<double>(window.getView(0).getCenter())},
-            .viewSize    = hg::math::VectorCast<double>(window.getView(0).getSize()),
+            .viewCenter  = PositionInWorld{vector_cast<double>(window.getView(0).getCenter())},
+            .viewSize    = vector_cast<double>(window.getView(0).getSize()),
             .pointOfView = {},
             .xOffset     = 0.0,
             .yOffset     = 0.0};
