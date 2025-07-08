@@ -55,11 +55,11 @@ public:
 
     math::Vector2d getAnchor() const override;
 
+    void drawOnto(Canvas& aCanvas, RenderStatesOptRef aRenderStates) const override;
+
 private:
     std::vector<sf::Vertex> _vertices;
     sf::PrimitiveType       _primitiveType;
-
-    void _drawOnto(Canvas& aCanvas, const RenderStates& aRenderStates) const override;
 };
 
 } // namespace gr

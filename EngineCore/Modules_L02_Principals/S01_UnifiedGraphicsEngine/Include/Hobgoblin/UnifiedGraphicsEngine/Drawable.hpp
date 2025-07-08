@@ -5,6 +5,7 @@
 #define UHOBGOBLIN_UGE_DRAWABLE_HPP
 
 #include <Hobgoblin/UnifiedGraphicsEngine/Element.hpp>
+#include <Hobgoblin/UnifiedGraphicsEngine/Render_states.hpp>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
@@ -14,12 +15,11 @@ namespace uge {
 class Canvas;
 class RenderStates;
 
-class Drawable : public Element {
+class Drawable : virtual public Element {
 public:
     virtual ~Drawable() = default;
 
-private:
-    virtual void _drawOnto(Canvas& aCanvas, const RenderStates& aStates) const = 0;
+    virtual void drawOnto(Canvas& aCanvas, RenderStatesOptRef aRenderStates) const = 0;
 };
 
 } // namespace gr

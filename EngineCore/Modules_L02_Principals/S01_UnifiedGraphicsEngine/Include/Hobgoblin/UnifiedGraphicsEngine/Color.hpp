@@ -1,4 +1,4 @@
-// Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
+// Copyright 2025 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
 #ifndef UHOBGOBLIN_UGE_COLOR_HPP
@@ -11,6 +11,7 @@
 HOBGOBLIN_NAMESPACE_BEGIN
 namespace uge {
 
+//! Represents a color in 32-bit RGBA format.
 class Color {
 public:
     constexpr Color() = default;
@@ -47,15 +48,17 @@ public:
     std::uint8_t a = 255;
 };
 
+static_assert(sizeof(Color) == sizeof(std::int32_t));
+
 inline constexpr bool operator==(Color aLhs, Color aRhs) {
     return aLhs.r == aRhs.r && aLhs.g == aRhs.g && aLhs.b == aRhs.b && aLhs.a == aRhs.a;
 }
 
 #define XMACRO(_name_, _hexcode_) constexpr Color COLOR_##_name_{_hexcode_};
 #include <Hobgoblin/UnifiedGraphicsEngine/Private/Xmacro_html_colors.hpp>
-#undef  XMACRO
+#undef XMACRO
 
-} // namespace gr
+} // namespace uge
 HOBGOBLIN_NAMESPACE_END
 
 #include <Hobgoblin/Private/Pmacro_undef.hpp>

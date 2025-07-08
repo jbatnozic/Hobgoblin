@@ -12,6 +12,7 @@
 HOBGOBLIN_NAMESPACE_BEGIN
 namespace uge {
 
+//! A vertex defines a point with color and coordinates on a texture.
 struct Vertex {
     math::Vector2f position;
     Color          color;

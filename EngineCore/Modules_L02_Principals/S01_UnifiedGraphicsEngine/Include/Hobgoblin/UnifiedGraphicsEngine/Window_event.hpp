@@ -1,8 +1,6 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-// clang-format off
-
 #ifndef UHOBGOBLIN_WINDOW_EVENT_HPP
 #define UHOBGOBLIN_WINDOW_EVENT_HPP
 
@@ -65,34 +63,34 @@ struct WindowEvent {
     struct KeyPressed {
         in::VirtualKeyboardKey  virtualKey;  //!< Virtual code of the key that was pressed
         in::PhysicalKeyboardKey physicalKey; //!< Physical code of the key that was pressed
-        bool alt;                            //!< Is the Alt key pressed?
-        bool control;                        //!< Is the Control key pressed?
-        bool shift;                          //!< Is the Shift key pressed?
-        bool system;                         //!< Is the System key pressed?
+        bool                    alt;         //!< Is the Alt key pressed?
+        bool                    control;     //!< Is the Control key pressed?
+        bool                    shift;       //!< Is the Shift key pressed?
+        bool                    system;      //!< Is the System key pressed?
     };
 
     //! A key was released on the keyboard.
     struct KeyReleased {
         in::VirtualKeyboardKey  virtualKey;  //!< Virtual code of the key that was released
         in::PhysicalKeyboardKey physicalKey; //!< Physical code of the key that was released
-        bool alt;                            //!< Is the Alt key pressed?
-        bool control;                        //!< Is the Control key pressed?
-        bool shift;                          //!< Is the Shift key pressed?
-        bool system;                         //!< Is the System key pressed?
+        bool                    alt;         //!< Is the Alt key pressed?
+        bool                    control;     //!< Is the Control key pressed?
+        bool                    shift;       //!< Is the Shift key pressed?
+        bool                    system;      //!< Is the System key pressed?
     };
 
     //! A mouse button was pressed.
     struct MouseButtonPressed {
         in::MouseButton button; //!< Code of the button that has been pressed
-        int x;                  //!< X position of the mouse pointer, relative to the left of the owner window
-        int y;                  //!< Y position of the mouse pointer, relative to the top of the owner window
+        int             x; //!< X position of the mouse pointer, relative to the left of the owner window
+        int             y; //!< Y position of the mouse pointer, relative to the top of the owner window
     };
 
     //! A mouse button was released.
     struct MouseButtonReleased {
         in::MouseButton button; //!< Code of the button that has been pressed
-        int x;                  //!< X position of the mouse pointer, relative to the left of the owner window
-        int y;                  //!< Y position of the mouse pointer, relative to the top of the owner window
+        int             x; //!< X position of the mouse pointer, relative to the left of the owner window
+        int             y; //!< Y position of the mouse pointer, relative to the top of the owner window
     };
 
     //! The mouse cursor entered the area of the window.
@@ -110,9 +108,10 @@ struct WindowEvent {
     //! The mouse wheel was scrolled.
     struct MouseWheelScrolled {
         in::MouseWheel wheel; //!< Which wheel (for mice with multiple ones).
-        float delta;          //!< Wheel offset (positive is up/left, negative is down/right). High-precision mice may use non-integral offsets.
-        int x;                //!< X position of the mouse pointer, relative to the left of the owner window.
-        int y;                //!< Y position of the mouse pointer, relative to the top of the owner window.
+        float delta; //!< Wheel offset (positive is up/left, negative is down/right). High-precision mice
+                     //!< may use non-integral offsets.
+        int x;       //!< X position of the mouse pointer, relative to the left of the owner window.
+        int y;       //!< Y position of the mouse pointer, relative to the top of the owner window.
     };
 
     //! The window was resized.
@@ -150,70 +149,60 @@ struct WindowEvent {
     };
 #endif
 
-    using EventVariant = std::variant<
-        Unknown,
-        Closed,
-        GainedFocus,
-        LostFocus,
-        KeyPressed,
-        KeyReleased,
-        MouseButtonPressed,
-        MouseButtonReleased,
-        MouseEntered,
-        MouseLeft,
-        MouseMoved,
-        MouseWheelScrolled,
-        Resized,
-        TextEntered
-    >;
+    using EventVariant = std::variant< Unknown,
+                                       Closed,
+                                       GainedFocus,
+                                       LostFocus,
+                                       KeyPressed,
+                                       KeyReleased,
+                                       MouseButtonPressed,
+                                       MouseButtonReleased,
+                                       MouseEntered,
+                                       MouseLeft,
+                                       MouseMoved,
+                                       MouseWheelScrolled,
+                                       Resized,
+                                       TextEntered >;
 
     WindowEvent() = default;
 
     template <class T>
     WindowEvent(T&& arg)
-        : eventVariant{std::forward<T>(arg)}
-    {
-    }
+        : eventVariant{std::forward<T>(arg)} {}
 
     EventVariant eventVariant;
 
-    template <class ...taCallables>
+    template <class... taCallables>
     void visit(taCallables&&... aCallables) {
-        std::visit(
-            util::MakeVisitor([](const auto&) {}, std::forward<taCallables>(aCallables)...),
-            eventVariant
-        );
+        std::visit(util::MakeVisitor([](const auto&) {}, std::forward<taCallables>(aCallables)...),
+                   eventVariant);
     }
 
-    template <class ...taCallables>
+    template <class... taCallables>
     void visit(taCallables&&... aCallables) const {
-        std::visit(
-            util::MakeVisitor([](const auto&) {}, std::forward<taCallables>(aCallables)...),
-            eventVariant
-        );
+        std::visit(util::MakeVisitor([](const auto&) {}, std::forward<taCallables>(aCallables)...),
+                   eventVariant);
     }
 
     //! Unlike visit, a call to strictVisit will not compile unless a
     //! matching callable is provided for each event type.
-    template <class ...taCallables>
+    template <class... taCallables>
     void strictVisit(taCallables&&... aCallables) {
         std::visit(util::MakeVisitor(std::forward<taCallables>(aCallables)...), eventVariant);
     }
 
     //! Unlike visit, a call to strictVisit will not compile unless a
     //! matching callable is provided for each event type.
-    template <class ...taCallables>
+    template <class... taCallables>
     void strictVisit(taCallables&&... aCallables) const {
         std::visit(util::MakeVisitor(std::forward<taCallables>(aCallables)...), eventVariant);
     }
 };
 
-} // namespace win
+} // namespace uge
 HOBGOBLIN_NAMESPACE_END
 
 #include <Hobgoblin/Private/Pmacro_undef.hpp>
 #include <Hobgoblin/Private/Short_namespace.hpp>
 
 #endif // !UHOBGOBLIN_WINDOW_EVENT_HPP
-
-// clang-format on

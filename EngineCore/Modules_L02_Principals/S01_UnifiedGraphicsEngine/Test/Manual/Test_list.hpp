@@ -4,3 +4,4 @@
 #pragma once
 
 void RunEmptyRenderWindowTest(int, const char**);
+void RunSquareInRenderWindowTest(int, const char**);

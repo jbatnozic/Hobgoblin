@@ -4,9 +4,13 @@
 #ifndef HOBGOBLIN_UGE_VIEW_HPP
 #define HOBGOBLIN_UGE_VIEW_HPP
 
+#include <Hobgoblin/UnifiedGraphicsEngine/Element.hpp>
+
 #include <Hobgoblin/Math/Angle.hpp>
 #include <Hobgoblin/Math/Rectangle.hpp>
 #include <Hobgoblin/Math/Vector.hpp>
+
+#include <memory>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
@@ -14,15 +18,12 @@ HOBGOBLIN_NAMESPACE_BEGIN
 namespace uge {
 
 //! \brief 2D camera that defines what region is shown on screen.
-class View {
+class View : virtual public Element {
 public:
     virtual ~View() = default;
 
-    //! \brief Enable or disable the view.
-    virtual void setEnabled(bool aEnabled) = 0;
-
-    //! \brief Check whether the view is enabled or not.
-    virtual bool isEnabled() const = 0;
+    //! Make and return a copy of this object.
+    virtual std::unique_ptr<View> clone() const = 0;
 
     // MARK: Size
 
@@ -46,47 +47,49 @@ public:
     //! be defined with View.setViewport(sf::FloatRect(0, 0, 0.5, 1)).
     //! By default, a view has a viewport which covers the entire target.
     //!
-    //! \param viewport New viewport rectangle
-    //!
-    //! \see getViewport
+    //! \param aViewport New viewport rectangle
     virtual void setViewport(const math::Rectangle<float>& aViewport) = 0;
 
     //! \brief Get the target viewport rectangle of the view
     //!
     //! \return Viewport rectangle, expressed as a factor of the target size
-    //!
-    //! \see setViewport
     virtual math::Rectangle<float> getViewport() const = 0;
+
+    // MARK: Anchor
+
+    virtual void setAnchor(math::Vector2d aAnchor) = 0;
+
+    virtual void setAnchor(double aX, double aY) = 0;
+
+    virtual math::Vector2d getAnchor() const = 0;
 
     // MARK: Center
 
-    //! \brief Set the center of the view
+    //! \brief Set the center of the view.
+    //! \note the center is relative to the anchor of the view.
     virtual void setCenter(math::Vector2f aCenter) = 0;
 
-    //! \brief Set the center of the view
+    //! \brief Set the center of the view.
+    //! \note the center is relative to the anchor of the view.
     virtual void setCenter(float aX, float aY) = 0;
 
-    //! \brief Get the center of the view
+    //! \brief Get the center of the view.
+    //! \note the center is relative to the anchor of the view.
     virtual math::Vector2f getCenter() const = 0;
 
     // MARK: Rotation
 
-    //! \brief Set the orientation of the view
+    //! \brief Set the orientation of the view.
     //!
-    //! The default rotation of a view is 0 degree.
-    //!
-    //! \param angle New angle, in degrees
-    virtual void setRotation(float aAngle) = 0;
+    //! The default rotation of a view is 0.
+    virtual void setRotation(math::AngleF aAngle) = 0;
 
-    //! \brief Rotate the view relatively to its current orientation
-    //!
-    //! \param angle Angle to rotate, in degrees
-    virtual void rotate(float aAngle) = 0;
+    //! \brief Rotate the view relatively to its current orientation (positive values rotate
+    //!        counter-clockwise).
+    virtual void rotate(math::AngleF aAngle) = 0;
 
-    //! \brief Get the current orientation of the view
-    //!
-    //! \return Rotation angle of the view, in degrees
-    virtual float getRotation() const = 0;
+    //! \brief Get the current orientation of the view.
+    virtual math::AngleF getRotation() const = 0;
 };
 
 } // namespace uge

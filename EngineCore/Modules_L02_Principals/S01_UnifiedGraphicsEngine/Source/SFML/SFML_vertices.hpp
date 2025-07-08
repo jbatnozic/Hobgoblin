@@ -9,7 +9,6 @@
 
 #include <cstddef>
 #include <cstdlib>
-#include <type_traits>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 

@@ -5,6 +5,7 @@ project("UnifiedGraphicsEngine.ManualTest")
 
 add_executable(${PROJECT_NAME}
     "Empty_renderwindow_test.cpp"
+    "Square_in_renderwindow_test.cpp"
     "UGE_manual_test.cpp"
 )
 

@@ -14,6 +14,8 @@ void RunEmptyRenderWindowTest() {
     auto system = CreateRenderSystem("SFML");
     auto window = system->createRenderWindow();
 
+    window->setFramerateLimit(60);
+
     while (true) {
         WindowEvent ev;
         while (window && window->pollEvent(ev)) {
@@ -24,6 +26,8 @@ void RunEmptyRenderWindowTest() {
         if (!window) {
             break;
         }
+        window->clear(COLOR_BLACK);
+        window->display();
     }
 }
 

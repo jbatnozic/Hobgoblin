@@ -18,6 +18,8 @@ set(COMPONENT_SOURCES
     "Source/SFML/System_impl.hpp"
     "Source/SFML/Vertex_array_impl.cpp"
     "Source/SFML/Vertex_array_impl.hpp"
+    "Source/SFML/View_impl.cpp"
+    "Source/SFML/View_impl.hpp"
 )
 
 # ===== TARGET SETUP =====

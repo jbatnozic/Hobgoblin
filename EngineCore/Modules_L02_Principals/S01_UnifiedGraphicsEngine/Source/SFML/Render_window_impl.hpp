@@ -11,7 +11,7 @@
 
 #include <SFML/Graphics/RenderWindow.hpp>
 
-#include <memory>
+#include "View_impl.hpp"
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
@@ -37,31 +37,84 @@ public:
     // MARK: Window                                                          //
     ///////////////////////////////////////////////////////////////////////////
 
+    // Title
+
+    void setTitle(const std::string& aTitle) override;
+
+    // Event handling
+
     bool pollEvent(WindowEvent& aEvent) override;
+    bool waitEvent(WindowEvent& aEvent) override;
+
+    // Size
+
+    void setSize(math::Vector2pz aSize) override;
+    math::Vector2pz getSize() const override;
+
+    // Position
+
+    void setPosition(math::Vector2i aPosition) override;
+    math::Vector2i getPosition() const override;
+
+    // Focus
+
+    void requestFocus() override;
+    bool hasFocus() const override;
+
+    // Cursor
+
+    void setMouseCursorVisible(bool aVisible) override;
+    void setMouseCursorGrabbed(bool aGrabbed) override;
+
+    // Contents
+
+    void display() override;
+
+    // Other
+
+    void setKeyRepeatEnabled(bool aEnabled) override;
+    void setVisible(bool aVisible) override;
+    void setVerticalSyncEnabled(bool aEnabled) override;
+    void setFramerateLimit(PZInteger aLimit) override;
 
     ///////////////////////////////////////////////////////////////////////////
     // MARK: Canvas                                                          //
     ///////////////////////////////////////////////////////////////////////////
 
-    math::Vector2pz getSize() const override;
+    // math::Vector2pz getSize() const override; -- see section 'Window'
 
-    void clear(const Color& aColor = COLOR_BLACK) override;
+    // Viwes
 
-    void draw(const Vertex*       aVertices,
-              PZInteger           aVertexCount,
-              PrimitiveType       aPrimitiveType,
-              math::Vector2d      aAnchor,
-              const RenderStates& aStates = RENDER_STATES_DEFAULT) override;
+    void setView(const View& aView) override;
+
+    void setDefaultView() override;
+
+    const View& getView() const override;
+
+    const sf::View& getDefaultView() const;
+
+    // Drawing
+
+    void clear(Color aColor = COLOR_BLACK) override;
+
+    void draw(const Vertex*      aVertices,
+              PZInteger          aVertexCount,
+              PrimitiveType      aPrimitiveType,
+              math::Vector2d     aAnchor,
+              RenderStatesOptRef aStates = RENDER_STATES_DEFAULT) override;
 
     void flush() override;
 
-    virtual void* getRenderingBackend() override {
-        return nullptr;
+    void* getRenderingBackend() override {
+        return nullptr; // TODO
     }
 
 private:
     const System&    _system;
     sf::RenderWindow _window;
+    sf::RenderStates _defaultRenderStates = sf::RenderStates::Default;
+    SFMLViewImpl     _activeView;
+    math::Vector2d   _activeViewAnchor;
 };
 
 } // namespace gr
