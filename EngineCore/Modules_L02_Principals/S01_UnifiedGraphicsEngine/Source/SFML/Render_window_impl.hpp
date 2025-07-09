@@ -5,8 +5,7 @@
 #define UHOBGOBLIN_UGE_SFML_RENDER_WINDOW_IMPL_HPP
 
 #include <Hobgoblin/UnifiedGraphicsEngine/Render_window.hpp>
-#include <Hobgoblin/Window/Video_mode.hpp>
-#include <Hobgoblin/Window/Window_style.hpp>
+#include <Hobgoblin/UnifiedGraphicsEngine/Window_style.hpp>
 #include <Hobgoblin/Unicode.hpp>
 
 #include <SFML/Graphics/RenderWindow.hpp>
@@ -22,10 +21,11 @@ class System;
 
 class SFMLRenderWindowImpl : public RenderWindow {
 public:
-    SFMLRenderWindowImpl(const System&         aSystem,
-                         const win::VideoMode& aVideoMode,
-                         const UnicodeString&  aTitle = HG_UNISTR("Window"),
-                         win::WindowStyle      aStyle = win::WindowStyle::Default);
+    SFMLRenderWindowImpl(const System&        aSystem,
+                         PZInteger            aWidth,
+                         PZInteger            aHeight,
+                         WindowStyle          aStyle,
+                         const UnicodeString& aTitle);
 
     ///////////////////////////////////////////////////////////////////////////
     // MARK: Element                                                         //

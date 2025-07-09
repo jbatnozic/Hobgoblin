@@ -21,8 +21,11 @@ class SFMLSystemImpl : public System {
 public:
     ~SFMLSystemImpl() override = default;
 
-    std::unique_ptr<RenderWindow> createRenderWindow() const override {
-        return std::make_unique<SFMLRenderWindowImpl>(SELF, win::VideoMode{640, 480});
+    std::unique_ptr<RenderWindow> createRenderWindow(PZInteger            aWidth,
+                                                     PZInteger            aHeight,
+                                                     WindowStyle          aStyle,
+                                                     const UnicodeString& aTitle) const override {
+        return std::make_unique<SFMLRenderWindowImpl>(SELF, aWidth, aHeight, aStyle, aTitle);
     }
 
     std::unique_ptr<View> createView()const override {

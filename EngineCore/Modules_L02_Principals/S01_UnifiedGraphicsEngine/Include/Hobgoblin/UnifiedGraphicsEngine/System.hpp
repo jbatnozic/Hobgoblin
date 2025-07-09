@@ -6,6 +6,8 @@
 
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/HGExcept.hpp>
+#include <Hobgoblin/Unicode.hpp>
+#include <Hobgoblin/UnifiedGraphicsEngine/Window_style.hpp>
 
 #include <memory>
 
@@ -22,7 +24,13 @@ class System {
 public:
     virtual ~System() = default;
 
-    virtual std::unique_ptr<RenderWindow> createRenderWindow() const = 0;
+    virtual std::unique_ptr<RenderWindow> createRenderWindow(
+        PZInteger            aWidth  = 640,
+        PZInteger            aHeight = 480,
+        WindowStyle          aStyle  = WindowStyle::DEFAULT,
+        const UnicodeString& aTitle  = HG_UNILIT("Hobgoblin")) const = 0;
+
+    // TODO: createRenderTexture
 
     virtual std::unique_ptr<View> createView() const = 0;
 

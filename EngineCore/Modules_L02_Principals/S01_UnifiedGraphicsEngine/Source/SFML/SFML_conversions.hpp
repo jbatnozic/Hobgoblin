@@ -22,6 +22,7 @@
 // #include <Hobgoblin/UnifiedGraphicsEngine/Transform.hpp>
 // #include <Hobgoblin/UnifiedGraphicsEngine/Vertex_buffer.hpp>
 // #include <Hobgoblin/UnifiedGraphicsEngine/View.hpp>
+#include <Hobgoblin/UnifiedGraphicsEngine/Window_style.hpp>
 #include <Hobgoblin/Window/Context_settings.hpp>
 
 // SFML
@@ -41,6 +42,7 @@
 #include <SFML/Graphics/VertexBuffer.hpp>
 #include <SFML/Graphics/View.hpp>
 #include <SFML/Window/ContextSettings.hpp>
+#include <SFML/Window/WindowStyle.hpp>
 
 #include <filesystem>
 
@@ -161,6 +163,10 @@ sf::PrimitiveType ToSf(PrimitiveType aType);
 
 // View ToHg(const sf::View& aView);
 // const sf::View& ToSf(const View& aView);
+
+// WindowStyle
+
+sf::Uint32 ToSf(WindowStyle aStyle);
 
 ///////////////////////////////////////////////////////////////////////////
 // MARK: INLINE DEFINITIONS                                              //
@@ -489,6 +495,25 @@ sf::PrimitiveType ToSf(PrimitiveType aType) {
 //     const auto& sfView = detail::GraphicsImplAccessor::getImplOf<sf::View>(aView);
 //     return sfView;
 // }
+
+// WindowStyle
+
+inline
+sf::Uint32 ToSf(WindowStyle aStyle) {
+    if (aStyle == WindowStyle::NONE) {
+        return sf::Style::None;
+    }
+
+    int result = 0;
+
+    if ((aStyle & WindowStyle::TITLEBAR)   != WindowStyle::NONE) result |= sf::Style::Titlebar;
+    if ((aStyle & WindowStyle::RESIZE)     != WindowStyle::NONE) result |= sf::Style::Resize;
+    if ((aStyle & WindowStyle::CLOSE)      != WindowStyle::NONE) result |= sf::Style::Close;
+    if ((aStyle & WindowStyle::FULLSCREEN) != WindowStyle::NONE) result |= sf::Style::Fullscreen;
+    if ((aStyle & WindowStyle::DEFAULT)    != WindowStyle::NONE) result |= sf::Style::Default;
+
+    return result;
+}
 
 } // namespace gr
 HOBGOBLIN_NAMESPACE_END

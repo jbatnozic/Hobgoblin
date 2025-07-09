@@ -5,6 +5,7 @@
 #define UHOBGOBLIN_UGE_RENDER_STATES_HPP
 
 #include <Hobgoblin/UnifiedGraphicsEngine/Shader.hpp>
+#include <Hobgoblin/UnifiedGraphicsEngine/Blend_mode.hpp>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
@@ -16,7 +17,7 @@ public:
     // const Texture* texture = nullptr;
     const Shader*  shader = nullptr;
     // Transform      transform{};
-    // BlendMode      blendMode = BLEND_ALPHA;
+    BlendMode      blendMode = BLEND_NORMAL;
 };
 
 class RenderStatesOptRef {

@@ -26,15 +26,16 @@ sf::String UnicodeStringToSfmlString(const UnicodeString& aUnicodeString) {
 }
 } // namespace
 
-SFMLRenderWindowImpl::SFMLRenderWindowImpl(const System&         aSystem,
-                                           const win::VideoMode& aVideoMode,
-                                           const UnicodeString&  aTitle,
-                                           win::WindowStyle      aStyle)
+SFMLRenderWindowImpl::SFMLRenderWindowImpl(const System&        aSystem,
+                                           PZInteger            aWidth,
+                                           PZInteger            aHeight,
+                                           WindowStyle          aStyle,
+                                           const UnicodeString& aTitle)
     : _system{aSystem}
-    , _window{sf::VideoMode{(unsigned)aVideoMode.width,
-                            (unsigned)aVideoMode.height,
-                            (unsigned)aVideoMode.bitsPerPixel},
-              UnicodeStringToSfmlString(aTitle)}
+    , _window{sf::VideoMode{static_cast<unsigned>(aWidth),
+                            static_cast<unsigned>(aHeight)},
+              UnicodeStringToSfmlString(aTitle),
+              ToSf(aStyle)}
     , _activeView{_system, _window.getDefaultView(), {0.0, 0.0}} {}
 
 ///////////////////////////////////////////////////////////////////////////
