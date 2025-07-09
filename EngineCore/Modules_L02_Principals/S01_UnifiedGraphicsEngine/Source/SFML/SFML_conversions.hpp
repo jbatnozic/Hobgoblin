@@ -10,7 +10,7 @@
 
 #include <Hobgoblin/Math/Rectangle.hpp>
 #include <Hobgoblin/Math/Vector.hpp>
-// #include <Hobgoblin/UnifiedGraphicsEngine/Blend_mode.hpp>
+#include <Hobgoblin/UnifiedGraphicsEngine/Blend_mode.hpp>
 #include <Hobgoblin/UnifiedGraphicsEngine/Color.hpp>
 // #include <Hobgoblin/UnifiedGraphicsEngine/Glyph.hpp>
 #include <Hobgoblin/UnifiedGraphicsEngine/Primitive_type.hpp>
@@ -19,7 +19,6 @@
 // #include <Hobgoblin/UnifiedGraphicsEngine/Sprite.hpp>
 // #include <Hobgoblin/UnifiedGraphicsEngine/Texture.hpp>
 // #include <Hobgoblin/UnifiedGraphicsEngine/Texture_rect.hpp>
-// #include <Hobgoblin/UnifiedGraphicsEngine/Transform.hpp>
 // #include <Hobgoblin/UnifiedGraphicsEngine/Vertex_buffer.hpp>
 // #include <Hobgoblin/UnifiedGraphicsEngine/View.hpp>
 #include <Hobgoblin/UnifiedGraphicsEngine/Window_style.hpp>
@@ -27,20 +26,19 @@
 
 // SFML
 
-#include <SFML/Graphics/Rect.hpp>
-#include <SFML/System/Vector2.hpp>
 #include <SFML/Graphics/BlendMode.hpp>
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/Glyph.hpp>
 #include <SFML/Graphics/PrimitiveType.hpp>
+#include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/RenderStates.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/Shader.hpp>
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/Texture.hpp>
-#include <SFML/Graphics/Transform.hpp>
 #include <SFML/Graphics/VertexBuffer.hpp>
 #include <SFML/Graphics/View.hpp>
+#include <SFML/System/Vector2.hpp>
 #include <SFML/Window/ContextSettings.hpp>
 #include <SFML/Window/WindowStyle.hpp>
 
@@ -93,8 +91,7 @@ typename math::Rectangle<taArithmetic> ToHg(const typename sf::Rect<taArithmetic
 // MARK: FILSYSTEM                                                       //
 ///////////////////////////////////////////////////////////////////////////
 
-inline
-std::string FilesystemPathToSfPath(const std::filesystem::path& aPath) {
+inline std::string FilesystemPathToSfPath(const std::filesystem::path& aPath) {
     return aPath.string();
 }
 
@@ -104,12 +101,12 @@ std::string FilesystemPathToSfPath(const std::filesystem::path& aPath) {
 
 // BlendMode
 
-// BlendMode ToHg(sf::BlendMode aBlendMode);
-// sf::BlendMode ToSf(BlendMode aBlendMode);
+BlendMode     ToHg(sf::BlendMode aBlendMode);
+sf::BlendMode ToSf(BlendMode aBlendMode);
 
 // Color
 
-Color ToHg(sf::Color aColor);
+Color     ToHg(sf::Color aColor);
 sf::Color ToSf(Color aColor);
 
 // ContextSettings
@@ -117,9 +114,9 @@ sf::Color ToSf(Color aColor);
 using win::ContextSettings;
 
 ContextSettings::Attribute ToHg(sf::ContextSettings::Attribute aAttribute);
-unsigned ToSf(ContextSettings::Attribute aAttribute);
+unsigned                   ToSf(ContextSettings::Attribute aAttribute);
 
-ContextSettings ToHg(const sf::ContextSettings& aSettings);
+ContextSettings     ToHg(const sf::ContextSettings& aSettings);
 sf::ContextSettings ToSf(const ContextSettings& aSettings);
 
 // Glyph
@@ -129,7 +126,7 @@ sf::ContextSettings ToSf(const ContextSettings& aSettings);
 
 // PrimitiveType
 
-PrimitiveType ToHg(sf::PrimitiveType aType);
+PrimitiveType     ToHg(sf::PrimitiveType aType);
 sf::PrimitiveType ToSf(PrimitiveType aType);
 
 // RenderStates
@@ -149,10 +146,6 @@ sf::PrimitiveType ToSf(PrimitiveType aType);
 // TextureRect
 
 // sf::IntRect ConvertTextureRect(TextureRect aTextureRect);
-
-// Transform
-
-// const sf::Transform& ToSf(const Transform& aTransform);
 
 // VertexBuffer
 
@@ -174,97 +167,97 @@ sf::Uint32 ToSf(WindowStyle aStyle);
 
 // BlendMode
 
-// inline
-// BlendMode::Factor ToHg(sf::BlendMode::Factor aFactor) {
-//     switch (aFactor) {
-//     case sf::BlendMode::Zero: return BlendMode::Factor::Zero;
-//     case sf::BlendMode::One: return BlendMode::Factor::One;
-//     case sf::BlendMode::SrcColor: return BlendMode::Factor::SrcColor;
-//     case sf::BlendMode::OneMinusSrcColor: return BlendMode::Factor::OneMinusSrcColor;
-//     case sf::BlendMode::DstColor: return BlendMode::Factor::DstColor;
-//     case sf::BlendMode::OneMinusDstColor: return BlendMode::Factor::OneMinusDstColor;
-//     case sf::BlendMode::SrcAlpha: return BlendMode::Factor::SrcAlpha;
-//     case sf::BlendMode::OneMinusSrcAlpha: return BlendMode::Factor::OneMinusSrcAlpha;
-//     case sf::BlendMode::DstAlpha: return BlendMode::Factor::DstAlpha;
-//     case sf::BlendMode::OneMinusDstAlpha: return BlendMode::Factor::OneMinusDstAlpha;
-//     default:
-//         HG_UNREACHABLE("Invalid sf::BlendMode::Factor value ({}).", (int)aFactor);
-//     }
-// }
-
-// inline
-// BlendMode::Equation ToHg(sf::BlendMode::Equation aEquation) {
-//     switch (aEquation) {
-//     case sf::BlendMode::Add: return BlendMode::Equation::Add;
-//     case sf::BlendMode::Subtract: return BlendMode::Equation::Subtract;
-//     case sf::BlendMode::ReverseSubtract: return BlendMode::Equation::ReverseSubtract;
-//     default:
-//         HG_UNREACHABLE("Invalid sf::BlendMode::Equation value ({}).", (int)aEquation);
-//     }
-// }
-
-// inline
-// BlendMode ToHg(sf::BlendMode aBlendMode) {
-//     return {
-//         ToHg(aBlendMode.colorSrcFactor),
-//         ToHg(aBlendMode.colorDstFactor),
-//         ToHg(aBlendMode.colorEquation),
-//         ToHg(aBlendMode.alphaSrcFactor),
-//         ToHg(aBlendMode.alphaDstFactor),
-//         ToHg(aBlendMode.alphaEquation)
-//     };
-// }
-
-// inline
-// sf::BlendMode::Factor ToSf(BlendMode::Factor aFactor) {
-//     switch (aFactor) {
-//     case BlendMode::Factor::Zero: return sf::BlendMode::Zero;
-//     case BlendMode::Factor::One: return sf::BlendMode::One;
-//     case BlendMode::Factor::SrcColor: return sf::BlendMode::SrcColor;
-//     case BlendMode::Factor::OneMinusSrcColor: return sf::BlendMode::OneMinusSrcColor;
-//     case BlendMode::Factor::DstColor: return sf::BlendMode::DstColor;
-//     case BlendMode::Factor::OneMinusDstColor: return sf::BlendMode::OneMinusDstColor;
-//     case BlendMode::Factor::SrcAlpha: return sf::BlendMode::SrcAlpha;
-//     case BlendMode::Factor::OneMinusSrcAlpha: return sf::BlendMode::OneMinusSrcAlpha;
-//     case BlendMode::Factor::DstAlpha: return sf::BlendMode::DstAlpha;
-//     case BlendMode::Factor::OneMinusDstAlpha: return sf::BlendMode::OneMinusDstAlpha;
-//     default:
-//         HG_UNREACHABLE("Invalid hg::gr::BlendMode::Factor value ({}).", (int)aFactor);
-//     }
-// }
-
-// inline
-// sf::BlendMode::Equation ToSf(BlendMode::Equation aEquation) {
-//     switch (aEquation) {
-//     case BlendMode::Equation::Add: return sf::BlendMode::Add;
-//     case BlendMode::Equation::Subtract: return sf::BlendMode::Subtract;
-//     case BlendMode::Equation::ReverseSubtract: return sf::BlendMode::ReverseSubtract;
-//     default:
-//         HG_UNREACHABLE("Invalid hg::gr::BlendMode::Equation value ({}).", (int)aEquation);
-//     }
-// }
-
-// inline
-// sf::BlendMode ToSf(BlendMode aBlendMode) {
-//     return {
-//         ToSf(aBlendMode.colorSrcFactor),
-//         ToSf(aBlendMode.colorDstFactor),
-//         ToSf(aBlendMode.colorEquation),
-//         ToSf(aBlendMode.alphaSrcFactor),
-//         ToSf(aBlendMode.alphaDstFactor),
-//         ToSf(aBlendMode.alphaEquation)
-//     };
-// }
-
-// Color
-
+// clang-format off
 inline
-Color ToHg(sf::Color aColor) {
-    return Color{aColor.toInteger()};
+BlendMode::Factor ToHg(sf::BlendMode::Factor aFactor) {
+    switch (aFactor) {
+    case sf::BlendMode::Zero:             return BlendMode::Factor::ZERO;
+    case sf::BlendMode::One:              return BlendMode::Factor::ONE;
+    case sf::BlendMode::SrcColor:         return BlendMode::Factor::SRC_COLOR;
+    case sf::BlendMode::OneMinusSrcColor: return BlendMode::Factor::ONE_MINUS_DST_COLOR;
+    case sf::BlendMode::DstColor:         return BlendMode::Factor::DST_COLOR;
+    case sf::BlendMode::OneMinusDstColor: return BlendMode::Factor::ONE_MINUS_DST_COLOR;
+    case sf::BlendMode::SrcAlpha:         return BlendMode::Factor::SRC_ALPHA;
+    case sf::BlendMode::OneMinusSrcAlpha: return BlendMode::Factor::ONE_MINUS_SRC_ALPHA;
+    case sf::BlendMode::DstAlpha:         return BlendMode::Factor::DST_ALPHA;
+    case sf::BlendMode::OneMinusDstAlpha: return BlendMode::Factor::ONE_MINUS_DST_ALPHA;
+    default:
+        HG_UNREACHABLE("Invalid sf::BlendMode::Factor value ({}).", (int)aFactor);
+    }
 }
 
 inline
-sf::Color ToSf(Color aColor) {
+BlendMode::Equation ToHg(sf::BlendMode::Equation aEquation) {
+    switch (aEquation) {
+    case sf::BlendMode::Add:             return BlendMode::Equation::ADD;
+    case sf::BlendMode::Subtract:        return BlendMode::Equation::SUBTRACT;
+    case sf::BlendMode::ReverseSubtract: return BlendMode::Equation::REVERSE_SUBTRACT;
+    default:
+        HG_UNREACHABLE("Invalid sf::BlendMode::Equation value ({}).", (int)aEquation);
+    }
+}
+
+inline
+BlendMode ToHg(sf::BlendMode aBlendMode) {
+    return {
+        ToHg(aBlendMode.colorSrcFactor),
+        ToHg(aBlendMode.colorDstFactor),
+        ToHg(aBlendMode.colorEquation),
+        ToHg(aBlendMode.alphaSrcFactor),
+        ToHg(aBlendMode.alphaDstFactor),
+        ToHg(aBlendMode.alphaEquation)
+    };
+}
+
+inline
+sf::BlendMode::Factor ToSf(BlendMode::Factor aFactor) {
+    switch (aFactor) {
+    case BlendMode::Factor::ZERO:                return sf::BlendMode::Zero;
+    case BlendMode::Factor::ONE:                 return sf::BlendMode::One;
+    case BlendMode::Factor::SRC_COLOR:           return sf::BlendMode::SrcColor;
+    case BlendMode::Factor::ONE_MINUS_SRC_COLOR: return sf::BlendMode::OneMinusSrcColor;
+    case BlendMode::Factor::DST_COLOR:           return sf::BlendMode::DstColor;
+    case BlendMode::Factor::ONE_MINUS_DST_COLOR: return sf::BlendMode::OneMinusDstColor;
+    case BlendMode::Factor::SRC_ALPHA:           return sf::BlendMode::SrcAlpha;
+    case BlendMode::Factor::ONE_MINUS_SRC_ALPHA: return sf::BlendMode::OneMinusSrcAlpha;
+    case BlendMode::Factor::DST_ALPHA:           return sf::BlendMode::DstAlpha;
+    case BlendMode::Factor::ONE_MINUS_DST_ALPHA: return sf::BlendMode::OneMinusDstAlpha;
+    default:
+        HG_UNREACHABLE("Invalid hg::gr::BlendMode::Factor value ({}).", (int)aFactor);
+    }
+}
+
+inline
+sf::BlendMode::Equation ToSf(BlendMode::Equation aEquation) {
+    switch (aEquation) {
+    case BlendMode::Equation::ADD:              return sf::BlendMode::Add;
+    case BlendMode::Equation::SUBTRACT:         return sf::BlendMode::Subtract;
+    case BlendMode::Equation::REVERSE_SUBTRACT: return sf::BlendMode::ReverseSubtract;
+    default:
+        HG_UNREACHABLE("Invalid hg::gr::BlendMode::Equation value ({}).", (int)aEquation);
+    }
+}
+
+inline
+sf::BlendMode ToSf(BlendMode aBlendMode) {
+    return {
+        ToSf(aBlendMode.colorSrcFactor),
+        ToSf(aBlendMode.colorDstFactor),
+        ToSf(aBlendMode.colorEquation),
+        ToSf(aBlendMode.alphaSrcFactor),
+        ToSf(aBlendMode.alphaDstFactor),
+        ToSf(aBlendMode.alphaEquation)
+    };
+}
+// clang-format on
+
+// Color
+
+inline Color ToHg(sf::Color aColor) {
+    return Color{aColor.toInteger()};
+}
+
+inline sf::Color ToSf(Color aColor) {
     return sf::Color{aColor.toInt()};
 }
 
@@ -278,8 +271,9 @@ sf::Color ToSf(Color aColor) {
 
 //     auto result = static_cast<ContextSettings::Attribute>(0);
 
-//     if ((aAttribute & sf::ContextSettings::Core)  != 0) result = result | ContextSettings::Attribute::Core;
-//     if ((aAttribute & sf::ContextSettings::Debug) != 0) result = result | ContextSettings::Attribute::Debug;
+//     if ((aAttribute & sf::ContextSettings::Core)  != 0) result = result |
+//     ContextSettings::Attribute::Core; if ((aAttribute & sf::ContextSettings::Debug) != 0) result =
+//     result | ContextSettings::Attribute::Debug;
 
 //     return result;
 // }
@@ -292,8 +286,10 @@ sf::Color ToSf(Color aColor) {
 
 //     unsigned result = 0;
 
-//     if ((aAttribute & ContextSettings::Attribute::Core)  != static_cast<ContextSettings::Attribute>(0)) result |= sf::ContextSettings::Core;
-//     if ((aAttribute & ContextSettings::Attribute::Debug) != static_cast<ContextSettings::Attribute>(0)) result |= sf::ContextSettings::Debug;
+//     if ((aAttribute & ContextSettings::Attribute::Core)  !=
+//     static_cast<ContextSettings::Attribute>(0)) result |= sf::ContextSettings::Core; if ((aAttribute &
+//     ContextSettings::Attribute::Debug) != static_cast<ContextSettings::Attribute>(0)) result |=
+//     sf::ContextSettings::Debug;
 
 //     return result;
 // }
@@ -350,13 +346,14 @@ sf::Color ToSf(Color aColor) {
 //     result.rsbDelta = aGlyph.rsbDelta;
 //     result.bounds   = ToSf(aGlyph.bounds);
 //     result.textureRect = ConvertTextureRect(aGlyph.textureRect);
-//     return result;    
+//     return result;
 // }
 
 // PrimitiveType
 
 // NOTE: MSVC is too stupid to optimize these switch/case convertors (while clang and gcc can do it).
 
+// clang-format off
 inline
 PrimitiveType ToHg(sf::PrimitiveType aType) {
     switch (aType) {
@@ -384,6 +381,7 @@ sf::PrimitiveType ToSf(PrimitiveType aType) {
         HG_UNREACHABLE("Invalid hg::gr::PrimitiveType value ({}).", (int)aType);
     }
 }
+// clang-format on
 
 // RenderStates
 
@@ -393,11 +391,13 @@ sf::PrimitiveType ToSf(PrimitiveType aType) {
 
 //     rs.blendMode = ToSf(aRenderStates.blendMode);
 //     rs.transform = ToSf(aRenderStates.transform);
-//     rs.texture   = (aRenderStates.texture != nullptr) ? &detail::GraphicsImplAccessor::getImplOf<sf::Texture>(*aRenderStates.texture)
+//     rs.texture   = (aRenderStates.texture != nullptr) ?
+//     &detail::GraphicsImplAccessor::getImplOf<sf::Texture>(*aRenderStates.texture)
 //                                                       : nullptr;
-//     rs.shader    = (aRenderStates.shader != nullptr) ? &detail::GraphicsImplAccessor::getImplOf<sf::Shader>(*aRenderStates.shader)
+//     rs.shader    = (aRenderStates.shader != nullptr) ?
+//     &detail::GraphicsImplAccessor::getImplOf<sf::Shader>(*aRenderStates.shader)
 //                                                      : nullptr;
-    
+
 //     return rs;
 // }
 
@@ -437,23 +437,6 @@ sf::PrimitiveType ToSf(PrimitiveType aType) {
 //         static_cast<int>(aTextureRect.w),
 //         static_cast<int>(aTextureRect.h)
 //     };
-// }
-
-// Transform
-
-// inline
-// Transform ToHg(const sf::Transform& aTransform) {
-//     // TODO(optimization: Improve efficiency of this function (private ctor??))
-//     Transform result;
-//     auto& sfTransform = detail::GraphicsImplAccessor::getImplOf<sf::Transform>(result);
-//     sfTransform = aTransform;
-//     return result;
-// }
-
-// inline
-// const sf::Transform& ToSf(const Transform& aTransform) {
-//     const auto& sfTransform = detail::GraphicsImplAccessor::getImplOf<sf::Transform>(aTransform);
-//     return sfTransform;
 // }
 
 // VertexBuffer
@@ -498,6 +481,7 @@ sf::PrimitiveType ToSf(PrimitiveType aType) {
 
 // WindowStyle
 
+// clang-format off
 inline
 sf::Uint32 ToSf(WindowStyle aStyle) {
     if (aStyle == WindowStyle::NONE) {
@@ -514,8 +498,9 @@ sf::Uint32 ToSf(WindowStyle aStyle) {
 
     return result;
 }
+// clang-format on
 
-} // namespace gr
+} // namespace uge
 HOBGOBLIN_NAMESPACE_END
 
 #include <Hobgoblin/Private/Pmacro_undef.hpp>

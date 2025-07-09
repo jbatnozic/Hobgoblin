@@ -6,6 +6,7 @@
 #include "SFML_conversions.hpp"
 #include "SFML_vertices.hpp"
 #include "SFML_window_event_conversion.hpp"
+#include "Transform_impl.hpp"
 #include "View_impl.hpp"
 
 #include <Hobgoblin/HGExcept.hpp>
@@ -175,29 +176,82 @@ void SFMLRenderWindowImpl::clear(Color aColor) {
     _window.clear(ToSf(aColor));
 }
 
-void SFMLRenderWindowImpl::draw(const Vertex*      aVertices,
-                                PZInteger          aVertexCount,
-                                PrimitiveType      aPrimitiveType,
-                                math::Vector2d     aAnchor,
-                                RenderStatesOptRef aStates) {
+void SFMLRenderWindowImpl::draw(const Vertex*       aVertices,
+                                PZInteger           aVertexCount,
+                                PrimitiveType       aPrimitiveType,
+                                math::Vector2d      aAnchor,
+                                const RenderStates& aRenderStates) {
     SFMLVertices sfVertices{aVertices, pztos(aVertexCount)};
 
-    if (aStates) {
-        HG_NOT_IMPLEMENTED();
-    } else {
-        auto* transformMatrix = const_cast<float*>(_defaultRenderStates.transform.getMatrix());
-        transformMatrix[12]   = static_cast<float>(aAnchor.x - _activeViewAnchor.x);
-        transformMatrix[13]   = static_cast<float>(aAnchor.y - _activeViewAnchor.y);
+    assert(aRenderStates.transform == nullptr || &aRenderStates.transform->getSystem() == &_system);
 
-        _window.draw(sfVertices.getVertices(),
-                     sfVertices.getVertexCount(),
-                     ToSf(aPrimitiveType),
-                     _defaultRenderStates);
-    }
+    // Determine which render states object to use
+    sf::RenderStates& sfmlRenderStates =
+        (aRenderStates.transform)
+            ? static_cast<const SFMLTransformImpl*>(aRenderStates.transform)->getUnderlyingRenderStates()
+            : _defaultRenderStates;
+
+    // Set simple fields of render states
+    sfmlRenderStates.texture   = _getSfmlTexture(aRenderStates.texture);
+    sfmlRenderStates.shader    = _getSfmlShader(aRenderStates.shader);
+    sfmlRenderStates.blendMode = _getSfmlBlendMode(aRenderStates.blendMode);
+
+    sf::Transform& sfmlTransform   = sfmlRenderStates.transform;
+    auto*          transformMatrix = const_cast<float*>(sfmlTransform.getMatrix());
+
+    // Save original translation values
+    float tm12 = transformMatrix[12];
+    float tm13 = transformMatrix[13];
+
+    // Adjust translation based on anchors
+    transformMatrix[12] += static_cast<float>(aAnchor.x - _activeViewAnchor.x);
+    transformMatrix[13] += static_cast<float>(aAnchor.y - _activeViewAnchor.y);
+
+    // Draw
+    _window.draw(sfVertices.getVertices(),
+                 sfVertices.getVertexCount(),
+                 ToSf(aPrimitiveType),
+                 sfmlRenderStates);
+
+    // Restore original translation values
+    transformMatrix[12] = tm12;
+    transformMatrix[13] = tm13;
 }
 
 void SFMLRenderWindowImpl::flush() {
     /* Nothing to do (there is no batching in SFML). */
+}
+
+///////////////////////////////////////////////////////////////////////////
+// MARK: Private                                                         //
+///////////////////////////////////////////////////////////////////////////
+
+const sf::Texture* SFMLRenderWindowImpl::_getSfmlTexture(const Texture* aTexture) const {
+    // assert(aRenderStates.texture == nullptr || &aRenderStates.texture->getSystem() == &_system);
+
+    if (aTexture) {
+        return {}; // TODO
+    } else {
+        return nullptr;
+    }
+}
+
+const sf::Shader* SFMLRenderWindowImpl::_getSfmlShader(const Shader* aShader) const {
+    // assert(aRenderStates.shader == nullptr || &aRenderStates.shader->getSystem() == &_system);
+
+    if (aShader) {
+        return {}; // TODO
+    } else {
+        return nullptr;
+    }
+}
+
+const sf::BlendMode SFMLRenderWindowImpl::_getSfmlBlendMode(std::optional<BlendMode> aBlendMode) {
+    if (aBlendMode) {
+        return ToSf(*aBlendMode);
+    } else {
+        return sf::BlendAlpha;
+    }
 }
 
 } // namespace uge

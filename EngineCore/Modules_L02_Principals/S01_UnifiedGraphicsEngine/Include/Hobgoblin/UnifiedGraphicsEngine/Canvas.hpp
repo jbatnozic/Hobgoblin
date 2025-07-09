@@ -68,11 +68,11 @@ public:
     //! \param aColor Fill color to use to clear the canvas.
     virtual void clear(Color aColor = COLOR_BLACK) = 0;
 
-    virtual void draw(const Vertex*      aVertices,
-                      PZInteger          aVertexCount,
-                      PrimitiveType      aPrimitiveType,
-                      math::Vector2d     aAnchor,
-                      RenderStatesOptRef aStates = RENDER_STATES_DEFAULT) = 0;
+    virtual void draw(const Vertex*       aVertices,
+                      PZInteger           aVertexCount,
+                      PrimitiveType       aPrimitiveType,
+                      math::Vector2d      aAnchor,
+                      const RenderStates& aStates = RENDER_STATES_DEFAULT) = 0;
 
 #if UHOBGOBLIN_FUTURE
     virtual void draw(const Drawable&     aDrawable,

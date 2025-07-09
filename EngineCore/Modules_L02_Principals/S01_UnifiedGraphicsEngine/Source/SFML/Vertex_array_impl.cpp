@@ -14,7 +14,7 @@
 HOBGOBLIN_NAMESPACE_BEGIN
 namespace uge {
 
-void SFMLVertexArrayImpl::drawOnto(Canvas& aCanvas, RenderStatesOptRef aRenderStates) const {
+void SFMLVertexArrayImpl::drawOnto(Canvas& aCanvas, const RenderStates& aRenderStates) const {
     assert(&getSystem() == &aCanvas.getSystem());
 
     auto* sfRenderTarget = static_cast<sf::RenderTarget*>(aCanvas.getRenderingBackend());

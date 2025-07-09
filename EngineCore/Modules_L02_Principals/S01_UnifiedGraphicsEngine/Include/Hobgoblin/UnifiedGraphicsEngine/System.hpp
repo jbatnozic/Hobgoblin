@@ -17,6 +17,7 @@ HOBGOBLIN_NAMESPACE_BEGIN
 namespace uge {
 
 class RenderWindow;
+class Transform;
 class VertexArray;
 class View;
 
@@ -35,6 +36,8 @@ public:
     virtual std::unique_ptr<View> createView() const = 0;
 
     virtual std::unique_ptr<View> createDefaultView(const RenderWindow& aRenderWindow) const = 0;
+
+    virtual std::unique_ptr<Transform> createTransform() const = 0;
 
     virtual std::unique_ptr<VertexArray> createVertexArray(PZInteger aSize) const = 0;
 };

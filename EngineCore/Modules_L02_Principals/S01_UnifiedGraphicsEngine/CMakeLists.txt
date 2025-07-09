@@ -16,6 +16,7 @@ set(COMPONENT_SOURCES
     "Source/SFML/Render_window_impl.cpp"
     "Source/SFML/Render_window_impl.hpp"
     "Source/SFML/System_impl.hpp"
+    "Source/SFML/Transform_impl.cpp"
     "Source/SFML/Vertex_array_impl.cpp"
     "Source/SFML/Vertex_array_impl.hpp"
     "Source/SFML/View_impl.cpp"

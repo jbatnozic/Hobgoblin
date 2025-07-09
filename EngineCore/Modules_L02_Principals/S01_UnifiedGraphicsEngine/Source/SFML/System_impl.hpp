@@ -7,6 +7,7 @@
 #include <Hobgoblin/UnifiedGraphicsEngine/System.hpp>
 
 #include "Render_window_impl.hpp"
+#include "Transform_impl.hpp"
 #include "Vertex_array_impl.hpp"
 #include "View_impl.hpp"
 
@@ -38,6 +39,10 @@ public:
             SELF,
             static_cast<const SFMLRenderWindowImpl&>(aRenderWindow).getDefaultView(),
             math::Vector2d{0.0, 0.0});
+    }
+
+    std::unique_ptr<Transform> createTransform() const override {
+        return std::make_unique<SFMLTransformImpl>(SELF);
     }
 
     std::unique_ptr<VertexArray> createVertexArray(PZInteger aSize) const override {

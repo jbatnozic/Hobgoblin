@@ -19,7 +19,7 @@ class Drawable : virtual public Element {
 public:
     virtual ~Drawable() = default;
 
-    virtual void drawOnto(Canvas& aCanvas, RenderStatesOptRef aRenderStates) const = 0;
+    virtual void drawOnto(Canvas& aCanvas, const RenderStates& aRenderStates) const = 0;
 };
 
 } // namespace gr

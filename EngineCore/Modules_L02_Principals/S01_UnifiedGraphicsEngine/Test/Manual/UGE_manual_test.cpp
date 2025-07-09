@@ -19,6 +19,7 @@ int main() try {
     hg::ManualTestRunner testRunner;
     HG_ADD_MANUAL_TEST(testRunner, RunEmptyRenderWindowTest);
     HG_ADD_MANUAL_TEST(testRunner, RunSquareInRenderWindowTest);
+    HG_ADD_MANUAL_TEST(testRunner, RunTransformInRenderWindowTest);
 
     testRunner.runTest();
 

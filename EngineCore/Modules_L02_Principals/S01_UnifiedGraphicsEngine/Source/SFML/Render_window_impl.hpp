@@ -4,13 +4,20 @@
 #ifndef UHOBGOBLIN_UGE_SFML_RENDER_WINDOW_IMPL_HPP
 #define UHOBGOBLIN_UGE_SFML_RENDER_WINDOW_IMPL_HPP
 
+#include <Hobgoblin/UnifiedGraphicsEngine/Blend_mode.hpp>
+#include <Hobgoblin/UnifiedGraphicsEngine/Render_states.hpp>
 #include <Hobgoblin/UnifiedGraphicsEngine/Render_window.hpp>
 #include <Hobgoblin/UnifiedGraphicsEngine/Window_style.hpp>
 #include <Hobgoblin/Unicode.hpp>
 
+#include <SFML/Graphics/BlendMode.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
+#include <SFML/Graphics/Shader.hpp>
+#include <SFML/Graphics/Texture.hpp>
 
 #include "View_impl.hpp"
+
+#include <optional>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
@@ -97,11 +104,11 @@ public:
 
     void clear(Color aColor = COLOR_BLACK) override;
 
-    void draw(const Vertex*      aVertices,
-              PZInteger          aVertexCount,
-              PrimitiveType      aPrimitiveType,
-              math::Vector2d     aAnchor,
-              RenderStatesOptRef aStates = RENDER_STATES_DEFAULT) override;
+    void draw(const Vertex*       aVertices,
+              PZInteger           aVertexCount,
+              PrimitiveType       aPrimitiveType,
+              math::Vector2d      aAnchor,
+              const RenderStates& aStates = RENDER_STATES_DEFAULT) override;
 
     void flush() override;
 
@@ -115,6 +122,10 @@ private:
     sf::RenderStates _defaultRenderStates = sf::RenderStates::Default;
     SFMLViewImpl     _activeView;
     math::Vector2d   _activeViewAnchor;
+
+    const sf::Texture*         _getSfmlTexture(const Texture* aTexture) const;
+    const sf::Shader*          _getSfmlShader(const Shader* aShader) const;
+    static const sf::BlendMode _getSfmlBlendMode(std::optional<BlendMode> aBlendMode);
 };
 
 } // namespace gr
