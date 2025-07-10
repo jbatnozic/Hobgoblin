@@ -11,6 +11,8 @@ namespace uge {
 
 class System;
 
+//! Base class for all objects that are elements of the graphics system:
+//! Windows, Canvases, Views, Drawables, etc.
 class Element {
 public:
     virtual ~Element() = default;

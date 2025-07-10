@@ -53,8 +53,8 @@ const System& SFMLRenderWindowImpl::getSystem() const {
 
 // Title
 
-void SFMLRenderWindowImpl::setTitle(const std::string& aTitle) {
-    _window.setTitle(aTitle);
+void SFMLRenderWindowImpl::setTitle(const UnicodeString& aTitle) {
+    _window.setTitle(UnicodeStringToSfmlString(aTitle));
 }
 
 // Event handling

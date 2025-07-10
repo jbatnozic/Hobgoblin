@@ -7,6 +7,7 @@
 #include <Hobgoblin/Math/Vector.hpp>
 #include <Hobgoblin/UnifiedGraphicsEngine/Element.hpp>
 #include <Hobgoblin/UnifiedGraphicsEngine/Window_event.hpp>
+#include <Hobgoblin/Unicode.hpp>
 
 #include <string>
 
@@ -27,7 +28,7 @@ public:
     //! \param title New title
     //!
     //! \see setIcon
-    virtual void setTitle(const std::string& aTitle) = 0;
+    virtual void setTitle(const UnicodeString& aTitle) = 0;
 
     // MARK: Event handling
 

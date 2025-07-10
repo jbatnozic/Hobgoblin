@@ -12,6 +12,7 @@
 HOBGOBLIN_NAMESPACE_BEGIN
 namespace uge {
 
+//! A Window that can also serve as a target for 2D drawing.
 class RenderWindow : public Window, public Canvas {
 public:
     virtual ~RenderWindow() = default;

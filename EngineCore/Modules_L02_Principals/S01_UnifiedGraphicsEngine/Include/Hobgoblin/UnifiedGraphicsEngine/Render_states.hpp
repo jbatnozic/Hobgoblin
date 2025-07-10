@@ -19,11 +19,30 @@ class Texture {
     // TODO: temporary
 };
 
+//! Defines the states used to draw to a Canvas.
 class RenderStates {
 public:
-    const Texture*           texture   = nullptr;
-    const Shader*            shader    = nullptr;
-    const Transform*         transform = nullptr;
+    //! The texture to use: what image is mapped to the object.
+    //! If nullptr, no texture will be used.
+    //!
+    //! \warning some high level objects, like text, sprites and multisprites will ignore
+    //!          this value and use their own textures.
+    const Texture* texture = nullptr;
+
+    //! The shader to use: what custom effect is applied to the object.
+    //! If nullptr, the default shader will be used.
+    const Shader* shader = nullptr;
+
+    //! The transform to use: how the object is positioned/rotated/scaled/etc.
+    //! If nullptr, the identity transform will be used.
+    //!
+    //! \note the built-in drawables: text, sprites, multisprites and shapes will combine their
+    //!       internal transforms with the one passed here. It is recommended for custom drawables
+    //!       to do the same.
+    const Transform* transform = nullptr;
+
+    //! The blend mode to use: how pixels of the objects are blended with the background.
+    //! If not set, normal (alpha) blending will be used.
     std::optional<BlendMode> blendMode = std::nullopt;
 };
 

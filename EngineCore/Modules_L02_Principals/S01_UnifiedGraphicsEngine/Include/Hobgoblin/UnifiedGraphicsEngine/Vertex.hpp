@@ -14,9 +14,16 @@ namespace uge {
 
 //! A vertex defines a point with color and coordinates on a texture.
 struct Vertex {
-    math::Vector2f position;
-    Color          color;
-    math::Vector2f texCoords;
+    //! Position of the vertex in the world. While these positions are relative to an anchor,
+    //! vertices don't store the anchor themselves, but it is always provided externally.
+    math::Vector2f position = {0.f, 0.f};
+
+    //! Color of the vertex.
+    Color color = COLOR_WHITE;
+
+    //! Coordinates of the texture's pixel to map to the vertex. Same as with the position and
+    //! its anchor, the reference to a texture (if any) is always provided externally.
+    math::Vector2f texCoords = {0.f, 0.f};
 };
 
 } // namespace gr

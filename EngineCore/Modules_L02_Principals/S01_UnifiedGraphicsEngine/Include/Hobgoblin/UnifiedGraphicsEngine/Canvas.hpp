@@ -91,12 +91,6 @@ public:
     //! be deferred until later. Calling flush() will make sure that every draw()
     //! call thus far is resolved.
     virtual void flush() = 0;
-
-    ///////////////////////////////////////////////////////////////////////////
-    // TODO                                                                  //
-    ///////////////////////////////////////////////////////////////////////////
-
-    virtual void* getRenderingBackend() = 0;
 };
 
 } // namespace uge

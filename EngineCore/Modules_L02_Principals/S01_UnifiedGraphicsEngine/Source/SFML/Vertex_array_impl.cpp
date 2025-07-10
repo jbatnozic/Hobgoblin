@@ -17,10 +17,10 @@ namespace uge {
 void SFMLVertexArrayImpl::drawOnto(Canvas& aCanvas, const RenderStates& aRenderStates) const {
     assert(&getSystem() == &aCanvas.getSystem());
 
-    auto* sfRenderTarget = static_cast<sf::RenderTarget*>(aCanvas.getRenderingBackend());
-    assert(sfRenderTarget != nullptr);
+    // auto* sfRenderTarget = static_cast<sf::RenderTarget*>(aCanvas.getRenderingBackend());
+    // assert(sfRenderTarget != nullptr);
 
-    sfRenderTarget->draw(_vertices.data(), _vertices.size(), _primitiveType); // TODO: render states
+    // sfRenderTarget->draw(_vertices.data(), _vertices.size(), _primitiveType); // TODO: render states
 }
 
 } // namespace uge

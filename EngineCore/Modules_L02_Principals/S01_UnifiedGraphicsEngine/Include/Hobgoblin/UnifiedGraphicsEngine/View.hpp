@@ -57,6 +57,17 @@ public:
 
     // MARK: Anchor
 
+    //! \brief Set the Anchor of the view.
+    //!
+    //! The Anchor is the position relative to which all other positions are defined.
+    //! For example: a view with an anchor at (32, 0) and center at (0, 32) is actually
+    //! positioned at (32, 32) in the game world.
+    //!
+    //! \note the anchor uses 64-bit floats while the center (setCenter() etc.) uses 32-bit floats.
+    //!       Therefore it's recommended to leave the center at (0, 0) and only move the anchor if
+    //!       you expect your game to use very large coordinates. (a good example is how graphics
+    //!       gets very jittery in Minecraft if you walk far enough away from the origin because it
+    //!       uses 32-bit floats for rendering.)
     virtual void setAnchor(math::Vector2d aAnchor) = 0;
 
     virtual void setAnchor(double aX, double aY) = 0;
