@@ -40,7 +40,7 @@ public:
 
     //! Change the current active view.
     //!
-    //! The view is like a 2D camera, it controls which part of the 2D scene is visible, 
+    //! The view is like a 2D camera, it controls which part of the 2D scene is visible,
     //! and how it is viewed in the canvas.
     //! The new view will affect everything that is drawn, until another view is set.
     //!

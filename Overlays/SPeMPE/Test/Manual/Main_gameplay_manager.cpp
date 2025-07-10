@@ -73,8 +73,7 @@ void MainGameplayManager::_didAttach(QAO_Runtime& aRuntime) {
         alternatingActor->init(32.f, 160.f, hg::gr::COLOR_ROYAL_BLUE, 0);
 #endif
 #if 1
-        auto alternatingAutodiffActor =
-            QAO_Create<AlternatingAutodiffActor>(aRuntime);
+        auto alternatingAutodiffActor = QAO_Create<AlternatingAutodiffActor>(aRuntime);
         alternatingAutodiffActor->init(32.f, 224.f, hg::gr::COLOR_FOREST_GREEN, 0);
 #endif
     }

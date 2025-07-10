@@ -48,7 +48,7 @@ public:
     //! Check if an object by the given index is owned by the registry.
     //! Throws if the registry does not contain an object by this index at all.
     bool isObjectWithIndexOwned(QAO_Index aIndex) const;
-    
+
     //! Count currently inserted instances (non-owned + owned).
     PZInteger instanceCount() const;
 

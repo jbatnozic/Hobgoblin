@@ -6,8 +6,8 @@
 
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/HGExcept.hpp>
-#include <Hobgoblin/Unicode.hpp>
 #include <Hobgoblin/UWGA/Window_style.hpp>
+#include <Hobgoblin/Unicode.hpp>
 
 #include <memory>
 

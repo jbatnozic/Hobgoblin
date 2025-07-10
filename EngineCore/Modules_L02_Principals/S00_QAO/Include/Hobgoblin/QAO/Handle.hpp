@@ -206,7 +206,7 @@ public:
         if (_object != nullptr && _isOwning) {
             QAO_Destroy(std::move(SELF));
         } else {
-            _object = nullptr;
+            _object   = nullptr;
             _isOwning = 0;
         }
     }

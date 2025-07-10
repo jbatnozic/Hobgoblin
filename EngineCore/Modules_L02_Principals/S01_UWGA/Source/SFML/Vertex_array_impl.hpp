@@ -23,7 +23,7 @@ public:
 
     ~SFMLVertexArrayImpl() override = default;
 
-    // MARK: Primitive type 
+    // MARK: Primitive type
 
     void setPrimitiveType(PrimitiveType aPrimitiveType) override;
 
@@ -44,7 +44,7 @@ public:
     void setVertex(PZInteger aIndex, const Vertex& aVertex) override;
 
     Vertex getVertex(PZInteger aIndex) const override {
-        const auto& vertex = _vertices[pztos(aIndex)]; 
+        const auto& vertex = _vertices[pztos(aIndex)];
         // return Vertex{vertex.position, vertex.color, vertex.texCoords};
         return {}; // TODO
     }
@@ -62,10 +62,9 @@ private:
     sf::PrimitiveType       _primitiveType;
 };
 
-} // namespace gr
+} // namespace uwga
 HOBGOBLIN_NAMESPACE_END
 
 #include <Hobgoblin/Private/Pmacro_undef.hpp>
 
 #endif // !UHOBGOBLIN_UWGA_SFML_VERTEX_ARRAY_IMPL_HPP
-

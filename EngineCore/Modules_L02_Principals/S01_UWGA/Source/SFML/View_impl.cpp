@@ -16,7 +16,9 @@ SFMLViewImpl::SFMLViewImpl(const System& aSystem)
     : _system{&aSystem} {}
 
 SFMLViewImpl::SFMLViewImpl(const System& aSystem, const sf::View& aView, math::Vector2d aAnchor)
-    : _system{&aSystem}, _view{aView}, _anchor{aAnchor} {}
+    : _system{&aSystem}
+    , _view{aView}
+    , _anchor{aAnchor} {}
 
 std::unique_ptr<View> SFMLViewImpl::clone() const {
     return std::make_unique<SFMLViewImpl>(*_system, _view, _anchor);

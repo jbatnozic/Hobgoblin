@@ -31,13 +31,13 @@ public:
         //! make transparent some walls so the player can see what's behind them.
         PositionInWorld pointOfView;
 
-        //! Most graphics libraries, including the Hobgoblin Graphics library, internally use 
+        //! Most graphics libraries, including the Hobgoblin Graphics library, internally use
         //! 32-bit floats, whose precision starts to be unsatisfactory for rendering with values
         //! around 100,000 and above. GridGoblin is made to support very large worlds, potentially
         //! millions of cells wide and tall, and the rendering quality could suffer a lot when the
         //! view is far away from the origin.
         //! Thse offsets can be used to shift what's being rendered rather than the view itself,
-        //! thus bringing it into ranges of values that are acceptable for the graphics library. 
+        //! thus bringing it into ranges of values that are acceptable for the graphics library.
         double xOffset = 0.0;
         double yOffset = 0.0;
     };

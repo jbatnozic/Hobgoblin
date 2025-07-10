@@ -29,8 +29,8 @@
 #ifndef UHOBGOBLIN_UWGA_TRANSFORM_HPP
 #define UHOBGOBLIN_UWGA_TRANSFORM_HPP
 
-#include <Hobgoblin/Math/Rectangle.hpp>
 #include <Hobgoblin/Math/Angle.hpp>
+#include <Hobgoblin/Math/Rectangle.hpp>
 #include <Hobgoblin/Math/Vector.hpp>
 
 #include <Hobgoblin/UWGA/Element.hpp>
@@ -133,7 +133,7 @@ public:
 
     //! \brief Combine the current transform with a rotation around an arbitrary center of rotation.
     //!
-    //! The center of rotation is provided for convenience as a second argument, so that you can 
+    //! The center of rotation is provided for convenience as a second argument, so that you can
     //! build rotations around arbitrary points more easily (and efficiently) than the usual
     //! `translate(-center).rotate(angle).translate(center)`.
     //!
@@ -146,7 +146,7 @@ public:
 
     //! \brief Combine the current transform with a rotation around an arbitrary center of rotation.
     //!
-    //! The center of rotation is provided for convenience as a second argument, so that you can 
+    //! The center of rotation is provided for convenience as a second argument, so that you can
     //! build rotations around arbitrary points more easily (and efficiently) than the usual
     //! `translate(-center).rotate(angle).translate(center)`.
     //!
@@ -159,7 +159,7 @@ public:
 
     //! \brief Combine the current transform with a rotation around an arbitrary center of rotation.
     //!
-    //! The center of rotation is provided for convenience as a second argument, so that you can 
+    //! The center of rotation is provided for convenience as a second argument, so that you can
     //! build rotations around arbitrary points more easily (and efficiently) than the usual
     //! `translate(-center).rotate(angle).translate(center)`.
     //!
@@ -171,7 +171,7 @@ public:
 
     //! \brief Combine the current transform with a rotation around an arbitrary center of rotation.
     //!
-    //! The center of rotation is provided for convenience as a second argument, so that you can 
+    //! The center of rotation is provided for convenience as a second argument, so that you can
     //! build rotations around arbitrary points more easily (and efficiently) than the usual
     //! `translate(-center).rotate(angle).translate(center)`.
     //!
@@ -223,7 +223,7 @@ public:
     virtual Transform& scale(const math::Vector2f& aFactors, const math::Vector2f& aCenter) = 0;
 };
 
-} // namespace gr
+} // namespace uwga
 HOBGOBLIN_NAMESPACE_END
 
 #include <Hobgoblin/Private/Pmacro_undef.hpp>

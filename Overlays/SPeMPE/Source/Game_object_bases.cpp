@@ -23,7 +23,8 @@ SynchronizedObjectBase::SynchronizedObjectBase(hg::QAO_InstGuard     aInstGuard,
                                                int                   aExecutionPriority,
                                                std::string           aName,
                                                SyncId                aSyncId)
-    : StateObject{aInstGuard, aTypeInfo, aExecutionPriority, std::move(aName)}, _syncId(aSyncId) {}
+    : StateObject{aInstGuard, aTypeInfo, aExecutionPriority, std::move(aName)}
+    , _syncId(aSyncId) {}
 
 SynchronizedObjectBase::~SynchronizedObjectBase() = default;
 

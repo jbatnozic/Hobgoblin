@@ -22,8 +22,8 @@ class DefaultNetworkingManager
     , private hg::RN_EventListener {
 public:
     DefaultNetworkingManager(hobgoblin::QAO_InstGuard aInstGuard,
-                             int                 aExecutionPriority,
-                             hg::PZInteger       aStateBufferingLength);
+                             int                      aExecutionPriority,
+                             hg::PZInteger            aStateBufferingLength);
 
     ~DefaultNetworkingManager() override;
 

@@ -43,7 +43,7 @@ public:
     }
 };
 
-static_assert(sizeof(PositionInView) <= 2* sizeof(void*));
+static_assert(sizeof(PositionInView) <= 2 * sizeof(void*));
 
 } // namespace gridgoblin
 } // namespace jbatnozic

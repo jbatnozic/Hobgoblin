@@ -15,7 +15,7 @@ class QAO_Base;
 
 //! Destroys the object pointed to by the passed handle, provided that the object
 //! is owned by either the handle or the object's runtime (if attached at all).
-//! 
+//!
 //! \note does nothing if passed a NULL handle.
 //!
 //! \throws InvalidArgumentError if the object is not owned by the passed handle
@@ -27,7 +27,7 @@ void QAO_Destroy(QAO_GenericHandle&& aHandle);
 
 //! Destroys the object pointed to by the passed pointer, provided that the object
 //! is attached to a runtime and owned by that runtime.
-//! 
+//!
 //! \note does nothing if passed a NULL pointer.
 //!
 //! \throws InvalidArgumentError if the object is not owned by the runtime it is

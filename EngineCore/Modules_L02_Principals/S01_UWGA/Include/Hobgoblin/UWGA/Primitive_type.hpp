@@ -26,10 +26,10 @@ enum PrimitiveType {
 
     //! Number of different primitive types.
     //! \warning Always keep last in the enum!
-    PRIMITIVE_TYPE_COUNT, 
+    PRIMITIVE_TYPE_COUNT,
 };
 
-} // namespace gr
+} // namespace uwga
 HOBGOBLIN_NAMESPACE_END
 
 #include <Hobgoblin/Private/Pmacro_undef.hpp>

@@ -22,7 +22,7 @@ public:
     virtual void drawOnto(Canvas& aCanvas, const RenderStates& aRenderStates) const = 0;
 };
 
-} // namespace gr
+} // namespace uwga
 HOBGOBLIN_NAMESPACE_END
 
 #include <Hobgoblin/Private/Pmacro_undef.hpp>

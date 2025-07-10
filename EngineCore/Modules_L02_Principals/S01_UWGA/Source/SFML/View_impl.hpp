@@ -49,8 +49,8 @@ public:
 
     // Anchor
 
-    void setAnchor(math::Vector2d aAnchor) override;
-    void setAnchor(double aX, double aY) override;
+    void           setAnchor(math::Vector2d aAnchor) override;
+    void           setAnchor(double aX, double aY) override;
     math::Vector2d getAnchor() const override;
 
     // Center

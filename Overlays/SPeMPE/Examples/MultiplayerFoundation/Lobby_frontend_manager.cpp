@@ -414,7 +414,7 @@ private:
         }
 
         try {
-// clang-format off
+            // clang-format off
             #define THROW_IF_FALSE(_val_)                                                              \
                 do {                                                                                   \
                     if (!(_val_)) {                                                                    \

@@ -26,7 +26,7 @@ struct Vertex {
     math::Vector2f texCoords = {0.f, 0.f};
 };
 
-} // namespace gr
+} // namespace uwga
 HOBGOBLIN_NAMESPACE_END
 
 #include <Hobgoblin/Private/Pmacro_undef.hpp>

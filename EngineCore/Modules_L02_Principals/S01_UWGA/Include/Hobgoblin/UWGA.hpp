@@ -14,9 +14,9 @@
 #include <Hobgoblin/UWGA/Shader.hpp>
 #include <Hobgoblin/UWGA/System.hpp>
 #include <Hobgoblin/UWGA/Transform.hpp>
-#include <Hobgoblin/UWGA/Vertex_array.hpp>
 #include <Hobgoblin/UWGA/Vertex.hpp>
+#include <Hobgoblin/UWGA/Vertex_array.hpp>
 #include <Hobgoblin/UWGA/View.hpp>
+#include <Hobgoblin/UWGA/Window.hpp>
 #include <Hobgoblin/UWGA/Window_event.hpp>
 #include <Hobgoblin/UWGA/Window_style.hpp>
-#include <Hobgoblin/UWGA/Window.hpp>

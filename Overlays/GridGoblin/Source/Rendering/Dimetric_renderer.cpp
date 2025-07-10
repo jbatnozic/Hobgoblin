@@ -156,7 +156,7 @@ void DimetricRenderer::_reduceCellsBelowIfCellIsVisible(hg::math::Vector2pz     
                                                         const VisibilityProvider& aVisProv) {
     const auto cr = _world.getCellResolution();
 
-    static constexpr double   PADDING      = 1.f;
+    static constexpr double  PADDING      = 1.f;
     const hg::math::Vector2d positions[4] = {
         {(aCell.x + 0) * cr + PADDING, (aCell.y + 0) * cr + PADDING},
         {(aCell.x + 1) * cr - PADDING, (aCell.y + 0) * cr + PADDING},
@@ -307,9 +307,8 @@ std::uint16_t DimetricRenderer::_updateFadeValueOfCellRendererMask(
     auto& ext  = GetMutableExtensionData(*aCellInfo.cell);
     auto  mask = ext.getRendererMask();
 
-    const auto cr = _world.getCellResolution();
-    const auto cellPos =
-        hg::math::Vector2d{(aCellInfo.gridX + 0.5) * cr, (aCellInfo.gridY + 0.5) * cr};
+    const auto cr      = _world.getCellResolution();
+    const auto cellPos = hg::math::Vector2d{(aCellInfo.gridX + 0.5) * cr, (aCellInfo.gridY + 0.5) * cr};
 
     if (hg::math::EuclideanDist(cellPos, *_renderParams.pointOfView) >
         _config.wallReductionConfig.reductionDistanceLimit) //

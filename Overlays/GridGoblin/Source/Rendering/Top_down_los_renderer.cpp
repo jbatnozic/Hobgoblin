@@ -115,7 +115,7 @@ void TopDownLineOfSightRenderer::render() {
 }
 
 std::optional<bool> TopDownLineOfSightRenderer::testVisibilityAt(PositionInWorld aPos) const {
-    const auto temp = *aPos + _viewCenterOffset; // FTODO
+    const auto temp     = *aPos + _viewCenterOffset;                                          // FTODO
     const auto pixelPos = _renderTexture.mapCoordsToPixel({(float)temp.x, (float)temp.y}, 0); // FTODO
 
     if (pixelPos.x < 0 || pixelPos.x >= _textureSize || pixelPos.y < 0 || pixelPos.y >= _textureSize) {
@@ -179,8 +179,9 @@ void TopDownLineOfSightRenderer::_renderOcclusion() {
                 // clang-format on
 
                 for (int i = 1; i < 10; i += 2) {
-                    hg::math::Vector2f diff = {static_cast<float>(vertices[i - 1].position.x - _losOrigin->x),
-                                               static_cast<float>(vertices[i - 1].position.y - _losOrigin->y)}; // FTODO
+                    hg::math::Vector2f diff = {
+                        static_cast<float>(vertices[i - 1].position.x - _losOrigin->x),
+                        static_cast<float>(vertices[i - 1].position.y - _losOrigin->y)}; // FTODO
                     diff.x *= 2000.f; // TODO: magic number
                     diff.y *= 2000.f; // TODO: magic number
 

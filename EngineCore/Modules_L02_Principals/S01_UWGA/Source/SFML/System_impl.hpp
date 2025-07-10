@@ -29,7 +29,7 @@ public:
         return std::make_unique<SFMLRenderWindowImpl>(SELF, aWidth, aHeight, aStyle, aTitle);
     }
 
-    std::unique_ptr<View> createView()const override {
+    std::unique_ptr<View> createView() const override {
         return std::make_unique<SFMLViewImpl>(SELF);
     }
 
@@ -51,10 +51,9 @@ public:
     }
 };
 
-} // namespace gr
+} // namespace uwga
 HOBGOBLIN_NAMESPACE_END
 
 #include <Hobgoblin/Private/Pmacro_undef.hpp>
 
 #endif // !UHOBGOBLIN_UWGA_SFML_SYSTEM_HPP
-

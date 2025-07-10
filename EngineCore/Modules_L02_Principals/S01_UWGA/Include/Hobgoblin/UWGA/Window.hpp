@@ -219,7 +219,7 @@ public:
 
 math::Vector2i GetMousePositionRelativeToWindow(const Window& aWindow);
 
-} // namespace win
+} // namespace uwga
 HOBGOBLIN_NAMESPACE_END
 
 #include <Hobgoblin/Private/Pmacro_undef.hpp>

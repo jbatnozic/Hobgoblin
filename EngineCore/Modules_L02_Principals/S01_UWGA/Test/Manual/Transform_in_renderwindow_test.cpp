@@ -36,12 +36,12 @@ void RunTransformInRenderWindowTest() {
     };
     // clang-format on
 
-    //! The main purpose of anchors is to make the graphics engine able to deal with 
+    //! The main purpose of anchors is to make the graphics engine able to deal with
     //! huge coordinates, so let's check if it works.
     const math::Vector2d VERY_FAR_AWAY_ANCHOR = {10'000'000'000.0, 10'000'000'000.0};
 
     math::Vector2d viewAnchor = VERY_FAR_AWAY_ANCHOR;
-    math::Vector2d boxAnchor = VERY_FAR_AWAY_ANCHOR;
+    math::Vector2d boxAnchor  = VERY_FAR_AWAY_ANCHOR;
     math::Vector2f boxOffset;
 
     RenderStates states;

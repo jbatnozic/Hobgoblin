@@ -4,12 +4,12 @@
 #ifndef UHOBGOBLIN_UWGA_SFML_RENDER_WINDOW_IMPL_HPP
 #define UHOBGOBLIN_UWGA_SFML_RENDER_WINDOW_IMPL_HPP
 
-#include <Hobgoblin/Unicode.hpp>
 #include <Hobgoblin/UWGA/Blend_mode.hpp>
 #include <Hobgoblin/UWGA/Render_states.hpp>
 #include <Hobgoblin/UWGA/Render_window.hpp>
 #include <Hobgoblin/UWGA/Shader.hpp>
 #include <Hobgoblin/UWGA/Window_style.hpp>
+#include <Hobgoblin/Unicode.hpp>
 
 #include <SFML/Graphics/BlendMode.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
@@ -56,12 +56,12 @@ public:
 
     // Size
 
-    void setSize(math::Vector2pz aSize) override;
+    void            setSize(math::Vector2pz aSize) override;
     math::Vector2pz getSize() const override;
 
     // Position
 
-    void setPosition(math::Vector2i aPosition) override;
+    void           setPosition(math::Vector2i aPosition) override;
     math::Vector2i getPosition() const override;
 
     // Focus
@@ -125,7 +125,7 @@ private:
     static const sf::BlendMode _getSfmlBlendMode(std::optional<BlendMode> aBlendMode);
 };
 
-} // namespace gr
+} // namespace uwga
 HOBGOBLIN_NAMESPACE_END
 
 #include <Hobgoblin/Private/Pmacro_undef.hpp>
