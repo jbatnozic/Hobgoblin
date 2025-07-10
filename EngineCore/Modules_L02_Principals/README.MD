@@ -9,5 +9,6 @@
 - **Window:** Windowing library.
 - **Alvin:** OOP extensions for `ChipmunkPhysics`, to make its use more user-friendly in C++.
 - **Graphics:** Graphics library with an API very similar to [SFML](https://www.sfml-dev.org)'s Graphics module.
+- **UWGA:** Unified Windowing and Graphics API.
 - **RmlUi:** Utilities for interoperability between Hobgoblin and [RmlUi](https://github.com/mikke89/RmlUi), an amazing
 GUI library.

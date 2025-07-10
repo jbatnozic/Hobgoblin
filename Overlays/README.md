@@ -15,4 +15,5 @@ single window, so it provides a convenient framework which alleviates much of th
 
 ## Directories
 Here you will find:
+- **GridGoblin:** An Overlay for games in 2D grid-based environments.
 - **SPeMPE:** An Overlay for peer-to-peer multiplayer games with graphics displayed in a single window.

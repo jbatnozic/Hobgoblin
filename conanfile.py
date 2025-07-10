@@ -59,13 +59,15 @@ class HobgoblinConan(ConanFile):
         "S01_Alvin",
         "S01_ColDetect",
         "S01_Graphics",
+        "S01_UWGA",
         "S02_RmlUi",
     ]
 
     # Overlays
 
     _overlays = [
-        "SPeMPE"
+        "GridGoblin",
+        "SPeMPE"        
     ]
 
     # Sources
@@ -202,10 +204,12 @@ class HobgoblinConan(ConanFile):
         # first, most basic ones last) prevents link errors on Linux.
         self.cpp_info.libs = [
             # Overlays
+            "GridGoblin",
             "SPeMPE",
 
             # Principals
             "Hobgoblin.RmlUi",
+            "Hobgoblin.UWGA",
             "Hobgoblin.Graphics",
             "Hobgoblin.Alvin",
             "Hobgoblin.Window",
