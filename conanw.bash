@@ -4,7 +4,7 @@
 # See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
 echo "Looking for conan..."
-if ! command -v git &> /dev/null
+if ! command -v conan &> /dev/null
 then
     echo "Error: conan could not be found; exiting."
     exit 1

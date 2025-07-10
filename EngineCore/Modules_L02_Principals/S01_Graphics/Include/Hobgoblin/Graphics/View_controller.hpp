@@ -15,7 +15,7 @@ namespace gr {
 
 //! ViewController abstracts away an object (such as a window or render texture) which is able
 //! to use views (hg::gr::View), which are a kind of 2D cameras. With views you can globally
-//! scroll, rotate or zoom everything that is drawn,  without having to transform every single
+//! scroll, rotate or zoom everything that is drawn, without having to transform every single
 //! entity. See the documentation of hg::gr::View for more details and sample pieces of code
 //! about this class.
 class ViewController {
