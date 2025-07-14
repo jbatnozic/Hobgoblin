@@ -2,7 +2,9 @@
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
 #include <Hobgoblin/HGExcept.hpp>
-#include <Hobgoblin/UWGA/System.hpp>
+
+// Include the whole suite of headers intentionally - it helps with code analysis
+#include <Hobgoblin/UWGA.hpp>
 
 #include "SFML/System_impl.hpp"
 

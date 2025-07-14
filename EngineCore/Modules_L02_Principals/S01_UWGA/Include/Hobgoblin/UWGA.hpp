@@ -8,11 +8,14 @@
 #include <Hobgoblin/UWGA/Color.hpp>
 #include <Hobgoblin/UWGA/Drawable.hpp>
 #include <Hobgoblin/UWGA/Element.hpp>
+#include <Hobgoblin/UWGA/Image.hpp>
 #include <Hobgoblin/UWGA/Primitive_type.hpp>
 #include <Hobgoblin/UWGA/Render_states.hpp>
 #include <Hobgoblin/UWGA/Render_window.hpp>
 #include <Hobgoblin/UWGA/Shader.hpp>
 #include <Hobgoblin/UWGA/System.hpp>
+#include <Hobgoblin/UWGA/Texture_rect.hpp>
+#include <Hobgoblin/UWGA/Texture.hpp>
 #include <Hobgoblin/UWGA/Transform.hpp>
 #include <Hobgoblin/UWGA/Vertex.hpp>
 #include <Hobgoblin/UWGA/Vertex_array.hpp>

@@ -13,6 +13,8 @@ set(COMPONENT_SOURCES
     "Source/System.cpp"
 
     # SFML
+    "Source/SFML/Image_impl.cpp"
+    "Source/SFML/Image_impl.hpp"
     "Source/SFML/Render_window_impl.cpp"
     "Source/SFML/Render_window_impl.hpp"
     "Source/SFML/System_impl.hpp"
