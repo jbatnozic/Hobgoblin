@@ -6,7 +6,7 @@
 #include <Hobgoblin/Private/Manual_test_framework.hpp>
 
 #include <iostream>
-#include <stdexcept>
+#include <exception>
 
 #include "Test_list.hpp"
 
@@ -19,6 +19,7 @@ int main() try {
     HG_ADD_MANUAL_TEST(testRunner, RunEmptyRenderWindowTest);
     HG_ADD_MANUAL_TEST(testRunner, RunSquareInRenderWindowTest);
     HG_ADD_MANUAL_TEST(testRunner, RunTransformInRenderWindowTest);
+    HG_ADD_MANUAL_TEST(testRunner, RunTexturedVerticfesInRenderWindowTest);
 
     testRunner.runTest();
 

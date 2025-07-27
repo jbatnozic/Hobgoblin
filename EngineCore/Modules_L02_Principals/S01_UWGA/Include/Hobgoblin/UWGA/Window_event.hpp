@@ -1,8 +1,8 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#ifndef UHOBGOBLIN_WINDOW_EVENT_HPP
-#define UHOBGOBLIN_WINDOW_EVENT_HPP
+#ifndef UHOBGOBLIN_UWGA_WINDOW_EVENT_HPP
+#define UHOBGOBLIN_UWGA_WINDOW_EVENT_HPP
 
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/Input.hpp>
@@ -205,4 +205,4 @@ HOBGOBLIN_NAMESPACE_END
 #include <Hobgoblin/Private/Pmacro_undef.hpp>
 #include <Hobgoblin/Private/Short_namespace.hpp>
 
-#endif // !UHOBGOBLIN_WINDOW_EVENT_HPP
+#endif // !UHOBGOBLIN_UWGA_WINDOW_EVENT_HPP

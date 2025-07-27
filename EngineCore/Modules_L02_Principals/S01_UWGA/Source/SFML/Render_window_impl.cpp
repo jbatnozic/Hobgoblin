@@ -39,6 +39,10 @@ SFMLRenderWindowImpl::SFMLRenderWindowImpl(const System&        aSystem,
               ToSf(aStyle)}
     , _activeView{_system, _window.getDefaultView(), {0.0, 0.0}} {}
 
+const sf::RenderWindow& SFMLRenderWindowImpl::getUnderlyingRenderWindow() const {
+    return _window;
+}
+
 ///////////////////////////////////////////////////////////////////////////
 // MARK: Element                                                         //
 ///////////////////////////////////////////////////////////////////////////
@@ -227,13 +231,9 @@ void SFMLRenderWindowImpl::flush() {
 ///////////////////////////////////////////////////////////////////////////
 
 const sf::Texture* SFMLRenderWindowImpl::_getSfmlTexture(const Texture* aTexture) const {
-    // assert(aRenderStates.texture == nullptr || &aRenderStates.texture->getSystem() == &_system);
+    assert(aTexture == nullptr || &aTexture->getSystem() == &_system);
 
-    if (aTexture) {
-        return {}; // TODO
-    } else {
-        return nullptr;
-    }
+    return ToSf(aTexture);
 }
 
 const sf::Shader* SFMLRenderWindowImpl::_getSfmlShader(const Shader* aShader) const {

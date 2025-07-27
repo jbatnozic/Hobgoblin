@@ -5,7 +5,6 @@
 #define UHOBGOBLIN_UWGA_RENDER_STATES_HPP
 
 #include <Hobgoblin/UWGA/Blend_mode.hpp>
-#include <Hobgoblin/UWGA/Shader.hpp>
 #include <Hobgoblin/UWGA/Transform.hpp>
 
 #include <optional>
@@ -15,9 +14,8 @@
 HOBGOBLIN_NAMESPACE_BEGIN
 namespace uwga {
 
-class Texture {
-    // TODO: temporary
-};
+class Shader;
+class Texture;
 
 //! Defines the states used to draw to a Canvas.
 class RenderStates {

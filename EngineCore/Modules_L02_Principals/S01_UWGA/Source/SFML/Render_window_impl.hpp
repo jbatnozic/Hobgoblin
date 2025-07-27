@@ -35,6 +35,8 @@ public:
                          WindowStyle          aStyle,
                          const UnicodeString& aTitle);
 
+    const sf::RenderWindow& getUnderlyingRenderWindow() const;
+
     ///////////////////////////////////////////////////////////////////////////
     // MARK: Element                                                         //
     ///////////////////////////////////////////////////////////////////////////

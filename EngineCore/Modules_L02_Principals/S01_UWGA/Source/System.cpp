@@ -3,9 +3,6 @@
 
 #include <Hobgoblin/HGExcept.hpp>
 
-// Include the whole suite of headers intentionally - it helps with code analysis
-#include <Hobgoblin/UWGA.hpp>
-
 #include "SFML/System_impl.hpp"
 
 #include <cstring>

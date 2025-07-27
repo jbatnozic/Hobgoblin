@@ -4,6 +4,7 @@
 #include "Image_impl.hpp"
 
 #include "SFML_conversions.hpp"
+#include "SFML_err.hpp"
 
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/HGExcept.hpp>
@@ -14,6 +15,17 @@
 
 HOBGOBLIN_NAMESPACE_BEGIN
 namespace uwga {
+
+SFMLImageImpl::SFMLImageImpl(const System& aSystem)
+    : _system{aSystem} {}
+
+SFMLImageImpl::SFMLImageImpl(const System& aSystem, const sf::Texture& aSfmlTexture)
+    : _system{aSystem}
+    , _image{aSfmlTexture.copyToImage()} {}
+
+const sf::Image& SFMLImageImpl::getUnderlyingImage() const {
+    return _image;
+}
 
 ///////////////////////////////////////////////////////////////////////////
 // MARK: Element                                                         //
@@ -52,13 +64,19 @@ void SFMLImageImpl::reset(math::Vector2pz aSize, NeverNull<const std::uint8_t*> 
 }
 
 void SFMLImageImpl::reset(const std::filesystem::path& aImagePath) {
-    _image.loadFromFile(FilesystemPathToSfPath(aImagePath));
+    SFMLErrorCatcher sfErr;
+    if (!_image.loadFromFile(FilesystemPathToSfPath(aImagePath))) {
+        HG_THROW_TRACED(IOError, 0, sfErr.getErrorMessage());
+    }
 }
 
 // Saving
 
 void SFMLImageImpl::saveToFile(const std::filesystem::path& aPath) const {
-    _image.saveToFile(FilesystemPathToSfPath(aPath));
+    SFMLErrorCatcher sfErr;
+    if (!_image.saveToFile(FilesystemPathToSfPath(aPath))) {
+        HG_THROW_TRACED(IOError, 0, sfErr.getErrorMessage());
+    }
 }
 
 // Pixel access

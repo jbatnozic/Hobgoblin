@@ -7,6 +7,7 @@
 #include <Hobgoblin/UWGA/Image.hpp>
 
 #include <SFML/Graphics/Image.hpp>
+#include <SFML/Graphics/Texture.hpp>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
@@ -17,6 +18,12 @@ class System;
 
 class SFMLImageImpl : public Image {
 public:
+    SFMLImageImpl(const System& aSystem);
+
+    SFMLImageImpl(const System& aSystem, const sf::Texture& aSfmlTexture);
+
+    const sf::Image& getUnderlyingImage() const;
+
     ///////////////////////////////////////////////////////////////////////////
     // MARK: Element                                                         //
     ///////////////////////////////////////////////////////////////////////////

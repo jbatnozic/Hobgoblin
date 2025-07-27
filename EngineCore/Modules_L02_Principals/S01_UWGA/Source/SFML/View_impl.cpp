@@ -5,6 +5,7 @@
 
 #include "SFML_conversions.hpp"
 
+#include <Hobgoblin/UWGA/View.hpp>
 #include <SFML/Graphics/View.hpp>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>

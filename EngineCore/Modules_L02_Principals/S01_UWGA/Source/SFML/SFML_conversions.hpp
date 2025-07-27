@@ -17,12 +17,14 @@
 // #include <Hobgoblin/UWGA/Render_states.hpp>
 // #include <Hobgoblin/UWGA/Shader.hpp>
 // #include <Hobgoblin/UWGA/Sprite.hpp>
-// #include <Hobgoblin/UWGA/Texture.hpp>
+#include <Hobgoblin/UWGA/Texture.hpp>
 // #include <Hobgoblin/UWGA/Texture_rect.hpp>
 // #include <Hobgoblin/UWGA/Vertex_buffer.hpp>
 // #include <Hobgoblin/UWGA/View.hpp>
 #include <Hobgoblin/UWGA/Window_style.hpp>
 #include <Hobgoblin/Window/Context_settings.hpp>
+
+#include "Texture_provider.hpp"
 
 // SFML
 
@@ -48,20 +50,6 @@
 
 HOBGOBLIN_NAMESPACE_BEGIN
 namespace uwga {
-
-namespace detail {
-class GraphicsImplAccessor {
-public:
-    template <class taSFMLImpl, class taGraphicsClass>
-    static taSFMLImpl& getImplOf(taGraphicsClass& aGraphicsObject) {
-        return *static_cast<taSFMLImpl*>(aGraphicsObject._getSFMLImpl());
-    }
-    template <class taSFMLImpl, class taGraphicsClass>
-    static const taSFMLImpl& getImplOf(const taGraphicsClass& aGraphicsObject) {
-        return *static_cast<const taSFMLImpl*>(aGraphicsObject._getSFMLImpl());
-    }
-};
-} // namespace detail
 
 ///////////////////////////////////////////////////////////////////////////
 // MARK: MATH                                                            //
@@ -139,13 +127,13 @@ sf::PrimitiveType ToSf(PrimitiveType aType);
 
 // Texture
 
-// const sf::Texture& ToSf(const Texture& aTexture);
+const sf::Texture* ToSf(const Texture* aTexture);
 
 // sf::Texture::CoordinateType ToSf(Texture::CoordinateType aCoordType);
 
 // TextureRect
 
-// sf::IntRect ConvertTextureRect(TextureRect aTextureRect);
+sf::IntRect ConvertTextureRect(TextureRect aTextureRect);
 
 // VertexBuffer
 
@@ -409,13 +397,14 @@ sf::PrimitiveType ToSf(PrimitiveType aType) {
 //     return sfSprite;
 // }
 
-// // Texture
+// Texture
 
-// inline
-// const sf::Texture& ToSf(const Texture& aTexture) {
-//     const auto& sfTexture = detail::GraphicsImplAccessor::getImplOf<sf::Texture>(aTexture);
-//     return sfTexture;
-// }
+inline const sf::Texture* ToSf(const Texture* aTexture) {
+    if (!aTexture) {
+        return nullptr;
+    }
+    return &static_cast<const SFMLTextureProvider*>(aTexture)->getUnderlyingTexture();
+}
 
 // inline
 // sf::Texture::CoordinateType ToSf(Texture::CoordinateType aCoordType) {
@@ -429,15 +418,15 @@ sf::PrimitiveType ToSf(PrimitiveType aType) {
 
 // TextureRect
 
-// inline
-// sf::IntRect ConvertTextureRect(TextureRect aTextureRect) {
-//     return {
-//         static_cast<int>(aTextureRect.getLeft()),
-//         static_cast<int>(aTextureRect.getTop()),
-//         static_cast<int>(aTextureRect.w),
-//         static_cast<int>(aTextureRect.h)
-//     };
-// }
+inline
+sf::IntRect ConvertTextureRect(TextureRect aTextureRect) {
+    return {
+        static_cast<int>(aTextureRect.getLeft()),
+        static_cast<int>(aTextureRect.getTop()),
+        static_cast<int>(aTextureRect.w),
+        static_cast<int>(aTextureRect.h)
+    };
+}
 
 // VertexBuffer
 

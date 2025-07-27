@@ -11,6 +11,7 @@
 #include <Hobgoblin/UWGA/Image.hpp>
 #include <Hobgoblin/UWGA/Primitive_type.hpp>
 #include <Hobgoblin/UWGA/Render_states.hpp>
+#include <Hobgoblin/UWGA/Render_texture.hpp>
 #include <Hobgoblin/UWGA/Render_window.hpp>
 #include <Hobgoblin/UWGA/Shader.hpp>
 #include <Hobgoblin/UWGA/System.hpp>

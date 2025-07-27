@@ -8,9 +8,12 @@
 
 #include "Image_impl.hpp"
 #include "Render_window_impl.hpp"
+#include "Texture_impl.hpp"
 #include "Transform_impl.hpp"
 #include "Vertex_array_impl.hpp"
 #include "View_impl.hpp"
+
+#include <SFML/Graphics/Texture.hpp>
 
 #include <cassert>
 
@@ -35,37 +38,77 @@ public:
     // MARK: Image
 
     std::unique_ptr<Image> createImage() const override {
-        return {}; // TODO
+        auto image = std::make_unique<SFMLImageImpl>(SELF);
+        image->reset();
+        return image;
     }
 
     std::unique_ptr<Image> createImage(PZInteger aWidth,
                                        PZInteger aHeight,
                                        Color     aColor) const override {
-        return {}; // TODO
+        auto image = std::make_unique<SFMLImageImpl>(SELF);
+        image->reset(aWidth, aHeight, aColor);
+        return image;
     }
 
     std::unique_ptr<Image> createImage(math::Vector2pz aSize, Color aColor) const override {
-        return {}; // TODO
+        auto image = std::make_unique<SFMLImageImpl>(SELF);
+        image->reset(aSize, aColor);
+        return image;
     }
 
     std::unique_ptr<Image> createImage(PZInteger                      aWidth,
                                        PZInteger                      aHeight,
                                        NeverNull<const std::uint8_t*> aPixels) const override {
-        return {}; // TODO
+        auto image = std::make_unique<SFMLImageImpl>(SELF);
+        image->reset(aWidth, aHeight, aPixels);
+        return image;
     }
 
     std::unique_ptr<Image> createImage(math::Vector2pz                aSize,
                                        NeverNull<const std::uint8_t*> aPixels) const override {
-        return {}; // TODO
+        auto image = std::make_unique<SFMLImageImpl>(SELF);
+        image->reset(aSize, aPixels);
+        return image;
     }
 
     std::unique_ptr<Image> createImage(const std::filesystem::path& aImagePath) const override {
-        return {}; // TODO
+        auto image = std::make_unique<SFMLImageImpl>(SELF);
+        image->reset(aImagePath);
+        return image;
     }
 
     // MARK: Texture
 
-    // TODO
+    PZInteger getMaximumTextureSize() const override {
+        return ToPz(sf::Texture::getMaximumSize());
+    }
+
+    std::unique_ptr<Texture> createTexture() const override {
+        return std::make_unique<SFMLTextureImpl>(SELF);
+    }
+
+    std::unique_ptr<Texture> createTexture(PZInteger aWidth,
+                                           PZInteger aHeight,
+                                           bool      aEnableSRgb) const override {
+        return std::make_unique<SFMLTextureImpl>(SELF, aWidth, aHeight, aEnableSRgb);
+    }
+
+    std::unique_ptr<Texture> createTexture(math::Vector2pz aSize, bool aEnableSRgb) const override {
+        return std::make_unique<SFMLTextureImpl>(SELF, aSize.x, aSize.y, aEnableSRgb);
+    }
+
+    std::unique_ptr<Texture> createTexture(const std::filesystem::path& aImagePath,
+                                           TextureRect                  aArea,
+                                           bool                         aEnableSRgb) const override {
+        return std::make_unique<SFMLTextureImpl>(SELF, aImagePath, aArea, aEnableSRgb);
+    }
+
+    std::unique_ptr<Texture> createTexture(const Image&      aImage,
+                                           const TextureRect aArea,
+                                           bool              aEnableSRgb) const override {
+        return std::make_unique<SFMLTextureImpl>(SELF, aImage, aArea, aEnableSRgb);
+    }
 
     // MARK: RenderTexture
 
