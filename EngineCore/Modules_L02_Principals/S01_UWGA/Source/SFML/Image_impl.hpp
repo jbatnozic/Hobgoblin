@@ -42,9 +42,7 @@ public:
 
     void reset(math::Vector2pz aSize, Color aColor) override;
 
-    void reset(PZInteger                      aWidth,
-               PZInteger                      aHeight,
-               NeverNull<const std::uint8_t*> aPixels) override;
+    void reset(PZInteger aWidth, PZInteger aHeight, NeverNull<const std::uint8_t*> aPixels) override;
 
     void reset(math::Vector2pz aSize, NeverNull<const std::uint8_t*> aPixels) override;
 

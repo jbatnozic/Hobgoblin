@@ -418,14 +418,11 @@ inline const sf::Texture* ToSf(const Texture* aTexture) {
 
 // TextureRect
 
-inline
-sf::IntRect ConvertTextureRect(TextureRect aTextureRect) {
-    return {
-        static_cast<int>(aTextureRect.getLeft()),
-        static_cast<int>(aTextureRect.getTop()),
-        static_cast<int>(aTextureRect.w),
-        static_cast<int>(aTextureRect.h)
-    };
+inline sf::IntRect ConvertTextureRect(TextureRect aTextureRect) {
+    return {static_cast<int>(aTextureRect.getLeft()),
+            static_cast<int>(aTextureRect.getTop()),
+            static_cast<int>(aTextureRect.w),
+            static_cast<int>(aTextureRect.h)};
 }
 
 // VertexBuffer

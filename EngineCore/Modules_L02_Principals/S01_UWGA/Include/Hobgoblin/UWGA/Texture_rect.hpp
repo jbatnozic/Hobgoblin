@@ -18,7 +18,7 @@ using TextureRect = math::Rectangle<std::uint16_t>;
 
 static_assert(sizeof(TextureRect) <= sizeof(std::intptr_t), "TextureRect object too big.");
 
-} // namespace gr
+} // namespace uwga
 HOBGOBLIN_NAMESPACE_END
 
 #include <Hobgoblin/Private/Pmacro_undef.hpp>

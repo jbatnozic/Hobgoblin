@@ -15,8 +15,8 @@
 #include <Hobgoblin/UWGA/Render_window.hpp>
 #include <Hobgoblin/UWGA/Shader.hpp>
 #include <Hobgoblin/UWGA/System.hpp>
-#include <Hobgoblin/UWGA/Texture_rect.hpp>
 #include <Hobgoblin/UWGA/Texture.hpp>
+#include <Hobgoblin/UWGA/Texture_rect.hpp>
 #include <Hobgoblin/UWGA/Transform.hpp>
 #include <Hobgoblin/UWGA/Vertex.hpp>
 #include <Hobgoblin/UWGA/Vertex_array.hpp>

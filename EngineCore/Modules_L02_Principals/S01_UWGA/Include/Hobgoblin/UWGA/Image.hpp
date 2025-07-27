@@ -67,9 +67,7 @@ public:
     //! and fill it with pixels read from `aPixels`.
     //! \warning Calling this function triggers Undefined Behaviour if the `aPixels` pointer does
     //!          not point to a sufficiently-sized array of 32-bit RGBA pixels.
-    virtual void reset(PZInteger                      aWidth,
-                       PZInteger                      aHeight,
-                       NeverNull<const std::uint8_t*> aPixels) = 0;
+    virtual void reset(PZInteger aWidth, PZInteger aHeight, NeverNull<const std::uint8_t*> aPixels) = 0;
 
     //! Reset the image to an image of size `aSize.x` x `aSize.y` (in pixels)
     //! and fill it with pixels read from `aPixels`.

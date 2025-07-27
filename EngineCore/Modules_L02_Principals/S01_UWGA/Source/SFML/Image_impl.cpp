@@ -53,9 +53,7 @@ void SFMLImageImpl::reset(math::Vector2pz aSize, Color aColor) {
     _image.create(static_cast<unsigned>(aSize.x), static_cast<unsigned>(aSize.y), ToSf(aColor));
 }
 
-void SFMLImageImpl::reset(PZInteger                      aWidth,
-                          PZInteger                      aHeight,
-                          NeverNull<const std::uint8_t*> aPixels) {
+void SFMLImageImpl::reset(PZInteger aWidth, PZInteger aHeight, NeverNull<const std::uint8_t*> aPixels) {
     _image.create(static_cast<unsigned>(aWidth), static_cast<unsigned>(aHeight), aPixels);
 }
 

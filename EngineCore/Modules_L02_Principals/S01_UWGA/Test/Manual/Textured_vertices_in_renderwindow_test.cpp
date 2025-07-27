@@ -13,14 +13,12 @@ namespace uwga {
 namespace {
 
 void RunTexturedVerticfesInRenderWindowTest() {
-    auto system  = CreateRenderSystem("SFML");
-    auto window  = system->createRenderWindow(800, 800, WindowStyle::DEFAULT, "UWGA.ManualTest");
+    auto system = CreateRenderSystem("SFML");
+    auto window = system->createRenderWindow(800, 800, WindowStyle::DEFAULT, "UWGA.ManualTest");
 
     auto image = system->createImage(32, 32);
     for (PZInteger y = 0; y < 32; ++y) {
-        Color colors[] = {
-            COLOR_RED, COLOR_GREEN, COLOR_BLUE, COLOR_YELLOW
-        };
+        Color colors[] = {COLOR_RED, COLOR_GREEN, COLOR_BLUE, COLOR_YELLOW};
         for (PZInteger x = 0; x < 32; ++x) {
             image->setPixel(x, y, colors[(y / 4) % 4]);
         }
