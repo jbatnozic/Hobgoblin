@@ -55,8 +55,24 @@ void SFMLTransformImpl::setToIdentity() {
     _getTransform() = sf::Transform::Identity;
 }
 
+void SFMLTransformImpl::setToCopyOf(const Transform& aOther) {
+    assert(&aOther.getSystem() == _system);
+
+    const auto& otherImpl = static_cast<const SFMLTransformImpl&>(aOther);
+
+    _getTransform() = otherImpl._getTransform();
+}
+
 void SFMLTransformImpl::setToInverse() {
     _getTransform() = _getTransform().getInverse();
+}
+
+void SFMLTransformImpl::setToInverseOf(const Transform& aOther) {
+    assert(&aOther.getSystem() == _system);
+
+    const auto& otherImpl = static_cast<const SFMLTransformImpl&>(aOther);
+
+    _getTransform() = otherImpl._getTransform().getInverse();
 }
 
 // Applying to objects

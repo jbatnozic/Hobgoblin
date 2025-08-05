@@ -45,7 +45,9 @@ public:
                         float a20, float a21, float a22) override;
     // clang-format on
     void setToIdentity() override;
+    void setToCopyOf(const Transform& aOther) override;
     void setToInverse() override;
+    void setToInverseOf(const Transform& aOther) override;
 
     // Applying to objects
 

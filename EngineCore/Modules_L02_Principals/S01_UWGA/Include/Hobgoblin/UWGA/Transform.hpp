@@ -76,8 +76,14 @@ public:
     //!        nothing).
     virtual void setToIdentity() = 0;
 
+    //! \brief Set the whole state of the transform into a copy of another transform.
+    virtual void setToCopyOf(const Transform& aOther) = 0;
+
     //! \brief Set the whole state of the transform into an inverse of its current self.
     virtual void setToInverse() = 0;
+
+    //! \brief Set the whole state of the transform into an inverse of another transform.
+    virtual void setToInverseOf(const Transform& aOther) = 0;
 
     ///////////////////////////////////////////////////////////////////////////
     // MARK: APPLYING TO OBJECTS                                             //

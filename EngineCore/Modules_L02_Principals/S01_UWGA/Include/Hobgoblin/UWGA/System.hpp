@@ -25,6 +25,7 @@ class Image;
 class RenderWindow;
 class Transform;
 class Texture;
+class RenderTexture;
 class VertexArray;
 class View;
 
@@ -96,13 +97,13 @@ public:
     //! Create a default texture with unspecified size and settings.
     virtual std::unique_ptr<Texture> createTexture() const = 0;
 
-    //! Create a texture of size `aWidth` x `aHeight` (in pixels) and fill it with color `aColor`.
+    //! Create a texture of size `aWidth` x `aHeight` (in pixels).
     //! Set `aEnableSRgb` to `true` to enable sRGB conversion, or to `false ` to disable it.
     virtual std::unique_ptr<Texture> createTexture(PZInteger aWidth,
                                                    PZInteger aHeight,
                                                    bool      aEnableSRgb = false) const = 0;
 
-    //! Create a image of size `aSize.x` x `aSize.y` (in pixels) and fill it with color `aColor`.
+    //! Create a texture of size `aSize.x` x `aSize.y` (in pixels).
     //! Set `aEnableSRgb` to `true` to enable sRGB conversion, or to `false ` to disable it.
     virtual std::unique_ptr<Texture> createTexture(math::Vector2pz aSize,
                                                    bool            aEnableSRgb = false) const = 0;
@@ -139,7 +140,47 @@ public:
     // MARK: RenderTexture                                                   //
     ///////////////////////////////////////////////////////////////////////////
 
-    // TODO
+    //! Create a default render texture with unspecified size and settings.
+    virtual std::unique_ptr<RenderTexture> createRenderTexture() const = 0;
+
+    //! Create a render texture of size `aWidth` x `aHeight` (in pixels).
+    //! Set `aEnableSRgb` to `true` to enable sRGB conversion, or to `false ` to disable it.
+    virtual std::unique_ptr<RenderTexture> createRenderTexture(PZInteger aWidth,
+                                                               PZInteger aHeight,
+                                                               bool      aEnableSRgb = false) const = 0;
+
+    //! Create a render texture of size `aSize.x` x `aSize.y` (in pixels).
+    //! Set `aEnableSRgb` to `true` to enable sRGB conversion, or to `false ` to disable it.
+    virtual std::unique_ptr<RenderTexture> createRenderTexture(math::Vector2pz aSize,
+                                                               bool aEnableSRgb = false) const = 0;
+
+    //! Create a render texture by loading an image file from the disk.
+    //!
+    //! The `aArea` argument can be used to load only a sub-rectangle of the whole image. If you want
+    //! the entire image then leave the default value (which is an empty `TextureRect`). If the `aArea`
+    //! rectangle crosses the bounds of the image, it is adjusted to fit the image size.
+    //!
+    //! Set `aEnableSRgb` to `true` to enable sRGB conversion, or to `false ` to disable it.
+    //!
+    //! \note The maximum size for a texture depends on the graphics driver and can be retrieved
+    //!       with the `getMaximumTextureSize` function.
+    virtual std::unique_ptr<RenderTexture> createRenderTexture(const std::filesystem::path& aImagePath,
+                                                               TextureRect                  aArea = {},
+                                                               bool aEnableSRgb = false) const = 0;
+
+    //! Create a render texture by loading it from an `Image` object.
+    //!
+    //! The `aArea` argument can be used to load only a sub-rectangle of the whole image. If you want
+    //! the entire image then leave the default value (which is an empty `TextureRect`). If the `aArea`
+    //! rectangle crosses the bounds of the image, it is adjusted to fit the image size.
+    //!
+    //! Set `aEnableSRgb` to `true` to enable sRGB conversion, or to `false ` to disable it.
+    //!
+    //! \note The maximum size for a texture depends on the graphics driver and can be retrieved
+    //!       with the `getMaximumTextureSize` function.
+    virtual std::unique_ptr<RenderTexture> createRenderTexture(const Image&      image,
+                                                               const TextureRect aArea = {},
+                                                               bool aEnableSRgb = false) const = 0;
 
     ///////////////////////////////////////////////////////////////////////////
     // MARK: View                                                            //

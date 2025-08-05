@@ -9,6 +9,7 @@
 #include "Image_impl.hpp"
 #include "Render_window_impl.hpp"
 #include "Texture_impl.hpp"
+#include "Render_texture_impl.hpp"
 #include "Transform_impl.hpp"
 #include "Vertex_array_impl.hpp"
 #include "View_impl.hpp"
@@ -112,7 +113,32 @@ public:
 
     // MARK: RenderTexture
 
-    // TODO
+    std::unique_ptr<RenderTexture> createRenderTexture() const override {
+        return std::make_unique<SFMLRenderTextureImpl>(SELF);
+    }
+
+    std::unique_ptr<RenderTexture> createRenderTexture(PZInteger aWidth,
+                                                       PZInteger aHeight,
+                                                       bool      aEnableSRgb) const override {
+        return std::make_unique<SFMLRenderTextureImpl>(SELF, aWidth, aHeight, aEnableSRgb);
+    }
+
+    std::unique_ptr<RenderTexture> createRenderTexture(math::Vector2pz aSize,
+                                                       bool            aEnableSRgb) const override {
+        return std::make_unique<SFMLRenderTextureImpl>(SELF, aSize.x, aSize.y, aEnableSRgb);
+    }
+
+    std::unique_ptr<RenderTexture> createRenderTexture(const std::filesystem::path& aImagePath,
+                                                       TextureRect                  aArea,
+                                                       bool aEnableSRgb) const override {
+        return std::make_unique<SFMLRenderTextureImpl>(SELF, aImagePath, aArea, aEnableSRgb);
+    }
+
+    std::unique_ptr<RenderTexture> createRenderTexture(const Image&      aImage,
+                                                       const TextureRect aArea,
+                                                       bool              aEnableSRgb) const override {
+        return std::make_unique<SFMLRenderTextureImpl>(SELF, aImage, aArea, aEnableSRgb);
+    }
 
     // MARK: View
 

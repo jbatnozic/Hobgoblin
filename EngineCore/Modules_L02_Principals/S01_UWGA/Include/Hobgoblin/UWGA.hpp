@@ -18,6 +18,7 @@
 #include <Hobgoblin/UWGA/Texture.hpp>
 #include <Hobgoblin/UWGA/Texture_rect.hpp>
 #include <Hobgoblin/UWGA/Transform.hpp>
+#include <Hobgoblin/UWGA/Transformable.hpp>
 #include <Hobgoblin/UWGA/Vertex.hpp>
 #include <Hobgoblin/UWGA/Vertex_array.hpp>
 #include <Hobgoblin/UWGA/View.hpp>
