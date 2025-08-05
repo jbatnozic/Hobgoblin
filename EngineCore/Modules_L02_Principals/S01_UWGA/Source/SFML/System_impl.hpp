@@ -7,9 +7,9 @@
 #include <Hobgoblin/UWGA/System.hpp>
 
 #include "Image_impl.hpp"
+#include "Render_texture_impl.hpp"
 #include "Render_window_impl.hpp"
 #include "Texture_impl.hpp"
-#include "Render_texture_impl.hpp"
 #include "Transform_impl.hpp"
 #include "Vertex_array_impl.hpp"
 #include "View_impl.hpp"

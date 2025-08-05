@@ -85,7 +85,7 @@ inline void Transformable::setPosition(const math::Vector2f& position) {
 }
 
 inline void Transformable::setRotation(math::AngleF angle) {
-    _rotation = angle;
+    _rotation                   = angle;
     _transformNeedUpdate        = true;
     _inverseTransformNeedUpdate = true;
 }
@@ -147,7 +147,7 @@ inline void Transformable::scale(const math::Vector2f& factor) {
     setScale({_scale.x * factor.x, _scale.y * factor.y});
 }
 
-} // namespace gr
+} // namespace uwga
 HOBGOBLIN_NAMESPACE_END
 
 #include <Hobgoblin/Private/Pmacro_undef.hpp>
