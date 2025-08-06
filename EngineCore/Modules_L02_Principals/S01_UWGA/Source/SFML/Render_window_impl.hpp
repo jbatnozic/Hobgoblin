@@ -96,13 +96,13 @@ public:
 
     void setView(const View& aView) override;
 
-    void setDefaultView() override;
-
     const View& getView() const override;
 
-    math::Rectangle<int> viewportToPixels(const View& aView) const override;
+    void setDefaultView() override;
 
-    const sf::View& getDefaultView() const;
+    std::unique_ptr<View> createDefaultView() const override;
+
+    math::Rectangle<int> viewportToPixels(const View& aView) const override;
 
     // Drawing
 

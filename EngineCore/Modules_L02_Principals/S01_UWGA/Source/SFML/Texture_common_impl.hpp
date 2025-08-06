@@ -92,13 +92,13 @@ public:
 
     void setView(const View& aView) override;
 
-    void setDefaultView() override;
-
     const View& getView() const override;
 
-    math::Rectangle<int> viewportToPixels(const View& aView) const override;
+    void setDefaultView() override;
 
-    const sf::View& getDefaultView() const; // TODO: wtf is this
+    std::unique_ptr<View> createDefaultView() const override;
+
+    math::Rectangle<int> viewportToPixels(const View& aView) const override;
 
     // Drawing
 
@@ -212,22 +212,22 @@ void SFMLTextureCommonImpl<taUnderlying>::setView(const View& aView) {
 }
 
 template <class taUnderlying>
-void SFMLTextureCommonImpl<taUnderlying>::setDefaultView() {
-    HG_UNREACHABLE("Illegal operation!");
-}
-
-template <class taUnderlying>
 const View& SFMLTextureCommonImpl<taUnderlying>::getView() const {
     HG_UNREACHABLE("Illegal operation!");
 }
 
 template <class taUnderlying>
-math::Rectangle<int> SFMLTextureCommonImpl<taUnderlying>::viewportToPixels(const View& aView) const {
+void SFMLTextureCommonImpl<taUnderlying>::setDefaultView() {
     HG_UNREACHABLE("Illegal operation!");
 }
 
 template <class taUnderlying>
-const sf::View& SFMLTextureCommonImpl<taUnderlying>::getDefaultView() const {
+std::unique_ptr<View> SFMLTextureCommonImpl<taUnderlying>::createDefaultView() const {
+    HG_UNREACHABLE("Illegal operation!");
+}
+
+template <class taUnderlying>
+math::Rectangle<int> SFMLTextureCommonImpl<taUnderlying>::viewportToPixels(const View& aView) const {
     HG_UNREACHABLE("Illegal operation!");
 }
 

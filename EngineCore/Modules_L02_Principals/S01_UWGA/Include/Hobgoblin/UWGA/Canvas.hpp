@@ -51,11 +51,14 @@ public:
     //! To restore the original view of the canvas, you can call `setDefaultView()`.
     virtual void setView(const View& aView) = 0;
 
+    //! Get a reference to the current active view.
+    virtual const View& getView() const = 0;
+
     //! Change the current active view back to the default view of this canvas.
     virtual void setDefaultView() = 0;
 
-    //! Get a reference to the current active view.
-    virtual const View& getView() const = 0;
+    //! Create and return the default view of this canvas.
+    virtual std::unique_ptr<View> createDefaultView() const = 0;
 
     //! \brief Get the viewport of a view, applied to this canvas.
     //!

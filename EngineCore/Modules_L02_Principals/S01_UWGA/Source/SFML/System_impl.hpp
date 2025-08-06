@@ -157,19 +157,6 @@ public:
         return std::make_unique<SFMLViewImpl>(SELF);
     }
 
-    std::unique_ptr<View> createDefaultView(const RenderWindow& aRenderWindow) const override {
-        assert(&aRenderWindow.getSystem() == this);
-        return std::make_unique<SFMLViewImpl>(
-            SELF,
-            static_cast<const SFMLRenderWindowImpl&>(aRenderWindow).getDefaultView(),
-            math::Vector2d{0.0, 0.0});
-    }
-
-    std::unique_ptr<View> createDefaultView(const RenderTexture& aRenderTexture) const override {
-        assert(&aRenderTexture.getSystem() == this);
-        return {}; // TODO
-    }
-
     // MARK: Transform
 
     std::unique_ptr<Transform> createTransform() const override {

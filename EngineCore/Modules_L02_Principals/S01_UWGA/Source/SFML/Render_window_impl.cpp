@@ -171,12 +171,16 @@ void SFMLRenderWindowImpl::setView(const View& aView) {
     _activeViewAnchor = aView.getAnchor();
 }
 
+const View& SFMLRenderWindowImpl::getView() const {
+    return _activeView;
+}
+
 void SFMLRenderWindowImpl::setDefaultView() {
     _window.setView(_window.getDefaultView());
 }
 
-const View& SFMLRenderWindowImpl::getView() const {
-    return _activeView;
+std::unique_ptr<View> SFMLRenderWindowImpl::createDefaultView() const {
+    return std::make_unique<SFMLViewImpl>(_system, _window.getDefaultView(), math::Vector2d{0.0, 0.0});
 }
 
 math::Rectangle<int> SFMLRenderWindowImpl::viewportToPixels(const View& aView) const {
@@ -188,10 +192,6 @@ math::Rectangle<int> SFMLRenderWindowImpl::viewportToPixels(const View& aView) c
             static_cast<int>(0.5f + size.y * viewport.y),
             static_cast<int>(0.5f + size.x * viewport.w),
             static_cast<int>(0.5f + size.y * viewport.h)};
-}
-
-const sf::View& SFMLRenderWindowImpl::getDefaultView() const {
-    return _window.getDefaultView();
 }
 
 // Drawing

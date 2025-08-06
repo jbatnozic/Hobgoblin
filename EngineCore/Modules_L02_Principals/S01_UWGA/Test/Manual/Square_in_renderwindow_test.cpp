@@ -15,7 +15,7 @@ namespace {
 void RunSquareInRenderWindowTest() {
     auto system = CreateRenderSystem("SFML");
     auto window = system->createRenderWindow(800, 800, WindowStyle::DEFAULT, "UWGA.ManualTest");
-    auto view   = system->createDefaultView(*window);
+    auto view   = window->createDefaultView();
 
     window->setFramerateLimit(60);
 

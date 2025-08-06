@@ -15,6 +15,7 @@
 #include "SFML_drawing_adapter.hpp"
 #include "SFML_err.hpp"
 #include "Texture_common_impl.hpp"
+#include "View_impl.hpp"
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
@@ -171,12 +172,18 @@ public:
         _activeViewAnchor = aView.getAnchor();
     }
 
+    const View& getView() const override {
+        return _activeView;
+    }
+
     void setDefaultView() override {
         _texture->setView(_texture->getDefaultView());
     }
 
-    const View& getView() const override {
-        return _activeView;
+    std::unique_ptr<View> createDefaultView() const override {
+        return std::make_unique<SFMLViewImpl>(_system,
+                                              _texture->getDefaultView(),
+                                              math::Vector2d{0.0, 0.0});
     }
 
     math::Rectangle<int> viewportToPixels(const View& aView) const override {
@@ -188,10 +195,6 @@ public:
                 static_cast<int>(0.5f + size.y * viewport.y),
                 static_cast<int>(0.5f + size.x * viewport.w),
                 static_cast<int>(0.5f + size.y * viewport.h)};
-    }
-
-    const sf::View& getDefaultView() const {
-        return _texture->getDefaultView();
     }
 
     // MARK: Canvas/Drawing

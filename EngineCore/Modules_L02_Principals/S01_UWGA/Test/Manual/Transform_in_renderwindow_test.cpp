@@ -17,7 +17,7 @@ namespace {
 void RunTransformInRenderWindowTest() {
     auto system    = CreateRenderSystem("SFML");
     auto window    = system->createRenderWindow(800, 800, WindowStyle::DEFAULT, "UWGA.ManualTest");
-    auto view      = system->createDefaultView(*window);
+    auto view      = window->createDefaultView();
     auto transform = system->createTransform();
 
     window->setFramerateLimit(60);

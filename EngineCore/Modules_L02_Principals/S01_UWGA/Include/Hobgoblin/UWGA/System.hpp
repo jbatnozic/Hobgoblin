@@ -189,10 +189,6 @@ public:
 
     virtual std::unique_ptr<View> createView() const = 0;
 
-    virtual std::unique_ptr<View> createDefaultView(const RenderWindow& aRenderWindow) const = 0;
-
-    virtual std::unique_ptr<View> createDefaultView(const RenderTexture& aRenderTexture) const = 0;
-
     ///////////////////////////////////////////////////////////////////////////
     // MARK: Transform                                                       //
     ///////////////////////////////////////////////////////////////////////////
