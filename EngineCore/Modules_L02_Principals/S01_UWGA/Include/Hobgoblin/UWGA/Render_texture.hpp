@@ -18,6 +18,13 @@ class RenderTexture
     , public Canvas {
 public:
     virtual ~RenderTexture() = default;
+
+    //! Update the contents of the target texture.
+    //!
+    //! This function updates the target texture with what has been drawn so far. Like for windows,
+    //! calling this function is mandatory at the end of rendering. Not calling it may leave the
+    //! texture in an undefined state.
+    virtual void display() = 0;
 };
 
 } // namespace uwga

@@ -11,6 +11,7 @@
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
 HOBGOBLIN_NAMESPACE_BEGIN
+namespace uwga {
 
 class SFMLErrorCatcher {
 public:
@@ -35,6 +36,7 @@ private:
     std::ostringstream _oss;
 };
 
+} // namespace uwga
 HOBGOBLIN_NAMESPACE_END
 
 #include <Hobgoblin/Private/Pmacro_undef.hpp>

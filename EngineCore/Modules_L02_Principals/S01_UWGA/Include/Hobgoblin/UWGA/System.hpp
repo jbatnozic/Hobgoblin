@@ -38,10 +38,11 @@ public:
     ///////////////////////////////////////////////////////////////////////////
 
     virtual std::unique_ptr<RenderWindow> createRenderWindow(
-        PZInteger            aWidth  = 640,
-        PZInteger            aHeight = 480,
-        WindowStyle          aStyle  = WindowStyle::DEFAULT,
-        const UnicodeString& aTitle  = HG_UNILIT("Hobgoblin")) const = 0;
+        PZInteger            aWidth      = 640,
+        PZInteger            aHeight     = 480,
+        WindowStyle          aStyle      = WindowStyle::DEFAULT,
+        const UnicodeString& aTitle      = HG_UNILIT("Hobgoblin"),
+        bool                 aEnableSRgb = false) const = 0;
 
     ///////////////////////////////////////////////////////////////////////////
     // MARK: Image                                                           //
@@ -189,6 +190,8 @@ public:
     virtual std::unique_ptr<View> createView() const = 0;
 
     virtual std::unique_ptr<View> createDefaultView(const RenderWindow& aRenderWindow) const = 0;
+
+    virtual std::unique_ptr<View> createDefaultView(const RenderTexture& aRenderTexture) const = 0;
 
     ///////////////////////////////////////////////////////////////////////////
     // MARK: Transform                                                       //

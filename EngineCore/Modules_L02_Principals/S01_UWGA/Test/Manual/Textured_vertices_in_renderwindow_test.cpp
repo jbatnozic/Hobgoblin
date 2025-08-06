@@ -12,7 +12,7 @@ namespace hobgoblin {
 namespace uwga {
 namespace {
 
-void RunTexturedVerticfesInRenderWindowTest() {
+void RunTexturedVerticesInRenderWindowTest() {
     auto system = CreateRenderSystem("SFML");
     auto window = system->createRenderWindow(800, 800, WindowStyle::DEFAULT, "UWGA.ManualTest");
 
@@ -85,6 +85,6 @@ void RunTexturedVerticfesInRenderWindowTest() {
 } // namespace hobgoblin
 } // namespace jbatnozic
 
-void RunTexturedVerticfesInRenderWindowTest(int, const char**) {
-    jbatnozic::hobgoblin::uwga::RunTexturedVerticfesInRenderWindowTest();
+void RunTexturedVerticesInRenderWindowTest(int, const char**) {
+    jbatnozic::hobgoblin::uwga::RunTexturedVerticesInRenderWindowTest();
 }

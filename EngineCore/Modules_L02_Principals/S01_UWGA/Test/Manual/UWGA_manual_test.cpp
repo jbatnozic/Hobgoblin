@@ -19,7 +19,8 @@ int main() try {
     HG_ADD_MANUAL_TEST(testRunner, RunEmptyRenderWindowTest);
     HG_ADD_MANUAL_TEST(testRunner, RunSquareInRenderWindowTest);
     HG_ADD_MANUAL_TEST(testRunner, RunTransformInRenderWindowTest);
-    HG_ADD_MANUAL_TEST(testRunner, RunTexturedVerticfesInRenderWindowTest);
+    HG_ADD_MANUAL_TEST(testRunner, RunTexturedVerticesInRenderWindowTest);
+    HG_ADD_MANUAL_TEST(testRunner, RunRenderTextureInRenderWindowTest);
 
     testRunner.runTest();
 

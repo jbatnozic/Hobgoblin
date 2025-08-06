@@ -6,4 +6,5 @@
 void RunEmptyRenderWindowTest(int, const char**);
 void RunSquareInRenderWindowTest(int, const char**);
 void RunTransformInRenderWindowTest(int, const char**);
-void RunTexturedVerticfesInRenderWindowTest(int, const char**);
+void RunTexturedVerticesInRenderWindowTest(int, const char**);
+void RunRenderTextureInRenderWindowTest(int, const char**);

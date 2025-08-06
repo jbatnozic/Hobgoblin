@@ -18,8 +18,6 @@
 
 #include "View_impl.hpp"
 
-#include <optional>
-
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
 HOBGOBLIN_NAMESPACE_BEGIN
@@ -33,7 +31,8 @@ public:
                          PZInteger            aWidth,
                          PZInteger            aHeight,
                          WindowStyle          aStyle,
-                         const UnicodeString& aTitle);
+                         const UnicodeString& aTitle,
+                         bool                 aEnableSRgb);
 
     const sf::RenderWindow& getUnderlyingRenderWindow() const;
 
@@ -121,10 +120,6 @@ private:
     sf::RenderStates _defaultRenderStates = sf::RenderStates::Default;
     SFMLViewImpl     _activeView;
     math::Vector2d   _activeViewAnchor;
-
-    const sf::Texture*         _getSfmlTexture(const Texture* aTexture) const;
-    const sf::Shader*          _getSfmlShader(const Shader* aShader) const;
-    static const sf::BlendMode _getSfmlBlendMode(std::optional<BlendMode> aBlendMode);
 };
 
 } // namespace uwga

@@ -4,9 +4,8 @@
 #include "Render_window_impl.hpp"
 
 #include "SFML_conversions.hpp"
-#include "SFML_vertices.hpp"
+#include "SFML_drawing_adapter.hpp"
 #include "SFML_window_event_conversion.hpp"
-#include "Transform_impl.hpp"
 #include "View_impl.hpp"
 
 #include <Hobgoblin/HGExcept.hpp>
@@ -25,19 +24,29 @@ sf::String UnicodeStringToSfmlString(const UnicodeString& aUnicodeString) {
     hobgoblin::detail::StoreUStringInSfString(aUnicodeString, &sfmlString);
     return sfmlString;
 }
+
+sf::ContextSettings MakeContextSettings(bool aEnableSRgb) {
+    sf::ContextSettings contextSettings;
+    contextSettings.sRgbCapable = aEnableSRgb;
+
+    return contextSettings;
+}
 } // namespace
 
 SFMLRenderWindowImpl::SFMLRenderWindowImpl(const System&        aSystem,
                                            PZInteger            aWidth,
                                            PZInteger            aHeight,
                                            WindowStyle          aStyle,
-                                           const UnicodeString& aTitle)
+                                           const UnicodeString& aTitle,
+                                           bool                 aEnableSRgb)
     : _system{aSystem}
     , _window{sf::VideoMode{static_cast<unsigned>(aWidth),
                             static_cast<unsigned>(aHeight)},
               UnicodeStringToSfmlString(aTitle),
-              ToSf(aStyle)}
-    , _activeView{_system, _window.getDefaultView(), {0.0, 0.0}} {}
+              ToSf(aStyle),
+              MakeContextSettings(aEnableSRgb)}
+    , _activeView{_system, _window.getDefaultView(), {0.0, 0.0}}
+    , _activeViewAnchor{_activeView.getAnchor()} {}
 
 const sf::RenderWindow& SFMLRenderWindowImpl::getUnderlyingRenderWindow() const {
     return _window;
@@ -185,73 +194,12 @@ void SFMLRenderWindowImpl::draw(const Vertex*       aVertices,
                                 PrimitiveType       aPrimitiveType,
                                 math::Vector2d      aAnchor,
                                 const RenderStates& aRenderStates) {
-    SFMLVertices sfVertices{aVertices, pztos(aVertexCount)};
-
-    assert(aRenderStates.transform == nullptr || &aRenderStates.transform->getSystem() == &_system);
-
-    // Determine which render states object to use
-    sf::RenderStates& sfmlRenderStates =
-        (aRenderStates.transform)
-            ? static_cast<const SFMLTransformImpl*>(aRenderStates.transform)->getUnderlyingRenderStates()
-            : _defaultRenderStates;
-
-    // Set simple fields of render states
-    sfmlRenderStates.texture   = _getSfmlTexture(aRenderStates.texture);
-    sfmlRenderStates.shader    = _getSfmlShader(aRenderStates.shader);
-    sfmlRenderStates.blendMode = _getSfmlBlendMode(aRenderStates.blendMode);
-
-    sf::Transform& sfmlTransform   = sfmlRenderStates.transform;
-    auto*          transformMatrix = const_cast<float*>(sfmlTransform.getMatrix());
-
-    // Save original translation values
-    float tm12 = transformMatrix[12];
-    float tm13 = transformMatrix[13];
-
-    // Adjust translation based on anchors
-    transformMatrix[12] += static_cast<float>(aAnchor.x - _activeViewAnchor.x);
-    transformMatrix[13] += static_cast<float>(aAnchor.y - _activeViewAnchor.y);
-
-    // Draw
-    _window.draw(sfVertices.getVertices(),
-                 sfVertices.getVertexCount(),
-                 ToSf(aPrimitiveType),
-                 sfmlRenderStates);
-
-    // Restore original translation values
-    transformMatrix[12] = tm12;
-    transformMatrix[13] = tm13;
+    SFMLDrawingAdapter drawingAdapter{_system, _window, _defaultRenderStates, _activeViewAnchor};
+    drawingAdapter.draw(aVertices, aVertexCount, aPrimitiveType, aAnchor, aRenderStates);
 }
 
 void SFMLRenderWindowImpl::flush() {
     /* Nothing to do (there is no batching in SFML). */
-}
-
-///////////////////////////////////////////////////////////////////////////
-// MARK: Private                                                         //
-///////////////////////////////////////////////////////////////////////////
-
-const sf::Texture* SFMLRenderWindowImpl::_getSfmlTexture(const Texture* aTexture) const {
-    assert(aTexture == nullptr || &aTexture->getSystem() == &_system);
-
-    return ToSf(aTexture);
-}
-
-const sf::Shader* SFMLRenderWindowImpl::_getSfmlShader(const Shader* aShader) const {
-    // assert(aRenderStates.shader == nullptr || &aRenderStates.shader->getSystem() == &_system);
-
-    if (aShader) {
-        return {}; // TODO
-    } else {
-        return nullptr;
-    }
-}
-
-const sf::BlendMode SFMLRenderWindowImpl::_getSfmlBlendMode(std::optional<BlendMode> aBlendMode) {
-    if (aBlendMode) {
-        return ToSf(*aBlendMode);
-    } else {
-        return sf::BlendAlpha;
-    }
 }
 
 } // namespace uwga

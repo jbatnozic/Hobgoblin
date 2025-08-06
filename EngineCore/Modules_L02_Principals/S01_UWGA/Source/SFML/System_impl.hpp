@@ -23,6 +23,11 @@
 HOBGOBLIN_NAMESPACE_BEGIN
 namespace uwga {
 
+namespace {
+constexpr PZInteger DEFAULT_WIDTH  = 640;
+constexpr PZInteger DEFAULT_HEIGHT = 480;
+} // namespace
+
 class SFMLSystemImpl : public System {
 public:
     ~SFMLSystemImpl() override = default;
@@ -32,8 +37,14 @@ public:
     std::unique_ptr<RenderWindow> createRenderWindow(PZInteger            aWidth,
                                                      PZInteger            aHeight,
                                                      WindowStyle          aStyle,
-                                                     const UnicodeString& aTitle) const override {
-        return std::make_unique<SFMLRenderWindowImpl>(SELF, aWidth, aHeight, aStyle, aTitle);
+                                                     const UnicodeString& aTitle,
+                                                     bool                 aEnableSRgb) const override {
+        return std::make_unique<SFMLRenderWindowImpl>(SELF,
+                                                      aWidth,
+                                                      aHeight,
+                                                      aStyle,
+                                                      aTitle,
+                                                      aEnableSRgb);
     }
 
     // MARK: Image
@@ -86,7 +97,7 @@ public:
     }
 
     std::unique_ptr<Texture> createTexture() const override {
-        return std::make_unique<SFMLTextureImpl>(SELF);
+        return std::make_unique<SFMLTextureImpl>(SELF, DEFAULT_WIDTH, DEFAULT_HEIGHT, false);
     }
 
     std::unique_ptr<Texture> createTexture(PZInteger aWidth,
@@ -114,7 +125,7 @@ public:
     // MARK: RenderTexture
 
     std::unique_ptr<RenderTexture> createRenderTexture() const override {
-        return std::make_unique<SFMLRenderTextureImpl>(SELF);
+        return std::make_unique<SFMLRenderTextureImpl>(SELF, DEFAULT_WIDTH, DEFAULT_HEIGHT, false);
     }
 
     std::unique_ptr<RenderTexture> createRenderTexture(PZInteger aWidth,
@@ -152,6 +163,11 @@ public:
             SELF,
             static_cast<const SFMLRenderWindowImpl&>(aRenderWindow).getDefaultView(),
             math::Vector2d{0.0, 0.0});
+    }
+
+    std::unique_ptr<View> createDefaultView(const RenderTexture& aRenderTexture) const override {
+        assert(&aRenderTexture.getSystem() == this);
+        return {}; // TODO
     }
 
     // MARK: Transform

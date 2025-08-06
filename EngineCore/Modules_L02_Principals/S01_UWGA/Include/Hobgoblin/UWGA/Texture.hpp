@@ -68,9 +68,10 @@ public:
     //!
     //! \param aWidth  New width of the texture.
     //! \param aHeight New height of the texture.
+    //! \param aEnableSRgb Whether to enable sRGB conversion or not.
     //!
     //! \throws TracedRuntimeError on failure.
-    virtual void reset(PZInteger aWidth, PZInteger aHeight) = 0;
+    virtual void reset(PZInteger aWidth, PZInteger aHeight, bool aEnableSRgb = false) = 0;
 
     //! \brief Reset the texture by loading new contents from a file on disk.
     //!
@@ -88,9 +89,12 @@ public:
     //!
     //! \param aPath Path of the image file to load.
     //! \param aArea Area of the image to load.
+    //! \param aEnableSRgb Whether to enable sRGB conversion or not.
     //!
     //! \throws TracedRuntimeError on failure.
-    virtual void reset(const std::filesystem::path& aPath, TextureRect aArea = {}) = 0;
+    virtual void reset(const std::filesystem::path& aPath,
+                       TextureRect                  aArea       = {},
+                       bool                         aEnableSRgb = false) = 0;
 
     //! \brief Reset the texture by loading new contents from an Image object.
     //!
@@ -105,9 +109,10 @@ public:
     //!
     //! \param aImage Image to load into the texture.
     //! \param aArea  Area of the image to load.
+    //! \param aEnableSRgb Whether to enable sRGB conversion or not.
     //!
     //! \throws TracedRuntimeError on failure.
-    virtual void reset(const Image& aImage, TextureRect aArea = {}) = 0;
+    virtual void reset(const Image& aImage, TextureRect aArea = {}, bool aEnableSRgb = false) = 0;
 
     ///////////////////////////////////////////////////////////////////////////
     // MARK: UPDATING                                                        //
@@ -233,44 +238,16 @@ public:
     //! The smooth filter is disabled by default.
     //!
     //! \param smooth True to enable smoothing, false to disable it
-    //!
-    //! \see isSmooth
     virtual void setSmooth(bool aSmooth) = 0;
 
     //! \brief Tell whether the smooth filter is enabled or not
     //!
     //! \return True if smoothing is enabled, false if it is disabled
-    //!
-    //! \see setSmooth
     virtual bool isSmooth() const = 0;
-
-    //! \brief Enable or disable conversion from sRGB
-    //!
-    //! When providing texture data from an image file or memory, it can
-    //! either be stored in a linear color space or an sRGB color space.
-    //! Most digital images account for gamma correction already, so they
-    //! would need to be "uncorrected" back to linear color space before
-    //! being processed by the hardware. The hardware can automatically
-    //! convert it from the sRGB color space to a linear color space when
-    //! it gets sampled. When the rendered image gets output to the final
-    //! framebuffer, it gets converted back to sRGB.
-    //!
-    //! After enabling or disabling sRGB conversion, make sure to reload
-    //! the texture data in order for the setting to take effect.
-    //!
-    //! This option is only useful in conjunction with an sRGB capable
-    //! framebuffer. This can be requested during window creation.
-    //!
-    //! \param sRgb True to enable sRGB conversion, false to disable it
-    //!
-    //! \see isSrgb
-    virtual void setSrgb(bool aSRgb) = 0;
 
     //! \brief Tell whether the texture source is converted from sRGB or not
     //!
     //! \return True if the texture source is converted from sRGB, false if not
-    //!
-    //! \see setSrgb
     virtual bool isSrgb() const = 0;
 
     //! \brief Enable or disable repeating
