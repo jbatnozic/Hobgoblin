@@ -132,6 +132,10 @@ void SFMLRenderWindowImpl::setMouseCursorGrabbed(bool aGrabbed) {
     _window.setMouseCursorGrabbed(aGrabbed);
 }
 
+math::Vector2f SFMLRenderWindowImpl::getRelativeCursorPosition() const {
+    return math::VectorCast<float>(ToHg(sf::Mouse::getPosition(_window)));
+}
+
 // Contents
 
 void SFMLRenderWindowImpl::display() {

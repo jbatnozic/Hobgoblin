@@ -20,7 +20,7 @@ void SFMLVertexArrayImpl::drawOnto(Canvas& aCanvas, const RenderStates& aRenderS
     // auto* sfRenderTarget = static_cast<sf::RenderTarget*>(aCanvas.getRenderingBackend());
     // assert(sfRenderTarget != nullptr);
 
-    // sfRenderTarget->draw(_vertices.data(), _vertices.size(), _primitiveType); // TODO: render states
+    // sfRenderTarget->draw(_vertices.data(), _vertices.size(), _primitiveType);
 }
 
 } // namespace uwga

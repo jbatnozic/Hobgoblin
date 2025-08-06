@@ -128,9 +128,9 @@ void RunTransformInRenderWindowTest() {
             }
         }
 
-        // Draw another box, always following the window
+        // Draw another box, always following the cursor
         {
-            const auto coords = window->mapPixelToCoords({64.f, 64.f});
+            const auto coords = window->mapPixelToCoords(window->getRelativeCursorPosition());
             window->draw(boxVertices.data(),
                          stopz(boxVertices.size()),
                          PrimitiveType::TRIANGLE_STRIP,

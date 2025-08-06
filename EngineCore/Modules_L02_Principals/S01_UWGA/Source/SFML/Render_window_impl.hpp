@@ -75,6 +75,8 @@ public:
     void setMouseCursorVisible(bool aVisible) override;
     void setMouseCursorGrabbed(bool aGrabbed) override;
 
+    math::Vector2f getRelativeCursorPosition() const override;
+
     // Contents
 
     void display() override;

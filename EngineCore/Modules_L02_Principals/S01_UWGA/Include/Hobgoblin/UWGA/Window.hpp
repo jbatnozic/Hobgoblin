@@ -9,8 +9,6 @@
 #include <Hobgoblin/UWGA/Window_event.hpp>
 #include <Hobgoblin/Unicode.hpp>
 
-#include <string>
-
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
 HOBGOBLIN_NAMESPACE_BEGIN
@@ -160,6 +158,10 @@ public:
     //!
     //! \param grabbed True to enable, false to disable
     virtual void setMouseCursorGrabbed(bool aGrabbed) = 0;
+
+    //! \brief get the position of the mouse cursor relative to the top-left corner of the window
+    //!        (the returned offset is expressed in pixels).
+    virtual math::Vector2f getRelativeCursorPosition() const = 0;
 
     // MARK: Contents
 
