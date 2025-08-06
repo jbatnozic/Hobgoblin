@@ -96,7 +96,9 @@ public:
 
     const View& getView() const override;
 
-    const sf::View& getDefaultView() const;
+    math::Rectangle<int> viewportToPixels(const View& aView) const override;
+
+    const sf::View& getDefaultView() const; // TODO: wtf is this
 
     // Drawing
 
@@ -216,6 +218,11 @@ void SFMLTextureCommonImpl<taUnderlying>::setDefaultView() {
 
 template <class taUnderlying>
 const View& SFMLTextureCommonImpl<taUnderlying>::getView() const {
+    HG_UNREACHABLE("Illegal operation!");
+}
+
+template <class taUnderlying>
+math::Rectangle<int> SFMLTextureCommonImpl<taUnderlying>::viewportToPixels(const View& aView) const {
     HG_UNREACHABLE("Illegal operation!");
 }
 

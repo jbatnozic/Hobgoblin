@@ -12,6 +12,8 @@ namespace hobgoblin {
 namespace uwga {
 namespace {
 
+#define LOG_ID "Hobgoblin.UWGA"
+
 void RunTransformInRenderWindowTest() {
     auto system    = CreateRenderSystem("SFML");
     auto window    = system->createRenderWindow(800, 800, WindowStyle::DEFAULT, "UWGA.ManualTest");
@@ -64,16 +66,16 @@ void RunTransformInRenderWindowTest() {
         }
 
         {
-            const auto lr = (double)in::CheckPressedPK(in::PK_D) - (double)in::CheckPressedPK(in::PK_A);
-            const auto ud = (double)in::CheckPressedPK(in::PK_S) - (double)in::CheckPressedPK(in::PK_W);
+            const auto lr = (double)in::CheckPressedPK(in::PK_L) - (double)in::CheckPressedPK(in::PK_J);
+            const auto ud = (double)in::CheckPressedPK(in::PK_K) - (double)in::CheckPressedPK(in::PK_I);
             viewAnchor.x += lr * 2.0;
             viewAnchor.y += ud * 2.0;
             view->setAnchor(viewAnchor);
         }
 
         {
-            const auto lr = (float)in::CheckPressedPK(in::PK_L) - (float)in::CheckPressedPK(in::PK_J);
-            const auto ud = (float)in::CheckPressedPK(in::PK_K) - (float)in::CheckPressedPK(in::PK_I);
+            const auto lr = (float)in::CheckPressedPK(in::PK_D) - (float)in::CheckPressedPK(in::PK_A);
+            const auto ud = (float)in::CheckPressedPK(in::PK_S) - (float)in::CheckPressedPK(in::PK_W);
             view->setCenter(view->getCenter() + math::Vector2f{lr, ud});
 
             const auto rot = (float)in::CheckPressedPK(in::PK_Q) - (float)in::CheckPressedPK(in::PK_E);
@@ -115,6 +117,24 @@ void RunTransformInRenderWindowTest() {
                          stopz(vertices.size()),
                          PrimitiveType::TRIANGLE_STRIP,
                          boxAnchor,
+                         states);
+
+            // If space is pressed, print the screen coordinates of the box
+            if (in::CheckPressedPK(in::PK_SPACE)) {
+                const auto px = window->mapCoordsToPixel(
+                    math::VectorCast<double>(transform->transformPoint(vertices[0].position)) +
+                    boxAnchor);
+                HG_LOG_INFO(LOG_ID, "Box screen coordinates are: {}, {}", px.x, px.y);
+            }
+        }
+
+        // Draw another box, always following the window
+        {
+            const auto coords = window->mapPixelToCoords({64.f, 64.f});
+            window->draw(boxVertices.data(),
+                         stopz(boxVertices.size()),
+                         PrimitiveType::TRIANGLE_STRIP,
+                         coords,
                          states);
         }
 

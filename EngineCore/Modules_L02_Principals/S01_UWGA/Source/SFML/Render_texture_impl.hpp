@@ -179,6 +179,17 @@ public:
         return _activeView;
     }
 
+    math::Rectangle<int> viewportToPixels(const View& aView) const override {
+        const auto size = math::VectorCast<float>(getSize());
+
+        const auto viewport = _activeView.getViewport();
+
+        return {static_cast<int>(0.5f + size.x * viewport.x),
+                static_cast<int>(0.5f + size.y * viewport.y),
+                static_cast<int>(0.5f + size.x * viewport.w),
+                static_cast<int>(0.5f + size.y * viewport.h)};
+    }
+
     const sf::View& getDefaultView() const {
         return _texture->getDefaultView();
     }

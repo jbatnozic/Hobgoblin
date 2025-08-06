@@ -65,6 +65,16 @@ public:
     void         rotate(math::AngleF aAngle) override;
     math::AngleF getRotation() const override;
 
+    // Transform
+
+    math::Vector2f transformPoint(float aX, float aY) const override;
+
+    math::Vector2f transformPoint(const math::Vector2f& aPoint) const override;
+
+    math::Vector2f inverseTransformPoint(float aX, float aY) const override;
+
+    math::Vector2f inverseTransformPoint(const math::Vector2f& aPoint) const override;
+
 private:
     const System*  _system;
     sf::View       _view;

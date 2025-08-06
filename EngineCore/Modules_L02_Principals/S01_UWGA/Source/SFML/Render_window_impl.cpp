@@ -179,6 +179,17 @@ const View& SFMLRenderWindowImpl::getView() const {
     return _activeView;
 }
 
+math::Rectangle<int> SFMLRenderWindowImpl::viewportToPixels(const View& aView) const {
+    const auto size = math::VectorCast<float>(getSize());
+
+    const auto viewport = _activeView.getViewport();
+
+    return {static_cast<int>(0.5f + size.x * viewport.x),
+            static_cast<int>(0.5f + size.y * viewport.y),
+            static_cast<int>(0.5f + size.x * viewport.w),
+            static_cast<int>(0.5f + size.y * viewport.h)};
+}
+
 const sf::View& SFMLRenderWindowImpl::getDefaultView() const {
     return _window.getDefaultView();
 }

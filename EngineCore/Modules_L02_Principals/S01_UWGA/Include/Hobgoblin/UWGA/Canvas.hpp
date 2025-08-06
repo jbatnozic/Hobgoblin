@@ -5,6 +5,7 @@
 #define UHOBGOBLIN_UWGA_CANVAS_HPP
 
 #include <Hobgoblin/Common.hpp>
+#include <Hobgoblin/Math/Rectangle.hpp>
 #include <Hobgoblin/Math/Vector.hpp>
 #include <Hobgoblin/UWGA/Color.hpp>
 #include <Hobgoblin/UWGA/Drawable.hpp>
@@ -56,6 +57,69 @@ public:
     //! Get a reference to the current active view.
     virtual const View& getView() const = 0;
 
+    //! \brief Get the viewport of a view, applied to this canvas.
+    //!
+    //! The viewport is defined in the view as a ratio, this function
+    //! simply applies this ratio to the current dimensions of the
+    //! canvas to calculate the pixels rectangle that the viewport
+    //! actually covers in the target.
+    //!
+    //! \param view The view for which we want to compute the viewport.
+    //!
+    //! \return Viewport rectangle, expressed in pixels
+    virtual math::Rectangle<int> viewportToPixels(const View& aView) const = 0;
+
+    //! \brief Convert a point from canvas coordinates to world coordinates, using the given view.
+    //!
+    //! This function finds the 2D position that matches the given pixel of the canvas.
+    //!
+    //! Initially, both coordinate systems (world units and canvas pixels) match perfectly. But if
+    //! you define a custom view or resize your canvas, this assertion is not true anymore, i.e. a
+    //! point located at (10, 50) in your canvas may map to the point (150, 75) in your 2D world --
+    //! if the view is translated by (140, 25).
+    //!
+    //! For `RenderWindow`s, this function is typically used to find which point (or object) is
+    //! located below the mouse cursor.
+    //!
+    //! This version uses a custom view for calculations, see the other overload of the function if
+    //! you want to use the current view of the canvas.
+    //!
+    //! \param aPixel Pixel to convert.
+    //! \param aView The view to use for converting the point.
+    //!
+    //! \return The converted point, in "world" units.
+    math::Vector2d mapPixelToCoords(math::Vector2f aPixel, const View& aView) const;
+
+    //! \brief Convert a point from target coordinates to world coordinates, using the current view.
+    //!
+    //! \note This function is an overload of the `mapPixelToCoords` function that implicitly uses
+    //!       the current view.
+    math::Vector2d mapPixelToCoords(math::Vector2f aPixel) const;
+
+    //! \brief Convert a point from world coordinates to canvas coordinates.
+    //!
+    //! This function finds the pixel of the canvas that matches the given 2D point.
+    //!
+    //! Initially, both coordinate systems (world units and canvas pixels) match perfectly. But if
+    //! you define a custom view or resize your canvas, this assertion is not true anymore, i.e. a
+    //! point located at (150, 75) in your 2D world may map to the pixel (10, 50) of your canvas --
+    //! if the view is translated by (140, 25).
+    //!
+    //! This version uses a custom view for calculations, see the other overload of the function if
+    //! you want to use the current view of the canvas.
+    //!
+    //! \param aCoords Point to convert.
+    //! \param aView The view to use for converting the point.
+    //!
+    //! \return The converted point, in canvas coordinates (pixels).
+    math::Vector2f mapCoordsToPixel(math::Vector2d aCoords, const View& aView) const;
+
+    //! \brief Convert a point from world coordinates to canvas coordinates, using the current view.
+    //!
+    //! This function is an overload of the `mapCoordsToPixel` function that implicitly uses
+    //! the current view.
+    math::Vector2f mapCoordsToPixel(math::Vector2d aCoords) const;
+
     ///////////////////////////////////////////////////////////////////////////
     // MARK: DRAWING                                                         //
     ///////////////////////////////////////////////////////////////////////////
@@ -92,6 +156,41 @@ public:
     //! call thus far is resolved.
     virtual void flush() = 0;
 };
+
+///////////////////////////////////////////////////////////////////////////
+// MARK: INLINE DEFINITIONS                                              //
+///////////////////////////////////////////////////////////////////////////
+
+inline math::Vector2d Canvas::mapPixelToCoords(math::Vector2f aPixel, const View& aView) const {
+    const auto viewport = viewportToPixels(aView);
+    const auto anchor   = aView.getAnchor();
+
+    math::Vector2f normalized; // In range -1 .. +1
+    normalized.x = -1.f + 2.f * (aPixel.x - (float)viewport.x) / (float)viewport.w;
+    normalized.y = +1.f - 2.f * (aPixel.y - (float)viewport.y) / (float)viewport.h;
+
+    return math::VectorCast<double>(aView.inverseTransformPoint(normalized)) + anchor;
+}
+
+inline math::Vector2d Canvas::mapPixelToCoords(math::Vector2f aPixel) const {
+    return mapPixelToCoords(aPixel, getView());
+}
+
+inline math::Vector2f Canvas::mapCoordsToPixel(math::Vector2d aCoords, const View& aView) const {
+    const auto fpoint     = math::VectorCast<float>(aCoords - aView.getAnchor());
+    const auto normalized = aView.transformPoint(fpoint); // In range -1 .. +1
+
+    const auto     viewport = viewportToPixels(aView);
+    math::Vector2f pixel;
+    pixel.x = (+normalized.x + 1.f) / 2.f * (float)viewport.w + (float)viewport.x;
+    pixel.y = (-normalized.y + 1.f) / 2.f * (float)viewport.h + (float)viewport.y;
+
+    return pixel;
+}
+
+inline math::Vector2f Canvas::mapCoordsToPixel(math::Vector2d aCoords) const {
+    return mapCoordsToPixel(aCoords, getView());
+}
 
 } // namespace uwga
 HOBGOBLIN_NAMESPACE_END

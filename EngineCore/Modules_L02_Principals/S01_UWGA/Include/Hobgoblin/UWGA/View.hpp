@@ -101,6 +101,24 @@ public:
 
     //! \brief Get the current orientation of the view.
     virtual math::AngleF getRotation() const = 0;
+
+    // MARK: Transform
+
+    //! \brief Transform the point using the view's projection, and assuming the point has the same
+    //!        anchor as the view itself.
+    virtual math::Vector2f transformPoint(float aX, float aY) const = 0;
+
+    //! \brief Transform the point using the view's projection, and assuming the point has the same
+    //!        anchor as the view itself.
+    virtual math::Vector2f transformPoint(const math::Vector2f& aPoint) const = 0;
+
+    //! \brief Transform the point using the inverse of the view's projection, and assuming the
+    //!        point has the same anchor as the view itself.
+    virtual math::Vector2f inverseTransformPoint(float aX, float aY) const = 0;
+
+    //! \brief Transform the point using the inverse of the view's projection, and assuming the
+    //!        point has the same anchor as the view itself.
+    virtual math::Vector2f inverseTransformPoint(const math::Vector2f& aPoint) const = 0;
 };
 
 } // namespace uwga

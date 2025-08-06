@@ -108,6 +108,24 @@ math::AngleF SFMLViewImpl::getRotation() const {
     return math::AngleF::fromDegrees(-_view.getRotation());
 }
 
+// Transform
+
+math::Vector2f SFMLViewImpl::transformPoint(float aX, float aY) const {
+    return ToHg(_view.getTransform().transformPoint(aX, aY));
+}
+
+math::Vector2f SFMLViewImpl::transformPoint(const math::Vector2f& aPoint) const {
+    return ToHg(_view.getTransform().transformPoint(ToSf(aPoint)));
+}
+
+math::Vector2f SFMLViewImpl::inverseTransformPoint(float aX, float aY) const {
+    return ToHg(_view.getInverseTransform().transformPoint(aX, aY));
+}
+
+math::Vector2f SFMLViewImpl::inverseTransformPoint(const math::Vector2f& aPoint) const {
+    return ToHg(_view.getInverseTransform().transformPoint(ToSf(aPoint)));
+}
+
 } // namespace uwga
 HOBGOBLIN_NAMESPACE_END
 

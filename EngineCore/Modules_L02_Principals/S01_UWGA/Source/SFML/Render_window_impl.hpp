@@ -100,6 +100,8 @@ public:
 
     const View& getView() const override;
 
+    math::Rectangle<int> viewportToPixels(const View& aView) const override;
+
     const sf::View& getDefaultView() const;
 
     // Drawing
