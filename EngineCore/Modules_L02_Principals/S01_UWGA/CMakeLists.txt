@@ -12,6 +12,7 @@ set(COMPONENT_NAME "Hobgoblin.UWGA")
 set(COMPONENT_SOURCES
     "Source/Sprite.cpp"
     "Source/System.cpp"
+    "Source/Texture_packing.cpp"
     "Source/Transformable.cpp"
 
     # SFML

@@ -17,6 +17,7 @@
 #include <Hobgoblin/UWGA/Sprite.hpp>
 #include <Hobgoblin/UWGA/System.hpp>
 #include <Hobgoblin/UWGA/Texture.hpp>
+#include <Hobgoblin/UWGA/Texture_packing.hpp>
 #include <Hobgoblin/UWGA/Texture_rect.hpp>
 #include <Hobgoblin/UWGA/Transform.hpp>
 #include <Hobgoblin/UWGA/Transformable.hpp>
