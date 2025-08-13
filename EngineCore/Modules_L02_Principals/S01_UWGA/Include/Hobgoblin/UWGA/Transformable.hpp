@@ -22,6 +22,12 @@ class Transform;
 class Transformable {
 public:
     Transformable(AvoidNull<std::unique_ptr<Transform>> aTransform);
+    Transformable(const Transformable& aOther);
+    Transformable& operator=(const Transformable& aOther);
+    Transformable(Transformable&& aOther)            = default;
+    Transformable& operator=(Transformable&& aOther) = default;
+
+    void setAnchor(math::Vector2d aAnchor);
 
     void setPosition(float aX, float aY);
 
@@ -36,6 +42,8 @@ public:
     void setOrigin(float aX, float aY);
 
     void setOrigin(const math::Vector2f& aOrigin);
+
+    math::Vector2d getAnchor() const;
 
     math::Vector2f getPosition() const;
 
@@ -61,10 +69,11 @@ public:
 
 private:
     // clang-format off
+    math::Vector2d             _anchor{0.0, 0.0};                 //!< Position in the 2D world to which all other measurements are relative
     math::Vector2f             _origin;                           //!< Origin of translation/rotation/scaling of the object
     math::Vector2f             _position;                         //!< Position of the object in the 2D world
     math::AngleF               _rotation{math::AngleF::zero()};   //!< Orientation of the object
-    math::Vector2f             _scale{1, 1};                      //!< Scale of the object
+    math::Vector2f             _scale{1.f, 1.f};                  //!< Scale of the object
     std::unique_ptr<Transform> _transform;                        //!< Combined transformation of the object
     std::unique_ptr<Transform> _inverseTransform;                 //!< Combined transformation of the object
     mutable bool               _transformNeedUpdate{true};        //!< Does the transform need to be recomputed?
@@ -73,6 +82,10 @@ private:
 };
 
 // MARK: Method definitions
+
+inline void Transformable::setAnchor(math::Vector2d aAnchor) {
+    _anchor = aAnchor;
+}
 
 inline void Transformable::setPosition(float aX, float aY) {
     setPosition({aX, aY});
@@ -108,6 +121,10 @@ inline void Transformable::setOrigin(const math::Vector2f& origin) {
     _origin                     = origin;
     _transformNeedUpdate        = true;
     _inverseTransformNeedUpdate = true;
+}
+
+inline math::Vector2d Transformable::getAnchor() const {
+    return _anchor;
 }
 
 inline math::Vector2f Transformable::getPosition() const {

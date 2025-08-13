@@ -16,6 +16,30 @@ Transformable::Transformable(AvoidNull<std::unique_ptr<Transform>> aTransform)
     _inverseTransform->setToInverse();
 }
 
+Transformable::Transformable(const Transformable& aOther)
+    : _origin{aOther._origin}
+    , _position{aOther._position}
+    , _rotation{aOther._rotation}
+    , _scale{aOther._scale}
+    , _transform{aOther._transform->clone()}
+    , _inverseTransform{aOther._inverseTransform->clone()}
+    , _transformNeedUpdate{aOther._inverseTransformNeedUpdate}
+    , _inverseTransformNeedUpdate{aOther._inverseTransformNeedUpdate} {}
+
+Transformable& Transformable::operator=(const Transformable& aOther) {
+    if (&aOther != this) {
+        _origin   = aOther._origin;
+        _position = aOther._position;
+        _rotation = aOther._rotation;
+        _scale    = aOther._scale;
+        _transform->setToCopyOf(aOther.getTransform());
+        _inverseTransform->setToCopyOf(aOther.getInverseTransform());
+        _transformNeedUpdate        = aOther._transformNeedUpdate;
+        _inverseTransformNeedUpdate = aOther._inverseTransformNeedUpdate;
+    }
+    return SELF;
+}
+
 const Transform& Transformable::getTransform() const {
     // Recompute the combined transform if needed
     if (_transformNeedUpdate) {

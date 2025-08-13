@@ -10,7 +10,9 @@ set(COMPONENT_NAME "Hobgoblin.UWGA")
 # ===== GATHER SOURCES ======
 
 set(COMPONENT_SOURCES
+    "Source/Sprite.cpp"
     "Source/System.cpp"
+    "Source/Transformable.cpp"
 
     # SFML
     "Source/SFML/Image_impl.cpp"

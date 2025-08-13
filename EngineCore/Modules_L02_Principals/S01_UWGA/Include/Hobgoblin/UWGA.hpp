@@ -14,6 +14,7 @@
 #include <Hobgoblin/UWGA/Render_texture.hpp>
 #include <Hobgoblin/UWGA/Render_window.hpp>
 #include <Hobgoblin/UWGA/Shader.hpp>
+#include <Hobgoblin/UWGA/Sprite.hpp>
 #include <Hobgoblin/UWGA/System.hpp>
 #include <Hobgoblin/UWGA/Texture.hpp>
 #include <Hobgoblin/UWGA/Texture_rect.hpp>
