@@ -1,4 +1,4 @@
-// Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
+// Copyright 2025 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
 #ifndef UHOBGOBLIN_UWGA_SPRITE_BLUEPRINT_HPP
