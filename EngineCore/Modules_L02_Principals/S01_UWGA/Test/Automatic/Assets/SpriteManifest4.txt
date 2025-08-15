@@ -1,0 +1,2 @@
+@enumeration: TILE_0 = 0, TILE_1 = 1, @texture(1024, 1024, BEST_AREA_FIT):
+addSprite(TILE_0, "tile-0.png"), addSprite(TILE_1, "tile-1.png"), addSubsprite(2, 0, "tile-2.png"), addSubsprite("tile-3", 0, "tile-3.png")

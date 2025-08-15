@@ -40,6 +40,10 @@ public:
               PrimitiveType       aPrimitiveType,
               math::Vector2d      aAnchor,
               const RenderStates& aRenderStates) {
+        if (aVertices == nullptr || aVertexCount == 0) {
+            return;
+        }
+
         SFMLVertices sfVertices{aVertices, pztos(aVertexCount)};
 
         assert(aRenderStates.transform == nullptr || &aRenderStates.transform->getSystem() == &_system);
@@ -78,9 +82,6 @@ public:
     }
 
 #if UHOBGOBLIN_FUTURE
-    virtual void draw(const Drawable&     aDrawable,
-                      const RenderStates& aStates = RENDER_STATES_DEFAULT) = 0;
-
     virtual void draw(const VertexBuffer& aVertexBuffer,
                       const RenderStates& aStates = RENDER_STATES_DEFAULT) = 0;
 

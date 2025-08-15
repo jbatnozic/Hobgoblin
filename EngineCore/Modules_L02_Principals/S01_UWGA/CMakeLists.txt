@@ -10,6 +10,10 @@ set(COMPONENT_NAME "Hobgoblin.UWGA")
 # ===== GATHER SOURCES ======
 
 set(COMPONENT_SOURCES
+    "Source/Sprite_attributes.cpp"
+    "Source/Sprite_blueprint.cpp"
+    "Source/Sprite_loader.cpp"
+    "Source/Sprite_manifest_parser.cpp"
     "Source/Sprite.cpp"
     "Source/System.cpp"
     "Source/Texture_packing.cpp"
@@ -26,6 +30,10 @@ set(COMPONENT_SOURCES
     "Source/SFML/Vertex_array_impl.hpp"
     "Source/SFML/View_impl.cpp"
     "Source/SFML/View_impl.hpp"
+
+    # MaxRectsBinPack
+    "Source/MaxRectsBinPack/Max_rects_bin_pack.cpp"
+    "Source/MaxRectsBinPack/Rbp_rect.cpp"
 )
 
 # ===== TARGET SETUP =====

@@ -21,6 +21,7 @@ int main() try {
     HG_ADD_MANUAL_TEST(testRunner, RunTransformInRenderWindowTest);
     HG_ADD_MANUAL_TEST(testRunner, RunTexturedVerticesInRenderWindowTest);
     HG_ADD_MANUAL_TEST(testRunner, RunRenderTextureInRenderWindowTest);
+    HG_ADD_MANUAL_TEST(testRunner, RunSpriteLoaderTest);
 
     testRunner.runTest();
 

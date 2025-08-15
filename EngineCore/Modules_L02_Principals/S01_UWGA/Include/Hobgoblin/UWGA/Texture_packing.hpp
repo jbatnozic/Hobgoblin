@@ -17,24 +17,24 @@ HOBGOBLIN_NAMESPACE_BEGIN
 namespace uwga {
 
 enum class TexturePackingHeuristic {
-	BestShortSideFit,
-	BestLongSideFit,
-	BestAreaFit,
-	BottomLeftRule,
-	ContactPointRule
+    BEST_SHORT_SIDE_FIT,
+    BEST_LONG_SIDE_FIT,
+    BEST_AREA_FIT,
+    BOTTOM_LEFT_RULE,
+    CONTACT_POINT_RULE
 };
 
 class TexturePackingError : public TracedRuntimeError {
 public:
-	using TracedRuntimeError::TracedRuntimeError;
+    using TracedRuntimeError::TracedRuntimeError;
 };
 
-std::vector<TextureRect> PackTexture(Texture& texture, 
-									 const std::vector<Image*>& images,
-                                     TexturePackingHeuristic heuristic, 
-									 float* occupancy = nullptr);
+std::vector<TextureRect> PackTexture(Texture&                   aTexture,
+                                     const std::vector<Image*>& aImages,
+                                     TexturePackingHeuristic    aHeuristic,
+                                     float*                     aOccupancy = nullptr);
 
-} // namespace gr
+} // namespace uwga
 HOBGOBLIN_NAMESPACE_END
 
 #include <Hobgoblin/Private/Pmacro_undef.hpp>

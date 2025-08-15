@@ -1,0 +1,15 @@
+// Normal human comment
+
+// Texture 1
+@enumeration: TILE_0 = 0,
+@texture(256, 256, BEST_SHORT_SIDE_FIT):
+
+    addSprite(TILE_0, "tile-0.png"),
+    addSubsprite(2, 0, "tile-2.png"),
+
+// Texture 2
+@enumeration: TILE_1 = 1,
+@texture(256, 256, BEST_LONG_SIDE_FIT):
+
+    addSprite(TILE_1, "tile-1.png"),
+    addSubsprite("tile-3", 0, "tile-3.png"),

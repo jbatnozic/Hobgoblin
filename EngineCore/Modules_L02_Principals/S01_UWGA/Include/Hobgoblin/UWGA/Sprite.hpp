@@ -1,4 +1,4 @@
-// Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
+// Copyright 2025 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
 #ifndef UHOBGOBLIN_UWGA_SPRITE_HPP
@@ -23,7 +23,8 @@ namespace uwga {
 
 class System;
 
-//! TODO(add description)
+//! Drawable representation of a Texture, with its own transformations, color, etc.
+//! Using this class allows us to easily display a Texture (or a part of it) on a Canvas.
 class Sprite
     : public Drawable
     , public Transformable {
@@ -40,7 +41,7 @@ public:
     Sprite(const System& aSystem, const Texture* aTexture, const Subsprite& aSubsprite);
 
     //! Constructs a sprite with one or more subsprite from a collection of
-    //! texture rects.
+    //! `Subsprite`s, or objects implicitly convertible to `Subsprite`s (such as `TextureRect`s).
     template <class taBeginIter, class taEndIter>
     Sprite(const System&       aSystem,
            const Texture*      aTexture,

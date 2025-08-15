@@ -98,6 +98,34 @@ const Texture* Sprite::getTexture() const {
 // MARK: SUBSPRITES                                                      //
 ///////////////////////////////////////////////////////////////////////////
 
+Sprite::Subsprite::Subsprite(TextureRect aTextureRect)
+    : _textureRect{aTextureRect} {
+    // World positions
+    {
+        const auto bounds = getLocalBounds();
+
+        _vertices[0].position = math::Vector2f{0.f, 0.f};
+        _vertices[1].position = math::Vector2f{0.f, bounds.h};
+        _vertices[2].position = math::Vector2f{bounds.w, bounds.h};
+        _vertices[3].position = math::Vector2f{bounds.w, 0.f};
+        _vertices[4].position = _vertices[0].position;
+    }
+
+    // Texture positions
+    {
+        const float left   = static_cast<float>(aTextureRect.getLeft());
+        const float right  = static_cast<float>(aTextureRect.getRight());
+        const float top    = static_cast<float>(aTextureRect.getTop());
+        const float bottom = static_cast<float>(aTextureRect.getBottom());
+
+        _vertices[0].texCoords = math::Vector2f{left, top};
+        _vertices[1].texCoords = math::Vector2f{left, bottom};
+        _vertices[2].texCoords = math::Vector2f{right, bottom};
+        _vertices[3].texCoords = math::Vector2f{right, top};
+        _vertices[4].texCoords = _vertices[0].texCoords;
+    }
+}
+
 math::Rectangle<float> Sprite::Subsprite::getLocalBounds() const {
     // clang-format off
     return {
@@ -259,7 +287,7 @@ void Sprite::drawOnto(Canvas& aCanvas, const RenderStates& aRenderStates) const 
 
     aCanvas.draw(vertices.data(),
                  stopz(Subsprite::VERTEX_COUNT),
-                 PrimitiveType::TRIANGLES,
+                 PrimitiveType::TRIANGLE_STRIP,
                  getAnchor(),
                  renderStates);
 }

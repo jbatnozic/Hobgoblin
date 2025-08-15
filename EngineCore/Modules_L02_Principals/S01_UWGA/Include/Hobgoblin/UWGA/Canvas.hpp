@@ -15,6 +15,8 @@
 #include <Hobgoblin/UWGA/Vertex.hpp>
 #include <Hobgoblin/UWGA/View.hpp>
 
+#include <type_traits>
+
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
 HOBGOBLIN_NAMESPACE_BEGIN
@@ -135,16 +137,23 @@ public:
     //! \param aColor Fill color to use to clear the canvas.
     virtual void clear(Color aColor = COLOR_BLACK) = 0;
 
+    //! Draw an array of vertices onto the canvas.
+    //! \note does nothing if `aVertices` is NULL or `aVertexCount` is 0.
     virtual void draw(const Vertex*       aVertices,
                       PZInteger           aVertexCount,
                       PrimitiveType       aPrimitiveType,
                       math::Vector2d      aAnchor,
                       const RenderStates& aStates = RENDER_STATES_DEFAULT) = 0;
 
-#if UHOBGOBLIN_FUTURE
-    virtual void draw(const Drawable&     aDrawable,
-                      const RenderStates& aStates = RENDER_STATES_DEFAULT) = 0;
+    //! Helper function to draw any class implementing the `Drawable` interface onto the canvas,
+    //! in the same way as you'd draw an array of vertices (provided for consitency).
+    template <class taDrawable,
+              T_ENABLE_IF(std::is_base_of_v<Drawable, std::remove_reference_t<taDrawable>>)>
+    void draw(const taDrawable& aDrawable, const RenderStates& aStates = RENDER_STATES_DEFAULT) {
+        aDrawable.drawOnto(SELF, aStates);
+    }
 
+#if UHOBGOBLIN_FUTURE
     virtual void draw(const VertexBuffer& aVertexBuffer,
                       const RenderStates& aStates = RENDER_STATES_DEFAULT) = 0;
 
