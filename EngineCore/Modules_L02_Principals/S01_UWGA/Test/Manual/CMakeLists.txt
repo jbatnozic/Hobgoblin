@@ -4,6 +4,7 @@
 project("Hobgoblin.UWGA.ManualTest")
 
 add_executable(${PROJECT_NAME}
+    "Circleshape_in_renderwindow_test.cpp"
     "Empty_renderwindow_test.cpp"
     "Rendertexture_in_renderwindow_test.cpp"
     "Sprite_loader_test.cpp"

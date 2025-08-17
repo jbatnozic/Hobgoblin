@@ -15,10 +15,15 @@ namespace uwga {
 class Canvas;
 class RenderStates;
 
-class Drawable : virtual public Element {
+class Drawable {
 public:
     virtual ~Drawable() = default;
 
+    //! TODO(add description)
+    //!
+    //! \note if the implementation of the Drawable cares which System the Canvas belongs to, it
+    //!       should check it itself at the start of this function (recommended to use the standard
+    //!       `assert` macro). The Canvas will NOT check it.
     virtual void drawOnto(Canvas&             aCanvas,
                           const RenderStates& aRenderStates = RENDER_STATES_DEFAULT) const = 0;
 };

@@ -10,6 +10,8 @@ set(COMPONENT_NAME "Hobgoblin.UWGA")
 # ===== GATHER SOURCES ======
 
 set(COMPONENT_SOURCES
+    "Source/Circle_shape.cpp"
+    "Source/Shape.cpp"
     "Source/Sprite_attributes.cpp"
     "Source/Sprite_blueprint.cpp"
     "Source/Sprite_loader.cpp"
@@ -18,6 +20,7 @@ set(COMPONENT_SOURCES
     "Source/System.cpp"
     "Source/Texture_packing.cpp"
     "Source/Transformable.cpp"
+    "Source/Vertex_array.cpp"
 
     # SFML
     "Source/SFML/Image_impl.cpp"
@@ -26,8 +29,6 @@ set(COMPONENT_SOURCES
     "Source/SFML/Render_window_impl.hpp"
     "Source/SFML/System_impl.hpp"
     "Source/SFML/Transform_impl.cpp"
-    "Source/SFML/Vertex_array_impl.cpp"
-    "Source/SFML/Vertex_array_impl.hpp"
     "Source/SFML/View_impl.cpp"
     "Source/SFML/View_impl.hpp"
 

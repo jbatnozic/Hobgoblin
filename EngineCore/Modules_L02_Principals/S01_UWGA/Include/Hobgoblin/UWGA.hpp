@@ -5,6 +5,7 @@
 
 #include <Hobgoblin/UWGA/Blend_mode.hpp>
 #include <Hobgoblin/UWGA/Canvas.hpp>
+#include <Hobgoblin/UWGA/Circle_shape.hpp>
 #include <Hobgoblin/UWGA/Color.hpp>
 #include <Hobgoblin/UWGA/Drawable.hpp>
 #include <Hobgoblin/UWGA/Element.hpp>
@@ -14,6 +15,7 @@
 #include <Hobgoblin/UWGA/Render_texture.hpp>
 #include <Hobgoblin/UWGA/Render_window.hpp>
 #include <Hobgoblin/UWGA/Shader.hpp>
+#include <Hobgoblin/UWGA/Shape.hpp>
 #include <Hobgoblin/UWGA/Sprite.hpp>
 #include <Hobgoblin/UWGA/Sprite_attributes.hpp>
 #include <Hobgoblin/UWGA/Sprite_blueprint.hpp>

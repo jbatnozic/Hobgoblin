@@ -26,7 +26,6 @@ class RenderWindow;
 class Transform;
 class Texture;
 class RenderTexture;
-class VertexArray;
 class View;
 
 class System {
@@ -194,12 +193,6 @@ public:
     ///////////////////////////////////////////////////////////////////////////
 
     virtual std::unique_ptr<Transform> createTransform() const = 0;
-
-    ///////////////////////////////////////////////////////////////////////////
-    // MARK: VertexArray                                                     //
-    ///////////////////////////////////////////////////////////////////////////
-
-    virtual std::unique_ptr<VertexArray> createVertexArray(PZInteger aSize) const = 0;
 };
 
 //! Create a new rendering system.

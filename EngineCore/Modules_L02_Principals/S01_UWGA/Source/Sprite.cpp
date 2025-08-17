@@ -8,6 +8,8 @@
 
 #include <Hobgoblin/HGExcept.hpp>
 
+#include <cassert>
+
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
 HOBGOBLIN_NAMESPACE_BEGIN
@@ -264,6 +266,8 @@ bool Sprite::areAllSubspritesOfSameSize() const {
 ///////////////////////////////////////////////////////////////////////////
 
 void Sprite::drawOnto(Canvas& aCanvas, const RenderStates& aRenderStates) const {
+    assert(&aCanvas.getSystem() == &getSystem());
+
     if (subsprites.empty() || _texture == nullptr) {
         return;
     }

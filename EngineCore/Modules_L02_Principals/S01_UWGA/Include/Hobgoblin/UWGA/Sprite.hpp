@@ -26,7 +26,8 @@ class System;
 //! Drawable representation of a Texture, with its own transformations, color, etc.
 //! Using this class allows us to easily display a Texture (or a part of it) on a Canvas.
 class Sprite
-    : public Drawable
+    : virtual public Element
+    , public Drawable
     , public Transformable {
 public:
     class Subsprite;

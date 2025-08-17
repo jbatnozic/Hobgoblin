@@ -11,7 +11,6 @@
 #include "Render_window_impl.hpp"
 #include "Texture_impl.hpp"
 #include "Transform_impl.hpp"
-#include "Vertex_array_impl.hpp"
 #include "View_impl.hpp"
 
 #include <SFML/Graphics/Texture.hpp>
@@ -161,13 +160,6 @@ public:
 
     std::unique_ptr<Transform> createTransform() const override {
         return std::make_unique<SFMLTransformImpl>(SELF);
-    }
-
-    // MARK: VertexArray
-
-    std::unique_ptr<VertexArray> createVertexArray(PZInteger aSize) const override {
-        // return std::make_unique
-        return {};
     }
 };
 
