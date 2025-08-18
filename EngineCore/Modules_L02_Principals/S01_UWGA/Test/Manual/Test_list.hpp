@@ -10,3 +10,4 @@ void RunTransformInRenderWindowTest(int, const char**);
 void RunTexturedVerticesInRenderWindowTest(int, const char**);
 void RunRenderTextureInRenderWindowTest(int, const char**);
 void RunSpriteLoaderTest(int, const char**);
+void RunRectangleShapeInRenderWindowTest(int, const char**);

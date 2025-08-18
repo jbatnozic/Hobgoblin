@@ -11,6 +11,7 @@ set(COMPONENT_NAME "Hobgoblin.UWGA")
 
 set(COMPONENT_SOURCES
     "Source/Circle_shape.cpp"
+    "Source/Rectangle_shape.cpp"
     "Source/Shape.cpp"
     "Source/Sprite_attributes.cpp"
     "Source/Sprite_blueprint.cpp"
