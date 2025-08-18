@@ -252,6 +252,21 @@ void Shape::drawOnto(Canvas& aCanvas, const RenderStates& aRenderStates) const {
     }
 }
 
+// MARK: Copying
+
+void Shape::_copyShapeDataFrom(const Shape& aOther) {
+    static_cast<Transformable&>(SELF) = static_cast<const Transformable&>(aOther);
+
+    setTexture(aOther.getTexture());
+    setTextureRect(aOther.getTextureRect());
+    setFillColor(aOther.getFillColor());
+    setOutlineColor(aOther.getOutlineColor());
+    setOutlineThickness(aOther.getOutlineThickness());
+    setMiterLimit(aOther.getMiterLimit());
+
+    _pointsDirty = true;
+}
+
 // MARK: Updating
 
 void Shape::_update() const {

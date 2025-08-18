@@ -283,6 +283,11 @@ protected:
     //! getPointCount or getPoint is different).
     mutable bool _pointsDirty = true;
 
+    //! Helper function to use in implementations of copy constructors/assignment operators of
+    //! derived classes. After calling this function, all you need to do is copy over the data
+    //! that's specific to the derived class.
+    void _copyShapeDataFrom(const Shape& aOther);
+
 private:
     void _update() const;
     void _updateIfNeeded() const;

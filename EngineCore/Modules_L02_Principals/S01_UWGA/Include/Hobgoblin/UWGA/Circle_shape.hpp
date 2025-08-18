@@ -49,6 +49,18 @@ public:
     //! \param pointCount Number of points composing the circle
     explicit CircleShape(const System& aSystem, float aRadius = 0, PZInteger aPointCount = 32);
 
+    //! Copy constructor.
+    CircleShape(const CircleShape& aOther);
+
+    //! Copy assignment.
+    CircleShape& operator=(const CircleShape& aOther);
+
+    //! Move constructor.
+    CircleShape(CircleShape&& aOther) = default;
+
+    //! Move assignment.
+    CircleShape& operator=(CircleShape&& aOther) = default;
+
     //! \brief Set the radius of the circle
     //!
     //! \param radius New radius of the circle

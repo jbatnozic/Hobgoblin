@@ -17,7 +17,8 @@ Transformable::Transformable(AvoidNull<std::unique_ptr<Transform>> aTransform)
 }
 
 Transformable::Transformable(const Transformable& aOther)
-    : _origin{aOther._origin}
+    : _anchor{aOther._anchor}
+    , _origin{aOther._origin}
     , _position{aOther._position}
     , _rotation{aOther._rotation}
     , _scale{aOther._scale}
@@ -28,6 +29,7 @@ Transformable::Transformable(const Transformable& aOther)
 
 Transformable& Transformable::operator=(const Transformable& aOther) {
     if (&aOther != this) {
+        _anchor   = aOther._anchor;
         _origin   = aOther._origin;
         _position = aOther._position;
         _rotation = aOther._rotation;

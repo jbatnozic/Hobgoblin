@@ -41,6 +41,24 @@ CircleShape::CircleShape(const System& aSystem, float aRadius, PZInteger aPointC
     , _radius{aRadius}
     , _pointCount{aPointCount} {}
 
+CircleShape::CircleShape(const CircleShape& aOther)
+    : Shape{aOther.getSystem()}
+    , _radius{aOther._radius}
+    , _pointCount{aOther._pointCount} //
+{
+    _copyShapeDataFrom(aOther);
+}
+
+CircleShape& CircleShape::operator=(const CircleShape& aOther) {
+    if (this != &aOther) {
+        _copyShapeDataFrom(aOther);
+
+        setRadius(aOther.getRadius());
+        setPointCount(aOther.getPointCount());
+    }
+    return SELF;
+}
+
 void CircleShape::setRadius(float aRadius) {
     _radius      = aRadius;
     _pointsDirty = true;
