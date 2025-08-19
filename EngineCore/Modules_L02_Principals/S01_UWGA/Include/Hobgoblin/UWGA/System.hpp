@@ -7,6 +7,7 @@
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/Math/Vector.hpp>
+#include <Hobgoblin/UWGA/Builtin_fonts.hpp>
 #include <Hobgoblin/UWGA/Color.hpp>
 #include <Hobgoblin/UWGA/Texture_rect.hpp>
 #include <Hobgoblin/UWGA/Window_style.hpp>
@@ -21,6 +22,7 @@
 HOBGOBLIN_NAMESPACE_BEGIN
 namespace uwga {
 
+class Font;
 class Image;
 class RenderWindow;
 class Transform;
@@ -193,6 +195,51 @@ public:
     ///////////////////////////////////////////////////////////////////////////
 
     virtual std::unique_ptr<Transform> createTransform() const = 0;
+
+    ///////////////////////////////////////////////////////////////////////////
+    // MARK: Font                                                            //
+    ///////////////////////////////////////////////////////////////////////////
+
+    //! Create an empty font (it must be reset before it can be used).
+    virtual std::unique_ptr<Font> createFont() const = 0;
+
+    //! Create a font and load its data from a file on disk.
+    //!
+    //! The supported font formats are: TrueType, Type 1, CFF,
+    //! OpenType, SFNT, X11 PCF, Windows FNT, BDF, PFR and Type 42.
+    //! Note that this function knows nothing about the standard
+    //! fonts installed on the user's system, thus you can't
+    //! load them directly.
+    //!
+    //! \warning we cannot preload all the font data in this
+    //! function, so the file has to remain accessible until
+    //! the sf::Font object loads a new font or is destroyed.
+    //!
+    //! \throws on failure
+    virtual std::unique_ptr<Font> createFont(const std::filesystem::path& aFilePath) const = 0;
+
+    //! Create a font and load its data from a file in memory.
+    //!
+    //! The supported font formats are: TrueType, Type 1, CFF,
+    //! OpenType, SFNT, X11 PCF, Windows FNT, BDF, PFR and Type 42.
+    //! Note that this function knows nothing about the standard
+    //! fonts installed on the user's system, thus you can't
+    //! load them directly.
+    //!
+    //! \warning we cannot preload all the font data in this
+    //! function, so the file has to remain accessible until
+    //! the sf::Font object loads a new font or is destroyed.
+    //!
+    //! \throws on failure
+    virtual std::unique_ptr<Font> createFont(const void* aData, PZInteger aByteCount) const = 0;
+
+    //! Create a copy of one of the builtin fonts and return it.
+    //! \note it's recommended to use `getBuiltinFont` instead, to share the font object between
+    //!       components.
+    virtual std::unique_ptr<Font> createBuiltinFont(BuiltInFont aFontChoice) const = 0;
+
+    //! Get a reference to one of the builtin font objects that's managed by the system.
+    virtual const Font& getBuiltinFont(BuiltInFont aFontChoice) const = 0;
 };
 
 //! Create a new rendering system.

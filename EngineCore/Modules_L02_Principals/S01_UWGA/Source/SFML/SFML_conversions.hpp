@@ -12,11 +12,10 @@
 #include <Hobgoblin/Math/Vector.hpp>
 #include <Hobgoblin/UWGA/Blend_mode.hpp>
 #include <Hobgoblin/UWGA/Color.hpp>
-// #include <Hobgoblin/UWGA/Glyph.hpp>
+#include <Hobgoblin/UWGA/Glyph.hpp>
 #include <Hobgoblin/UWGA/Primitive_type.hpp>
 // #include <Hobgoblin/UWGA/Render_states.hpp>
 // #include <Hobgoblin/UWGA/Shader.hpp>
-// #include <Hobgoblin/UWGA/Sprite.hpp>
 #include <Hobgoblin/UWGA/Texture.hpp>
 // #include <Hobgoblin/UWGA/Texture_rect.hpp>
 // #include <Hobgoblin/UWGA/Vertex_buffer.hpp>
@@ -36,7 +35,6 @@
 #include <SFML/Graphics/RenderStates.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/Shader.hpp>
-#include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/Graphics/VertexBuffer.hpp>
 #include <SFML/Graphics/View.hpp>
@@ -109,8 +107,8 @@ sf::ContextSettings ToSf(const ContextSettings& aSettings);
 
 // Glyph
 
-// Glyph ToHg(const sf::Glyph& aGlyph);
-// sf::Glyph ToSf(const Glyph& aGlyph);
+Glyph     ToHg(const sf::Glyph& aGlyph);
+sf::Glyph ToSf(const Glyph& aGlyph);
 
 // PrimitiveType
 
@@ -120,10 +118,6 @@ sf::PrimitiveType ToSf(PrimitiveType aType);
 // RenderStates
 
 // sf::RenderStates ToSf(const RenderStates& aRenderStates);
-
-// Sprite
-
-// const sf::Sprite& ToSf(const Sprite& aSprite);
 
 // Texture
 
@@ -310,32 +304,28 @@ inline sf::Color ToSf(Color aColor) {
 
 // Glyph
 
-// inline
-// Glyph ToHg(const sf::Glyph& aGlyph) {
-//     return {
-//         aGlyph.advance,
-//         aGlyph.lsbDelta,
-//         aGlyph.rsbDelta,
-//         ToHg(aGlyph.bounds),
-//         TextureRect{
-//             static_cast<std::uint16_t>(aGlyph.textureRect.left),
-//             static_cast<std::uint16_t>(aGlyph.textureRect.top),
-//             static_cast<std::uint16_t>(aGlyph.textureRect.width),
-//             static_cast<std::uint16_t>(aGlyph.textureRect.height)
-//         }
-//     };
-// }
+inline Glyph ToHg(const sf::Glyph& aGlyph) {
+    return {
+        aGlyph.advance,
+        aGlyph.lsbDelta,
+        aGlyph.rsbDelta,
+        ToHg(aGlyph.bounds),
+        TextureRect{static_cast<std::uint16_t>(aGlyph.textureRect.left),
+                    static_cast<std::uint16_t>(aGlyph.textureRect.top),
+                    static_cast<std::uint16_t>(aGlyph.textureRect.width),
+                    static_cast<std::uint16_t>(aGlyph.textureRect.height)}
+    };
+}
 
-// inline
-// sf::Glyph ToSf(const Glyph& aGlyph) {
-//     sf::Glyph result;
-//     result.advance  = aGlyph.advance;
-//     result.lsbDelta = aGlyph.lsbDelta;
-//     result.rsbDelta = aGlyph.rsbDelta;
-//     result.bounds   = ToSf(aGlyph.bounds);
-//     result.textureRect = ConvertTextureRect(aGlyph.textureRect);
-//     return result;
-// }
+inline sf::Glyph ToSf(const Glyph& aGlyph) {
+    sf::Glyph result;
+    result.advance     = aGlyph.advance;
+    result.lsbDelta    = aGlyph.lsbDelta;
+    result.rsbDelta    = aGlyph.rsbDelta;
+    result.bounds      = ToSf(aGlyph.bounds);
+    result.textureRect = ConvertTextureRect(aGlyph.textureRect);
+    return result;
+}
 
 // PrimitiveType
 
@@ -387,14 +377,6 @@ sf::PrimitiveType ToSf(PrimitiveType aType) {
 //                                                      : nullptr;
 
 //     return rs;
-// }
-
-// Sprite
-
-// inline
-// const sf::Sprite& ToSf(const Sprite& aSprite) {
-//     const auto& sfSprite = detail::GraphicsImplAccessor::getImplOf<sf::Sprite>(aSprite);
-//     return sfSprite;
 // }
 
 // Texture

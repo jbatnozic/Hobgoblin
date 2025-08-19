@@ -4,11 +4,14 @@
 #pragma once
 
 #include <Hobgoblin/UWGA/Blend_mode.hpp>
+#include <Hobgoblin/UWGA/Builtin_fonts.hpp>
 #include <Hobgoblin/UWGA/Canvas.hpp>
 #include <Hobgoblin/UWGA/Circle_shape.hpp>
 #include <Hobgoblin/UWGA/Color.hpp>
 #include <Hobgoblin/UWGA/Drawable.hpp>
 #include <Hobgoblin/UWGA/Element.hpp>
+#include <Hobgoblin/UWGA/Font.hpp>
+#include <Hobgoblin/UWGA/Glyph.hpp>
 #include <Hobgoblin/UWGA/Image.hpp>
 #include <Hobgoblin/UWGA/Primitive_type.hpp>
 #include <Hobgoblin/UWGA/Rectangle_shape.hpp>

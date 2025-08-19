@@ -6,6 +6,7 @@
 
 #include <Hobgoblin/UWGA/System.hpp>
 
+#include "Font_impl.hpp"
 #include "Image_impl.hpp"
 #include "Render_texture_impl.hpp"
 #include "Render_window_impl.hpp"
@@ -13,8 +14,11 @@
 #include "Transform_impl.hpp"
 #include "View_impl.hpp"
 
+#include "../BuiltinFonts/Helper.hpp"
+
 #include <SFML/Graphics/Texture.hpp>
 
+#include <array>
 #include <cassert>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
@@ -161,6 +165,50 @@ public:
     std::unique_ptr<Transform> createTransform() const override {
         return std::make_unique<SFMLTransformImpl>(SELF);
     }
+
+    // MARK: Font
+
+    std::unique_ptr<Font> createFont() const override {
+        return std::make_unique<SFMLFontImpl>(SELF);
+    }
+
+    std::unique_ptr<Font> createFont(const std::filesystem::path& aFilePath) const override {
+        auto font = std::make_unique<SFMLFontImpl>(SELF);
+        ;
+        font->reset(aFilePath);
+        return font;
+    }
+
+    std::unique_ptr<Font> createFont(const void* aData, PZInteger aByteCount) const override {
+        auto font = std::make_unique<SFMLFontImpl>(SELF);
+        font->reset(aData, aByteCount);
+        return font;
+    }
+
+    std::unique_ptr<Font> createBuiltinFont(BuiltInFont aFontChoice) const override {
+        const void* data      = nullptr;
+        PZInteger   byteCount = 0;
+
+        GetBuiltinFontData(aFontChoice, &data, &byteCount);
+        HG_HARD_ASSERT(data != nullptr && byteCount > 0);
+
+        auto font = std::make_unique<SFMLFontImpl>(SELF);
+        font->reset(data, byteCount);
+        return font;
+    }
+
+    const Font& getBuiltinFont(BuiltInFont aFontChoice) const override {
+        auto& fontPtr = _cachedBuiltinFonts.at((std::size_t)aFontChoice);
+
+        if (!fontPtr) {
+            fontPtr = createBuiltinFont(aFontChoice);
+        }
+
+        return *fontPtr;
+    }
+
+private:
+    mutable std::array<std::unique_ptr<Font>, (std::size_t)BuiltInFont::COUNT> _cachedBuiltinFonts;
 };
 
 } // namespace uwga

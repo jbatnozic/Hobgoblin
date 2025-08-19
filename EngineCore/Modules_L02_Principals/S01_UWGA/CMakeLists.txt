@@ -23,7 +23,16 @@ set(COMPONENT_SOURCES
     "Source/Transformable.cpp"
     "Source/Vertex_array.cpp"
 
+    # BuiltinFonts
+    "Source/BuiltinFonts/Font_cmu_serif_roman.cpp"
+    "Source/BuiltinFonts/Font_cmu_typewriter_text.cpp"
+    "Source/BuiltinFonts/Font_ebgaramond12_regular.cpp"
+    "Source/BuiltinFonts/Font_inconsolata_regular.cpp"
+    "Source/BuiltinFonts/Font_titillium_webregular.cpp"
+
     # SFML
+    "Source/SFML/Font_impl.cpp"
+    "Source/SFML/Font_impl.hpp"
     "Source/SFML/Image_impl.cpp"
     "Source/SFML/Image_impl.hpp"
     "Source/SFML/Render_window_impl.cpp"
