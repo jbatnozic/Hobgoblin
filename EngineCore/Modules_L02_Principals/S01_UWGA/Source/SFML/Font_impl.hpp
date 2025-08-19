@@ -1,6 +1,9 @@
 // Copyright 2025 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
+#ifndef UHOBGOBLIN_UWGA_SFML_FONT_IMPL_HPP
+#define UHOBGOBLIN_UWGA_SFML_FONT_IMPL_HPP
+
 #include <Hobgoblin/UWGA/Font.hpp>
 
 #include <SFML/Graphics/Font.hpp>
@@ -15,6 +18,8 @@ public:
     SFMLFontImpl(const System& aSystem);
 
     const System& getSystem() const override;
+
+    const sf::Font& getUnderlyingFont() const;
 
     ///////////////////////////////////////////////////////////////////////////
     // MARK: RESETING                                                        //
@@ -73,3 +78,5 @@ private:
 HOBGOBLIN_NAMESPACE_END
 
 #include <Hobgoblin/Private/Pmacro_undef.hpp>
+
+#endif // !UHOBGOBLIN_UWGA_SFML_FONT_IMPL_HPP

@@ -10,6 +10,7 @@ add_executable(${PROJECT_NAME}
     "Rendertexture_in_renderwindow_test.cpp"
     "Sprite_loader_test.cpp"
     "Square_in_renderwindow_test.cpp"
+    "Text_in_renderwindow_test.cpp"
     "Transform_in_renderwindow_test.cpp"
     "Textured_vertices_in_renderwindow_test.cpp"
 

@@ -9,6 +9,7 @@
 #include <Hobgoblin/Math/Vector.hpp>
 #include <Hobgoblin/UWGA/Builtin_fonts.hpp>
 #include <Hobgoblin/UWGA/Color.hpp>
+#include <Hobgoblin/UWGA/Text.hpp>
 #include <Hobgoblin/UWGA/Texture_rect.hpp>
 #include <Hobgoblin/UWGA/Window_style.hpp>
 #include <Hobgoblin/Unicode.hpp>
@@ -240,6 +241,25 @@ public:
 
     //! Get a reference to one of the builtin font objects that's managed by the system.
     virtual const Font& getBuiltinFont(BuiltInFont aFontChoice) const = 0;
+
+    ///////////////////////////////////////////////////////////////////////////
+    // MARK: Text                                                            //
+    ///////////////////////////////////////////////////////////////////////////
+
+    //! Create a text with the given font but with an empty string.
+    virtual std::unique_ptr<Text> createText(const Font& aFont) const = 0;
+
+    //! Create a text with the given font, string and character size.
+    virtual std::unique_ptr<Text> createText(
+        const Font&        aFont,
+        const std::string& aString,
+        PZInteger          aCharacterSize = Text::DEFAULT_CHARACTER_SIZE) const = 0;
+
+    //! Create a text with the given font, string and character size.
+    virtual std::unique_ptr<Text> createText(
+        const Font&          aFont,
+        const UnicodeString& aString,
+        PZInteger            aCharacterSize = Text::DEFAULT_CHARACTER_SIZE) const = 0;
 };
 
 //! Create a new rendering system.

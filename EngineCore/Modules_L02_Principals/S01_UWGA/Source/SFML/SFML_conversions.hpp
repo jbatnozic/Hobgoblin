@@ -1,8 +1,8 @@
 // Copyright 2025 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#ifndef HOBGOBLIN_UGE_SFML_CONVERSIONS_HPP
-#define HOBGOBLIN_UGE_SFML_CONVERSIONS_HPP
+#ifndef HOBGOBLIN_UWGA_SFML_CONVERSIONS_HPP
+#define HOBGOBLIN_UWGA_SFML_CONVERSIONS_HPP
 
 // Hobgoblin
 
@@ -473,4 +473,4 @@ HOBGOBLIN_NAMESPACE_END
 
 #include <Hobgoblin/Private/Pmacro_undef.hpp>
 
-#endif // !HOBGOBLIN_UGE_SFML_CONVERSIONS_HPP
+#endif // !HOBGOBLIN_UWGA_SFML_CONVERSIONS_HPP

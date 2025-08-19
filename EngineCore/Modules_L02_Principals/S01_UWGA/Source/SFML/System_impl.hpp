@@ -10,6 +10,7 @@
 #include "Image_impl.hpp"
 #include "Render_texture_impl.hpp"
 #include "Render_window_impl.hpp"
+#include "Text_impl.hpp"
 #include "Texture_impl.hpp"
 #include "Transform_impl.hpp"
 #include "View_impl.hpp"
@@ -205,6 +206,34 @@ public:
         }
 
         return *fontPtr;
+    }
+
+    // MARK: Text
+
+    std::unique_ptr<Text> createText(const Font& aFont) const override {
+        auto text = std::make_unique<SFMLTextImpl>(SELF);
+        text->setFont(aFont);
+        return text;
+    }
+
+    std::unique_ptr<Text> createText(const Font&        aFont,
+                                     const std::string& aString,
+                                     PZInteger          aCharacterSize) const override {
+        auto text = std::make_unique<SFMLTextImpl>(SELF);
+        text->setFont(aFont);
+        text->setString(aString);
+        text->setCharacterSize(aCharacterSize);
+        return text;
+    }
+
+    std::unique_ptr<Text> createText(const Font&          aFont,
+                                     const UnicodeString& aString,
+                                     PZInteger            aCharacterSize) const override {
+        auto text = std::make_unique<SFMLTextImpl>(SELF);
+        text->setFont(aFont);
+        text->setString(aString);
+        text->setCharacterSize(aCharacterSize);
+        return text;
     }
 
 private:

@@ -28,6 +28,8 @@
 
 #include "Font_impl.hpp"
 
+#include <Hobgoblin/UWGA/Font.hpp>
+
 #include "SFML_conversions.hpp"
 #include "SFML_err.hpp"
 
@@ -41,6 +43,10 @@ SFMLFontImpl::SFMLFontImpl(const System& aSystem)
 
 const System& SFMLFontImpl::getSystem() const {
     return _system;
+}
+
+const sf::Font& SFMLFontImpl::getUnderlyingFont() const {
+    return _font;
 }
 
 ///////////////////////////////////////////////////////////////////////////

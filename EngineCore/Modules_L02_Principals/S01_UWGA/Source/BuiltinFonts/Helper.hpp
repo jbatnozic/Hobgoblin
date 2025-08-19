@@ -26,27 +26,27 @@ inline void GetBuiltinFontData(BuiltInFont aFontChoice, const void** aData, PZIn
     case BuiltInFont::COMPUTER_MODERN_SERIF_ROMAN:
         (*aData)      = &UHOBGOBLIN_UWGA_cmu_serif_roman_ttf;
         (*aByteCount) = ToPz(UHOBGOBLIN_UWGA_cmu_serif_roman_ttf_len);
-        break;
+        return;
 
     case BuiltInFont::COMPUTER_MODERN_TYPEWRITER_TEXT:
         (*aData)      = &UHOBGOBLIN_UWGA_cmuntt_ttf;
         (*aByteCount) = ToPz(UHOBGOBLIN_UWGA_cmuntt_ttf_len);
-        break;
+        return;
 
     case BuiltInFont::EB_GARAMOND_12_REGULAR:
         (*aData)      = &UHOBGOBLIN_UWGA_EBGaramond12_Regular_ttf;
         (*aByteCount) = ToPz(UHOBGOBLIN_UWGA_EBGaramond12_Regular_ttf_len);
-        break;
+        return;
 
     case BuiltInFont::INCONSOLATA_REGULAR:
         (*aData)      = &UHOBGOBLIN_UWGA_Inconsolata_Regular_ttf;
         (*aByteCount) = ToPz(UHOBGOBLIN_UWGA_Inconsolata_Regular_ttf_len);
-        break;
+        return;
 
     case BuiltInFont::TITILLIUM_REGULAR:
         (*aData)      = &UHOBGOBLIN_UWGA_TitilliumWeb_Regular_ttf;
         (*aByteCount) = ToPz(UHOBGOBLIN_UWGA_TitilliumWeb_Regular_ttf_len);
-        break;
+        return;
 
     default:
         break;
