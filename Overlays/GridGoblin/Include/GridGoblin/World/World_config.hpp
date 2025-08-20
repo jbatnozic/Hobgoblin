@@ -112,6 +112,10 @@ struct WorldConfig {
     static const WorldConfig& validate(const WorldConfig& aConfig) {
         return validate(const_cast<WorldConfig&>(aConfig));
     }
+
+    static void saveToFile(const WorldConfig& aConfig, const std::filesystem::path& aFilePath);
+
+    static WorldConfig loadFromFile(const std::filesystem::path& aFilePath);
 };
 
 } // namespace gridgoblin

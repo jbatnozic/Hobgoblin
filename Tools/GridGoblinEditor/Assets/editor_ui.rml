@@ -1,0 +1,46 @@
+<rml>
+    <head>
+        <link type="text/css" href="editor_ui.rcss"/>
+        <link type="text/css" href="scroll_bar.rcss"/>
+        <title>Window</title>
+        <style>
+            body
+            {
+                width: 300dp;
+                height: 600dp;
+
+                margin: auto;
+            }
+        </style>
+    </head>
+    <body class="window">
+        <div id="title-bar">
+            <handle move_target="#document">
+                <span id="title">Cells</span>
+            </handle>
+        </div>
+
+        <!-- WINDOW INTERIOR -->
+        <div id="window-interior-holder">
+
+            <!-- DEFINITION LIST -->
+            <div id="definition-list-holder" class="window-contents">
+                <table data-model="editor-ui-driver-model">
+                    <colgroup>
+                        <col span="1" style="text-align: left;"/>
+                    </colgroup>
+                    <tbody data-for="def, i : cellDefinitions">
+                        <tr data-if="i != selectedIdx">
+                            <td colspan="1" class="button" data-event-click="SelectDefinition(i)">{{def.definitionName}}</td>
+                        </tr>
+                        <tr data-if="i == selectedIdx">
+                            <td colspan="1" class="button" style="background-color: rgb(29, 82, 84);">{{def.definitionName}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+    </body>
+</rml>

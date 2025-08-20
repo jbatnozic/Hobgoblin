@@ -47,7 +47,7 @@ const std::string TAG_BINSTREAM = "binary_stream";
 #define ENSURE_JSON_CONTAINS(_value_, _member_name_, _member_type_)                                 \
     do {                                                                                            \
         if (!(_value_).HasMember(_member_name_) || !(_value_)[_member_name_].Is##_member_type_()) { \
-            HG_THROW_TRACED(JsonParseError, 0, "No array member '{}' found.", _member_name_);       \
+            HG_THROW_TRACED(JsonParseError, 0, "No member '{}' found.", _member_name_);             \
         }                                                                                           \
     } while (false)
 
@@ -155,9 +155,6 @@ void Base64Decode(
                        (int)aPreferredSerializationMethod);
     }
 }
-
-//! Named based on the 'elvis operator' (?:) from other languages
-#define ELVIS(_lhs_, _rhs_) ((_lhs_) ? (_lhs_) : (_rhs_))
 } // namespace
 
 // MARK: Cell <-> JSON

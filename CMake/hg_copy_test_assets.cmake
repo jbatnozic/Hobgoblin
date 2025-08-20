@@ -1,3 +1,5 @@
+# Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
+# See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
 function(hg_copy_test_assets A_TARGET A_ASSET_DIR)
     set(COPIED_DIR_NAME "_${A_TARGET}_TestAssets")

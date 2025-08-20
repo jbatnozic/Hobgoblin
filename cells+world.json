@@ -1,0 +1,24 @@
+{
+    "cells": [
+        {
+            "definitionName": "Definition 1",
+            "wall": {},
+            "floor": {},
+            "userData": 0
+        },
+        {
+            "definitionName": "Definition 2",
+            "wall": {},
+            "floor": {},
+            "userData": 0
+        }
+    ],
+    "world": {
+        "chunkCountX": 1,
+        "chunkCountY": 1,
+        "cellsPerChunkX": 8,
+        "cellsPerChunkY": 8,
+        "cellResolution": 32.0,
+        "defaultCellDefinition": "Definition 2"
+    }
+}

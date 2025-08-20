@@ -16,9 +16,24 @@
 namespace jbatnozic {
 namespace gridgoblin {
 
+const std::filesystem::path TEST_WORLD_PATH = "TestWorld";
+
 class WorldTest : public ::testing::Test {
 public:
     WorldTest() = default;
+
+    void SetUp() override {
+        if (std::filesystem::exists(TEST_WORLD_PATH)) {
+            std::filesystem::remove_all(TEST_WORLD_PATH);
+        }
+        std::filesystem::create_directory(TEST_WORLD_PATH);
+    }
+
+    void TearDown() override {
+        if (std::filesystem::exists(TEST_WORLD_PATH)) {
+            std::filesystem::remove_all(TEST_WORLD_PATH);
+        }
+    }
 
 protected:
     test::FakeDiskIoHandler _fakeDiskIoHandler;
@@ -36,7 +51,8 @@ protected:
                 .cellsPerChunkY              = 8,
                 .cellResolution              = 32.f,
                 .maxCellOpenness             = 5,
-                .maxLoadedNonessentialChunks = 1};
+                .maxLoadedNonessentialChunks = 1,
+                .chunkDirectoryPath          = TEST_WORLD_PATH};
     }
 };
 
@@ -82,7 +98,8 @@ TEST_F(WorldTest, AvailableChunkIterations) {
                                     .cellsPerChunkY              = 8,
                                     .cellResolution              = 32.f,
                                     .maxCellOpenness             = 5,
-                                    .maxLoadedNonessentialChunks = 2};
+                                    .maxLoadedNonessentialChunks = 2,
+                                    .chunkDirectoryPath          = TEST_WORLD_PATH};
 
     auto& w = _createWorld(config);
 
