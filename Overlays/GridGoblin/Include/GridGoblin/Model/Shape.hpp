@@ -53,29 +53,21 @@ constexpr std::uint8_t MAX_SHAPE_NUMBER =
 
 // MARK: Operators
 
-#define TO_UNDERLYING(_val_) static_cast<std::underlying_type<decltype(_val_)>::type>(_val_)
+[[nodiscard]] inline HG_ENUM_DEFINE_ARITHMETIC_OP(Shape, |);
 
-inline constexpr Shape operator|(Shape aLhs, Shape aRhs) {
-    return static_cast<Shape>(TO_UNDERLYING(aLhs) | TO_UNDERLYING(aRhs));
-}
-
-inline constexpr Shape& operator|=(Shape& aLhs, Shape aRhs) {
+[[nodiscard]] inline constexpr Shape& operator|=(Shape& aLhs, Shape aRhs) {
     return (aLhs = (aLhs | aRhs));
 }
 
-inline constexpr Shape operator&(Shape aLhs, Shape aRhs) {
-    return static_cast<Shape>(TO_UNDERLYING(aLhs) & TO_UNDERLYING(aRhs));
-}
+[[nodiscard]] inline HG_ENUM_DEFINE_ARITHMETIC_OP(Shape, &);
 
-inline constexpr Shape& operator&=(Shape& aLhs, Shape aRhs) {
+[[nodiscard]] inline constexpr Shape& operator&=(Shape& aLhs, Shape aRhs) {
     return (aLhs = (aLhs & aRhs));
 }
 
-inline constexpr Shape operator~(Shape aShape) {
-    return static_cast<Shape>(~TO_UNDERLYING(aShape));
+[[nodiscard]] inline constexpr Shape operator~(Shape aShape) {
+    return static_cast<Shape>(~static_cast<std::underlying_type_t<Shape>>(aShape));
 }
-
-#undef TO_UNDERLYING
 
 // MARK: Obstruction
 

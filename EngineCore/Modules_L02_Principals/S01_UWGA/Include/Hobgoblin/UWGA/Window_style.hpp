@@ -4,6 +4,8 @@
 #ifndef UHOBGOBLIN_UWGA_WINDOW_STYLE_HPP
 #define UHOBGOBLIN_UWGA_WINDOW_STYLE_HPP
 
+#include <Hobgoblin/Common/Enum_op.hpp>
+
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
 HOBGOBLIN_NAMESPACE_BEGIN
@@ -19,17 +21,9 @@ enum class WindowStyle : int {
     DEFAULT = TITLEBAR | RESIZE | CLOSE ///< Default window style
 };
 
-inline WindowStyle operator|(WindowStyle aLhs, WindowStyle aRhs) {
-    return static_cast<WindowStyle>(static_cast<int>(aLhs) | static_cast<int>(aRhs));
-}
-
-inline WindowStyle operator&(WindowStyle aLhs, WindowStyle aRhs) {
-    return static_cast<WindowStyle>(static_cast<int>(aLhs) & static_cast<int>(aRhs));
-}
-
-inline WindowStyle operator^(WindowStyle aLhs, WindowStyle aRhs) {
-    return static_cast<WindowStyle>(static_cast<int>(aLhs) ^ static_cast<int>(aRhs));
-}
+[[nodiscard]] inline HG_ENUM_DEFINE_ARITHMETIC_OP(WindowStyle, |);
+[[nodiscard]] inline HG_ENUM_DEFINE_ARITHMETIC_OP(WindowStyle, &);
+[[nodiscard]] inline HG_ENUM_DEFINE_ARITHMETIC_OP(WindowStyle, ^);
 
 } // namespace uwga
 HOBGOBLIN_NAMESPACE_END

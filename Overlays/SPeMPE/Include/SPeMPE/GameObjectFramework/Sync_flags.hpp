@@ -6,6 +6,7 @@
 #ifndef SPEMPE_GAME_OBJECT_FRAMEWORK_SYNC_FLAGS_HPP
 #define SPEMPE_GAME_OBJECT_FRAMEWORK_SYNC_FLAGS_HPP
 
+#include <Hobgoblin/Common/Enum_op.hpp>
 #include <Hobgoblin/Utility/Packet.hpp>
 
 #include <cstdint>
@@ -40,25 +41,25 @@ enum class SyncFlags : detail::SyncFlagsUnderlyingType {
 };
 
 //! Bitwise OR operator.
-SyncFlags operator|(SyncFlags aLhs, SyncFlags aRhs);
+[[nodiscard]] HG_ENUM_DECLARE_ARITHMETIC_OP(SyncFlags, |);
 
 //! Bitwise OR assignment operator.
-SyncFlags& operator|=(SyncFlags& aLhs, SyncFlags aRhs);
+[[nodiscard]] constexpr SyncFlags& operator|=(SyncFlags& aLhs, SyncFlags aRhs);
 
 //! Bitwise AND operator.
-SyncFlags operator&(SyncFlags aLhs, SyncFlags aRhs);
+[[nodiscard]] HG_ENUM_DECLARE_ARITHMETIC_OP(SyncFlags, &);
 
 //! Bitwise AND assignment operator.
-SyncFlags& operator&=(SyncFlags& aLhs, SyncFlags aRhs);
+[[nodiscard]] constexpr SyncFlags& operator&=(SyncFlags& aLhs, SyncFlags aRhs);
 
 //! Returns `true` if the `FULL_STATE` bit is set in `aFlags`, `false` otherwise.
-bool IsFullStateFlagSet(SyncFlags aFlags);
+constexpr bool IsFullStateFlagSet(SyncFlags aFlags);
 
 //! Returns `true` if the `NO_CHAIN` bit is set in `aFlags`, `false` otherwise.
-bool IsNoChainFlagSet(SyncFlags aFlags);
+constexpr bool IsNoChainFlagSet(SyncFlags aFlags);
 
 //! Returns `true` if the `PACEMAKER_PULSE` bit is set in `aFlags`, `false` otherwise.
-bool IsPacemakerPulseFlagSet(SyncFlags aFlags);
+constexpr bool IsPacemakerPulseFlagSet(SyncFlags aFlags);
 
 //! Packing operator.
 hg::util::OutputStream& operator<<(hg::util::OutputStreamExtender& aOStream, SyncFlags aFlags);
@@ -70,50 +71,30 @@ hg::util::InputStream& operator>>(hg::util::InputStreamExtender& aIStream, SyncF
 // INLINE IMPLEMENTATIONS                                                //
 ///////////////////////////////////////////////////////////////////////////
 
-inline
-SyncFlags operator|(SyncFlags aLhs, SyncFlags aRhs) {
-    return static_cast<SyncFlags>(
-        static_cast<detail::SyncFlagsUnderlyingType>(aLhs) | 
-        static_cast<detail::SyncFlagsUnderlyingType>(aRhs)
-    );
+[[nodiscard]] inline HG_ENUM_DEFINE_ARITHMETIC_OP(SyncFlags, |);
+
+[[nodiscard]] inline constexpr SyncFlags& operator|=(SyncFlags& aLhs, SyncFlags aRhs) {
+    return (aLhs = (aLhs | aRhs));
+}
+
+[[nodiscard]] inline HG_ENUM_DEFINE_ARITHMETIC_OP(SyncFlags, &);
+
+[[nodiscard]] inline constexpr SyncFlags& operator&=(SyncFlags& aLhs, SyncFlags aRhs) {
+    return (aLhs = (aLhs & aRhs));
 }
 
 inline
-SyncFlags& operator|=(SyncFlags& aLhs, SyncFlags aRhs) {
-    return aLhs = static_cast<SyncFlags>(
-        static_cast<detail::SyncFlagsUnderlyingType>(aLhs) | 
-        static_cast<detail::SyncFlagsUnderlyingType>(aRhs)
-    );
-}
-
-inline
-SyncFlags operator&(SyncFlags aLhs, SyncFlags aRhs) {
-    return static_cast<SyncFlags>(
-        static_cast<detail::SyncFlagsUnderlyingType>(aLhs) &
-        static_cast<detail::SyncFlagsUnderlyingType>(aRhs)
-    );
-}
-
-inline
-SyncFlags& operator&=(SyncFlags& aLhs, SyncFlags aRhs) {
-    return aLhs = static_cast<SyncFlags>(
-        static_cast<detail::SyncFlagsUnderlyingType>(aLhs) &
-        static_cast<detail::SyncFlagsUnderlyingType>(aRhs)
-    );
-}
-
-inline
-bool IsFullStateFlagSet(SyncFlags aFlags) {
+constexpr bool IsFullStateFlagSet(SyncFlags aFlags) {
     return ((aFlags & SyncFlags::FULL_STATE) != SyncFlags::NONE);
 }
 
 inline
-bool IsNoChainFlagSet(SyncFlags aFlags) {
+constexpr bool IsNoChainFlagSet(SyncFlags aFlags) {
     return ((aFlags & SyncFlags::NO_CHAIN) != SyncFlags::NONE);
 }
 
 inline
-bool IsPacemakerPulseFlagSet(SyncFlags aFlags) {
+constexpr bool IsPacemakerPulseFlagSet(SyncFlags aFlags) {
     return ((aFlags & SyncFlags::PACEMAKER_PULSE) != SyncFlags::NONE);
 }
 

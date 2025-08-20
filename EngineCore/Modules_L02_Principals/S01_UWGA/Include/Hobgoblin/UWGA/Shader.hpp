@@ -4,12 +4,12 @@
 #ifndef UHOBGOBLIN_UWGA_SHADER_HPP
 #define UHOBGOBLIN_UWGA_SHADER_HPP
 
+#include <Hobgoblin/Common/Enum_op.hpp>
 #include <Hobgoblin/UWGA/Element.hpp>
 
 #include <cstdint>
 #include <filesystem>
 #include <string>
-#include <type_traits>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
@@ -123,19 +123,8 @@ public:
                        const std::string& aGeometryShaderSource) = 0;
 };
 
-// clang-format off
-#define HG_ENUM_DECLARE_ARITHMETIC_OP(_enum_, _op_) \
-    _enum_ operator _op_(_enum_ aLhs, _enum_ aRhs);
-
-#define HG_ENUM_DEFINE_ARITHMETIC_OP(_enum_, _op_)                                        \
-    _enum_ operator _op_(_enum_ aLhs, _enum_ aRhs) {                                      \
-        return static_cast<_enum_>(static_cast<std::underlying_type_t<_enum_>>(aLhs) _op_ \
-                                   static_cast<std::underlying_type_t<_enum_>>(aRhs));    \
-    }
-// clang-format on
-
-inline HG_ENUM_DEFINE_ARITHMETIC_OP(Shader::Language, &);
-inline HG_ENUM_DEFINE_ARITHMETIC_OP(Shader::Language, |);
+[[nodiscard]] inline HG_ENUM_DEFINE_ARITHMETIC_OP(Shader::Language, &);
+[[nodiscard]] inline HG_ENUM_DEFINE_ARITHMETIC_OP(Shader::Language, |);
 
 } // namespace uwga
 HOBGOBLIN_NAMESPACE_END
