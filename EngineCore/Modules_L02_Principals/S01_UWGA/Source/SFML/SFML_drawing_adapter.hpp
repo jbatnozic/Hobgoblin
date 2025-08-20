@@ -13,6 +13,7 @@
 
 #include <SFML/Graphics/RenderTarget.hpp>
 
+#include "Glsl_shader_impl.hpp"
 #include "SFML_conversions.hpp"
 #include "SFML_vertices.hpp"
 #include "Transform_impl.hpp"
@@ -104,10 +105,13 @@ private:
     }
 
     const sf::Shader* _getSfmlShader(const Shader* aShader) const {
-        // assert(aRenderStates.shader == nullptr || &aRenderStates.shader->getSystem() == &_system);
+        assert(aShader == nullptr || &aShader->getSystem() == &_system);
 
         if (aShader) {
-            return {}; // TODO
+            // We can do a shortcut without calling `aShader->getLanguage()` because this
+            // is the only shader implementation supported by the SFML graphics system
+            assert(typeid(*aShader) == typeid(SFMLGLSLShaderImpl));
+            return &static_cast<const SFMLGLSLShaderImpl*>(aShader)->getUnderlyingShader();
         } else {
             return nullptr;
         }

@@ -12,3 +12,5 @@ void RunRenderTextureInRenderWindowTest(int, const char**);
 void RunSpriteLoaderTest(int, const char**);
 void RunRectangleShapeInRenderWindowTest(int, const char**);
 void RunTextInRenderWindowTest(int, const char**);
+void RunDefaultShaderTest(int, const char**);
+void RunInvertShaderTest(int, const char**);

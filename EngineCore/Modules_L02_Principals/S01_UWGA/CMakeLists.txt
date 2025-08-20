@@ -34,6 +34,8 @@ set(COMPONENT_SOURCES
     # SFML
     "Source/SFML/Font_impl.cpp"
     "Source/SFML/Font_impl.hpp"
+    "Source/SFML/Glsl_shader_impl.cpp"
+    "Source/SFML/Glsl_shader_impl.hpp"
     "Source/SFML/Image_impl.cpp"
     "Source/SFML/Image_impl.hpp"
     "Source/SFML/Render_window_impl.cpp"

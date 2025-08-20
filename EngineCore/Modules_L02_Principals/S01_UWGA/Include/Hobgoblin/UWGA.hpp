@@ -11,6 +11,7 @@
 #include <Hobgoblin/UWGA/Drawable.hpp>
 #include <Hobgoblin/UWGA/Element.hpp>
 #include <Hobgoblin/UWGA/Font.hpp>
+#include <Hobgoblin/UWGA/Glsl_shader.hpp>
 #include <Hobgoblin/UWGA/Glyph.hpp>
 #include <Hobgoblin/UWGA/Image.hpp>
 #include <Hobgoblin/UWGA/Primitive_type.hpp>

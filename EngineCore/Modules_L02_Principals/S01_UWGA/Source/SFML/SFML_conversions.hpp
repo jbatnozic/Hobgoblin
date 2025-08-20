@@ -15,7 +15,6 @@
 #include <Hobgoblin/UWGA/Glyph.hpp>
 #include <Hobgoblin/UWGA/Primitive_type.hpp>
 // #include <Hobgoblin/UWGA/Render_states.hpp>
-// #include <Hobgoblin/UWGA/Shader.hpp>
 #include <Hobgoblin/UWGA/Texture.hpp>
 // #include <Hobgoblin/UWGA/Texture_rect.hpp>
 // #include <Hobgoblin/UWGA/Vertex_buffer.hpp>
@@ -34,7 +33,6 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/RenderStates.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
-#include <SFML/Graphics/Shader.hpp>
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/Graphics/VertexBuffer.hpp>
 #include <SFML/Graphics/View.hpp>

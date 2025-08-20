@@ -7,6 +7,7 @@
 #include <Hobgoblin/UWGA/System.hpp>
 
 #include "Font_impl.hpp"
+#include "Glsl_shader_impl.hpp"
 #include "Image_impl.hpp"
 #include "Render_texture_impl.hpp"
 #include "Render_window_impl.hpp"
@@ -17,7 +18,7 @@
 
 #include "../BuiltinFonts/Helper.hpp"
 
-#include <SFML/Graphics/Texture.hpp>
+#include <SFML/Graphics/Shader.hpp>
 
 #include <array>
 #include <cassert>
@@ -175,7 +176,6 @@ public:
 
     std::unique_ptr<Font> createFont(const std::filesystem::path& aFilePath) const override {
         auto font = std::make_unique<SFMLFontImpl>(SELF);
-        ;
         font->reset(aFilePath);
         return font;
     }
@@ -234,6 +234,99 @@ public:
         text->setString(aString);
         text->setCharacterSize(aCharacterSize);
         return text;
+    }
+
+    // MARK: Shader
+
+    Shader::Language getAvailableShaders() const override {
+        if (!sf::Shader::isAvailable()) {
+            return Shader::Language::NONE;
+        }
+        return Shader::Language::GLSL;
+    }
+
+    Shader::Language getAvailableGeometryShaders() const override {
+        if (!sf::Shader::isGeometryAvailable()) {
+            return Shader::Language::NONE;
+        }
+        return Shader::Language::GLSL;
+    }
+
+    std::unique_ptr<GLSLShader> createGLSLShader() const override {
+        if ((getAvailableShaders() & Shader::Language::GLSL) == Shader::Language::NONE) {
+            return nullptr;
+        }
+        return std::make_unique<SFMLGLSLShaderImpl>(SELF);
+    }
+
+    std::unique_ptr<GLSLShader> createGLSLShader(const std::filesystem::path& aFile,
+                                                 Shader::Kind                 aKind) const override {
+        if (aKind == Shader::Kind::GEOMETRY) {
+            if ((getAvailableGeometryShaders() & Shader::Language::GLSL) == Shader::Language::NONE) {
+                return nullptr;
+            }
+        }
+
+        auto shader = createGLSLShader();
+        shader->reset(aFile, aKind);
+        return shader;
+    }
+
+    std::unique_ptr<GLSLShader> createGLSLShader(
+        const std::filesystem::path& aVertexShaderFile,
+        const std::filesystem::path& aFragmentShaderFile) const override //
+    {
+        auto shader = createGLSLShader();
+        shader->reset(aVertexShaderFile, aFragmentShaderFile);
+        return shader;
+    }
+
+    std::unique_ptr<GLSLShader> createGLSLShader(
+        const std::filesystem::path& aVertexShaderFile,
+        const std::filesystem::path& aFragmentShaderFile,
+        const std::filesystem::path& aGeometryShaderFile) const override //
+    {
+        if ((getAvailableGeometryShaders() & Shader::Language::GLSL) == Shader::Language::NONE) {
+            return nullptr;
+        }
+        auto shader = createGLSLShader();
+        shader->reset(aVertexShaderFile, aFragmentShaderFile, aGeometryShaderFile);
+        return shader;
+    }
+
+    std::unique_ptr<GLSLShader> createGLSLShader(const std::string& aShaderSource,
+                                                 Shader::Kind       aKind) const override {
+        if (aKind == Shader::Kind::GEOMETRY) {
+            if ((getAvailableGeometryShaders() & Shader::Language::GLSL) == Shader::Language::NONE) {
+                return nullptr;
+            }
+        }
+
+        auto shader = createGLSLShader();
+        shader->reset(aShaderSource, aKind);
+        return shader;
+    }
+
+    std::unique_ptr<GLSLShader> createGLSLShader(
+        const std::string& aVertexShaderSource,
+        const std::string& aFragmentShaderSource) const override {
+        auto shader = createGLSLShader();
+        shader->reset(aVertexShaderSource, aFragmentShaderSource);
+        return shader;
+    }
+
+    std::unique_ptr<GLSLShader> createGLSLShader(
+        const std::string& aVertexShaderSource,
+        const std::string& aFragmentShaderSource,
+        const std::string& aGeometryShaderSource) const override //
+    {
+        if ((getAvailableGeometryShaders() & Shader::Language::GLSL) == Shader::Language::NONE) {
+            return nullptr;
+        }
+
+        auto shader = createGLSLShader();
+        shader->reset(aVertexShaderSource, aFragmentShaderSource, aGeometryShaderSource);
+        return shader;
     }
 
 private:

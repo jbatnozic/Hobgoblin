@@ -9,6 +9,7 @@
 #include <Hobgoblin/Math/Vector.hpp>
 #include <Hobgoblin/UWGA/Builtin_fonts.hpp>
 #include <Hobgoblin/UWGA/Color.hpp>
+#include <Hobgoblin/UWGA/Shader.hpp>
 #include <Hobgoblin/UWGA/Text.hpp>
 #include <Hobgoblin/UWGA/Texture_rect.hpp>
 #include <Hobgoblin/UWGA/Window_style.hpp>
@@ -24,6 +25,7 @@ HOBGOBLIN_NAMESPACE_BEGIN
 namespace uwga {
 
 class Font;
+class GLSLShader;
 class Image;
 class RenderWindow;
 class Transform;
@@ -260,6 +262,144 @@ public:
         const Font&          aFont,
         const UnicodeString& aString,
         PZInteger            aCharacterSize = Text::DEFAULT_CHARACTER_SIZE) const = 0;
+
+    ///////////////////////////////////////////////////////////////////////////
+    // MARK: Shaders                                                         //
+    ///////////////////////////////////////////////////////////////////////////
+
+    //! \brief Tell whether or not the system supports certain shaders
+    //!
+    //! The returned value is a bitmask where each bit denotes whether the system
+    //! supports the shader language related to that bit (see `Shader::Language`).
+    //! If all bits are 0 (`Shader::Language::NONE`), the system doesn't support
+    //! shaders.
+    //!
+    //! This function should always be called before using the shader features.
+    //! Attempting to use unsupported shader features will always fail.
+    virtual Shader::Language getAvailableShaders() const = 0;
+
+    //! \brief Tell whether or not the system supports certain geometry shaders
+    //!
+    //! The returned value is a bitmask where each bit denotes whether the system
+    //! supports geometry shaders in a shader language related to that bit (see
+    //! `Shader::Language`). If all bits are 0 (`Shader::Language::NONE`), the system
+    //! doesn't support geometry shaders.
+    //! \note a bit in the value returned by this function can only be set to 1 if the
+    //!       corresponding bit in the value returned by `getAvailableShaders` is also
+    //!       set to 1, since shaders in general have to be supported in order for geometry
+    //!       shaders to be supported as well.
+    //!
+    //! This function should always be called before using the geometry shader features.
+    //! Attempting to use unsupported shader features will always fail.
+    virtual Shader::Language getAvailableGeometryShaders() const = 0;
+
+    //! \brief Create an empty GLSL shader
+    //!
+    //! You must `reset()` the shader manually before using it.
+    //!
+    //! \returns unique pointer to the shader, or `nullptr` if it is not supported (see
+    //!          `getAvailableShaders()`,
+    virtual std::unique_ptr<GLSLShader> createGLSLShader() const = 0;
+
+    //! \brief Create a new GLSL shader and load its source code from a file
+    //!
+    //! This function loads only one of: vertex shader, fragment shader, or geometry shader
+    //! (identified by the second argument). Its data will be loaded from a text file
+    //! which must contain a valid shader in GLSL language.
+    //!
+    //! \param aFile Path of the text file containing the shader.
+    //! \param aKind Kind of shader to load (vertex, geometry or fragment)
+    //!
+    //! \throws on failure.
+    //!
+    //! \returns unique pointer to the shader, or `nullptr` if it is not supported (see
+    //!          `getAvailableShaders()`, `getAvailableGeometryShaders()`).
+    virtual std::unique_ptr<GLSLShader> createGLSLShader(const std::filesystem::path& aFile,
+                                                         Shader::Kind                 aKind) const = 0;
+
+    //! \brief Create a new GLSL shader and load vertex/fragment source codes from files
+    //!
+    //! The data will be loaded from text files which must contain valid
+    //! shaders in the GLSL language.
+    //!
+    //! \param aVertexShaderFile   Path of the text file containing the vertex shader.
+    //! \param aFragmentShaderFile Path of the text file containing the fragment shader.
+    //!
+    //! \throws on failure.
+    //!
+    //! \returns unique pointer to the shader, or `nullptr` if it is not supported (see
+    //!          `getAvailableShaders()`).
+    virtual std::unique_ptr<GLSLShader> createGLSLShader(
+        const std::filesystem::path& aVertexShaderFile,
+        const std::filesystem::path& aFragmentShaderFile) const = 0;
+
+    //! \brief Create a new GLSL shader and load vertex/fragment/geometry source codes from files
+    //!
+    //! The data will be loaded from text files which must contain valid
+    //! shaders in the GLSL language.
+    //!
+    //! \param aVertexShaderFile   Path of the text file containing the vertex shader.
+    //! \param aFragmentShaderFile Path of the text file containing the fragment shader.
+    //! \param aGeometryShaderFile Path of the text file containing the geometry shader.
+    //!
+    //! \throws on failure.
+    //!
+    //! \returns unique pointer to the shader, or `nullptr` if it is not supported (see
+    //!          `getAvailableShaders()`, `getAvailableGeometryShaders()`).
+    virtual std::unique_ptr<GLSLShader> createGLSLShader(
+        const std::filesystem::path& aVertexShaderFile,
+        const std::filesystem::path& aFragmentShaderFile,
+        const std::filesystem::path& aGeometryShaderFile) const = 0;
+
+    //! \brief Create a new GLSL shader and load its source code from memory
+    //!
+    //! This function loads only one of: vertex shader, fragment shader, or geometry shader
+    //! (identified by the second argument). Its data will be loaded from a string in memory
+    //! which must contain a valid shader in GLSL language.
+    //!
+    //! \param aShaderSource String containing the source code of the shader to load.
+    //! \param aKind Kind of shader to load (vertex, geometry or fragment).
+    //!
+    //! \throws on failure.
+    //!
+    //! \returns unique pointer to the shader, or `nullptr` if it is not supported (see
+    //!          `getAvailableShaders()`, `getAvailableGeometryShaders()`).
+    virtual std::unique_ptr<GLSLShader> createGLSLShader(const std::string& aShaderSource,
+                                                         Shader::Kind       aKind) const = 0;
+
+    //! \brief Create a new GLSL shader and load vertex/fragment source codes from memory
+    //!
+    //! The data will be loaded from strings in memory which must contain valid
+    //! shaders in the GLSL language.
+    //!
+    //! \param aVertexShaderSource   String containing the source code of the vertex shader.
+    //! \param aFragmentShaderSource String containing the source code of the fragment shader.
+    //!
+    //! \throws on failure.
+    //!
+    //! \returns unique pointer to the shader, or `nullptr` if it is not supported (see
+    //!          `getAvailableShaders()`).
+    virtual std::unique_ptr<GLSLShader> createGLSLShader(
+        const std::string& aVertexShaderSource,
+        const std::string& aFragmentShaderSource) const = 0;
+
+    //! \brief Create a new GLSL shader and load vertex/fragment/geometry source codes from memory
+    //!
+    //! The data will be loaded from strings in memory which must contain valid
+    //! shaders in the GLSL language.
+    //!
+    //! \param aVertexShaderSource   String containing the source code of the vertex shader.
+    //! \param aFragmentShaderSource String containing the source code of the fragment shader.
+    //! \param aGeometryShaderSource String containing the source code of the geometry shader.
+    //!
+    //! \throws on failure.
+    //!
+    //! \returns unique pointer to the shader, or `nullptr` if it is not supported (see
+    //!          `getAvailableShaders()`, `getAvailableGeometryShaders()`).
+    virtual std::unique_ptr<GLSLShader> createGLSLShader(
+        const std::string& aVertexShaderSource,
+        const std::string& aFragmentShaderSource,
+        const std::string& aGeometryShaderSource) const = 0;
 };
 
 //! Create a new rendering system.
