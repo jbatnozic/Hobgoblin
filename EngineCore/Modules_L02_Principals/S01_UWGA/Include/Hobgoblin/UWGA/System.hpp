@@ -33,9 +33,52 @@ class Texture;
 class RenderTexture;
 class View;
 
+//! \brief Virtual interface for a graphics system.
+//!
+//! It is the entry point for all windowing and graphics/rendering operations, and provides
+//! functions to inspect the capabilities of the system and create various graphics elements.
 class System {
 public:
+    //! \brief Virtual destructor.
     virtual ~System() = default;
+
+    //! Graphics system provider designator.
+    enum class Provider {
+        SFML
+    };
+
+    //! Get the designator of the graphics system provider.
+    //!
+    //! In general this will be the same value that you pass to `CreateGraphicsSystem(System::Provider)`
+    //! when creating the system.
+    virtual Provider getProvider() const = 0;
+
+    //! Get the name of the graphics system provider.
+    //! Depending on the value returned by `getProvider()`, the returned string can be:
+    //! - SFML -> "SFML"
+    //!
+    //! In general this will be the same string that you pass to `CreateGraphicsSystem(const char*)`
+    //! when creating the system.
+    virtual const char* getProviderName() const = 0;
+
+    //! Graphics API designator.
+    enum class GraphicsAPI {
+        OPENGL,   //!< OpenGL.
+        DIRECT3D, //!< Direct3D (part of DirectX). WARNING: Not yet supported.
+        VULKAN,   //!< Vulkan (cross-platform successor to OpenGL). WARNING: Not yet supported.
+        METAL     //!< Metal (replacement for OpenGL on Apple platforms). WARNING: Not yet supported.
+    };
+
+    //! Get the designator of the underlying graphics API used by the system.
+    virtual GraphicsAPI getGraphicsAPI() const = 0;
+
+    //! Get the name of the underlying graphics API used by the system.
+    //! Depending on the value returned by `getGraphicsAPI()`, the returned string can be:
+    //! - OPENGL   -> "OpenGL"
+    //! - DIRECT3D -> "Direct3D"
+    //! - VULKAN   -> "Vulkan"
+    //! - METAL    -> "Metal"
+    virtual const char* getGraphicsAPIName() const = 0;
 
     ///////////////////////////////////////////////////////////////////////////
     // MARK: RenderWindow                                                    //
@@ -402,13 +445,22 @@ public:
         const std::string& aGeometryShaderSource) const = 0;
 };
 
-//! Create a new rendering system.
+//! Create a new graphics system, selecting by provider designator.
 //!
-//! \param aSystemProviderName name of the rendering system provider. Must be one of the following:
-//!                            - "SFML": Use SFML (OpenGL underneath).
+//! \param aProvider designator of the graphics system provider.
 //!
-//! \throws TracedLogicError if an invalid provider name is passed.
-std::unique_ptr<System> CreateRenderSystem(const char* aSystemProviderName);
+//! \throws TracedLogicError if an invalid designator is passed, or the selected provider is not
+//!                          supported on the current machine (such as Direct3D on Mac).
+std::unique_ptr<System> CreateGraphicsSystem(System::Provider aProvider);
+
+//! Create a new graphics system, selecting by provider name.
+//!
+//! \param aSystemProviderName name of the graphics system provider. Must be one of the following:
+//!                            - "SFML": Use SFML (Graphics API: OpenGL).
+//!
+//! \throws TracedLogicError if an invalid name is passed, or the selected provider is not
+//!                          supported on the current machine (such as Direct3D on Mac).
+std::unique_ptr<System> CreateGraphicsSystem(const char* aSystemProviderName);
 
 } // namespace uwga
 HOBGOBLIN_NAMESPACE_END

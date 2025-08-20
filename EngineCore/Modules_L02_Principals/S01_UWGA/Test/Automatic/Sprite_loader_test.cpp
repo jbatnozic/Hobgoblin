@@ -77,7 +77,7 @@ TEST(SpriteLoadingTest, LoadSpriteAttrs_SingleSubspriteExamples) {
 
     constexpr uwga::SpriteIdNumerical SPRITE_ID = 49;
 
-    auto system = uwga::CreateRenderSystem("SFML");
+    auto system = uwga::CreateGraphicsSystem("SFML");
 
     for (const auto& _case : CASES) {
         SCOPED_TRACE(hg::UniStrConv(hg::TO_ASCII_STD_STRING, _case.path));
@@ -116,7 +116,7 @@ TEST(SpriteLoadingTest, UseSpriteManifest) {
 
         hg::uwga::SpriteLoader::SpriteManifestEnumerationMap enumMap;
 
-        auto system = uwga::CreateRenderSystem("SFML");
+        auto system = uwga::CreateGraphicsSystem("SFML");
 
         for (const auto& path : paths) {
             SCOPED_TRACE(path.string());

@@ -12,14 +12,26 @@
 HOBGOBLIN_NAMESPACE_BEGIN
 namespace uwga {
 
-std::unique_ptr<System> CreateRenderSystem(const char* aSystemProviderName) {
+std::unique_ptr<System> CreateGraphicsSystem(System::Provider aProvider) {
+    switch (aProvider) {
+    case System::Provider::SFML:
+        return std::make_unique<SFMLSystemImpl>();
+    }
+
+    HG_THROW_TRACED(TracedLogicError,
+                    0,
+                    "Graphics system provider with designator '{}' does not exist.",
+                    (int)aProvider);
+}
+
+std::unique_ptr<System> CreateGraphicsSystem(const char* aSystemProviderName) {
     if (std::strcmp(aSystemProviderName, "SFML") == 0) {
         return std::make_unique<SFMLSystemImpl>();
     }
 
     HG_THROW_TRACED(TracedLogicError,
                     0,
-                    "Render system provider named '{}' does not exist.",
+                    "Graphics system provider named '{}' does not exist.",
                     aSystemProviderName);
 }
 

@@ -37,6 +37,22 @@ class SFMLSystemImpl : public System {
 public:
     ~SFMLSystemImpl() override = default;
 
+    Provider getProvider() const override {
+        return Provider::SFML;
+    }
+
+    const char* getProviderName() const override {
+        return "SFML";
+    }
+
+    GraphicsAPI getGraphicsAPI() const override {
+        return GraphicsAPI::OPENGL;
+    }
+
+    const char* getGraphicsAPIName() const override {
+        return "OpenGL";
+    }
+
     // MARK: RenderWindow
 
     std::unique_ptr<RenderWindow> createRenderWindow(PZInteger            aWidth,

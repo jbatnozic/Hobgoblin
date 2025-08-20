@@ -13,7 +13,7 @@ namespace uwga {
 namespace {
 
 void RunSquareInRenderWindowTest() {
-    auto system = CreateRenderSystem("SFML");
+    auto system = CreateGraphicsSystem("SFML");
     auto window = system->createRenderWindow(800, 800, WindowStyle::DEFAULT, "UWGA.ManualTest");
     auto view   = window->createDefaultView();
 

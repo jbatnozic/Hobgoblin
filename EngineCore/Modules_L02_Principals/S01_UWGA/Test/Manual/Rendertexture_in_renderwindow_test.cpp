@@ -13,7 +13,7 @@ namespace uwga {
 namespace {
 
 void RunRenderTextureInRenderWindowTest() {
-    auto system = CreateRenderSystem("SFML");
+    auto system = CreateGraphicsSystem("SFML");
     auto window = system->createRenderWindow(800, 800, WindowStyle::DEFAULT, "UWGA.ManualTest");
 
     auto texture = system->createRenderTexture(128, 128, false);

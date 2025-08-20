@@ -9,7 +9,7 @@ namespace uwga {
 namespace {
 
 void RunInvertShaderTest() {
-    auto system = CreateRenderSystem("SFML");
+    auto system = CreateGraphicsSystem("SFML");
 
     SpriteLoader loader{*system};
     loader.startTexture(2048, 2048)

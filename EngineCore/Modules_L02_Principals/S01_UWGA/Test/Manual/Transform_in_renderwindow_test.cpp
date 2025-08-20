@@ -15,7 +15,7 @@ namespace {
 #define LOG_ID "Hobgoblin.UWGA"
 
 void RunTransformInRenderWindowTest() {
-    auto system    = CreateRenderSystem("SFML");
+    auto system    = CreateGraphicsSystem("SFML");
     auto window    = system->createRenderWindow(800, 800, WindowStyle::DEFAULT, "UWGA.ManualTest");
     auto view      = window->createDefaultView();
     auto transform = system->createTransform();

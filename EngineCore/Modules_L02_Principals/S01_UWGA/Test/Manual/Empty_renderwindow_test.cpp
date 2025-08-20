@@ -11,7 +11,7 @@ namespace uwga {
 namespace {
 
 void RunEmptyRenderWindowTest() {
-    auto system = CreateRenderSystem("SFML");
+    auto system = CreateGraphicsSystem("SFML");
     auto window = system->createRenderWindow();
 
     window->setFramerateLimit(60);
