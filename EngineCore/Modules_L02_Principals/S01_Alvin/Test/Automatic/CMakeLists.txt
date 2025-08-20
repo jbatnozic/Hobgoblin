@@ -20,3 +20,6 @@ PUBLIC
   # External
   "gtest::gtest"
 )
+
+include(GoogleTest)
+gtest_discover_tests("Hobgoblin.Alvin.AutomaticTest")

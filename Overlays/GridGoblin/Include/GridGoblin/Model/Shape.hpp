@@ -55,13 +55,13 @@ constexpr std::uint8_t MAX_SHAPE_NUMBER =
 
 [[nodiscard]] inline HG_ENUM_DEFINE_ARITHMETIC_OP(Shape, |);
 
-[[nodiscard]] inline constexpr Shape& operator|=(Shape& aLhs, Shape aRhs) {
+inline constexpr Shape& operator|=(Shape& aLhs, Shape aRhs) {
     return (aLhs = (aLhs | aRhs));
 }
 
 [[nodiscard]] inline HG_ENUM_DEFINE_ARITHMETIC_OP(Shape, &);
 
-[[nodiscard]] inline constexpr Shape& operator&=(Shape& aLhs, Shape aRhs) {
+inline constexpr Shape& operator&=(Shape& aLhs, Shape aRhs) {
     return (aLhs = (aLhs & aRhs));
 }
 

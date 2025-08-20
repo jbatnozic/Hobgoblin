@@ -22,3 +22,6 @@ target_link_libraries(${PROJECT_NAME}
     # External
     "gtest::gtest"
 )
+
+include(GoogleTest)
+gtest_discover_tests("Hobgoblin.QAO.AutomaticTest")

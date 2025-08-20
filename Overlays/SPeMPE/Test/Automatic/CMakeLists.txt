@@ -20,3 +20,6 @@ PUBLIC
   "SPeMPE"
   "gtest::gtest"
 )
+
+include(GoogleTest)
+gtest_discover_tests("SPeMPE.AutomaticTest")

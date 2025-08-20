@@ -28,6 +28,11 @@ endif()
 
 include("CMake/hg_copy_test_assets.cmake")
 
+# ===== ENABLE TESTING WITH CTEST =====
+
+enable_testing()
+include(CTest)
+
 # ===== ADD ALL THE PARTS =====
 
 # In Debug builds, define "UHOBGOBLIN_DEBUG" macro for all targets.

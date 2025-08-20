@@ -44,13 +44,13 @@ enum class SyncFlags : detail::SyncFlagsUnderlyingType {
 [[nodiscard]] HG_ENUM_DECLARE_ARITHMETIC_OP(SyncFlags, |);
 
 //! Bitwise OR assignment operator.
-[[nodiscard]] constexpr SyncFlags& operator|=(SyncFlags& aLhs, SyncFlags aRhs);
+constexpr SyncFlags& operator|=(SyncFlags& aLhs, SyncFlags aRhs);
 
 //! Bitwise AND operator.
 [[nodiscard]] HG_ENUM_DECLARE_ARITHMETIC_OP(SyncFlags, &);
 
 //! Bitwise AND assignment operator.
-[[nodiscard]] constexpr SyncFlags& operator&=(SyncFlags& aLhs, SyncFlags aRhs);
+constexpr SyncFlags& operator&=(SyncFlags& aLhs, SyncFlags aRhs);
 
 //! Returns `true` if the `FULL_STATE` bit is set in `aFlags`, `false` otherwise.
 constexpr bool IsFullStateFlagSet(SyncFlags aFlags);
@@ -73,13 +73,13 @@ hg::util::InputStream& operator>>(hg::util::InputStreamExtender& aIStream, SyncF
 
 [[nodiscard]] inline HG_ENUM_DEFINE_ARITHMETIC_OP(SyncFlags, |);
 
-[[nodiscard]] inline constexpr SyncFlags& operator|=(SyncFlags& aLhs, SyncFlags aRhs) {
+inline constexpr SyncFlags& operator|=(SyncFlags& aLhs, SyncFlags aRhs) {
     return (aLhs = (aLhs | aRhs));
 }
 
 [[nodiscard]] inline HG_ENUM_DEFINE_ARITHMETIC_OP(SyncFlags, &);
 
-[[nodiscard]] inline constexpr SyncFlags& operator&=(SyncFlags& aLhs, SyncFlags aRhs) {
+inline constexpr SyncFlags& operator&=(SyncFlags& aLhs, SyncFlags aRhs) {
     return (aLhs = (aLhs & aRhs));
 }
 

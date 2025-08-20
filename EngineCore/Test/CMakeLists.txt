@@ -42,3 +42,7 @@ PUBLIC
     # External
     "gtest::gtest"
 )
+
+# TODO: Migrate this test suite
+include(GoogleTest)
+gtest_discover_tests("Hobgoblin.Test")

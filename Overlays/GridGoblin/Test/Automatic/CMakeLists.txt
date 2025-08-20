@@ -24,3 +24,6 @@ target_include_directories(${PROJECT_NAME}
 PUBLIC
     "../Common"
 )
+
+include(GoogleTest)
+gtest_discover_tests("GridGoblin.AutomaticTest")
