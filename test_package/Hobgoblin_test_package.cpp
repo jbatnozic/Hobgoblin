@@ -90,7 +90,7 @@ int main() {
         ctx.runFor(1);
     }
 
-    std::cout << "The Goblin hobs happily!\n";
+    std::cout << "Goblin mode activated\n";
     return EXIT_SUCCESS;
 }
 
