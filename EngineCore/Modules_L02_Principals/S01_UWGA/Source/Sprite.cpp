@@ -107,10 +107,11 @@ Sprite::Subsprite::Subsprite(TextureRect aTextureRect)
         const auto bounds = getLocalBounds();
 
         _vertices[0].position = math::Vector2f{0.f, 0.f};
-        _vertices[1].position = math::Vector2f{0.f, bounds.h};
-        _vertices[2].position = math::Vector2f{bounds.w, bounds.h};
+        _vertices[1].position = math::Vector2f{bounds.w, 0.f};
+        _vertices[2].position = math::Vector2f{0.f, bounds.h};
         _vertices[3].position = math::Vector2f{bounds.w, 0.f};
-        _vertices[4].position = _vertices[0].position;
+        _vertices[4].position = math::Vector2f{bounds.w, bounds.h};
+        _vertices[5].position = math::Vector2f{0.f, bounds.h};
     }
 
     // Texture positions
@@ -121,10 +122,11 @@ Sprite::Subsprite::Subsprite(TextureRect aTextureRect)
         const float bottom = static_cast<float>(aTextureRect.getBottom());
 
         _vertices[0].texCoords = math::Vector2f{left, top};
-        _vertices[1].texCoords = math::Vector2f{left, bottom};
-        _vertices[2].texCoords = math::Vector2f{right, bottom};
+        _vertices[1].texCoords = math::Vector2f{right, top};
+        _vertices[2].texCoords = math::Vector2f{left, bottom};
         _vertices[3].texCoords = math::Vector2f{right, top};
-        _vertices[4].texCoords = _vertices[0].texCoords;
+        _vertices[4].texCoords = math::Vector2f{right, bottom};
+        _vertices[5].texCoords = math::Vector2f{left, bottom};
     }
 }
 
@@ -291,7 +293,7 @@ void Sprite::drawOnto(Canvas& aCanvas, const RenderStates& aRenderStates) const 
 
     aCanvas.draw(vertices.data(),
                  stopz(Subsprite::VERTEX_COUNT),
-                 PrimitiveType::TRIANGLE_STRIP,
+                 PrimitiveType::TRIANGLES,
                  getAnchor(),
                  renderStates);
 }

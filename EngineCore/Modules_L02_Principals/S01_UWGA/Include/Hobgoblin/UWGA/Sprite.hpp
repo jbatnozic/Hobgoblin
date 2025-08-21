@@ -82,7 +82,7 @@ public:
         Subsprite(TextureRect aTextureRect);
 
     private:
-        static constexpr std::size_t VERTEX_COUNT = 5;
+        static constexpr std::size_t VERTEX_COUNT = 6;
 
         TextureRect                      _textureRect;
         std::array<Vertex, VERTEX_COUNT> _vertices;
