@@ -166,6 +166,19 @@ Transform& SFMLTransformImpl::scale(const math::Vector2f& aFactors, const math::
     return SELF;
 }
 
+// Comparison
+
+bool SFMLTransformImpl::eq(const Transform* aOther) const {
+    if (aOther == nullptr) {
+        return _getTransform() == sf::Transform::Identity;
+    }
+
+    assert(&aOther->getSystem() == _system);
+
+    const auto& otherImpl = static_cast<const SFMLTransformImpl&>(*aOther);
+    return _getTransform() == otherImpl._getTransform();
+}
+
 ///////////////////////////////////////////////////////////////////////////
 // MARK: Private                                                         //
 ///////////////////////////////////////////////////////////////////////////

@@ -75,6 +75,10 @@ public:
     Transform& scale(const math::Vector2f& aFactors) override;
     Transform& scale(const math::Vector2f& aFactors, const math::Vector2f& aCenter) override;
 
+    // Comparison
+
+    bool eq(const Transform* aOther) const override;
+
 private:
     const System* _system;
 

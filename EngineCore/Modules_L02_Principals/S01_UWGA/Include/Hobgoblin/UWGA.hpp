@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <Hobgoblin/UWGA/Anchor_utils.hpp>
 #include <Hobgoblin/UWGA/Blend_mode.hpp>
 #include <Hobgoblin/UWGA/Builtin_fonts.hpp>
 #include <Hobgoblin/UWGA/Canvas.hpp>
@@ -14,6 +15,7 @@
 #include <Hobgoblin/UWGA/Glsl_shader.hpp>
 #include <Hobgoblin/UWGA/Glyph.hpp>
 #include <Hobgoblin/UWGA/Image.hpp>
+#include <Hobgoblin/UWGA/Opengl_utils.hpp>
 #include <Hobgoblin/UWGA/Primitive_type.hpp>
 #include <Hobgoblin/UWGA/Rectangle_shape.hpp>
 #include <Hobgoblin/UWGA/Render_states.hpp>

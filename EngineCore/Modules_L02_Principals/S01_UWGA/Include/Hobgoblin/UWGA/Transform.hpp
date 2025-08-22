@@ -227,6 +227,12 @@ public:
     //!
     //! \return a reference to `*this`, so that calls can be chained.
     virtual Transform& scale(const math::Vector2f& aFactors, const math::Vector2f& aCenter) = 0;
+
+    ///////////////////////////////////////////////////////////////////////////
+    // MARK: COMPARISON                                                      //
+    ///////////////////////////////////////////////////////////////////////////
+
+    virtual bool eq(const Transform* aOther) const = 0;
 };
 
 } // namespace uwga
