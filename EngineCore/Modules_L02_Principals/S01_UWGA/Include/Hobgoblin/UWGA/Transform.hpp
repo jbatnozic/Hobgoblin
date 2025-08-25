@@ -232,6 +232,8 @@ public:
     // MARK: COMPARISON                                                      //
     ///////////////////////////////////////////////////////////////////////////
 
+    //! Compare this and another transform for equality.
+    //! Passing `nullptr` for `aOther` is treated as comparing against the identity transform.
     virtual bool eq(const Transform* aOther) const = 0;
 };
 

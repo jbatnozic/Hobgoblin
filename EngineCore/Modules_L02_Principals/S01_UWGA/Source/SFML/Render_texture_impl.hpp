@@ -229,7 +229,7 @@ public:
     }
 
     void resetPerformanceCounters() override {
-       _perfCnt = {.maxAggregation = 1};
+        _perfCnt = {.maxAggregation = 1};
     }
 
     PerformanceCounters getAndResetPerformanceCounters() override {

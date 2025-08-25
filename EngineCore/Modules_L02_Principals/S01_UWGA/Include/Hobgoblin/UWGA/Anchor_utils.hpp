@@ -13,8 +13,12 @@
 HOBGOBLIN_NAMESPACE_BEGIN
 namespace uwga {
 
+//! Default delta for `AreAnchorsApproxEq`.
 constexpr double ANCHOR_DEFAULT_DELTA = 0.001;
 
+//! Compare two anchors to tell if they are approximately equal.
+//! \return true if both X and Y components of both anchors are within `aDelta` of each other
+//!         (individually; this function does not calculate true euclidean distance).
 inline bool AreAnchorsApproxEq(math::Vector2d aAnchor1,
                                math::Vector2d aAnchor2,
                                double         aDelta = ANCHOR_DEFAULT_DELTA) {

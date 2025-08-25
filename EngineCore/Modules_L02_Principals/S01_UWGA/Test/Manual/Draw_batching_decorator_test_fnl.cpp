@@ -31,7 +31,7 @@ void RunFastNLooseDrawBatchingDecoratorTest() {
         Color colors[] = {COLOR_RED, COLOR_GREEN, COLOR_BLUE, COLOR_YELLOW};
         for (PZInteger x = 0; x < 32; ++x) {
             if (x == 0 || y == 0 || x == 31 || y == 31) {
-                image->setPixel(x, y, COLOR_BEIGE);    
+                image->setPixel(x, y, COLOR_BEIGE);
             } else {
                 image->setPixel(x, y, colors[(y / 4) % 4]);
             }
@@ -76,7 +76,7 @@ void RunFastNLooseDrawBatchingDecoratorTest() {
             } else {
                 states.shader = nullptr;
             }
-            
+
             std::array<Vertex, 6> vertices = boxVertices;
             window->draw(vertices.data(),
                          stopz(vertices.size()),

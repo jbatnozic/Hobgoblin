@@ -23,7 +23,7 @@ HOBGOBLIN_NAMESPACE_BEGIN
 namespace uwga {
 namespace detail {
 
-//! TODO(add description)
+//! Draw batching decorator implementing the `FAST_N_LOOSE` batching strategy.
 // clang-format off
 template <class taCanvasImpl,
           T_ENABLE_IF(std::is_base_of_v<Canvas, taCanvasImpl>)>

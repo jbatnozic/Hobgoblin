@@ -187,7 +187,7 @@ public:
     //! Get the current state of the performance counters.
     //!
     //! \note to get the most accurrate results, the best time to call this
-    //!       function is immediately after flushing the canvas. 
+    //!       function is immediately after flushing the canvas.
     virtual const PerformanceCounters& getPerformanceCounters() const = 0;
 
     //! Reset all the performance counters back to their zero states (as if
@@ -197,7 +197,7 @@ public:
     //! Return the values of performance counters and reset them internally.
     //!
     //! \note to get the most accurrate results, the best time to call this
-    //!       function is immediately after flushing the canvas. 
+    //!       function is immediately after flushing the canvas.
     virtual PerformanceCounters getAndResetPerformanceCounters() = 0;
 };
 

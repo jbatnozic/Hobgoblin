@@ -6,28 +6,13 @@
 
 #include <Hobgoblin/UWGA/Canvas.hpp>
 
-#include <type_traits>
-
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
 HOBGOBLIN_NAMESPACE_BEGIN
 namespace uwga {
 namespace detail {
 
-//! TODO(add description)
-// clang-format off
-template <class taCanvasImpl,
-          T_ENABLE_IF(std::is_base_of_v<Canvas, taCanvasImpl>)>
-// clang-format on
-class StructDrawBatchingDecorator : public taCanvasImpl {
-public:
-    using Super = taCanvasImpl;
-
-    // Inherit all the constructors
-    using Super::Super;
-
-    // TODO: Actual implementation
-};
+// TODO
 
 } // namespace detail
 } // namespace uwga
