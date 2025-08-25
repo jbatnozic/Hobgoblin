@@ -28,8 +28,6 @@
 
 #include "Font_impl.hpp"
 
-#include <Hobgoblin/UWGA/Font.hpp>
-
 #include "SFML_conversions.hpp"
 #include "SFML_err.hpp"
 

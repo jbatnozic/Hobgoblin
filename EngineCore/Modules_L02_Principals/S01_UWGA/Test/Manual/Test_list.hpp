@@ -14,3 +14,4 @@ void RunRectangleShapeInRenderWindowTest(int, const char**);
 void RunTextInRenderWindowTest(int, const char**);
 void RunDefaultShaderTest(int, const char**);
 void RunInvertShaderTest(int, const char**);
+void RunFastNLooseDrawBatchingDecoratorTest(int, const char**);

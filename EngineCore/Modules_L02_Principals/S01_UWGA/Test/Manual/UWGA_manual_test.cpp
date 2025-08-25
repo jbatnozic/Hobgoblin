@@ -27,6 +27,7 @@ int main() try {
     HG_ADD_MANUAL_TEST(testRunner, RunTextInRenderWindowTest);
     HG_ADD_MANUAL_TEST(testRunner, RunDefaultShaderTest);
     HG_ADD_MANUAL_TEST(testRunner, RunInvertShaderTest);
+    HG_ADD_MANUAL_TEST(testRunner, RunFastNLooseDrawBatchingDecoratorTest);
 
     testRunner.runTest();
 

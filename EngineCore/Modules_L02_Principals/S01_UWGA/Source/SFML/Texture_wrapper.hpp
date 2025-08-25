@@ -6,9 +6,7 @@
 
 #include "Texture_provider.hpp"
 
-namespace sf {
-class Texture;
-} // namespace sf
+#include <SFML/Graphics/Texture.hpp>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
@@ -130,7 +128,11 @@ public:
     }
 
     [[nodiscard]] std::optional<std::int64_t> getNativeHandle() const override {
-        HG_NOT_IMPLEMENTED();
+        const auto openglHandle = _texture.getNativeHandle();
+        if (openglHandle == 0) {
+            return std::nullopt;
+        }
+        return static_cast<std::int64_t>(openglHandle);
     }
 
     // MARK: Canvas/Views
@@ -174,6 +176,18 @@ public:
     }
 
     void display() override {
+        HG_UNREACHABLE("Operation not supported.");
+    }
+
+    const PerformanceCounters& getPerformanceCounters() const override {
+        HG_UNREACHABLE("Operation not supported.");
+    }
+
+    void resetPerformanceCounters() override {
+        HG_UNREACHABLE("Operation not supported.");
+    }
+
+    PerformanceCounters getAndResetPerformanceCounters() override {
         HG_UNREACHABLE("Operation not supported.");
     }
 

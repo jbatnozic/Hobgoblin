@@ -227,6 +227,14 @@ public:
     //!
     //! \return a reference to `*this`, so that calls can be chained.
     virtual Transform& scale(const math::Vector2f& aFactors, const math::Vector2f& aCenter) = 0;
+
+    ///////////////////////////////////////////////////////////////////////////
+    // MARK: COMPARISON                                                      //
+    ///////////////////////////////////////////////////////////////////////////
+
+    //! Compare this and another transform for equality.
+    //! Passing `nullptr` for `aOther` is treated as comparing against the identity transform.
+    virtual bool eq(const Transform* aOther) const = 0;
 };
 
 } // namespace uwga

@@ -203,8 +203,6 @@ void SFMLTextImpl::drawOnto(Canvas& aCanvas, const RenderStates& aRenderStates) 
 
         states.texture = &texWrap;
 
-        aCanvas.flush();
-
         if (_text.getOutlineThickness() != 0.f) {
             const auto& sfmlOutlineVertexArray = _text.m_outlineVertices;
             aCanvas.draw(reinterpret_cast<const Vertex*>(sfmlOutlineVertexArray.m_vertices.data()),

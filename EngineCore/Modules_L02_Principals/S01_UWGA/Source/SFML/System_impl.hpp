@@ -6,6 +6,8 @@
 
 #include <Hobgoblin/UWGA/System.hpp>
 
+#include <Hobgoblin/UWGA/Private/Draw_batching_decorator_fnl.hpp>
+
 #include "Font_impl.hpp"
 #include "Glsl_shader_impl.hpp"
 #include "Image_impl.hpp"
@@ -31,6 +33,29 @@ namespace uwga {
 namespace {
 constexpr PZInteger DEFAULT_WIDTH  = 640;
 constexpr PZInteger DEFAULT_HEIGHT = 480;
+
+const BatchingConfig DEFAULT_BATCHING_CFG = {.strategy = BatchingConfig::Strategy::DISABLED};
+
+template <class taCanvas, class... taArgs>
+std::unique_ptr<taCanvas> CreateCanvas(const BatchingConfig& aBatchingConfig, taArgs&&... aArgs) {
+    switch (aBatchingConfig.strategy) {
+    case BatchingConfig::Strategy::DISABLED:
+        return std::make_unique<taCanvas>(std::forward<taArgs>(aArgs)...);
+
+    case BatchingConfig::Strategy::STRICT:
+        HG_NOT_IMPLEMENTED();
+
+    case BatchingConfig::Strategy::FAST_N_LOOSE:
+        {
+            using Type = detail::FastNLooseDrawBatchingDecorator<taCanvas>;
+            return std::make_unique<Type>(std::forward<taArgs>(aArgs)...);
+        }
+
+    default:
+        HG_UNREACHABLE("Invalid value for BatchingConfig::Strategy ({}).",
+                       (int)aBatchingConfig.strategy);
+    }
+}
 } // namespace
 
 class SFMLSystemImpl : public System {
@@ -55,17 +80,27 @@ public:
 
     // MARK: RenderWindow
 
+    std::unique_ptr<RenderWindow> createRenderWindow(const BatchingConfig& aBatchingConfig,
+                                                     PZInteger             aWidth,
+                                                     PZInteger             aHeight,
+                                                     WindowStyle           aStyle,
+                                                     const UnicodeString&  aTitle,
+                                                     bool                  aEnableSRgb) const override {
+        return CreateCanvas<SFMLRenderWindowImpl>(aBatchingConfig,
+                                                  SELF,
+                                                  aWidth,
+                                                  aHeight,
+                                                  aStyle,
+                                                  aTitle,
+                                                  aEnableSRgb);
+    }
+
     std::unique_ptr<RenderWindow> createRenderWindow(PZInteger            aWidth,
                                                      PZInteger            aHeight,
                                                      WindowStyle          aStyle,
                                                      const UnicodeString& aTitle,
                                                      bool                 aEnableSRgb) const override {
-        return std::make_unique<SFMLRenderWindowImpl>(SELF,
-                                                      aWidth,
-                                                      aHeight,
-                                                      aStyle,
-                                                      aTitle,
-                                                      aEnableSRgb);
+        return createRenderWindow(DEFAULT_BATCHING_CFG, aWidth, aHeight, aStyle, aTitle, aEnableSRgb);
     }
 
     // MARK: Image
@@ -145,31 +180,72 @@ public:
 
     // MARK: RenderTexture
 
+    std::unique_ptr<RenderTexture> createRenderTexture(
+        const BatchingConfig& aBatchingConfig) const override //
+    {
+        return CreateCanvas<SFMLRenderTextureImpl>(aBatchingConfig,
+                                                   SELF,
+                                                   DEFAULT_WIDTH,
+                                                   DEFAULT_HEIGHT,
+                                                   false);
+    }
+
     std::unique_ptr<RenderTexture> createRenderTexture() const override {
-        return std::make_unique<SFMLRenderTextureImpl>(SELF, DEFAULT_WIDTH, DEFAULT_HEIGHT, false);
+        return createRenderTexture(DEFAULT_BATCHING_CFG);
+    }
+
+    std::unique_ptr<RenderTexture> createRenderTexture(const BatchingConfig& aBatchingConfig,
+                                                       PZInteger             aWidth,
+                                                       PZInteger             aHeight,
+                                                       bool aEnableSRgb) const override {
+        return CreateCanvas<SFMLRenderTextureImpl>(aBatchingConfig, SELF, aWidth, aHeight, aEnableSRgb);
     }
 
     std::unique_ptr<RenderTexture> createRenderTexture(PZInteger aWidth,
                                                        PZInteger aHeight,
                                                        bool      aEnableSRgb) const override {
-        return std::make_unique<SFMLRenderTextureImpl>(SELF, aWidth, aHeight, aEnableSRgb);
+        return createRenderTexture(DEFAULT_BATCHING_CFG, aWidth, aHeight, aEnableSRgb);
+    }
+
+    std::unique_ptr<RenderTexture> createRenderTexture(const BatchingConfig& aBatchingConfig,
+                                                       math::Vector2pz       aSize,
+                                                       bool aEnableSRgb) const override {
+        return CreateCanvas<SFMLRenderTextureImpl>(aBatchingConfig, SELF, aSize.x, aSize.y, aEnableSRgb);
     }
 
     std::unique_ptr<RenderTexture> createRenderTexture(math::Vector2pz aSize,
                                                        bool            aEnableSRgb) const override {
-        return std::make_unique<SFMLRenderTextureImpl>(SELF, aSize.x, aSize.y, aEnableSRgb);
+        return createRenderTexture(DEFAULT_BATCHING_CFG, aSize.x, aSize.y, aEnableSRgb);
+    }
+
+    std::unique_ptr<RenderTexture> createRenderTexture(const BatchingConfig&        aBatchingConfig,
+                                                       const std::filesystem::path& aImagePath,
+                                                       TextureRect                  aArea,
+                                                       bool aEnableSRgb) const override {
+        return CreateCanvas<SFMLRenderTextureImpl>(aBatchingConfig,
+                                                   SELF,
+                                                   aImagePath,
+                                                   aArea,
+                                                   aEnableSRgb);
     }
 
     std::unique_ptr<RenderTexture> createRenderTexture(const std::filesystem::path& aImagePath,
                                                        TextureRect                  aArea,
                                                        bool aEnableSRgb) const override {
-        return std::make_unique<SFMLRenderTextureImpl>(SELF, aImagePath, aArea, aEnableSRgb);
+        return createRenderTexture(DEFAULT_BATCHING_CFG, aImagePath, aArea, aEnableSRgb);
+    }
+
+    std::unique_ptr<RenderTexture> createRenderTexture(const BatchingConfig& aBatchingConfig,
+                                                       const Image&          aImage,
+                                                       const TextureRect     aArea,
+                                                       bool aEnableSRgb) const override {
+        return CreateCanvas<SFMLRenderTextureImpl>(aBatchingConfig, SELF, aImage, aArea, aEnableSRgb);
     }
 
     std::unique_ptr<RenderTexture> createRenderTexture(const Image&      aImage,
                                                        const TextureRect aArea,
                                                        bool              aEnableSRgb) const override {
-        return std::make_unique<SFMLRenderTextureImpl>(SELF, aImage, aArea, aEnableSRgb);
+        return createRenderTexture(DEFAULT_BATCHING_CFG, aImage, aArea, aEnableSRgb);
     }
 
     // MARK: View

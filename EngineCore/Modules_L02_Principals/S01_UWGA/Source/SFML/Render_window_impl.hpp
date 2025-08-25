@@ -118,12 +118,19 @@ public:
 
     void flush() override;
 
+    const PerformanceCounters& getPerformanceCounters() const override;
+
+    void resetPerformanceCounters() override;
+
+    PerformanceCounters getAndResetPerformanceCounters() override;
+
 private:
-    const System&    _system;
-    sf::RenderWindow _window;
-    sf::RenderStates _defaultRenderStates = sf::RenderStates::Default;
-    SFMLViewImpl     _activeView;
-    math::Vector2d   _activeViewAnchor;
+    const System&       _system;
+    sf::RenderWindow    _window;
+    sf::RenderStates    _defaultRenderStates = sf::RenderStates::Default;
+    SFMLViewImpl        _activeView;
+    math::Vector2d      _activeViewAnchor;
+    PerformanceCounters _perfCnt;
 };
 
 } // namespace uwga

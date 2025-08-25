@@ -6,6 +6,7 @@ project("Hobgoblin.UWGA.ManualTest")
 add_executable(${PROJECT_NAME}
     "Circleshape_in_renderwindow_test.cpp"
     "Default_shader_test.cpp"
+    "Draw_batching_decorator_test_fnl.cpp"
     "Empty_renderwindow_test.cpp"
     "Invert_shader_test.cpp"
     "Rectangleshape_in_renderwindow_test.cpp"
