@@ -10,10 +10,11 @@
 #include <Hobgoblin/UWGA/Anchor_utils.hpp>
 #include <Hobgoblin/UWGA/Canvas.hpp>
 #include <Hobgoblin/UWGA/Private/Draw_batching_utils.hpp>
-#include <Hobgoblin/UWGA/Vertex_array.hpp>
 #include <Hobgoblin/UWGA/Texture.hpp>
+#include <Hobgoblin/UWGA/Vertex_array.hpp>
 
 #include <cassert>
+#include <memory>
 #include <type_traits>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
@@ -29,18 +30,11 @@ template <class taCanvasImpl,
 // clang-format on
 class FastNLooseDrawBatchingDecorator : public taCanvasImpl {
 public:
-    using Super = taCanvasImpl;
+    using Super               = taCanvasImpl;
+    using PerformanceCounters = Super::PerformanceCounters;
 
     // Inherit all the constructors
     using Super::Super;
-
-    ~FastNLooseDrawBatchingDecorator() override {
-        // There must never be a situation where both are non-null
-        assert(!(_states.transform && _swappableTransform));
-
-        delete _states.transform;
-        delete _swappableTransform;
-    }
 
     void clear(Color aColor = COLOR_BLACK) override {
         _clear();
@@ -52,6 +46,8 @@ public:
               PrimitiveType       aPrimitiveType,
               math::Vector2d      aAnchor,
               const RenderStates& aStates = RENDER_STATES_DEFAULT) override {
+        ++_perfCnt.vcallCount;
+
         if (HG_UNLIKELY_CONDITION(aVertices == nullptr || aVertexCount == 0)) {
             HG_UNLIKELY_BRANCH;
             return;
@@ -61,7 +57,7 @@ public:
             if (!IsBatchable(aPrimitiveType)) {
                 // This is the easiest case: the VA is empty and the new set of vertices is
                 // non-batchable, so we just pass it onto the superclass.
-                Super::draw(aVertices, aVertexCount, aPrimitiveType, aAnchor, aStates);
+                _superDraw(aVertices, aVertexCount, aPrimitiveType, aAnchor, aStates);
             } else {
             START_NEW_BATCH:
                 // In this case, the VA is empty but the new set of vertices is batchable,
@@ -69,7 +65,9 @@ public:
                 _va.anchor        = aAnchor;
                 _va.primitiveType = aPrimitiveType;
                 _va.vertices.insert(_va.vertices.end(), aVertices, aVertices + aVertexCount);
-                
+
+                _perfCnt.currentAggregation = 1;
+
                 _saveRenderStates(aStates);
             }
         } else {
@@ -77,7 +75,7 @@ public:
                 // Another easy case: the VA is not empty but the new set of vertices is not
                 // batchable, so we flush and then pass the vertices to the superclass.
                 _flush();
-                Super::draw(aVertices, aVertexCount, aPrimitiveType, aAnchor, aStates);
+                _superDraw(aVertices, aVertexCount, aPrimitiveType, aAnchor, aStates);
             } else {
                 // The hardest case: with two nonempty but batchable sets of vertices, we have to
                 // detect if they are compatible or not, and also deal with different anchors.
@@ -96,6 +94,7 @@ public:
                 }
 
                 auto it = _va.vertices.insert(_va.vertices.end(), aVertices, aVertices + aVertexCount);
+                ++_perfCnt.currentAggregation;
                 if (!AreAnchorsApproxEq(aAnchor, _va.anchor)) {
                     const auto delta = math::VectorCast<float>(aAnchor - _va.anchor);
                     for (; it != _va.vertices.end(); ++it) {
@@ -111,20 +110,65 @@ public:
         Super::flush();
     }
 
+    const PerformanceCounters& getPerformanceCounters() const override {
+        if (_perfCnt.maxAggregation < _perfCnt.currentAggregation) {
+            _perfCnt.maxAggregation = _perfCnt.currentAggregation;
+        }
+        return _perfCnt;
+    }
+
+    void resetPerformanceCounters() override {
+        _perfCnt = {};
+    }
+
+    PerformanceCounters getAndResetPerformanceCounters() override {
+        PerformanceCounters result = _perfCnt;
+        _perfCnt                   = {};
+        return result;
+    }
+
 private:
     VertexArray _va;
 
-    // NOTE: _states.transform, if not null, will hold
-    //       AND OWN a Transform object as a raw pointer!
-    RenderStates     _states;
-    const Transform* _swappableTransform = nullptr;
+    RenderStates _states;
+
+    // NOTE: If a `RenderStates` object non-null Transform is ever passed to the batcher, it will
+    //       clone it. On subsequent uses, it will reuse this object (just copy the transformation
+    //       matrices into it). When a transform is s not needed, `_states.transform` will be set
+    //       to null, but otherwise it will point to this object.
+    std::unique_ptr<Transform> _auxTransform;
+
+    struct PerformanceCountersExt : PerformanceCounters {
+        PZInteger currentAggregation = 0;
+    };
+
+    mutable PerformanceCountersExt _perfCnt;
 
     void _clear() {
         _va.vertices.clear();
+        _perfCnt.currentAggregation = 0;
+    }
+
+    void _superDraw(const Vertex*       aVertices,
+                    PZInteger           aVertexCount,
+                    PrimitiveType       aPrimitiveType,
+                    math::Vector2d      aAnchor,
+                    const RenderStates& aStates) {
+        Super::draw(aVertices, aVertexCount, aPrimitiveType, aAnchor, aStates);
+        ++_perfCnt.ucallCount;
     }
 
     void _flush() {
-        Super::draw(_va, _states);
+        _superDraw(_va.vertices.data(),
+                   stopz(_va.vertices.size()),
+                   _va.primitiveType,
+                   _va.anchor,
+                   _states);
+
+        if (_perfCnt.maxAggregation < _perfCnt.currentAggregation) {
+            _perfCnt.maxAggregation = _perfCnt.currentAggregation;
+        }
+
         _clear();
     }
 
@@ -134,27 +178,19 @@ private:
         _states.blendMode = aStates.blendMode;
 
         if (!aStates.transform) {
-            if (_states.transform) {
-                assert(_swappableTransform == nullptr);
-                std::swap(_states.transform, _swappableTransform);
-            }
+            _states.transform = nullptr;
         } else {
-            if (!_states.transform) {
-                if (_swappableTransform) {
-                    std::swap(_states.transform, _swappableTransform);
-                    const_cast<Transform*>(_states.transform)->setToCopyOf(*aStates.transform);
-                } else {
-                    _states.transform = aStates.transform->clone().release();
-                }
+            if (!_auxTransform) {
+                _auxTransform = aStates.transform->clone();
             } else {
-                const_cast<Transform*>(_states.transform)->setToCopyOf(*aStates.transform);
+                _auxTransform->setToCopyOf(*aStates.transform);
             }
+            _states.transform = _auxTransform.get();
         }
     }
 
     bool _isTextureCompatibleWithCurrentBranch(const Texture* aTexture) {
-        const auto selector =
-            static_cast<int>(!!_states.texture) | (static_cast<int>(!!aTexture) << 1);
+        const auto selector = static_cast<int>(!!_states.texture) | (static_cast<int>(!!aTexture) << 1);
 
         switch (selector) {
         case 0: // both are null
@@ -196,6 +232,7 @@ private:
         }
     }
 };
+
 } // namespace detail
 } // namespace uwga
 HOBGOBLIN_NAMESPACE_END

@@ -112,6 +112,12 @@ public:
 
     void flush() override;
 
+    const PerformanceCounters& getPerformanceCounters() const override;
+
+    void resetPerformanceCounters() override;
+
+    PerformanceCounters getAndResetPerformanceCounters() override;
+
 protected:
     const System&               _system;
     std::optional<taUnderlying> _texture;
@@ -249,6 +255,23 @@ void SFMLTextureCommonImpl<taUnderlying>::draw(const Vertex*       aVertices,
 
 template <class taUnderlying>
 void SFMLTextureCommonImpl<taUnderlying>::flush() {
+    HG_UNREACHABLE("Illegal operation!");
+}
+
+template <class taUnderlying>
+const SFMLTextureCommonImpl<taUnderlying>::PerformanceCounters& SFMLTextureCommonImpl<
+    taUnderlying>::getPerformanceCounters() const {
+    HG_UNREACHABLE("Illegal operation!");
+}
+
+template <class taUnderlying>
+void SFMLTextureCommonImpl<taUnderlying>::resetPerformanceCounters() {
+    HG_UNREACHABLE("Illegal operation!");
+}
+
+template <class taUnderlying>
+SFMLTextureCommonImpl<taUnderlying>::PerformanceCounters SFMLTextureCommonImpl<
+    taUnderlying>::getAndResetPerformanceCounters() {
     HG_UNREACHABLE("Illegal operation!");
 }
 

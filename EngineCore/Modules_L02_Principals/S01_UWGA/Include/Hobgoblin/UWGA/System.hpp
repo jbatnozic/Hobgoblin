@@ -7,6 +7,7 @@
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/Math/Vector.hpp>
+#include <Hobgoblin/UWGA/Batching_config.hpp>
 #include <Hobgoblin/UWGA/Builtin_fonts.hpp>
 #include <Hobgoblin/UWGA/Color.hpp>
 #include <Hobgoblin/UWGA/Shader.hpp>
@@ -83,6 +84,14 @@ public:
     ///////////////////////////////////////////////////////////////////////////
     // MARK: RenderWindow                                                    //
     ///////////////////////////////////////////////////////////////////////////
+
+    virtual std::unique_ptr<RenderWindow> createRenderWindow(
+        const BatchingConfig& aBatchingConfig,
+        PZInteger             aWidth      = 640,
+        PZInteger             aHeight     = 480,
+        WindowStyle           aStyle      = WindowStyle::DEFAULT,
+        const UnicodeString&  aTitle      = HG_UNILIT("Hobgoblin"),
+        bool                  aEnableSRgb = false) const = 0;
 
     virtual std::unique_ptr<RenderWindow> createRenderWindow(
         PZInteger            aWidth      = 640,
@@ -189,20 +198,76 @@ public:
     ///////////////////////////////////////////////////////////////////////////
 
     //! Create a default render texture with unspecified size and settings.
+    virtual std::unique_ptr<RenderTexture> createRenderTexture(
+        const BatchingConfig& aBatchingConfig) const = 0;
+
+    //! Create a default render texture with unspecified size and settings.
+    //!
+    //! \note this overload of the function takes no `BatchingConfig` parameter,
+    //!       so the default is assumed (batching disabled).
     virtual std::unique_ptr<RenderTexture> createRenderTexture() const = 0;
 
     //! Create a render texture of size `aWidth` x `aHeight` (in pixels).
     //! Set `aEnableSRgb` to `true` to enable sRGB conversion, or to `false ` to disable it.
+    //!
+    //! \note The maximum size for a texture depends on the graphics driver and can be retrieved
+    //!       with the `getMaximumTextureSize` function.
+    virtual std::unique_ptr<RenderTexture> createRenderTexture(const BatchingConfig& aBatchingConfig,
+                                                               PZInteger             aWidth,
+                                                               PZInteger             aHeight,
+                                                               bool aEnableSRgb = false) const = 0;
+
+    //! Create a render texture of size `aWidth` x `aHeight` (in pixels).
+    //! Set `aEnableSRgb` to `true` to enable sRGB conversion, or to `false ` to disable it.
+    //!
+    //! \note this overload of the function takes no `BatchingConfig` parameter,
+    //!       so the default is assumed (batching disabled).
+    //!
+    //! \note The maximum size for a texture depends on the graphics driver and can be retrieved
+    //!       with the `getMaximumTextureSize` function.
     virtual std::unique_ptr<RenderTexture> createRenderTexture(PZInteger aWidth,
                                                                PZInteger aHeight,
                                                                bool      aEnableSRgb = false) const = 0;
 
     //! Create a render texture of size `aSize.x` x `aSize.y` (in pixels).
     //! Set `aEnableSRgb` to `true` to enable sRGB conversion, or to `false ` to disable it.
+    //!
+    //! \note The maximum size for a texture depends on the graphics driver and can be retrieved
+    //!       with the `getMaximumTextureSize` function.
+    virtual std::unique_ptr<RenderTexture> createRenderTexture(const BatchingConfig& aBatchingConfig,
+                                                               math::Vector2pz       aSize,
+                                                               bool aEnableSRgb = false) const = 0;
+
+    //! Create a render texture of size `aSize.x` x `aSize.y` (in pixels).
+    //! Set `aEnableSRgb` to `true` to enable sRGB conversion, or to `false ` to disable it.
+    //!
+    //! \note this overload of the function takes no `BatchingConfig` parameter,
+    //!       so the default is assumed (batching disabled).
+    //!
+    //! \note The maximum size for a texture depends on the graphics driver and can be retrieved
+    //!       with the `getMaximumTextureSize` function.
     virtual std::unique_ptr<RenderTexture> createRenderTexture(math::Vector2pz aSize,
                                                                bool aEnableSRgb = false) const = 0;
 
     //! Create a render texture by loading an image file from the disk.
+    //!
+    //! The `aArea` argument can be used to load only a sub-rectangle of the whole image. If you want
+    //! the entire image then leave the default value (which is an empty `TextureRect`). If the `aArea`
+    //! rectangle crosses the bounds of the image, it is adjusted to fit the image size.
+    //!
+    //! Set `aEnableSRgb` to `true` to enable sRGB conversion, or to `false ` to disable it.
+    //!
+    //! \note The maximum size for a texture depends on the graphics driver and can be retrieved
+    //!       with the `getMaximumTextureSize` function.
+    virtual std::unique_ptr<RenderTexture> createRenderTexture(const BatchingConfig& aBatchingConfig,
+                                                               const std::filesystem::path& aImagePath,
+                                                               TextureRect                  aArea = {},
+                                                               bool aEnableSRgb = false) const = 0;
+
+    //! Create a render texture by loading an image file from the disk.
+    //!
+    //! \note this overload of the function takes no `BatchingConfig` parameter,
+    //!       so the default is assumed (batching disabled).
     //!
     //! The `aArea` argument can be used to load only a sub-rectangle of the whole image. If you want
     //! the entire image then leave the default value (which is an empty `TextureRect`). If the `aArea`
@@ -217,6 +282,24 @@ public:
                                                                bool aEnableSRgb = false) const = 0;
 
     //! Create a render texture by loading it from an `Image` object.
+    //!
+    //! The `aArea` argument can be used to load only a sub-rectangle of the whole image. If you want
+    //! the entire image then leave the default value (which is an empty `TextureRect`). If the `aArea`
+    //! rectangle crosses the bounds of the image, it is adjusted to fit the image size.
+    //!
+    //! Set `aEnableSRgb` to `true` to enable sRGB conversion, or to `false ` to disable it.
+    //!
+    //! \note The maximum size for a texture depends on the graphics driver and can be retrieved
+    //!       with the `getMaximumTextureSize` function.
+    virtual std::unique_ptr<RenderTexture> createRenderTexture(const BatchingConfig& aBatchingConfig,
+                                                               const Image&          image,
+                                                               const TextureRect     aArea = {},
+                                                               bool aEnableSRgb = false) const = 0;
+
+    //! Create a render texture by loading it from an `Image` object.
+    //!
+    //! \note this overload of the function takes no `BatchingConfig` parameter,
+    //!       so the default is assumed (batching disabled).
     //!
     //! The `aArea` argument can be used to load only a sub-rectangle of the whole image. If you want
     //! the entire image then leave the default value (which is an empty `TextureRect`). If the `aArea`

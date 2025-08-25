@@ -2,6 +2,7 @@
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
 #include <Hobgoblin/UWGA.hpp>
+#include <Hobgoblin/UWGA/Private/Draw_batching_decorator_fnl.hpp>
 
 #include <Hobgoblin/Logging.hpp>
 
@@ -14,13 +15,26 @@ namespace {
 
 void RunFastNLooseDrawBatchingDecoratorTest() {
     auto system = CreateGraphicsSystem("SFML");
-    auto window = system->createRenderWindow(800, 800, WindowStyle::DEFAULT, "UWGA.ManualTest");
+    auto window =
+        system->createRenderWindow(BatchingConfig{.strategy = BatchingConfig::Strategy::FAST_N_LOOSE},
+                                   800,
+                                   800,
+                                   WindowStyle::DEFAULT,
+                                   "UWGA.ManualTest");
+
+    auto shader = system->createGLSLShader(
+        std::filesystem::path{HG_TEST_ASSET_DIR} / "Invert_shader_vertex.txt",
+        std::filesystem::path{HG_TEST_ASSET_DIR} / "Invert_shader_fragment.txt");
 
     auto image = system->createImage(32, 32);
     for (PZInteger y = 0; y < 32; ++y) {
         Color colors[] = {COLOR_RED, COLOR_GREEN, COLOR_BLUE, COLOR_YELLOW};
         for (PZInteger x = 0; x < 32; ++x) {
-            image->setPixel(x, y, colors[(y / 4) % 4]);
+            if (x == 0 || y == 0 || x == 31 || y == 31) {
+                image->setPixel(x, y, COLOR_BEIGE);    
+            } else {
+                image->setPixel(x, y, colors[(y / 4) % 4]);
+            }
         }
     }
 
@@ -53,18 +67,28 @@ void RunFastNLooseDrawBatchingDecoratorTest() {
         window->clear(COLOR_BLACK);
 
         // Draw the box
+        RenderStates states{.texture = texture.get()};
         for (int i = 0; i < 8; ++i) {
             math::Vector2d anchor{i * 64.0, i * 64.0};
 
+            if (i == 4) {
+                states.shader = shader.get();
+            } else {
+                states.shader = nullptr;
+            }
+            
             std::array<Vertex, 6> vertices = boxVertices;
             window->draw(vertices.data(),
                          stopz(vertices.size()),
-                         PrimitiveType::TRIANGLE_STRIP,
-                         boxAnchor,
-                         {.texture = texture.get()});
+                         PrimitiveType::TRIANGLES,
+                         anchor,
+                         states);
         }
 
         window->display();
+
+        const auto pc1 = window->getAndResetPerformanceCounters();
+        const auto pc2 = window->getAndResetPerformanceCounters();
     }
 }
 
@@ -73,6 +97,6 @@ void RunFastNLooseDrawBatchingDecoratorTest() {
 } // namespace hobgoblin
 } // namespace jbatnozic
 
-void RunTexturedVerticesInRenderWindowTest(int, const char**) {
-    jbatnozic::hobgoblin::uwga::RunTexturedVerticesInRenderWindowTest();
+void RunFastNLooseDrawBatchingDecoratorTest(int, const char**) {
+    jbatnozic::hobgoblin::uwga::RunFastNLooseDrawBatchingDecoratorTest();
 }

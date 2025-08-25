@@ -139,6 +139,7 @@ math::Vector2f SFMLRenderWindowImpl::getRelativeCursorPosition() const {
 // Contents
 
 void SFMLRenderWindowImpl::display() {
+    flush();
     _window.display();
 }
 
@@ -211,10 +212,27 @@ void SFMLRenderWindowImpl::draw(const Vertex*       aVertices,
                                 const RenderStates& aRenderStates) {
     SFMLDrawingAdapter drawingAdapter{_system, _window, _defaultRenderStates, _activeViewAnchor};
     drawingAdapter.draw(aVertices, aVertexCount, aPrimitiveType, aAnchor, aRenderStates);
+
+    ++_perfCnt.vcallCount;
+    ++_perfCnt.ucallCount;
 }
 
 void SFMLRenderWindowImpl::flush() {
     /* Nothing to do (there is no batching in SFML). */
+}
+
+auto SFMLRenderWindowImpl::getPerformanceCounters() const -> const PerformanceCounters& {
+    return _perfCnt;
+}
+
+void SFMLRenderWindowImpl::resetPerformanceCounters() {
+    _perfCnt = {.maxAggregation = 1};
+}
+
+auto SFMLRenderWindowImpl::getAndResetPerformanceCounters() -> PerformanceCounters {
+    PerformanceCounters result = _perfCnt;
+    _perfCnt                   = {};
+    return result;
 }
 
 } // namespace uwga

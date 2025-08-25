@@ -29,6 +29,7 @@ public:
         , _activeView{aSystem} //
     {
         reset(aWidth, aHeight, aEnableSRgb);
+        resetPerformanceCounters();
     }
 
     SFMLRenderTextureImpl(const System& aSystem, math::Vector2pz aSize, bool aEnableSRgb)
@@ -36,6 +37,7 @@ public:
         , _activeView{aSystem} //
     {
         reset(aSize.x, aSize.y, aEnableSRgb);
+        resetPerformanceCounters();
     }
 
     SFMLRenderTextureImpl(const System&                aSystem,
@@ -46,6 +48,7 @@ public:
         , _activeView{aSystem} //
     {
         reset(aImagePath, aArea, aEnableSRgb);
+        resetPerformanceCounters();
     }
 
     SFMLRenderTextureImpl(const System&     aSystem,
@@ -56,9 +59,11 @@ public:
         , _activeView{aSystem} //
     {
         reset(aImage, aArea, aEnableSRgb);
+        resetPerformanceCounters();
     }
 
     void display() override {
+        flush();
         _texture->display();
     }
 
@@ -210,16 +215,34 @@ public:
               const RenderStates& aRenderStates) override {
         SFMLDrawingAdapter drawingAdapter{_system, *_texture, _defaultRenderStates, _activeViewAnchor};
         drawingAdapter.draw(aVertices, aVertexCount, aPrimitiveType, aAnchor, aRenderStates);
+
+        ++_perfCnt.vcallCount;
+        ++_perfCnt.ucallCount;
     }
 
     void flush() override {
         /* Nothing to do (there is no batching in SFML). */
     }
 
+    const PerformanceCounters& getPerformanceCounters() const override {
+        return _perfCnt;
+    }
+
+    void resetPerformanceCounters() override {
+       _perfCnt = {.maxAggregation = 1};
+    }
+
+    PerformanceCounters getAndResetPerformanceCounters() override {
+        PerformanceCounters result = _perfCnt;
+        _perfCnt                   = {};
+        return result;
+    }
+
 private:
-    sf::RenderStates _defaultRenderStates = sf::RenderStates::Default;
-    SFMLViewImpl     _activeView;
-    math::Vector2d   _activeViewAnchor;
+    sf::RenderStates    _defaultRenderStates = sf::RenderStates::Default;
+    SFMLViewImpl        _activeView;
+    math::Vector2d      _activeViewAnchor;
+    PerformanceCounters _perfCnt;
 };
 
 } // namespace uwga
