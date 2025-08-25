@@ -93,12 +93,24 @@ public:
                     goto START_NEW_BATCH;
                 }
 
+                const bool majorityIsNew = (pztos(aVertexCount) > _va.vertices.size());
                 auto it = _va.vertices.insert(_va.vertices.end(), aVertices, aVertices + aVertexCount);
                 ++_perfCnt.currentAggregation;
                 if (!AreAnchorsApproxEq(aAnchor, _va.anchor)) {
                     const auto delta = math::VectorCast<float>(aAnchor - _va.anchor);
-                    for (; it != _va.vertices.end(); ++it) {
-                        it->position += delta;
+                    if (HG_LIKELY_CONDITION(!majorityIsNew)) {
+                        HG_LIKELY_BRANCH;
+                        auto end = _va.vertices.end();
+                        for (; it != end; ++it) {
+                            it->position += delta;
+                        }
+                    } else {
+                        auto end = _va.vertices.begin();
+                        std::swap(it, end);
+                        for (; it != end; ++it) {
+                            it->position -= delta;
+                        }
+                        _va.anchor = aAnchor;
                     }
                 }
             }

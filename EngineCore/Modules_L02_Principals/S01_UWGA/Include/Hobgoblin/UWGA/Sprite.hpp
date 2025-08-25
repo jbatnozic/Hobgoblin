@@ -82,7 +82,8 @@ public:
         Subsprite(TextureRect aTextureRect);
 
     private:
-        static constexpr std::size_t VERTEX_COUNT = 6;
+        // Two triangles is 6 vertices, but we can infer the 5th and 6th one
+        static constexpr std::size_t VERTEX_COUNT = 4;
 
         TextureRect                      _textureRect;
         std::array<Vertex, VERTEX_COUNT> _vertices;

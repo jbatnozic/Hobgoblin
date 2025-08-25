@@ -109,9 +109,7 @@ Sprite::Subsprite::Subsprite(TextureRect aTextureRect)
         _vertices[0].position = math::Vector2f{0.f, 0.f};
         _vertices[1].position = math::Vector2f{bounds.w, 0.f};
         _vertices[2].position = math::Vector2f{0.f, bounds.h};
-        _vertices[3].position = math::Vector2f{bounds.w, 0.f};
-        _vertices[4].position = math::Vector2f{bounds.w, bounds.h};
-        _vertices[5].position = math::Vector2f{0.f, bounds.h};
+        _vertices[3].position = math::Vector2f{bounds.w, bounds.h};
     }
 
     // Texture positions
@@ -124,9 +122,7 @@ Sprite::Subsprite::Subsprite(TextureRect aTextureRect)
         _vertices[0].texCoords = math::Vector2f{left, top};
         _vertices[1].texCoords = math::Vector2f{right, top};
         _vertices[2].texCoords = math::Vector2f{left, bottom};
-        _vertices[3].texCoords = math::Vector2f{right, top};
-        _vertices[4].texCoords = math::Vector2f{right, bottom};
-        _vertices[5].texCoords = math::Vector2f{left, bottom};
+        _vertices[3].texCoords = math::Vector2f{right, bottom};
     }
 }
 
@@ -277,8 +273,10 @@ void Sprite::drawOnto(Canvas& aCanvas, const RenderStates& aRenderStates) const 
     const auto& subspr = subsprites[pztos(getCurrentSubspriteIndex())];
 
     // Prepare vertices
-    std::array<Vertex, Subsprite::VERTEX_COUNT> vertices;
-    std::memcpy(vertices.data(), subspr._vertices.data(), sizeof(vertices));
+    std::array<Vertex, 6> vertices;
+    std::memcpy(vertices.data(), subspr._vertices.data(), Subsprite::VERTEX_COUNT * sizeof(Vertex));
+    vertices[4] = vertices[2];
+    vertices[5] = vertices[1];
 
     const auto& transform = getTransform();
     for (auto& vertex : vertices) {
@@ -292,7 +290,7 @@ void Sprite::drawOnto(Canvas& aCanvas, const RenderStates& aRenderStates) const 
                                            .blendMode = aRenderStates.blendMode};
 
     aCanvas.draw(vertices.data(),
-                 stopz(Subsprite::VERTEX_COUNT),
+                 stopz(vertices.size()),
                  PrimitiveType::TRIANGLES,
                  getAnchor(),
                  renderStates);
