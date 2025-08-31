@@ -6,6 +6,7 @@ project("Hobgoblin.UWGA.AutomaticTest")
 find_package(GTest CONFIG REQUIRED)
 
 add_executable(${PROJECT_NAME}
+    "Draw_batching_decorator_fnl_test.cpp"
     "Sprite_loader_test.cpp"
 )
 
