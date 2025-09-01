@@ -1,9 +1,6 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-// clang-format off
-
-
 #include <Hobgoblin/RmlUi/Hobgoblin_backend.hpp>
 
 #include <RmlUi/Core.h>
@@ -20,18 +17,22 @@ namespace rml {
 
 namespace {
 std::mutex gBackendMutex;
-int gBackendUseCount;
+int        gBackendUseCount;
 
+std::shared_ptr<uwga::System>                   gGraphicsSystem;
 std::unique_ptr<detail::RmlUiHobgoblinSystem>   gSystem;
 std::unique_ptr<detail::RmlUiHobgoblinRenderer> gRenderer;
 } // namespace
 
-std::unique_ptr<HobgoblinBackend::BackendLifecycleGuard> HobgoblinBackend::initialize() {
+std::unique_ptr<HobgoblinBackend::BackendLifecycleGuard> HobgoblinBackend::initialize(
+    std::shared_ptr<uwga::System> aGraphicsSystem) //
+{
     std::lock_guard lock{gBackendMutex};
 
     if (gBackendUseCount == 0) {
-        gSystem = std::make_unique<detail::RmlUiHobgoblinSystem>();
-        gRenderer = std::make_unique<detail::RmlUiHobgoblinRenderer>();
+        gGraphicsSystem = std::move(aGraphicsSystem);
+        gSystem         = std::make_unique<detail::RmlUiHobgoblinSystem>();
+        gRenderer       = std::make_unique<detail::RmlUiHobgoblinRenderer>(*gGraphicsSystem);
 
         Rml::SetSystemInterface(gSystem.get());
         Rml::SetRenderInterface(gRenderer.get());
@@ -39,6 +40,10 @@ std::unique_ptr<HobgoblinBackend::BackendLifecycleGuard> HobgoblinBackend::initi
         if (!Rml::Initialise()) {
             throw std::runtime_error{"HobgoblinBackend - RmlUi could not be initialized!"};
         }
+    } else if (gGraphicsSystem.get() != aGraphicsSystem.get()) {
+        throw std::runtime_error{
+            "HobgoblinBackend - Cannot initialize a new blackend for RmlUi with a different graphics "
+            "system (uwga::System) before the existing one is destroyed!"};
     }
 
     gBackendUseCount += 1;
@@ -55,6 +60,7 @@ HobgoblinBackend::BackendLifecycleGuard::~BackendLifecycleGuard() {
 
         gRenderer.reset();
         gSystem.reset();
+        gGraphicsSystem.reset();
     }
 }
 
@@ -324,18 +330,15 @@ int HobgoblinBackend::translateButton(in::MouseButton aButton) {
 int HobgoblinBackend::getKeyModifiers() {
     int modifiers = 0;
 
-    if (in::CheckPressedVK(in::VK_LSHIFT) ||
-        in::CheckPressedVK(in::VK_RSHIFT)) {
+    if (in::CheckPressedVK(in::VK_LSHIFT) || in::CheckPressedVK(in::VK_RSHIFT)) {
         modifiers |= Rml::Input::KM_SHIFT;
     }
 
-    if (in::CheckPressedVK(in::VK_LCONTROL) ||
-        in::CheckPressedVK(in::VK_RCONTROL)) {
+    if (in::CheckPressedVK(in::VK_LCONTROL) || in::CheckPressedVK(in::VK_RCONTROL)) {
         modifiers |= Rml::Input::KM_CTRL;
     }
 
-    if (in::CheckPressedVK(in::VK_LALT) ||
-        in::CheckPressedVK(in::VK_RALT)) {
+    if (in::CheckPressedVK(in::VK_LALT) || in::CheckPressedVK(in::VK_RALT)) {
         modifiers |= Rml::Input::KM_ALT;
     }
 
@@ -359,5 +362,3 @@ detail::RmlUiHobgoblinRenderer* HobgoblinBackend::getRenderer() {
 } // namespace rml
 HOBGOBLIN_NAMESPACE_END
 #include <Hobgoblin/Private/Pmacro_undef.hpp>
-
-// clang-format on

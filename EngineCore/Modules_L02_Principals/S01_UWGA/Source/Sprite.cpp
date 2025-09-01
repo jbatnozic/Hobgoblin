@@ -126,6 +126,10 @@ Sprite::Subsprite::Subsprite(TextureRect aTextureRect)
     }
 }
 
+TextureRect Sprite::Subsprite::getTextureRect() const {
+    return _textureRect;
+}
+
 math::Rectangle<float> Sprite::Subsprite::getLocalBounds() const {
     // clang-format off
     return {

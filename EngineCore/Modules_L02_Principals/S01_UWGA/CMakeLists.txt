@@ -79,7 +79,7 @@ PUBLIC
     "Hobgoblin_L01_S02_Utility"
 
     # Principals
-    "Hobgoblin_L02_S00_Window"
+    "Hobgoblin_L02_S00_Input"
 
     # External
     "sfml::sfml"

@@ -4,13 +4,13 @@
 #define HOBGOBLIN_SHORT_NAMESPACE
 #include <Hobgoblin/Alvin.hpp>
 #include <Hobgoblin/ChipmunkPhysics.hpp>
-#include <Hobgoblin/Graphics.hpp>
 #include <Hobgoblin/Logging.hpp>
 #include <Hobgoblin/Math.hpp>
+#include <Hobgoblin/UWGA.hpp>
 
 #include <chrono>
-#include <iostream>
 #include <list>
+#include <optional>
 
 namespace alvin = hg::alvin;
 namespace math  = hg::math;
@@ -74,12 +74,15 @@ void Init(alvin::MainCollisionDispatcher& aDispatcher, NeverNull<cpSpace*> aSpac
 
 ///////////////////////////////////////////////////////////////////////////////
 
-class Ball : public BallInterface {
+class Ball
+    : public BallInterface
+    , public hg::uwga::Drawable {
 public:
     Ball(NeverNull<cpSpace*> aSpace, math::Vector2d aPosition)
         : _colDelegate{_initColDelegate()}
         , _body{alvin::Body::createDynamic(1000.0, cpMomentForCircle(1000.0, 0.0, RADIUS, cpvzero))}
-        , _shape{alvin::Shape::createCircle(_body, RADIUS, cpvzero)} {
+        , _shape{alvin::Shape::createCircle(_body, RADIUS, cpvzero)} //
+    {
         _colDelegate.bind(*this, _shape);
         cpSpaceAddBody(aSpace, _body);
         setPosition(aPosition);
@@ -101,17 +104,23 @@ public:
         return _shape;
     }
 
-    void draw(hg::gr::Canvas& aCanvas) const {
-        hg::gr::CircleShape circle{RADIUS};
-        circle.setFillColor(hg::gr::COLOR_WHITE);
-        circle.setOutlineColor(hg::gr::COLOR_RED);
-        circle.setOutlineThickness(1.f);
+    void drawOnto(
+        hg::uwga::Canvas&             aCanvas,
+        const hg::uwga::RenderStates& aRenderStates = hg::uwga::RENDER_STATES_DEFAULT) const override //
+    {
+        if (!_circle) {
+            _circle.emplace(aCanvas.getSystem(), RADIUS, 16);
+
+            _circle->setFillColor(hg::uwga::COLOR_WHITE);
+            _circle->setOutlineColor(hg::uwga::COLOR_RED);
+            _circle->setOutlineThickness(1.f);
+        }
 
         const auto pos = cpBodyGetPosition(_body);
-        circle.setOrigin({RADIUS, RADIUS});
-        circle.setPosition({(float)pos.x, (float)pos.y});
+        _circle->setOrigin({RADIUS, RADIUS});
+        _circle->setPosition({(float)pos.x, (float)pos.y});
 
-        aCanvas.draw(circle);
+        aCanvas.draw(*_circle);
     }
 
     void destroy() override {
@@ -127,6 +136,8 @@ private:
 
     std::list<Ball>*          _ballList     = nullptr;
     std::list<Ball>::iterator _ballListIter = {};
+
+    mutable std::optional<hg::uwga::CircleShape> _circle;
 
     alvin::CollisionDelegate _initColDelegate() {
         return alvin::CollisionDelegateBuilder{}
@@ -153,12 +164,15 @@ private:
     }
 };
 
-class Wall : public WallInterface {
+class Wall
+    : public WallInterface
+    , public hg::uwga::Drawable {
 public:
     Wall(NeverNull<cpSpace*> aSpace, math::Vector2d aPosition)
         : _colDelegate{_initColDelegate()}
         , _body{alvin::Body::createStatic()}
-        , _shape{alvin::Shape::createBox(_body, CELL_RESOLUTION, CELL_RESOLUTION, 0.0)} {
+        , _shape{alvin::Shape::createBox(_body, CELL_RESOLUTION, CELL_RESOLUTION, 0.0)} //
+    {
         _colDelegate.bind(*this, _shape);
         cpSpaceAddBody(aSpace, _body);
         setPosition(aPosition);
@@ -175,23 +189,29 @@ public:
         return _shape;
     }
 
-    void draw(hg::gr::Canvas& aCanvas) const {
-        hg::gr::RectangleShape rect{
-            {CELL_RESOLUTION, CELL_RESOLUTION}
-        };
-        rect.setFillColor(hg::gr::COLOR_BLACK);
+    void drawOnto(
+        hg::uwga::Canvas&             aCanvas,
+        const hg::uwga::RenderStates& aRenderStates = hg::uwga::RENDER_STATES_DEFAULT) const override //
+    {
+        if (!_rect) {
+            _rect.emplace(aCanvas.getSystem(), hg::math::Vector2f{CELL_RESOLUTION, CELL_RESOLUTION});
+
+            _rect->setFillColor(hg::uwga::COLOR_BLACK);
+        }
 
         const auto pos = cpBodyGetPosition(_body);
-        rect.setOrigin({CELL_RESOLUTION / 2.f, CELL_RESOLUTION / 2.f});
-        rect.setPosition({(float)pos.x, (float)pos.y});
+        _rect->setOrigin({CELL_RESOLUTION / 2.f, CELL_RESOLUTION / 2.f});
+        _rect->setPosition({(float)pos.x, (float)pos.y});
 
-        aCanvas.draw(rect);
+        aCanvas.draw(*_rect);
     }
 
 private:
     alvin::CollisionDelegate _colDelegate;
     alvin::Body              _body;
     alvin::Shape             _shape;
+
+    mutable std::optional<hg::uwga::RectangleShape> _rect;
 
     alvin::CollisionDelegate _initColDelegate() {
         return alvin::CollisionDelegateBuilder{}
@@ -200,12 +220,15 @@ private:
     }
 };
 
-class Sensor : public SensorInterface {
+class Sensor
+    : public SensorInterface
+    , public hg::uwga::Drawable {
 public:
     Sensor(NeverNull<cpSpace*> aSpace, math::Vector2d aPosition)
         : _colDelegate{_initColDelegate()}
         , _body{alvin::Body::createKinematic()}
-        , _shape{alvin::Shape::createCircle(_body, RADIUS, cpvzero)} {
+        , _shape{alvin::Shape::createCircle(_body, RADIUS, cpvzero)} //
+    {
         cpShapeSetSensor(_shape, true);
         _colDelegate.bind(*this, _shape);
         cpSpaceAddBody(aSpace, _body);
@@ -219,17 +242,23 @@ public:
         cpBodySetPosition(_body, cpv(aPosition.x, aPosition.y));
     }
 
-    void draw(hg::gr::Canvas& aCanvas) const {
-        hg::gr::CircleShape circle{RADIUS};
-        circle.setFillColor(hg::gr::COLOR_TRANSPARENT);
-        circle.setOutlineColor(hg::gr::COLOR_BLUE);
-        circle.setOutlineThickness(2.f);
+    void drawOnto(
+        hg::uwga::Canvas&             aCanvas,
+        const hg::uwga::RenderStates& aRenderStates = hg::uwga::RENDER_STATES_DEFAULT) const override //
+    {
+        if (!_circle) {
+            _circle.emplace(aCanvas.getSystem(), RADIUS, 16);
+
+            _circle->setFillColor(hg::uwga::COLOR_TRANSPARENT);
+            _circle->setOutlineColor(hg::uwga::COLOR_BLUE);
+            _circle->setOutlineThickness(2.f);
+        }
 
         const auto pos = cpBodyGetPosition(_body);
-        circle.setOrigin({RADIUS, RADIUS});
-        circle.setPosition({(float)pos.x, (float)pos.y});
+        _circle->setOrigin({RADIUS, RADIUS});
+        _circle->setPosition({(float)pos.x, (float)pos.y});
 
-        aCanvas.draw(circle);
+        aCanvas.draw(*_circle);
     }
 
 private:
@@ -238,6 +267,8 @@ private:
     alvin::CollisionDelegate _colDelegate;
     alvin::Body              _body;
     alvin::Shape             _shape;
+
+    mutable std::optional<hg::uwga::CircleShape> _circle;
 
     alvin::CollisionDelegate _initColDelegate() {
         auto builder = alvin::CollisionDelegateBuilder{};
@@ -276,13 +307,24 @@ std::list<Wall> SetUpArenaEdges(hg::NeverNull<cpSpace*> aSpace,
 
 } // namespace
 
+// MARK: main
+
 int main(int argc, char* argv[]) {
     hg::log::SetMinimalLogSeverity(hg::log::Severity::Info);
 
-    hg::gr::RenderWindow window{hg::win::VideoMode::getDesktopMode(), "Wallz & Ballz"};
-    window.setFramerateLimit(60);
-    window.getView().setSize({100 * CELL_RESOLUTION, 50 * CELL_RESOLUTION});
-    window.getView().setCenter({100 * CELL_RESOLUTION / 2.0, 50 * CELL_RESOLUTION / 2.0});
+    auto graphicsSystem = hg::uwga::CreateGraphicsSystem("SFML");
+    auto window         = graphicsSystem->createRenderWindow(
+        hg::uwga::BatchingConfig{.strategy = hg::uwga::BatchingConfig::Strategy::FAST_N_LOOSE},
+        1000,
+        800,
+        hg::uwga::WindowStyle::DEFAULT,
+        "Wallz & Ballz");
+    window->setFramerateLimit(60);
+
+    auto view = graphicsSystem->createView();
+    view->setSize({100 * CELL_RESOLUTION, 50 * CELL_RESOLUTION});
+    view->setCenter({100 * CELL_RESOLUTION / 2.0, 50 * CELL_RESOLUTION / 2.0});
+    window->setView(*view);
 
     alvin::Space space;
     cpSpaceSetGravity(space, cpv(0.0, 500.0));
@@ -302,14 +344,14 @@ int main(int argc, char* argv[]) {
     bool           lmbPressed = false;
     bool           rmbPressed = false;
 
-    while (window.isOpen()) {
-        hg::win::Event ev;
-        while (window.pollEvent(ev)) {
+    while (true) {
+        hg::uwga::WindowEvent ev;
+        while (window && window->pollEvent(ev)) {
             ev.visit(
-                [&window](const hg::win::Event::Closed&) {
-                    window.close();
+                [&window](const hg::uwga::WindowEvent::Closed&) {
+                    window.reset();
                 },
-                [&](const hg::win::Event::MouseButtonPressed& aData) {
+                [&](const hg::uwga::WindowEvent::MouseButtonPressed& aData) {
                     mousePos = {aData.x, aData.y};
                     switch (aData.button) {
                     case hg::in::MB_LEFT:
@@ -322,7 +364,7 @@ int main(int argc, char* argv[]) {
                         break;
                     }
                 },
-                [&](const hg::win::Event::MouseButtonReleased& aData) {
+                [&](const hg::uwga::WindowEvent::MouseButtonReleased& aData) {
                     mousePos = {aData.x, aData.y};
                     switch (aData.button) {
                     case hg::in::MB_LEFT:
@@ -335,19 +377,23 @@ int main(int argc, char* argv[]) {
                         break;
                     }
                 },
-                [&](const hg::win::Event::MouseMoved& aData) {
+                [&](const hg::uwga::WindowEvent::MouseMoved& aData) {
                     mousePos = {aData.x, aData.y};
                 });
         }
+        if (!window) {
+            break;
+        }
 
-        const auto worldPos = window.mapPixelToCoords(mousePos, window.getView());
+        const auto worldPos =
+            window->mapPixelToCoords(hg::math::VectorCast<float>(mousePos), window->getView());
         if (lmbPressed) {
-            balls.emplace_back(space, math::Vector2d{worldPos.x, worldPos.y});
+            balls.emplace_back(space, worldPos);
             balls.back().addListInfo(balls, std::prev(balls.end()));
             HG_LOG_INFO(LOG_ID, "Ball count: {}", balls.size());
         }
 
-        sensor.setPosition({worldPos.x, worldPos.y});
+        sensor.setPosition(worldPos);
 
         const auto start = std::chrono::steady_clock::now();
         space.step(1.0 / 60.0);
@@ -358,17 +404,18 @@ int main(int argc, char* argv[]) {
             HG_LOG_INFO(LOG_ID, "Step took {}ms.", ms);
         }
 
-        window.clear(hg::gr::COLOR_GREY);
+        window->clear(hg::uwga::COLOR_GREY);
 
         for (const auto& ball : balls) {
-            ball.draw(window);
+            window->draw(ball);
         }
         for (const auto& wall : walls) {
-            wall.draw(window);
+            window->draw(wall);
         }
-        sensor.draw(window);
+        window->draw(sensor);
 
-        window.display();
+        window->flush();
+        window->display();
     }
 
     return EXIT_SUCCESS;

@@ -1,14 +1,13 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-// clang-format off
-
 #ifndef UHOBGOBLIN_RMLUI_RMLUI_PREPROCESSING_HPP
 #define UHOBGOBLIN_RMLUI_RMLUI_PREPROCESSING_HPP
 
 #include <Hobgoblin/HGExcept.hpp>
+#include <Hobgoblin/UWGA/System.hpp>
 
-#include <string>
+#include <filesystem>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 HOBGOBLIN_NAMESPACE_BEGIN
@@ -21,8 +20,7 @@ public:
 };
 
 //! TODO(add description)
-//! TODO(use filesystem::path)
-void PreprocessRcssFile(const std::string& aFilePath); 
+void PreprocessRcssFile(std::filesystem::path aFilePath, const uwga::System& aGraphicsSystem);
 
 } // namespace rml
 HOBGOBLIN_NAMESPACE_END
@@ -30,5 +28,3 @@ HOBGOBLIN_NAMESPACE_END
 #include <Hobgoblin/Private/Short_namespace.hpp>
 
 #endif // !UHOBGOBLIN_RMLUI_RMLUI_PREPROCESSING_HPP
-
-// clang-format on

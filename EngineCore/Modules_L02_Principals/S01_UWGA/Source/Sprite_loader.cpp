@@ -326,7 +326,7 @@ void SpriteLoader::loadSpriteManifest(const std::filesystem::path&  aManifestFil
     ParseSpriteManifestFile(aManifestFilePath, SELF, aSpriteManifestEnumerationMap);
 }
 
-SpriteBlueprint SpriteLoader::getBlueprint(SpriteIdNumerical aSpriteId) const {
+const SpriteBlueprint& SpriteLoader::getBlueprint(SpriteIdNumerical aSpriteId) const {
     const auto iter = _indexedBlueprints.find(aSpriteId);
     if (iter == _indexedBlueprints.end()) {
         HG_THROW_TRACED(TracedRuntimeError, 0, "No blueprint with this ID ({}) was found!", aSpriteId);
@@ -335,7 +335,7 @@ SpriteBlueprint SpriteLoader::getBlueprint(SpriteIdNumerical aSpriteId) const {
     return iter->second;
 }
 
-SpriteBlueprint SpriteLoader::getBlueprint(const SpriteIdTextual& aSpriteId) const {
+const SpriteBlueprint& SpriteLoader::getBlueprint(const SpriteIdTextual& aSpriteId) const {
     const auto iter = _mappedBlueprints.find(aSpriteId);
     if (iter == _mappedBlueprints.end()) {
         HG_THROW_TRACED(TracedRuntimeError, 0, "No blueprint with this ID ({}) was found!", aSpriteId);

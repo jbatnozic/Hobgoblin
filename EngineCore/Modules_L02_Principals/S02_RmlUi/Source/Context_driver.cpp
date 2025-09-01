@@ -16,7 +16,7 @@
 HOBGOBLIN_NAMESPACE_BEGIN
 namespace rml {
 
-ContextDriver::ContextDriver(const std::string& aContextName, gr::Canvas& aCanvas)
+ContextDriver::ContextDriver(const std::string& aContextName, uwga::Canvas& aCanvas)
     : _canvas{&aCanvas} {
     _context = Rml::CreateContext(aContextName,
                                   Rml::Vector2i{_canvas->getSize().x, _canvas->getSize().y},
@@ -59,42 +59,42 @@ void ContextDriver::render() {
     renderer->setCanvas(nullptr);
 }
 
-bool ContextDriver::processEvent(const win::Event& aEvent) {
+bool ContextDriver::processEvent(const uwga::WindowEvent& aEvent) {
     const auto modifiers = HobgoblinBackend::getKeyModifiers();
 
     bool eventConsumed = false;
 
     aEvent.strictVisit(
-        [](const win::Event::Unknown&) {},
-        [](const win::Event::Closed&) {},
-        [](const win::Event::GainedFocus&) {},
-        [](const win::Event::LostFocus&) {},
-        [&](const win::Event::KeyPressed& aEventData) {
+        [](const uwga::WindowEvent::Unknown&) {},
+        [](const uwga::WindowEvent::Closed&) {},
+        [](const uwga::WindowEvent::GainedFocus&) {},
+        [](const uwga::WindowEvent::LostFocus&) {},
+        [&](const uwga::WindowEvent::KeyPressed& aEventData) {
             eventConsumed =
                 !_context->ProcessKeyDown(HobgoblinBackend::translateKey(aEventData.virtualKey),
                                           modifiers);
         },
-        [&](const win::Event::KeyReleased& aEventData) {
+        [&](const uwga::WindowEvent::KeyReleased& aEventData) {
             eventConsumed =
                 !_context->ProcessKeyUp(HobgoblinBackend::translateKey(aEventData.virtualKey),
                                         modifiers);
         },
-        [&](const win::Event::MouseButtonPressed& aEventData) {
+        [&](const uwga::WindowEvent::MouseButtonPressed& aEventData) {
             eventConsumed =
                 !_context->ProcessMouseButtonDown(HobgoblinBackend::translateButton(aEventData.button),
                                                   modifiers);
         },
-        [&](const win::Event::MouseButtonReleased& aEventData) {
+        [&](const uwga::WindowEvent::MouseButtonReleased& aEventData) {
             eventConsumed =
                 !_context->ProcessMouseButtonUp(HobgoblinBackend::translateButton(aEventData.button),
                                                 modifiers);
         },
-        [](const win::Event::MouseEntered&) {},
-        [](const win::Event::MouseLeft&) {},
-        [&](const win::Event::MouseMoved& aEventData) {
+        [](const uwga::WindowEvent::MouseEntered&) {},
+        [](const uwga::WindowEvent::MouseLeft&) {},
+        [&](const uwga::WindowEvent::MouseMoved& aEventData) {
             eventConsumed = !_context->ProcessMouseMove(aEventData.x, aEventData.y, modifiers);
         },
-        [&](const win::Event::MouseWheelScrolled& aEventData) {
+        [&](const uwga::WindowEvent::MouseWheelScrolled& aEventData) {
             switch (aEventData.wheel) {
             case in::MW_HORIZONTAL:
                 eventConsumed =
@@ -110,8 +110,8 @@ bool ContextDriver::processEvent(const win::Event& aEvent) {
                 break;
             }
         },
-        [](const win::Event::Resized&) {},
-        [&](const win::Event::TextEntered& aEventData) {
+        [](const uwga::WindowEvent::Resized&) {},
+        [&](const uwga::WindowEvent::TextEntered& aEventData) {
             // note: 0..31 are control characters
             if (aEventData.unicode > 31) {
                 eventConsumed = !_context->ProcessTextInput(Rml::Character(aEventData.unicode));
@@ -127,7 +127,7 @@ void ContextDriver::update() {
     _context->Update();
 }
 
-void ContextDriver::setCanvas(gr::Canvas& aCanvas) {
+void ContextDriver::setCanvas(uwga::Canvas& aCanvas) {
     _canvas = &aCanvas;
 }
 

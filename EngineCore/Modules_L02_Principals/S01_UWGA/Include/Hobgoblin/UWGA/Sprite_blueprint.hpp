@@ -54,6 +54,10 @@ public:
     //! Returns number of contained subsprites.
     PZInteger getSubspriteCount() const;
 
+    //! Return the texture rect defining the subsprite with index `aSubspriteIndex`.
+    //! \warning UB if `aSubspriteIndex` is out of bounds!
+    TextureRect getSubsprite(PZInteger aSubspriteIndex) const;
+
     //! Get the sprite attributes that will modify the sprite that's returned when you call `spr()`.
     const SpriteAttributes& getSpriteAttributes() const;
 
