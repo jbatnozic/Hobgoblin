@@ -8,17 +8,17 @@
 
 #include <Hobgoblin/UWGA/Private/Draw_batching_decorator_fnl.hpp>
 
-#include "Font_impl.hpp"
-#include "Glsl_shader_impl.hpp"
-#include "Image_impl.hpp"
-#include "Render_texture_impl.hpp"
-#include "Render_window_impl.hpp"
-#include "Text_impl.hpp"
-#include "Texture_impl.hpp"
-#include "Transform_impl.hpp"
-#include "View_impl.hpp"
+#include "SFML/Font_impl.hpp"
+#include "SFML/Glsl_shader_impl.hpp"
+#include "SFML/Image_impl.hpp"
+#include "SFML/Render_texture_impl.hpp"
+#include "SFML/Render_window_impl.hpp"
+#include "SFML/Text_impl.hpp"
+#include "SFML/Texture_impl.hpp"
+#include "SFML/Transform_impl.hpp"
+#include "SFML/View_impl.hpp"
 
-#include "../BuiltinFonts/Helper.hpp"
+#include "BuiltinFonts/Helper.hpp"
 
 #include <SFML/Graphics/Shader.hpp>
 

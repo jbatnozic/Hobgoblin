@@ -13,10 +13,10 @@
 
 #include <SFML/Graphics/RenderTarget.hpp>
 
-#include "Glsl_shader_impl.hpp"
-#include "SFML_conversions.hpp"
-#include "SFML_vertices.hpp"
-#include "Transform_impl.hpp"
+#include "SFML/Glsl_shader_impl.hpp"
+#include "SFML/SFML_conversions.hpp"
+#include "SFML/SFML_vertices.hpp"
+#include "SFML/Transform_impl.hpp"
 
 #include <cassert>
 

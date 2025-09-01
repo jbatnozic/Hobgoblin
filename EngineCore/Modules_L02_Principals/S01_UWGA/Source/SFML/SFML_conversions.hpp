@@ -22,7 +22,7 @@
 #include <Hobgoblin/UWGA/Window_style.hpp>
 #include <Hobgoblin/Window/Context_settings.hpp>
 
-#include "Texture_provider.hpp"
+#include "SFML/Texture_provider.hpp"
 
 // SFML
 

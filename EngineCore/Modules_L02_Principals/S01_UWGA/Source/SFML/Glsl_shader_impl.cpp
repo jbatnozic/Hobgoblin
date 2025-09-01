@@ -1,15 +1,15 @@
 // Copyright 2025 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#include "Glsl_shader_impl.hpp"
+#include "SFML/Glsl_shader_impl.hpp"
 
 #include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/UWGA/Glsl_shader.hpp>
 #include <Hobgoblin/UWGA/Shader.hpp>
 
-#include "SFML_conversions.hpp"
-#include "SFML_err.hpp"
-#include "Texture_provider.hpp"
+#include "SFML/SFML_conversions.hpp"
+#include "SFML/SFML_err.hpp"
+#include "SFML/Texture_provider.hpp"
 
 #include <cassert>
 

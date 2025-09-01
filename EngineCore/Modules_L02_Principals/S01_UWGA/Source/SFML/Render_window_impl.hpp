@@ -16,7 +16,7 @@
 #include <SFML/Graphics/Shader.hpp>
 #include <SFML/Graphics/Texture.hpp>
 
-#include "View_impl.hpp"
+#include "SFML/View_impl.hpp"
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
@@ -35,6 +35,8 @@ public:
                          bool                 aEnableSRgb);
 
     const sf::RenderWindow& getUnderlyingRenderWindow() const;
+
+    sf::RenderWindow& getUnderlyingRenderWindow();
 
     ///////////////////////////////////////////////////////////////////////////
     // MARK: Element                                                         //

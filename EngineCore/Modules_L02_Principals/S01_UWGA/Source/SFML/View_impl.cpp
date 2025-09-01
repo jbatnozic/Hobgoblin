@@ -1,9 +1,9 @@
 // Copyright 2025 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#include "View_impl.hpp"
+#include "SFML/View_impl.hpp"
 
-#include "SFML_conversions.hpp"
+#include "SFML/SFML_conversions.hpp"
 
 #include <Hobgoblin/UWGA/View.hpp>
 #include <SFML/Graphics/View.hpp>

@@ -1,7 +1,7 @@
 // Copyright 2025 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#include "Text_impl.hpp"
+#include "SFML/Text_impl.hpp"
 
 #include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/UWGA/Font.hpp>
@@ -9,9 +9,9 @@
 #include <Hobgoblin/UWGA/Text.hpp>
 #include <Hobgoblin/UWGA/Texture.hpp>
 
-#include "Font_impl.hpp"
-#include "SFML_conversions.hpp"
-#include "Texture_wrapper.hpp"
+#include "SFML/Font_impl.hpp"
+#include "SFML/SFML_conversions.hpp"
+#include "SFML/Texture_wrapper.hpp"
 
 #include <cassert>
 

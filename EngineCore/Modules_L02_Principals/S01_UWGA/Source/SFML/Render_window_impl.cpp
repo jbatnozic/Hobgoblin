@@ -1,12 +1,12 @@
 // Copyright 2025 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#include "Render_window_impl.hpp"
+#include "SFML/Render_window_impl.hpp"
 
-#include "SFML_conversions.hpp"
-#include "SFML_drawing_adapter.hpp"
-#include "SFML_window_event_conversion.hpp"
-#include "View_impl.hpp"
+#include "SFML/SFML_conversions.hpp"
+#include "SFML/SFML_drawing_adapter.hpp"
+#include "SFML/SFML_window_event_conversion.hpp"
+#include "SFML/View_impl.hpp"
 
 #include <Hobgoblin/HGExcept.hpp>
 #include <SFML/Window/Event.hpp>
@@ -49,6 +49,10 @@ SFMLRenderWindowImpl::SFMLRenderWindowImpl(const System&        aSystem,
     , _activeViewAnchor{_activeView.getAnchor()} {}
 
 const sf::RenderWindow& SFMLRenderWindowImpl::getUnderlyingRenderWindow() const {
+    return _window;
+}
+
+sf::RenderWindow& SFMLRenderWindowImpl::getUnderlyingRenderWindow() {
     return _window;
 }
 

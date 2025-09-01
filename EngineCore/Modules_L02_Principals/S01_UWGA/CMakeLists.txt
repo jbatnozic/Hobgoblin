@@ -11,6 +11,7 @@ set(COMPONENT_NAME "Hobgoblin.UWGA")
 
 set(COMPONENT_SOURCES
     "Source/Circle_shape.cpp"
+    "Source/Opengl_utils.cpp"
     "Source/Rectangle_shape.cpp"
     "Source/Shape.cpp"
     "Source/Sprite_attributes.cpp"
@@ -55,7 +56,14 @@ set(COMPONENT_SOURCES
 # ===== TARGET SETUP =====
 
 add_library(${COMPONENT_NAME} STATIC ${COMPONENT_SOURCES})
-target_include_directories(${COMPONENT_NAME} PUBLIC "Include/")
+
+target_include_directories(${COMPONENT_NAME}
+PUBLIC
+    "Include/"
+
+PRIVATE
+    "Source/"
+)
 
 target_link_libraries(${COMPONENT_NAME}
 PUBLIC

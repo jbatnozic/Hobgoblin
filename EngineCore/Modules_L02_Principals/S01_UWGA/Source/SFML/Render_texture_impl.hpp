@@ -11,11 +11,11 @@
 #include <SFML/Graphics/RenderStates.hpp>
 #include <SFML/Graphics/RenderTexture.hpp>
 
-#include "SFML_conversions.hpp"
-#include "SFML_drawing_adapter.hpp"
-#include "SFML_err.hpp"
-#include "Texture_common_impl.hpp"
-#include "View_impl.hpp"
+#include "SFML/SFML_conversions.hpp"
+#include "SFML/SFML_drawing_adapter.hpp"
+#include "SFML/SFML_err.hpp"
+#include "SFML/Texture_common_impl.hpp"
+#include "SFML/View_impl.hpp"
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
@@ -65,6 +65,22 @@ public:
     void display() override {
         flush();
         _texture->display();
+    }
+
+    void pushGLStates() {
+        _texture->pushGLStates();
+    }
+
+    void popGLStates() {
+        _texture->popGLStates();
+    }
+
+    void resetGLStates() {
+        _texture->resetGLStates();
+    }
+
+    bool setActive(bool aActive) {
+        return _texture->setActive(aActive);
     }
 
     ///////////////////////////////////////////////////////////////////////////

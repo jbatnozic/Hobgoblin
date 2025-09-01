@@ -4,7 +4,7 @@
 #ifndef UHOBGOBLIN_UWGA_SFML_TEXTURE_WRAPPER_HPP
 #define UHOBGOBLIN_UWGA_SFML_TEXTURE_WRAPPER_HPP
 
-#include "Texture_provider.hpp"
+#include "SFML/Texture_provider.hpp"
 
 #include <SFML/Graphics/Texture.hpp>
 

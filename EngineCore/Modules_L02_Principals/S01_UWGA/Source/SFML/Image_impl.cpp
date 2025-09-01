@@ -1,10 +1,10 @@
 // Copyright 2025 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#include "Image_impl.hpp"
+#include "SFML/Image_impl.hpp"
 
-#include "SFML_conversions.hpp"
-#include "SFML_err.hpp"
+#include "SFML/SFML_conversions.hpp"
+#include "SFML/SFML_err.hpp"
 
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/HGExcept.hpp>

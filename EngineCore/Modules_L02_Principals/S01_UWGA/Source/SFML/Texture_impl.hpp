@@ -8,9 +8,9 @@
 
 #include <SFML/Graphics/Texture.hpp>
 
-#include "SFML_conversions.hpp"
-#include "SFML_err.hpp"
-#include "Texture_common_impl.hpp"
+#include "SFML/SFML_conversions.hpp"
+#include "SFML/SFML_err.hpp"
+#include "SFML/Texture_common_impl.hpp"
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 

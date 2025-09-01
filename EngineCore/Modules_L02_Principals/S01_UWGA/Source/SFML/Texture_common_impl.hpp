@@ -8,9 +8,9 @@
 
 #include <SFML/Graphics/Texture.hpp>
 
-#include "Image_impl.hpp"
-#include "Render_window_impl.hpp"
-#include "Texture_provider.hpp"
+#include "SFML/Image_impl.hpp"
+#include "SFML/Render_window_impl.hpp"
+#include "SFML/Texture_provider.hpp"
 
 #include <optional>
 #include <type_traits>
