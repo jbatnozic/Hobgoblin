@@ -7,6 +7,7 @@
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/Input.hpp>
 #include <Hobgoblin/Math/Vector.hpp>
+#include <Hobgoblin/UWGA/View.hpp>
 #include <Hobgoblin/UWGA/Window_event.hpp>
 
 #include <SPeMPE/Utility/Window_frame_input_view.hpp>
@@ -22,7 +23,7 @@ namespace hg = ::jbatnozic::hobgoblin;
 
 class WindowInputTracker {
 public:
-    using GetViewRelativeMousePosFunc   = std::function<hg::math::Vector2f(hg::PZInteger)>;
+    using GetViewRelativeMousePosFunc   = std::function<hg::math::Vector2d(const hg::uwga::View*)>;
     using GetWindowRelativeMousePosFunc = std::function<hg::math::Vector2f()>;
 
     WindowInputTracker(GetViewRelativeMousePosFunc   aGetViewRelativeMousePos,
@@ -54,7 +55,9 @@ public:
 
     bool checkMouseMoved() const;
 
-    hg::math::Vector2f getViewRelativeMousePos(hobgoblin::PZInteger aViewIndex = 0) const;
+    hg::math::Vector2d getViewRelativeMousePos() const;
+
+    hg::math::Vector2d getViewRelativeMousePos(const hg::uwga::View& aView) const;
 
     hg::math::Vector2f getWindowRelativeMousePos() const;
 

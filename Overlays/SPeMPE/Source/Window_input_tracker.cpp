@@ -160,8 +160,12 @@ bool WindowInputTracker::checkMouseMoved() const {
     return _mouseDidMove;
 }
 
-hg::math::Vector2f WindowInputTracker::getViewRelativeMousePos(hobgoblin::PZInteger aViewIndex) const {
-    return _getViewRelativeMousePos(aViewIndex);
+hg::math::Vector2d WindowInputTracker::getViewRelativeMousePos() const {
+    return _getViewRelativeMousePos(nullptr);
+}
+
+hg::math::Vector2d WindowInputTracker::getViewRelativeMousePos(const hg::uwga::View& aView) const {
+    return _getViewRelativeMousePos(&aView);
 }
 
 hg::math::Vector2f WindowInputTracker::getWindowRelativeMousePos() const {

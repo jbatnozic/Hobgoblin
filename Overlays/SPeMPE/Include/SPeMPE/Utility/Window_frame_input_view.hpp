@@ -7,6 +7,7 @@
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/Input/Universal_input_enumeration.hpp>
 #include <Hobgoblin/Math/Vector.hpp>
+#include <Hobgoblin/UWGA/View.hpp>
 
 namespace jbatnozic {
 namespace spempe {
@@ -67,11 +68,15 @@ public:
     //! Checks if the mouse cursor was moved since the last frame.
     bool checkMouseMoved() const;
 
-    //! Returns the  position of the mouse cursor relative to the selected view (in game world
-    //! coordinates).
-    hg::math::Vector2f getViewRelativeMousePos(hobgoblin::PZInteger aViewIndex = 0) const;
+    //! Returns the position (in game world coordinates) of the mouse cursor relative to the
+    //! current view of the window.
+    hg::math::Vector2d getViewRelativeMousePos() const;
 
-    //! Returns the position of the mouse cursor relative to the window (in window coordinates).
+    //! Returns the position (in game world coordinates) of the mouse cursor relative to the
+    //! provided view.
+    hg::math::Vector2d getViewRelativeMousePos(const hobgoblin::uwga::View& aView) const;
+
+    //! Returns the position (in window coordinates) of the mouse cursor relative to the window.
     hg::math::Vector2f getWindowRelativeMousePos() const;
 
     //! Positive is up, negative is down, 0 = no change since last frame

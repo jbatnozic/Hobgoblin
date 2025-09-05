@@ -16,8 +16,8 @@ DefaultWindowManager::DefaultWindowManager(hobgoblin::QAO_InstGuard aInstGuard, 
                      aExecutionPriority,
                      "::jbatnozic::spempe::DefaultWindowManager"}
     , _rmlUiContextDriver{}
-    , _inputTracker{[this](hg::PZInteger aViewIndex) -> hg::math::Vector2f {
-                        return _getViewRelativeMousePos(aViewIndex);
+    , _inputTracker{[this](const hg::uwga::View* aView) -> hg::math::Vector2d {
+                        return _getViewRelativeMousePos(aView);
                     },
                     [this]() -> hg::math::Vector2f {
                         return _getWindowRelativeMousePos();
@@ -368,7 +368,7 @@ FloatSeconds DefaultWindowManager::_getFrameDeltaTime() const {
     return _timingConfig.framerateLimit.value().getDeltaTime();
 }
 
-sf::Vector2f DefaultWindowManager::_getViewRelativeMousePos(hobgoblin::PZInteger aViewIndex) const {
+hg::math::Vector2d DefaultWindowManager::_getViewRelativeMousePos(const hg::uwga::View* aView) const {
     if (_headless) {
         return {0.f, 0.f};
     }
@@ -376,18 +376,17 @@ sf::Vector2f DefaultWindowManager::_getViewRelativeMousePos(hobgoblin::PZInteger
     const auto mrtPositioning = _getMainRenderTexturePositioningData();
     const auto pixelPos       = _window->getRelativeCursorPosition();
 
-    auto windowPos =
-        _window->mapPixelToCoords(hg::math::VectorCast<float>(pixelPos), _window->getView());
+    auto windowPos = _window->mapPixelToCoords(hg::math::VectorCast<float>(pixelPos),
+                                               aView ? *aView : _window->getView());
     windowPos.x =
         (windowPos.x - mrtPositioning.position.x) / mrtPositioning.scale.x + mrtPositioning.origin.x;
     windowPos.y =
         (windowPos.y - mrtPositioning.position.y) / mrtPositioning.scale.y + mrtPositioning.origin.y;
 
-    return hg::math::VectorCast<float>(
-        _mainRenderTexture->mapPixelToCoords(hg::math::VectorCast<float>(windowPos)));
+    return _mainRenderTexture->mapPixelToCoords(hg::math::VectorCast<float>(windowPos));
 }
 
-sf::Vector2f DefaultWindowManager::_getWindowRelativeMousePos() const {
+hg::math::Vector2f DefaultWindowManager::_getWindowRelativeMousePos() const {
     if (_headless) {
         return {0, 0};
     }

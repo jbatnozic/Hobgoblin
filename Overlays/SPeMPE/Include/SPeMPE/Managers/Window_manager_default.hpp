@@ -4,6 +4,7 @@
 #ifndef SPEMPE_MANAGERS_WINDOW_MANAGER_DEFAULT_HPP
 #define SPEMPE_MANAGERS_WINDOW_MANAGER_DEFAULT_HPP
 
+#include <Hobgoblin/Math/Vector.hpp>
 #include <Hobgoblin/RmlUi.hpp>
 #include <Hobgoblin/UWGA/Render_texture.hpp>
 #include <Hobgoblin/UWGA/Render_window.hpp>
@@ -21,6 +22,8 @@
 
 namespace jbatnozic {
 namespace spempe {
+
+namespace hg = ::jbatnozic::hobgoblin;
 
 class DefaultWindowManager
     : public WindowManagerInterface
@@ -138,8 +141,8 @@ private:
     FloatSeconds _getTickDeltaTime() const;
     FloatSeconds _getFrameDeltaTime() const;
 
-    sf::Vector2f _getViewRelativeMousePos(hobgoblin::PZInteger aViewIndex) const;
-    sf::Vector2f _getWindowRelativeMousePos() const;
+    hg::math::Vector2d _getViewRelativeMousePos(const hg::uwga::View* aView) const;
+    hg::math::Vector2f _getWindowRelativeMousePos() const;
 };
 
 } // namespace spempe
