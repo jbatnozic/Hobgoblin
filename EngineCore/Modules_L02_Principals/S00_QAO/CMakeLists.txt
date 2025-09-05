@@ -32,7 +32,7 @@ PUBLIC
 
     # Utilities
     "Hobgoblin_L00_S01_Common"
-    "Hobgoblin_L01_S02_Utility"
+    "Hobgoblin_L01_S01_Utility"
 )
 
 add_library("Hobgoblin_L02_S00_QAO" ALIAS ${COMPONENT_NAME})

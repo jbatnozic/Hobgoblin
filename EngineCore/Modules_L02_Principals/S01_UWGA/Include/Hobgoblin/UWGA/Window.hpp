@@ -219,8 +219,6 @@ public:
     virtual void setFramerateLimit(PZInteger aLimit) = 0;
 };
 
-math::Vector2i GetMousePositionRelativeToWindow(const Window& aWindow);
-
 } // namespace uwga
 HOBGOBLIN_NAMESPACE_END
 

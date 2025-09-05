@@ -6,9 +6,6 @@
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/Math/Vector.hpp>
-#include <Hobgoblin/Window.hpp>
-
-#include <iostream>
 
 namespace jbatnozic {
 namespace spempe {
@@ -18,15 +15,11 @@ DefaultWindowManager::DefaultWindowManager(hobgoblin::QAO_InstGuard aInstGuard, 
                      SPEMPE_TYPEID_SELF,
                      aExecutionPriority,
                      "::jbatnozic::spempe::DefaultWindowManager"}
-    , _window{}
-    , _windowDrawBatcher{}
-    , _mainRenderTexture{}
-    , _mainRenderTextureDrawBatcher{}
     , _rmlUiContextDriver{}
     , _inputTracker{[this](hg::PZInteger aViewIndex) -> hg::math::Vector2f {
                         return _getViewRelativeMousePos(aViewIndex);
                     },
-                    [this]() -> hg::math::Vector2i {
+                    [this]() -> hg::math::Vector2f {
                         return _getWindowRelativeMousePos();
                     }} {}
 
@@ -40,57 +33,42 @@ void DefaultWindowManager::setToHeadlessMode(const TimingConfig& aTimingConfig) 
     _headless     = true;
     _timingConfig = aTimingConfig;
 
-    _mainRenderTextureDrawBatcher.reset();
     _mainRenderTexture.reset();
-    _windowDrawBatcher.reset();
     _window.reset();
 }
 
-void DefaultWindowManager::setToNormalMode(const WindowConfig&            aWindowConfig,
-                                           const MainRenderTextureConfig& aMainRenderTextureConfig,
-                                           const TimingConfig&            aTimingConfig) {
+void DefaultWindowManager::setToNormalMode(
+    hg::AvoidNull<std::shared_ptr<hg::uwga::System>> aGraphicsSystem,
+    const WindowConfig&                              aWindowConfig,
+    const MainRenderTextureConfig&                   aMainRenderTextureConfig,
+    const TimingConfig&                              aTimingConfig) //
+{
     SPEMPE_VALIDATE_GAME_CONTEXT_FLAGS(ctx(), headless == false);
+
+    _graphicsSystem = std::move(aGraphicsSystem);
 
     _headless     = false;
     _timingConfig = aTimingConfig;
 
     // Create window:
-    _window.emplace(aWindowConfig.videoMode,
-                    aWindowConfig.title,
-                    aWindowConfig.style,
-                    aWindowConfig.openGlContextSettings);
-
-    _window->setView(hg::gr::View{
-        {0.f,
-         0.f, static_cast<float>(aWindowConfig.videoMode.width),
-         static_cast<float>(aWindowConfig.videoMode.height)}
-    });
+    _window = _graphicsSystem->createRenderWindow(aWindowConfig.size.x, // TODO: batching config
+                                                  aWindowConfig.size.y,
+                                                  aWindowConfig.style,
+                                                  aWindowConfig.title);
 
     _window->setFramerateLimit(_timingConfig.lowLevelFramerateLimiter);
     _window->setVerticalSyncEnabled(_timingConfig.verticalSyncEnabled);
 
     // Create main render texture:
-    _mainRenderTexture.emplace();
-    _mainRenderTexture->create(aMainRenderTextureConfig.size,
-                               aMainRenderTextureConfig.openGlContextSettings);
+    _mainRenderTexture =
+        _graphicsSystem->createRenderTexture(aMainRenderTextureConfig.size); // TODO: batching config
     _mainRenderTexture->setSmooth(aMainRenderTextureConfig.smooth);
 
-    {
-        const auto w = static_cast<float>(aMainRenderTextureConfig.size.x);
-        const auto h = static_cast<float>(aMainRenderTextureConfig.size.y);
-
-        _mainRenderTexture->setViewCount(1);
-        _mainRenderTexture->getView(0).setSize({w, h});
-        _mainRenderTexture->getView(0).setCenter({w * 0.5f, h * 0.5f});
-        _mainRenderTexture->getView(0).setViewport({0.f, 0.f, 1.f, 1.f});
-    }
-
-    // Create adapters:
-    _windowDrawBatcher.emplace(*_window);
-    _mainRenderTextureDrawBatcher.emplace(*_mainRenderTexture);
+    _mrtSprite = std::make_unique<hg::uwga::Sprite>(*_graphicsSystem);
+    _mrtSprite->addSubsprite(hg::uwga::TextureRect{});
 
     // Create GUI:
-    _rmlUiBackendLifecycleGuard = hg::rml::HobgoblinBackend::initialize();
+    _rmlUiBackendLifecycleGuard = hg::rml::HobgoblinBackend::initialize(_graphicsSystem);
     _rmlUiContextDriver.emplace("DefaultWindowManager::RmlContext", *_window);
 }
 
@@ -99,7 +77,7 @@ void DefaultWindowManager::setToNormalMode(const WindowConfig&            aWindo
 ///////////////////////////////////////////////////////////////////////////
 
 hobgoblin::math::Vector2pz DefaultWindowManager::getWindowSize() const {
-    return _window->getSize();
+    return GetSize(*_window);
 }
 
 void DefaultWindowManager::setStopIfCloseClicked(bool aStop) {
@@ -110,14 +88,27 @@ void DefaultWindowManager::setStopIfCloseClicked(bool aStop) {
 // GRAPHICS & DRAWING                                                    //
 ///////////////////////////////////////////////////////////////////////////
 
-// sf::RenderTexture& getMainRenderTexture();
+hg::uwga::System& DefaultWindowManager::getGraphicsSystem() const {
+    HG_HARD_ASSERT(!_headless && "Method not available in Headless mode.");
+    return *_graphicsSystem;
+}
 
-hg::gr::Canvas& DefaultWindowManager::getCanvas() {
+const hg::uwga::RenderWindow& DefaultWindowManager::getWindow() const {
+    HG_HARD_ASSERT(!_headless && "Method not available in Headless mode.");
+    return *_window;
+}
+
+const hg::uwga::RenderTexture& DefaultWindowManager::getMainRenderTexture() const {
+    HG_HARD_ASSERT(!_headless && "Method not available in Headless mode.");
+    return *_mainRenderTexture;
+}
+
+hg::uwga::Canvas& DefaultWindowManager::getActiveCanvas() {
     HG_HARD_ASSERT(!_headless && "Method not available in Headless mode.");
     if (getRuntime()->getCurrentEvent() == hg::QAO_Event::DRAW_GUI) {
-        return *_windowDrawBatcher;
+        return *_window;
     } else {
-        return *_mainRenderTextureDrawBatcher;
+        return *_mainRenderTexture;
     }
 }
 
@@ -129,77 +120,32 @@ void DefaultWindowManager::setMainRenderTextureDrawPosition(DrawPosition aDrawPo
 // VIEWS                                                                 //
 ///////////////////////////////////////////////////////////////////////////
 
-hg::gr::ViewController& DefaultWindowManager::getViewController() {
-    HG_HARD_ASSERT(!_headless && "Method not available in Headless mode.");
-    return *_mainRenderTexture;
-}
-
-const hg::gr::ViewController& DefaultWindowManager::getViewController() const {
-    HG_HARD_ASSERT(!_headless && "Method not available in Headless mode.");
-    return *_mainRenderTexture;
-}
-
-void DefaultWindowManager::setViewCount(hg::PZInteger aViewCount) {
-    HG_HARD_ASSERT(!_headless && "Method not available in Headless mode.");
-    _mainRenderTexture->setViewCount(aViewCount);
-}
-
-hg::PZInteger DefaultWindowManager::getViewCount() const {
-    HG_HARD_ASSERT(!_headless && "Method not available in Headless mode.");
-    return _mainRenderTexture->getViewCount();
-}
-
-hg::gr::View& DefaultWindowManager::getView(hg::PZInteger aViewIndex) {
-    HG_HARD_ASSERT(!_headless && "Method not available in Headless mode.");
-    return _mainRenderTexture->getView(aViewIndex);
-}
-
-const hg::gr::View& DefaultWindowManager::getView(hg::PZInteger aViewIndex) const {
-    HG_HARD_ASSERT(!_headless && "Method not available in Headless mode.");
-    return _mainRenderTexture->getView(aViewIndex);
-}
-
-hg::math::Vector2f DefaultWindowManager::mapPixelToCoords(const hg::math::Vector2i& aPoint,
-                                                          const hg::gr::View&       aView) const {
+hg::math::Vector2d DefaultWindowManager::mapPixelToCoords(const hg::math::Vector2f& aPixel,
+                                                          const hg::uwga::View&     aView) const {
     HG_HARD_ASSERT(!_headless && "Method not available in Headless mode.");
 
     const auto mrtPositioning = _getMainRenderTexturePositioningData();
 
-    auto windowPos = _window->mapPixelToCoords(aPoint, _window->getView());
+    auto windowPos = _window->mapPixelToCoords(aPixel, _window->getView());
     windowPos.x =
         (windowPos.x - mrtPositioning.position.x) / mrtPositioning.scale.x + mrtPositioning.origin.x;
     windowPos.y =
         (windowPos.y - mrtPositioning.position.y) / mrtPositioning.scale.y + mrtPositioning.origin.y;
 
-    const sf::Vector2i windowPosI = {static_cast<int>(windowPos.x), static_cast<int>(windowPos.y)};
-
-    return _mainRenderTexture->mapPixelToCoords(windowPosI, aView);
+    return _mainRenderTexture->mapPixelToCoords(hg::math::VectorCast<float>(windowPos), aView);
 }
 
-hg::math::Vector2f DefaultWindowManager::mapPixelToCoords(const hg::math::Vector2i& aPoint,
-                                                          hg::PZInteger             aViewIdx) const {
+hg::math::Vector2d DefaultWindowManager::mapPixelToCoords(const hg::math::Vector2f& aPixel) const {
+    return mapPixelToCoords(aPixel, _mainRenderTexture->getView());
+}
+
+hg::math::Vector2f DefaultWindowManager::mapCoordsToPixel(const hg::math::Vector2d& aCoords,
+                                                          const hg::uwga::View&     aView) const {
     HG_HARD_ASSERT(!_headless && "Method not available in Headless mode.");
 
     const auto mrtPositioning = _getMainRenderTexturePositioningData();
 
-    auto windowPos = _window->mapPixelToCoords(aPoint, _window->getView());
-    windowPos.x =
-        (windowPos.x - mrtPositioning.position.x) / mrtPositioning.scale.x + mrtPositioning.origin.x;
-    windowPos.y =
-        (windowPos.y - mrtPositioning.position.y) / mrtPositioning.scale.y + mrtPositioning.origin.y;
-
-    const sf::Vector2i windowPosI = {static_cast<int>(windowPos.x), static_cast<int>(windowPos.y)};
-
-    return _mainRenderTexture->mapPixelToCoords(windowPosI, aViewIdx);
-}
-
-hg::math::Vector2i DefaultWindowManager::mapCoordsToPixel(const hg::math::Vector2f& aPoint,
-                                                          const hg::gr::View&       aView) const {
-    HG_HARD_ASSERT(!_headless && "Method not available in Headless mode.");
-
-    const auto mrtPositioning = _getMainRenderTexturePositioningData();
-
-    auto       mrtPos = _mainRenderTexture->mapCoordsToPixel(aPoint, aView);
+    auto       mrtPos = _mainRenderTexture->mapCoordsToPixel(aCoords, aView);
     const auto xx =
         mrtPositioning.position.x + (mrtPos.x - mrtPositioning.origin.x) * mrtPositioning.scale.x;
     const auto yy =
@@ -208,19 +154,8 @@ hg::math::Vector2i DefaultWindowManager::mapCoordsToPixel(const hg::math::Vector
     return _window->mapCoordsToPixel({xx, yy}, _window->getView());
 }
 
-hg::math::Vector2i DefaultWindowManager::mapCoordsToPixel(const hg::math::Vector2f& aPoint,
-                                                          hg::PZInteger             aViewIdx) const {
-    HG_HARD_ASSERT(!_headless && "Method not available in Headless mode.");
-
-    const auto mrtPositioning = _getMainRenderTexturePositioningData();
-
-    auto       mrtPos = _mainRenderTexture->mapCoordsToPixel(aPoint, aViewIdx);
-    const auto xx =
-        mrtPositioning.position.x + (mrtPos.x - mrtPositioning.origin.x) * mrtPositioning.scale.x;
-    const auto yy =
-        mrtPositioning.position.y + (mrtPos.y - mrtPositioning.origin.y) * mrtPositioning.scale.y;
-
-    return {(int)xx, (int)yy};
+hg::math::Vector2f DefaultWindowManager::mapCoordsToPixel(const hg::math::Vector2d& aCoords) const {
+    return mapCoordsToPixel(aCoords, _mainRenderTexture->getView());
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -256,19 +191,19 @@ void DefaultWindowManager::_eventPreUpdate() {
         _inputTracker.eventOccurred(ev);
 
         ev.visit(
-            [this](const hg::win::Event::Closed& aEventData) {
+            [this](const hg::uwga::WindowEvent::Closed& aEventData) {
                 if (_stopIfCloseClicked) {
                     ctx().stop();
                 }
             },
-            [this](const hg::win::Event::Resized& aEventData) {
+            [this](const hg::uwga::WindowEvent::Resized& aEventData) {
                 // clang-format off
-                _window->setView(hg::gr::View{{
-                    0.f,
-                    0.f,
-                    static_cast<float>(aEventData.width),
-                    static_cast<float>(aEventData.height)
-                }});
+                // _window->setView(hg::uwga::View{{ // TODO
+                //     0.f,
+                //     0.f,
+                //     static_cast<float>(aEventData.width),
+                //     static_cast<float>(aEventData.height)
+                // }});
                 // clang-format on
             });
     }
@@ -283,14 +218,14 @@ void DefaultWindowManager::_eventPreDraw() {
 
 void DefaultWindowManager::_eventDraw2() {
     if (!_headless) {
-        _window->clear(hg::gr::COLOR_BLACK); // TODO Parametrize colour
+        _window->clear(hg::uwga::COLOR_BLACK); // TODO Parametrize colour
         _drawMainRenderTexture();
     }
 }
 
 void DefaultWindowManager::_eventDrawGUI() {
     if (!_headless) {
-        _windowDrawBatcher->flush();
+        _window->flush();
         _rmlUiContextDriver->update();
         _rmlUiContextDriver->render();
         _frameReady = true;
@@ -307,24 +242,25 @@ void DefaultWindowManager::_eventDisplay() {
 }
 
 DefaultWindowManager::MainRenderTexturePositioningData DefaultWindowManager::
-    _getMainRenderTexturePositioningData() const {
+    _getMainRenderTexturePositioningData() const //
+{
     MainRenderTexturePositioningData result;
 
-    const auto mrtSize = _mainRenderTexture->getSize();
+    const auto mrtSize = GetSize(*_mainRenderTexture);
     const auto winSize = _window->getView().getSize();
 
     switch (_mainRenderTextureDrawPos) {
-    case DrawPosition::None:
+    case DrawPosition::NONE:
         result.position = {0.f, 0.f};
         result.origin   = {0.f, 0.f};
         result.scale    = {0.f, 0.f};
         break;
 
-    case DrawPosition::Fill:
-    case DrawPosition::Fit:
+    case DrawPosition::FILL:
+    case DrawPosition::FIT:
         {
             float scale;
-            if (_mainRenderTextureDrawPos == DrawPosition::Fill) {
+            if (_mainRenderTextureDrawPos == DrawPosition::FILL) {
                 scale = std::max(static_cast<float>(winSize.x) / mrtSize.x,
                                  static_cast<float>(winSize.y) / mrtSize.y);
             } else {
@@ -335,8 +271,8 @@ DefaultWindowManager::MainRenderTexturePositioningData DefaultWindowManager::
         }
         // FALLTHROUGH
 
-    case DrawPosition::Centre:
-        if (_mainRenderTextureDrawPos == DrawPosition::Centre) {
+    case DrawPosition::CENTER:
+        if (_mainRenderTextureDrawPos == DrawPosition::CENTER) {
             result.scale = {1.f, 1.f};
         }
 
@@ -344,14 +280,14 @@ DefaultWindowManager::MainRenderTexturePositioningData DefaultWindowManager::
         result.origin   = {static_cast<float>(mrtSize.x) * 0.5f, static_cast<float>(mrtSize.y) * 0.5f};
         break;
 
-    case DrawPosition::Stretch:
+    case DrawPosition::STRETCH:
         result.position = {0.f, 0.f};
         result.origin   = {0.f, 0.f};
         result.scale    = {static_cast<float>(winSize.x) / mrtSize.x,
                            static_cast<float>(winSize.y) / mrtSize.y};
         break;
 
-    case DrawPosition::TopLeft:
+    case DrawPosition::TOP_LEFT:
         result.position = {0.f, 0.f};
         result.origin   = {0.f, 0.f};
         result.scale    = {1.f, 1.f};
@@ -365,17 +301,19 @@ DefaultWindowManager::MainRenderTexturePositioningData DefaultWindowManager::
 }
 
 void DefaultWindowManager::_drawMainRenderTexture() {
-    _mainRenderTextureDrawBatcher->flush();
+    _mainRenderTexture->flush();
     _mainRenderTexture->display();
-    hg::gr::Sprite mrtSprite{&_mainRenderTexture->getTexture()};
+
+    _mrtSprite->setTexture(_mainRenderTexture.get());
+    _mrtSprite->subsprites[0] = hg::uwga::Sprite::Subsprite{*_mainRenderTexture};
 
     const auto mrtPositioning = _getMainRenderTexturePositioningData();
 
-    mrtSprite.setPosition(mrtPositioning.position);
-    mrtSprite.setOrigin(mrtPositioning.origin);
-    mrtSprite.setScale(mrtPositioning.scale);
+    _mrtSprite->setPosition(mrtPositioning.position);
+    _mrtSprite->setOrigin(mrtPositioning.origin);
+    _mrtSprite->setScale(mrtPositioning.scale);
 
-    _window->draw(mrtSprite);
+    _window->draw(*_mrtSprite);
 }
 
 void DefaultWindowManager::_displayWindowAndPollEvents() {
@@ -386,12 +324,13 @@ void DefaultWindowManager::_displayWindowAndPollEvents() {
 
     _timeSinceLastDisplay.restart();
     if (_frameReady) {
+        _window->flush();
         _window->display();
     }
     _frameReady = false;
 
 EVENTS:
-    hg::win::Event ev;
+    hg::uwga::WindowEvent ev;
     while (_window->pollEvent(ev)) {
         _events.push_back(std::move(ev));
     }
@@ -435,25 +374,25 @@ sf::Vector2f DefaultWindowManager::_getViewRelativeMousePos(hobgoblin::PZInteger
     }
 
     const auto mrtPositioning = _getMainRenderTexturePositioningData();
-    const auto pixelPos       = hg::win::GetMousePositionRelativeToWindow(*_window);
+    const auto pixelPos       = _window->getRelativeCursorPosition();
 
-    auto windowPos = _window->mapPixelToCoords(pixelPos, _window->getView());
+    auto windowPos =
+        _window->mapPixelToCoords(hg::math::VectorCast<float>(pixelPos), _window->getView());
     windowPos.x =
         (windowPos.x - mrtPositioning.position.x) / mrtPositioning.scale.x + mrtPositioning.origin.x;
     windowPos.y =
         (windowPos.y - mrtPositioning.position.y) / mrtPositioning.scale.y + mrtPositioning.origin.y;
 
-    const sf::Vector2i windowPosI = {static_cast<int>(windowPos.x), static_cast<int>(windowPos.y)};
-
-    return _mainRenderTexture->mapPixelToCoords(windowPosI, aViewIndex);
+    return hg::math::VectorCast<float>(
+        _mainRenderTexture->mapPixelToCoords(hg::math::VectorCast<float>(windowPos)));
 }
 
-sf::Vector2i DefaultWindowManager::_getWindowRelativeMousePos() const {
+sf::Vector2f DefaultWindowManager::_getWindowRelativeMousePos() const {
     if (_headless) {
         return {0, 0};
     }
 
-    return hg::win::GetMousePositionRelativeToWindow(*_window);
+    return _window->getRelativeCursorPosition();
 }
 
 } // namespace spempe

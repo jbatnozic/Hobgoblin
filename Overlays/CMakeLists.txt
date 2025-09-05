@@ -2,4 +2,4 @@
 # See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
 # add_subdirectory("GridGoblin")
-# add_subdirectory("SPeMPE")
+add_subdirectory("SPeMPE")

@@ -22,10 +22,10 @@
 HOBGOBLIN_NAMESPACE_BEGIN
 namespace uwga {
 
-std::unique_ptr<System> CreateGraphicsSystem(System::Provider aProvider) {
+std::shared_ptr<System> CreateGraphicsSystem(System::Provider aProvider) {
     switch (aProvider) {
     case System::Provider::SFML:
-        return std::make_unique<SFMLSystemImpl>();
+        return std::make_shared<SFMLSystemImpl>();
     }
 
     HG_THROW_TRACED(TracedLogicError,
@@ -34,9 +34,9 @@ std::unique_ptr<System> CreateGraphicsSystem(System::Provider aProvider) {
                     (int)aProvider);
 }
 
-std::unique_ptr<System> CreateGraphicsSystem(const char* aSystemProviderName) {
+std::shared_ptr<System> CreateGraphicsSystem(const char* aSystemProviderName) {
     if (std::strcmp(aSystemProviderName, "SFML") == 0) {
-        return std::make_unique<SFMLSystemImpl>();
+        return std::make_shared<SFMLSystemImpl>();
     }
 
     HG_THROW_TRACED(TracedLogicError,

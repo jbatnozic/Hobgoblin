@@ -1,15 +1,13 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-// clang-format off
-
 #ifndef SPEMPE_UTILITY_MOUSE_INPUT_HPP
 #define SPEMPE_UTILITY_MOUSE_INPUT_HPP
 
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/Input.hpp>
-#include <Hobgoblin/Window.hpp>
 #include <Hobgoblin/Math/Vector.hpp>
+#include <Hobgoblin/UWGA/Window_event.hpp>
 
 #include <SPeMPE/Utility/Window_frame_input_view.hpp>
 
@@ -25,7 +23,7 @@ namespace hg = ::jbatnozic::hobgoblin;
 class WindowInputTracker {
 public:
     using GetViewRelativeMousePosFunc   = std::function<hg::math::Vector2f(hg::PZInteger)>;
-    using GetWindowRelativeMousePosFunc = std::function<hg::math::Vector2i()>;
+    using GetWindowRelativeMousePosFunc = std::function<hg::math::Vector2f()>;
 
     WindowInputTracker(GetViewRelativeMousePosFunc   aGetViewRelativeMousePos,
                        GetWindowRelativeMousePosFunc aGetWindowRelativeMousePos);
@@ -38,7 +36,7 @@ public:
 
     void prepForEvents();
 
-    void eventOccurred(const hg::win::Event& aEvent);
+    void eventOccurred(const hg::uwga::WindowEvent& aEvent);
 
     ///////////////////////////////////////////////////////////////////////////
     // READING: UNIVERSAL                                                    //
@@ -58,7 +56,7 @@ public:
 
     hg::math::Vector2f getViewRelativeMousePos(hobgoblin::PZInteger aViewIndex = 0) const;
 
-    hg::math::Vector2i getWindowRelativeMousePos() const;
+    hg::math::Vector2f getWindowRelativeMousePos() const;
 
     float getVerticalMouseWheelScroll() const;
 
@@ -99,7 +97,7 @@ private:
 
     bool _mouseDidMove = false;
 
-    float _verticalScrollDelta = 0.f;
+    float _verticalScrollDelta   = 0.f;
     float _horizontalScrollDelta = 0.f;
 
     // enter = "press", leave = "release"
@@ -111,5 +109,3 @@ private:
 } // namespace jbatnozic
 
 #endif // !SPEMPE_UTILITY_MOUSE_INPUT_HPP
-
-// clang-format on

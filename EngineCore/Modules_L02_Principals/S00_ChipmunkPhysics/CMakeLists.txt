@@ -59,7 +59,7 @@ PUBLIC
     "Hobgoblin_L00_S00_PDef"
 
     # Utilities
-    "Hobgoblin_L01_S02_Utility"
+    "Hobgoblin_L01_S01_Utility"
 )
 
 add_library("Hobgoblin_L02_S00_ChipmunkPhysics" ALIAS ${COMPONENT_NAME})

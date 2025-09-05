@@ -46,7 +46,7 @@ void MainGameplayManager::_didAttach(QAO_Runtime& aRuntime) {
     MainGameplayManagerBase::_didAttach(aRuntime);
 
     auto p = QAO_Create<BasicActor>(aRuntime);
-    p->init(32.f, 32.f, hg::gr::COLOR_PURPLE, 0);
+    p->init(32.f, 32.f, hg::uwga::COLOR_PURPLE, 0);
 }
 
 } // namespace singleplayer
@@ -62,19 +62,19 @@ void MainGameplayManager::_didAttach(QAO_Runtime& aRuntime) {
     if (ctx().isPrivileged()) {
 #if 1
         auto basicActor = QAO_Create<BasicActor>(aRuntime);
-        basicActor->init(32.f, 32.f, hg::gr::COLOR_PURPLE, 0);
+        basicActor->init(32.f, 32.f, hg::uwga::COLOR_PURPLE, 0);
 #endif
 #if 1
         auto autodiffActor = QAO_Create<AutodiffActor>(aRuntime);
-        autodiffActor->init(32.f, 96.f, hg::gr::COLOR_ORANGE, 0);
+        autodiffActor->init(32.f, 96.f, hg::uwga::COLOR_ORANGE, 0);
 #endif
 #if 1
         auto alternatingActor = QAO_Create<AlternatingActor>(aRuntime);
-        alternatingActor->init(32.f, 160.f, hg::gr::COLOR_ROYAL_BLUE, 0);
+        alternatingActor->init(32.f, 160.f, hg::uwga::COLOR_ROYAL_BLUE, 0);
 #endif
 #if 1
         auto alternatingAutodiffActor = QAO_Create<AlternatingAutodiffActor>(aRuntime);
-        alternatingAutodiffActor->init(32.f, 224.f, hg::gr::COLOR_FOREST_GREEN, 0);
+        alternatingAutodiffActor->init(32.f, 224.f, hg::uwga::COLOR_FOREST_GREEN, 0);
 #endif
     }
 }

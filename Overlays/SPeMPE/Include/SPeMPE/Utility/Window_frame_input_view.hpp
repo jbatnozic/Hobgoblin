@@ -1,17 +1,12 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-// clang-format off
-
 #ifndef SPEMPE_UTILITY_WINDOW_FRAME_INPUT_VIEW_HPP
 #define SPEMPE_UTILITY_WINDOW_FRAME_INPUT_VIEW_HPP
 
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/Input/Universal_input_enumeration.hpp>
 #include <Hobgoblin/Math/Vector.hpp>
-
-#include <functional>
-#include <vector>
 
 namespace jbatnozic {
 namespace spempe {
@@ -37,9 +32,9 @@ public:
         Edge,
 
         //! For KEYBOARD keys:
-        //!     Same as Edge, but also returns true every few frames afterwards so 
+        //!     Same as Edge, but also returns true every few frames afterwards so
         //!     long as the key remains pressed (with OS-defined frequency).
-        //! 
+        //!
         //! For MOUSE buttons:
         //!     Same as Edge.
         Repeated,
@@ -72,11 +67,12 @@ public:
     //! Checks if the mouse cursor was moved since the last frame.
     bool checkMouseMoved() const;
 
-    //! Returns the  position of the mouse cursor relative to the selected view (in game world coordinates).
+    //! Returns the  position of the mouse cursor relative to the selected view (in game world
+    //! coordinates).
     hg::math::Vector2f getViewRelativeMousePos(hobgoblin::PZInteger aViewIndex = 0) const;
 
     //! Returns the position of the mouse cursor relative to the window (in window coordinates).
-    hg::math::Vector2i getWindowRelativeMousePos() const;
+    hg::math::Vector2f getWindowRelativeMousePos() const;
 
     //! Positive is up, negative is down, 0 = no change since last frame
     float getVerticalMouseWheelScroll() const;
@@ -105,5 +101,3 @@ private:
 } // namespace jbatnozic
 
 #endif // !SPEMPE_UTILITY_WINDOW_FRAME_INPUT_VIEW_HPP
-
-// clang-format on

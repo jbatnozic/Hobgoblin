@@ -22,6 +22,7 @@ HOBGOBLIN_NAMESPACE_BEGIN
 namespace uwga {
 
 class System;
+class Texture;
 
 //! Drawable representation of a Texture, with its own transformations, color, etc.
 //! Using this class allows us to easily display a Texture (or a part of it) on a Canvas.
@@ -48,6 +49,12 @@ public:
            const Texture*      aTexture,
            const taBeginIter&& aBeginIter,
            const taEndIter&&   aEndIter);
+
+    //! A utility constructor which will initialize the sprite so that it uses the provided
+    //! texture, and contains exactly one subsprite whose texture rect covers the entire texture.
+    //!
+    //! \note this is useful if you want to draw a whole texture onto a Canvas.
+    Sprite(const Texture& aTexture);
 
     //! Copy contructor.
     Sprite(const Sprite& aOther);
@@ -80,6 +87,10 @@ public:
     class Subsprite {
     public:
         Subsprite(TextureRect aTextureRect);
+
+        //! Creates a subsprite with a texture rect that corresponds to the
+        //! size of the provided texture.
+        explicit Subsprite(const Texture& aTexture);
 
         TextureRect getTextureRect() const;
 
@@ -182,7 +193,6 @@ public:
                   const RenderStates& aRenderStates = RENDER_STATES_DEFAULT) const override;
 
 private:
-    const System*  _system;
     const Texture* _texture = nullptr;
 
     float _subspriteSelector = 0.f;
@@ -197,7 +207,6 @@ Sprite::Sprite(const System&       aSystem,
                const taBeginIter&& aBeginIter,
                const taEndIter&&   aEndIter)
     : Transformable{_createTransform(aSystem)}
-    , _system{&aSystem}
     , _texture{aTexture} //
 {
     for (auto iter = aBeginIter; iter != aEndIter; ++iter) {

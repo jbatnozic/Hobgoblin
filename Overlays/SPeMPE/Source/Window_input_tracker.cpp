@@ -1,9 +1,6 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-// clang-format off
-
-
 #include <SPeMPE/Utility/Window_input_tracker.hpp>
 
 #include <Hobgoblin/HGExcept.hpp>
@@ -17,8 +14,7 @@ namespace detail {
 WindowInputTracker::WindowInputTracker(GetViewRelativeMousePosFunc   aGetViewRelativeMousePos,
                                        GetWindowRelativeMousePosFunc aGetWindowRelativeMousePos)
     : _getViewRelativeMousePos{std::move(aGetViewRelativeMousePos)}
-    , _getWindowRelativeMousePos{std::move(aGetWindowRelativeMousePos)}
-{
+    , _getWindowRelativeMousePos{std::move(aGetWindowRelativeMousePos)} {
     _controlBlocks.resize(static_cast<std::size_t>(hg::in::UNIVERSAL_INPUT_ENUM_COUNT));
 }
 
@@ -35,64 +31,63 @@ void WindowInputTracker::prepForEvents() {
         controlBlock.advance();
     }
 
-    _mouseDidMove = false;
-    _verticalScrollDelta = 0.f;
+    _mouseDidMove          = false;
+    _verticalScrollDelta   = 0.f;
     _horizontalScrollDelta = 0.f;
 
     _cursorWithinWindow.advance();
 }
 
-void WindowInputTracker::eventOccurred(const hg::win::Event& aEvent) {
-    aEvent.visit(
-        [this](const hg::win::Event::GainedFocus&) {},
-        [this](const hg::win::Event::LostFocus&) {},
-        [this](const hg::win::Event::KeyPressed& aEventData) {
-            const auto vk = aEventData.virtualKey;
-            _controlBlocks.at(static_cast<std::size_t>(vk)).recordPress();
-            const auto pk = aEventData.physicalKey;
-            _controlBlocks.at(static_cast<std::size_t>(pk)).recordPress();
-        },
-        [this](const hg::win::Event::KeyReleased& aEventData) {
-            const auto vk = aEventData.virtualKey;
-            _controlBlocks.at(static_cast<std::size_t>(vk)).recordRelease();
-            const auto pk = aEventData.physicalKey;
-            _controlBlocks.at(static_cast<std::size_t>(pk)).recordRelease();
-        },
-        [this](const hg::win::Event::MouseButtonPressed& aEventData) {
-            const auto mb = aEventData.button;
-            _controlBlocks.at(static_cast<std::size_t>(mb)).recordPress();
-        },
-        [this](const hg::win::Event::MouseButtonReleased& aEventData) {
-            const auto mb = aEventData.button;
-            _controlBlocks.at(static_cast<std::size_t>(mb)).recordRelease();
-        },
-        [this](const hg::win::Event::MouseEntered&) {
-            _cursorWithinWindow.recordPress();
-        },
-        [this](const hg::win::Event::MouseLeft&) {
-            _cursorWithinWindow.recordRelease();
-        },
-        [this](const hg::win::Event::MouseMoved& aEventData) {
-            _mouseDidMove = true;
-        },
-        [this](const hg::win::Event::MouseWheelScrolled& aEventData) {
-            switch (aEventData.wheel.val()) {
-            case hg::in::MW_VERTICAL:
-                _verticalScrollDelta = aEventData.delta;
-                break;
+void WindowInputTracker::eventOccurred(const hg::uwga::WindowEvent& aEvent) {
+    aEvent.visit([this](const hg::uwga::WindowEvent::GainedFocus&) {},
+                 [this](const hg::uwga::WindowEvent::LostFocus&) {},
+                 [this](const hg::uwga::WindowEvent::KeyPressed& aEventData) {
+                     const auto vk = aEventData.virtualKey;
+                     _controlBlocks.at(static_cast<std::size_t>(vk)).recordPress();
+                     const auto pk = aEventData.physicalKey;
+                     _controlBlocks.at(static_cast<std::size_t>(pk)).recordPress();
+                 },
+                 [this](const hg::uwga::WindowEvent::KeyReleased& aEventData) {
+                     const auto vk = aEventData.virtualKey;
+                     _controlBlocks.at(static_cast<std::size_t>(vk)).recordRelease();
+                     const auto pk = aEventData.physicalKey;
+                     _controlBlocks.at(static_cast<std::size_t>(pk)).recordRelease();
+                 },
+                 [this](const hg::uwga::WindowEvent::MouseButtonPressed& aEventData) {
+                     const auto mb = aEventData.button;
+                     _controlBlocks.at(static_cast<std::size_t>(mb)).recordPress();
+                 },
+                 [this](const hg::uwga::WindowEvent::MouseButtonReleased& aEventData) {
+                     const auto mb = aEventData.button;
+                     _controlBlocks.at(static_cast<std::size_t>(mb)).recordRelease();
+                 },
+                 [this](const hg::uwga::WindowEvent::MouseEntered&) {
+                     _cursorWithinWindow.recordPress();
+                 },
+                 [this](const hg::uwga::WindowEvent::MouseLeft&) {
+                     _cursorWithinWindow.recordRelease();
+                 },
+                 [this](const hg::uwga::WindowEvent::MouseMoved& aEventData) {
+                     _mouseDidMove = true;
+                 },
+                 [this](const hg::uwga::WindowEvent::MouseWheelScrolled& aEventData) {
+                     switch (aEventData.wheel.val()) {
+                     case hg::in::MW_VERTICAL:
+                         _verticalScrollDelta = aEventData.delta;
+                         break;
 
-            case hg::in::MW_HORIZONTAL:
-                _horizontalScrollDelta = aEventData.delta;
-                break;
+                     case hg::in::MW_HORIZONTAL:
+                         _horizontalScrollDelta = aEventData.delta;
+                         break;
 
-            default:
-                HG_UNREACHABLE("Invalid mouse wheel identifier ({}).", (int)aEventData.wheel.val());
-            }
-        },
-        [this](const hg::win::Event::TextEntered& aEventData) {
-            // TODO(save)
-        }
-    );
+                     default:
+                         HG_UNREACHABLE("Invalid mouse wheel identifier ({}).",
+                                        (int)aEventData.wheel.val());
+                     }
+                 },
+                 [this](const hg::uwga::WindowEvent::TextEntered& aEventData) {
+                     // TODO(save)
+                 });
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -169,7 +164,7 @@ hg::math::Vector2f WindowInputTracker::getViewRelativeMousePos(hobgoblin::PZInte
     return _getViewRelativeMousePos(aViewIndex);
 }
 
-hg::math::Vector2i WindowInputTracker::getWindowRelativeMousePos() const {
+hg::math::Vector2f WindowInputTracker::getWindowRelativeMousePos() const {
     return _getWindowRelativeMousePos();
 }
 
@@ -206,7 +201,8 @@ Bit 2: ABS bit from one frame ago
 Bit 3: EDGE bit from one frame ago
 ...
 
-The whole thing is shifted 2 bits to the left every frame, preserving the ABS bit but clearing the EDGE bit.
+The whole thing is shifted 2 bits to the left every frame, preserving the ABS bit but clearing the EDGE
+bit.
 */
 
 #define BIT_0 0x01
@@ -215,7 +211,7 @@ The whole thing is shifted 2 bits to the left every frame, preserving the ABS bi
 
 void WindowInputTracker::InputControlBlock::advance() {
     const decltype(_status) lowestBit = _status & BIT_0;
-    _status = ((_status << 2) & ~(BIT_0 | BIT_1)) | lowestBit;
+    _status                           = ((_status << 2) & ~(BIT_0 | BIT_1)) | lowestBit;
 }
 
 void WindowInputTracker::InputControlBlock::recordPress() {
@@ -253,5 +249,3 @@ bool WindowInputTracker::InputControlBlock::isReleasedEdge() const {
 } // namespace detail
 } // namespace spempe
 } // namespace jbatnozic
-
-// clang-format on

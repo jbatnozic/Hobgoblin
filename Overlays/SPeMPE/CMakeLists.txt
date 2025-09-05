@@ -42,7 +42,6 @@ PUBLIC
     "Hobgoblin.Logging"
 
     # Utilities
-    "Hobgoblin.Common"
     "Hobgoblin.Math"
     "Hobgoblin.Utility"
 
@@ -51,7 +50,7 @@ PUBLIC
     "Hobgoblin.QAO"
     "Hobgoblin.RigelNet"
     "Hobgoblin.RmlUi"
-    "Hobgoblin.Graphics"
+    "Hobgoblin.UWGA"
     
     # External
     "sfml::sfml"
@@ -64,4 +63,4 @@ add_subdirectory("Test")
 
 # ===== BUILD EXAMPLES =====
 
-add_subdirectory("Examples")
+# add_subdirectory("Examples")

@@ -4,12 +4,12 @@
 #ifndef SPEMPE_MANAGERS_WINDOW_MANAGER_DEFAULT_HPP
 #define SPEMPE_MANAGERS_WINDOW_MANAGER_DEFAULT_HPP
 
-#include <Hobgoblin/Graphics.hpp>
 #include <Hobgoblin/RmlUi.hpp>
+#include <Hobgoblin/UWGA/Render_texture.hpp>
+#include <Hobgoblin/UWGA/Render_window.hpp>
+#include <Hobgoblin/UWGA/Sprite.hpp>
+#include <Hobgoblin/UWGA/System.hpp>
 #include <Hobgoblin/Utility/Time_utils.hpp>
-
-#include <Hobgoblin/Graphics.hpp>
-#include <Hobgoblin/Window.hpp>
 
 #include <SPeMPE/GameObjectFramework/Game_object_bases.hpp>
 #include <SPeMPE/Managers/Window_manager_interface.hpp>
@@ -17,8 +17,7 @@
 #include <SPeMPE/Utility/Window_frame_input_view.hpp>
 #include <SPeMPE/Utility/Window_input_tracker.hpp>
 
-#include <chrono>
-#include <optional>
+#include <memory>
 
 namespace jbatnozic {
 namespace spempe {
@@ -35,9 +34,10 @@ public:
 
     void setToHeadlessMode(const TimingConfig& aTimingConfig) override;
 
-    void setToNormalMode(const WindowConfig&            aWindowConfig,
-                         const MainRenderTextureConfig& aMainRenderTextureConfig,
-                         const TimingConfig&            aTimingConfig) override;
+    void setToNormalMode(hg::AvoidNull<std::shared_ptr<hg::uwga::System>> aGraphicsSystem,
+                         const WindowConfig&                              aWindowConfig,
+                         const MainRenderTextureConfig&                   aMainRenderTextureConfig,
+                         const TimingConfig&                              aTimingConfig) override;
 
     ///////////////////////////////////////////////////////////////////////////
     // WINDOW MANAGEMENT                                                     //
@@ -51,9 +51,13 @@ public:
     // GRAPHICS & DRAWING                                                    //
     ///////////////////////////////////////////////////////////////////////////
 
-    // sf::RenderTexture& getMainRenderTexture();
+    hg::uwga::System& getGraphicsSystem() const override;
 
-    hg::gr::Canvas& getCanvas() override;
+    const hg::uwga::RenderWindow& getWindow() const override;
+
+    const hg::uwga::RenderTexture& getMainRenderTexture() const override;
+
+    hg::uwga::Canvas& getActiveCanvas() override;
 
     void setMainRenderTextureDrawPosition(DrawPosition aDrawPosition) override;
 
@@ -61,29 +65,15 @@ public:
     // VIEWS                                                                 //
     ///////////////////////////////////////////////////////////////////////////
 
-    hg::gr::ViewController& getViewController() override;
+    hg::math::Vector2d mapPixelToCoords(const hg::math::Vector2f& aPoint,
+                                        const hg::uwga::View&     aView) const override;
 
-    const hg::gr::ViewController& getViewController() const override;
+    hg::math::Vector2d mapPixelToCoords(const hg::math::Vector2f& aPoint) const override;
 
-    void setViewCount(hg::PZInteger aViewCount) override;
+    hg::math::Vector2f mapCoordsToPixel(const hg::math::Vector2d& aPoint,
+                                        const hg::uwga::View&     aView) const override;
 
-    hg::PZInteger getViewCount() const override;
-
-    hg::gr::View& getView(hg::PZInteger aViewIndex = 0) override;
-
-    const hg::gr::View& getView(hg::PZInteger aViewIndex = 0) const override;
-
-    hg::math::Vector2f mapPixelToCoords(const hg::math::Vector2i& aPoint,
-                                        const hg::gr::View&       aView) const override;
-
-    hg::math::Vector2f mapPixelToCoords(const hg::math::Vector2i& aPoint,
-                                        hg::PZInteger             aViewIdx = 0) const override;
-
-    hg::math::Vector2i mapCoordsToPixel(const hg::math::Vector2f& aPoint,
-                                        const hg::gr::View&       aView) const override;
-
-    hg::math::Vector2i mapCoordsToPixel(const hg::math::Vector2f& aPoint,
-                                        hg::PZInteger             aViewIdx = 0) const override;
+    hg::math::Vector2f mapCoordsToPixel(const hg::math::Vector2d& aPoint) const override;
 
     ///////////////////////////////////////////////////////////////////////////
     // GUI                                                                   //
@@ -108,19 +98,21 @@ private:
     bool         _headless;
     TimingConfig _timingConfig;
 
-    // Window management:
-    std::optional<hg::gr::RenderWindow> _window;
-    std::optional<hg::gr::DrawBatcher>  _windowDrawBatcher;
-    hg::util::Stopwatch                 _timeSinceLastDisplay;
-    bool                                _stopIfCloseClicked = false;
+    // Graphics system:
+    std::shared_ptr<hg::uwga::System> _graphicsSystem;
 
-    std::vector<hg::win::Event> _events;
+    // Window management:
+    std::unique_ptr<hg::uwga::RenderWindow> _window;
+    hg::util::Stopwatch                     _timeSinceLastDisplay;
+    bool                                    _stopIfCloseClicked = false;
+
+    std::vector<hg::uwga::WindowEvent> _events;
 
     // Main render texture:
-    std::optional<hg::gr::RenderTexture> _mainRenderTexture;
-    std::optional<hg::gr::DrawBatcher>   _mainRenderTextureDrawBatcher;
+    std::unique_ptr<hg::uwga::RenderTexture> _mainRenderTexture;
+    std::unique_ptr<hg::uwga::Sprite>        _mrtSprite;
 
-    DrawPosition _mainRenderTextureDrawPos = DrawPosition::Fit;
+    DrawPosition _mainRenderTextureDrawPos = DrawPosition::FIT;
 
     // GUI:
     std::unique_ptr<hg::rml::HobgoblinBackend::BackendLifecycleGuard> _rmlUiBackendLifecycleGuard;
@@ -147,7 +139,7 @@ private:
     FloatSeconds _getFrameDeltaTime() const;
 
     sf::Vector2f _getViewRelativeMousePos(hobgoblin::PZInteger aViewIndex) const;
-    sf::Vector2i _getWindowRelativeMousePos() const;
+    sf::Vector2f _getWindowRelativeMousePos() const;
 };
 
 } // namespace spempe

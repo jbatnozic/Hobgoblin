@@ -1,9 +1,6 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-// clang-format off
-
-
 #include <SPeMPE/Utility/Window_frame_input_view.hpp>
 
 #include <SPeMPE/Utility/Window_input_tracker.hpp>
@@ -12,9 +9,7 @@ namespace jbatnozic {
 namespace spempe {
 
 WindowFrameInputView::WindowFrameInputView(hg::NeverNull<const detail::WindowInputTracker*> aTracker)
-    : _tracker{*aTracker}
-{
-}
+    : _tracker{*aTracker} {}
 
 ///////////////////////////////////////////////////////////////////////////
 // UNIVERSAL                                                             //
@@ -46,7 +41,7 @@ hg::math::Vector2f WindowFrameInputView::getViewRelativeMousePos(hobgoblin::PZIn
     return _tracker.getViewRelativeMousePos(aViewIndex);
 }
 
-hg::math::Vector2i WindowFrameInputView::getWindowRelativeMousePos() const {
+hg::math::Vector2f WindowFrameInputView::getWindowRelativeMousePos() const {
     return _tracker.getWindowRelativeMousePos();
 }
 
@@ -72,5 +67,3 @@ bool WindowFrameInputView::checkMouseInWindow() const {
 
 } // namespace spempe
 } // namespace jbatnozic
-
-// clang-format on
