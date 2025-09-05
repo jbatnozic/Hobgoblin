@@ -2,4 +2,4 @@
 # See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
 # add_subdirectory("AntimonyAnimator")
-# add_subdirectory("FrameTimingTester")
+add_subdirectory("FrameTimingTester")

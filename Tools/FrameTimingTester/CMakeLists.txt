@@ -14,7 +14,7 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     "Hobgoblin.Math"
 
     # Principals
-    "Hobgoblin.Graphics"
+    "Hobgoblin.UWGA"
 
     # Overlay
     "SPeMPE"

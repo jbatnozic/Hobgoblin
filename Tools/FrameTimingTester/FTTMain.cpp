@@ -4,24 +4,20 @@
 #define HOBGOBLIN_SHORT_NAMESPACE
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/Format.hpp>
-#include <Hobgoblin/Graphics.hpp>
 #include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/Input.hpp>
 #include <Hobgoblin/Logging.hpp>
+#include <Hobgoblin/UWGA.hpp>
 #include <Hobgoblin/Unicode.hpp>
 
 #include <SPeMPE/SPeMPE.hpp>
 
-#include <chrono>
 #include <cstdlib>
-#include <filesystem>
 #include <memory>
-#include <optional>
 #include <string>
-#include <vector>
 
-namespace gr  = hg::gr;
-namespace spe = ::jbatnozic::spempe;
+namespace uwga = hg::uwga;
+namespace spe  = ::jbatnozic::spempe;
 using namespace hg::in;
 
 constexpr auto LOG_ID = "FTT";
@@ -35,33 +31,38 @@ constexpr auto LOG_ID = "FTT";
 #endif
 
 void SimpleTest() {
-    gr::RenderWindow window{
-        hg::win::VideoMode{800, 800},
-        "FTT (Simple)"
-    };
-    window.getView().setCenter({0.f, 0.f});
-    window.setFramerateLimit(TICK_RATE);
+    auto uwgaSystem = uwga::CreateGraphicsSystem("SFML");
+    auto window = uwgaSystem->createRenderWindow(800, 800, uwga::WindowStyle::DEFAULT, "FTT (Simple)");
+    auto view   = window->createDefaultView();
 
-    gr::CircleShape circle{32.f};
+    view->setCenter({0.f, 0.f});
+    window->setView(*view);
+    window->setFramerateLimit(TICK_RATE);
+
+    uwga::CircleShape circle{*uwgaSystem, 32.f};
     circle.setOrigin({32.f, 32.f});
-    circle.setFillColor(gr::COLOR_RED);
+    circle.setFillColor(uwga::COLOR_RED);
 
-    while (window.isOpen()) {
-        hg::win::Event ev;
-        while (window.pollEvent(ev)) {
-            ev.visit([&](const hg::win::Event::Closed&) {
-                window.close();
+    while (true) {
+        uwga::WindowEvent ev;
+        while (window && window->pollEvent(ev)) {
+            ev.visit([&](const uwga::WindowEvent::Closed&) {
+                window.reset();
             });
+        }
+        if (!window) {
+            break;
         }
 
         const auto lr         = (float)CheckPressedPK(PK_D) - (float)CheckPressedPK(PK_A);
         const auto ud         = (float)CheckPressedPK(PK_S) - (float)CheckPressedPK(PK_W);
         const auto multiplier = 8.f;
-        window.getView().move({-lr * multiplier, -ud * multiplier});
+        view->setCenter(view->getCenter() + hg::math::Vector2f{-lr * multiplier, -ud * multiplier});
+        window->setView(*view);
 
-        window.clear();
-        window.draw(circle);
-        window.display();
+        window->clear();
+        window->draw(circle);
+        window->display();
     }
 }
 
@@ -69,6 +70,8 @@ void SimpleTest() {
 #define PRIORITY_WINDOW_MANAGER 0
 
 std::unique_ptr<spe::GameContext> CreateContex() {
+    auto uwgaSystem = uwga::CreateGraphicsSystem("SFML");
+
     spe::GameContext::RuntimeConfig rtConfig{spe::TickRate{TICK_RATE}};
     auto                            ctx = std::make_unique<spe::GameContext>(rtConfig);
 
@@ -77,13 +80,13 @@ std::unique_ptr<spe::GameContext> CreateContex() {
                                                             PRIORITY_WINDOW_MANAGER);
     // clang-format off
     spe::WindowManagerInterface::WindowConfig windowConfig{
-        hg::win::VideoMode{800, 800},
-        "FTT (SPeMPE)",
-        hg::win::WindowStyle::Default
+        .size = {800, 800},
+        .title = "FTT (SPeMPE)",
+        .style = hg::uwga::WindowStyle::DEFAULT
     };
     spe::WindowManagerInterface::MainRenderTextureConfig mrtConfig{
-        /* SIZE */  {1024, 1024},
-        /* SMOOTH*/ true
+        .size = {1024, 1024},
+        .smooth = true
     };
     spe::WindowManagerInterface::TimingConfig timingConfig{
     #ifdef _MSC_VER
@@ -97,10 +100,13 @@ std::unique_ptr<spe::GameContext> CreateContex() {
     #endif
     };
     // clang-format on
-    winMgr->setToNormalMode(windowConfig, mrtConfig, timingConfig);
-    winMgr->setMainRenderTextureDrawPosition(spe::WindowManagerInterface::DrawPosition::Fit);
+    winMgr->setToNormalMode(uwgaSystem, windowConfig, mrtConfig, timingConfig);
+    winMgr->setMainRenderTextureDrawPosition(spe::WindowManagerInterface::DrawPosition::FIT);
     winMgr->setStopIfCloseClicked(true);
-    winMgr->getView().setCenter({0.f, 0.f});
+
+    auto view = winMgr->getActiveCanvas().getView().clone();
+    view->setCenter({0.f, 0.f});
+    winMgr->getActiveCanvas().setView(*view);
 
     ctx->attachAndOwnComponent(std::move(winMgr));
 
@@ -120,16 +126,19 @@ public:
         const auto ud         = (float)input.checkPressed(PK_S) - (float)input.checkPressed(PK_W);
         const auto multiplier = 8.f;
 
-        winMgr.getView().move({-lr * multiplier, -ud * multiplier});
+        auto view = winMgr.getActiveCanvas().getView().clone();
+        view->setCenter(view->getCenter() + hg::math::Vector2f{-lr * multiplier, -ud * multiplier});
+        winMgr.getActiveCanvas().setView(*view);
     }
 
     void _eventDraw1() override {
         auto& winMgr = ccomp<spe::WindowManagerInterface>();
+        auto& canvas = winMgr.getActiveCanvas();
 
-        gr::CircleShape circle{32.f};
+        uwga::CircleShape circle{canvas.getSystem(), 32.f};
         circle.setOrigin({32.f, 32.f});
-        circle.setFillColor(gr::COLOR_RED);
-        winMgr.getCanvas().draw(circle);
+        circle.setFillColor(uwga::COLOR_RED);
+        canvas.draw(circle);
     }
 };
 
