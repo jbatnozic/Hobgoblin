@@ -528,13 +528,15 @@ public:
         const std::string& aGeometryShaderSource) const = 0;
 };
 
+// MARK: System factories
+
 //! Create a new graphics system, selecting by provider designator.
 //!
 //! \param aProvider designator of the graphics system provider.
 //!
 //! \throws TracedLogicError if an invalid designator is passed, or the selected provider is not
 //!                          supported on the current machine (such as Direct3D on Mac).
-std::unique_ptr<System> CreateGraphicsSystem(System::Provider aProvider);
+std::shared_ptr<System> CreateGraphicsSystem(System::Provider aProvider);
 
 //! Create a new graphics system, selecting by provider name.
 //!
@@ -543,7 +545,7 @@ std::unique_ptr<System> CreateGraphicsSystem(System::Provider aProvider);
 //!
 //! \throws TracedLogicError if an invalid name is passed, or the selected provider is not
 //!                          supported on the current machine (such as Direct3D on Mac).
-std::unique_ptr<System> CreateGraphicsSystem(const char* aSystemProviderName);
+std::shared_ptr<System> CreateGraphicsSystem(const char* aSystemProviderName);
 
 } // namespace uwga
 HOBGOBLIN_NAMESPACE_END

@@ -14,13 +14,11 @@
 #include <Hobgoblin/UWGA/Color.hpp>
 #include <Hobgoblin/UWGA/Glyph.hpp>
 #include <Hobgoblin/UWGA/Primitive_type.hpp>
-// #include <Hobgoblin/UWGA/Render_states.hpp>
 #include <Hobgoblin/UWGA/Texture.hpp>
 // #include <Hobgoblin/UWGA/Texture_rect.hpp>
 // #include <Hobgoblin/UWGA/Vertex_buffer.hpp>
 // #include <Hobgoblin/UWGA/View.hpp>
 #include <Hobgoblin/UWGA/Window_style.hpp>
-#include <Hobgoblin/Window/Context_settings.hpp>
 
 #include "SFML/Texture_provider.hpp"
 
@@ -31,7 +29,6 @@
 #include <SFML/Graphics/Glyph.hpp>
 #include <SFML/Graphics/PrimitiveType.hpp>
 #include <SFML/Graphics/Rect.hpp>
-#include <SFML/Graphics/RenderStates.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/Graphics/VertexBuffer.hpp>
@@ -93,16 +90,6 @@ sf::BlendMode ToSf(BlendMode aBlendMode);
 Color     ToHg(sf::Color aColor);
 sf::Color ToSf(Color aColor);
 
-// ContextSettings
-
-using win::ContextSettings;
-
-ContextSettings::Attribute ToHg(sf::ContextSettings::Attribute aAttribute);
-unsigned                   ToSf(ContextSettings::Attribute aAttribute);
-
-ContextSettings     ToHg(const sf::ContextSettings& aSettings);
-sf::ContextSettings ToSf(const ContextSettings& aSettings);
-
 // Glyph
 
 Glyph     ToHg(const sf::Glyph& aGlyph);
@@ -112,10 +99,6 @@ sf::Glyph ToSf(const Glyph& aGlyph);
 
 PrimitiveType     ToHg(sf::PrimitiveType aType);
 sf::PrimitiveType ToSf(PrimitiveType aType);
-
-// RenderStates
-
-// sf::RenderStates ToSf(const RenderStates& aRenderStates);
 
 // Texture
 
@@ -241,65 +224,6 @@ inline sf::Color ToSf(Color aColor) {
     return sf::Color{aColor.toInt()};
 }
 
-// ContextSettings
-
-// inline
-// ContextSettings::Attribute ToHg(sf::ContextSettings::Attribute aAttribute) {
-//     if (aAttribute == sf::ContextSettings::Default) {
-//         return ContextSettings::Attribute::Default;
-//     }
-
-//     auto result = static_cast<ContextSettings::Attribute>(0);
-
-//     if ((aAttribute & sf::ContextSettings::Core)  != 0) result = result |
-//     ContextSettings::Attribute::Core; if ((aAttribute & sf::ContextSettings::Debug) != 0) result =
-//     result | ContextSettings::Attribute::Debug;
-
-//     return result;
-// }
-
-// inline
-// unsigned ToSf(ContextSettings::Attribute aAttribute) {
-//     if (aAttribute == ContextSettings::Attribute::Default) {
-//         return sf::ContextSettings::Default;
-//     }
-
-//     unsigned result = 0;
-
-//     if ((aAttribute & ContextSettings::Attribute::Core)  !=
-//     static_cast<ContextSettings::Attribute>(0)) result |= sf::ContextSettings::Core; if ((aAttribute &
-//     ContextSettings::Attribute::Debug) != static_cast<ContextSettings::Attribute>(0)) result |=
-//     sf::ContextSettings::Debug;
-
-//     return result;
-// }
-
-// inline
-// ContextSettings ToHg(const sf::ContextSettings& aSettings) {
-//     return ContextSettings{
-//         static_cast<PZInteger>(aSettings.depthBits),
-//         static_cast<PZInteger>(aSettings.stencilBits),
-//         static_cast<PZInteger>(aSettings.antialiasingLevel),
-//         static_cast<PZInteger>(aSettings.majorVersion),
-//         static_cast<PZInteger>(aSettings.minorVersion),
-//         ToHg(static_cast<sf::ContextSettings::Attribute>(aSettings.attributeFlags)),
-//         aSettings.sRgbCapable
-//     };
-// }
-
-// inline
-// sf::ContextSettings ToSf(const ContextSettings& aSettings) {
-//     return sf::ContextSettings{
-//         static_cast<unsigned>(aSettings.depthBits),
-//         static_cast<unsigned>(aSettings.stencilBits),
-//         static_cast<unsigned>(aSettings.antialiasingLevel),
-//         static_cast<unsigned>(aSettings.majorVersion),
-//         static_cast<unsigned>(aSettings.minorVersion),
-//         ToSf(aSettings.attributeFlags),
-//         aSettings.sRgbCapable
-//     };
-// }
-
 // Glyph
 
 inline Glyph ToHg(const sf::Glyph& aGlyph) {
@@ -358,24 +282,6 @@ sf::PrimitiveType ToSf(PrimitiveType aType) {
     }
 }
 // clang-format on
-
-// RenderStates
-
-// inline
-// sf::RenderStates ToSf(const RenderStates& aRenderStates) {
-//     sf::RenderStates rs;
-
-//     rs.blendMode = ToSf(aRenderStates.blendMode);
-//     rs.transform = ToSf(aRenderStates.transform);
-//     rs.texture   = (aRenderStates.texture != nullptr) ?
-//     &detail::GraphicsImplAccessor::getImplOf<sf::Texture>(*aRenderStates.texture)
-//                                                       : nullptr;
-//     rs.shader    = (aRenderStates.shader != nullptr) ?
-//     &detail::GraphicsImplAccessor::getImplOf<sf::Shader>(*aRenderStates.shader)
-//                                                      : nullptr;
-
-//     return rs;
-// }
 
 // Texture
 

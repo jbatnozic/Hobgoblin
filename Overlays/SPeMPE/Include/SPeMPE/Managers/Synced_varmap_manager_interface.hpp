@@ -6,6 +6,7 @@
 #ifndef SPEMPE_MANAGERS_SYNCED_VARMAP_MANAGER_INTERFACE_HPP
 #define SPEMPE_MANAGERS_SYNCED_VARMAP_MANAGER_INTERFACE_HPP
 
+#include <Hobgoblin/Common/Positive_or_zero_integer.hpp>
 #include <SPeMPE/GameContext/Context_components.hpp>
 
 #include <cstdint>
@@ -14,6 +15,8 @@
 
 namespace jbatnozic {
 namespace spempe {
+
+namespace hg = ::jbatnozic::hobgoblin;
 
 class SyncedVarmapManagerInterface : public ContextComponent {
 public:

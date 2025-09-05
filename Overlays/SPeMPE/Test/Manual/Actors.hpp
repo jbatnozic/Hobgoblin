@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <Hobgoblin/Graphics.hpp>
+#include <Hobgoblin/UWGA/Color.hpp>
 #include <Hobgoblin/Utility/Autopack.hpp>
 
 #include "Engine.hpp"
@@ -49,7 +49,7 @@ class BasicActor : public spe::SynchronizedObject<VisibleState> {
 public:
     BasicActor(hg::QAO_InstGuard aInstGuard, spe::SyncId aSyncId = spe::SYNC_ID_NEW);
 
-    void init(float aX, float aY, hg::gr::Color aColor, std::int8_t aIndex);
+    void init(float aX, float aY, hg::uwga::Color aColor, std::int8_t aIndex);
 
 private:
     enum class State {
@@ -84,7 +84,7 @@ class AutodiffActor : public spe::SynchronizedObject<AutodiffVisibleState> {
 public:
     AutodiffActor(hg::QAO_InstGuard aInstGuard, spe::SyncId aSyncId = spe::SYNC_ID_NEW);
 
-    void init(float aX, float aY, hg::gr::Color aColor, std::int8_t aIndex);
+    void init(float aX, float aY, hg::uwga::Color aColor, std::int8_t aIndex);
 
 private:
     enum class State {
@@ -122,7 +122,7 @@ class AlternatingActor : public spe::SynchronizedObject<VisibleState> {
 public:
     AlternatingActor(hg::QAO_InstGuard aInstGuard, spe::SyncId aSyncId = spe::SYNC_ID_NEW);
 
-    void init(float aX, float aY, hg::gr::Color aColor, std::int8_t aIndex);
+    void init(float aX, float aY, hg::uwga::Color aColor, std::int8_t aIndex);
 
 private:
     enum class State {
@@ -159,7 +159,7 @@ class AlternatingAutodiffActor : public spe::SynchronizedObject<AutodiffVisibleS
 public:
     AlternatingAutodiffActor(hg::QAO_InstGuard aInstGuard, spe::SyncId aSyncId = spe::SYNC_ID_NEW);
 
-    void init(float aX, float aY, hg::gr::Color aColor, std::int8_t aIndex);
+    void init(float aX, float aY, hg::uwga::Color aColor, std::int8_t aIndex);
 
 private:
     enum class State {

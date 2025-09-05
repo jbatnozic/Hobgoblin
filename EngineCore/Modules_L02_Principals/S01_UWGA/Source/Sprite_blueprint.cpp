@@ -44,6 +44,10 @@ PZInteger SpriteBlueprint::getSubspriteCount() const {
     return stopz(_textureRects.size());
 }
 
+TextureRect SpriteBlueprint::getSubsprite(PZInteger aSubspriteIndex) const {
+    return _textureRects[pztos(aSubspriteIndex)];
+}
+
 const SpriteAttributes& SpriteBlueprint::getSpriteAttributes() const {
     return _spriteAttrs;
 }

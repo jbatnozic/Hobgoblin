@@ -4,7 +4,7 @@
 #include "Actors.hpp"
 #include "Config.hpp"
 
-#include <Hobgoblin/Graphics.hpp>
+#include <Hobgoblin/UWGA.hpp>
 
 ///////////////////////////////////////////////////////////////////////////
 // MARK: BASIC ACTOR                                                     //
@@ -15,7 +15,7 @@ SPEMPE_GENERATE_DEFAULT_SYNC_HANDLERS(BasicActor, (CREATE, UPDATE, DESTROY));
 BasicActor::BasicActor(hg::QAO_InstGuard aInstGuard, spe::SyncId aSyncId)
     : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, PRIORITY_ACTOR, "BasicActor", aSyncId} {}
 
-void BasicActor::init(float aX, float aY, hg::gr::Color aColor, std::int8_t aIndex) {
+void BasicActor::init(float aX, float aY, hg::uwga::Color aColor, std::int8_t aIndex) {
     HG_HARD_ASSERT(isMasterObject());
     auto& self = _getCurrentState();
     self.x     = aX;
@@ -63,13 +63,13 @@ void BasicActor::_eventDraw1() {
     }
 
     auto& winMgr = ccomp<spe::WindowManagerInterface>();
-    auto& canvas = winMgr.getCanvas();
+    auto& canvas = winMgr.getActiveCanvas();
 
     const auto& self = _getCurrentState();
 
-    hg::gr::CircleShape circle{32.f};
+    hg::uwga::CircleShape circle{canvas.getSystem(), 32.f};
     circle.setOrigin(32.f, 32.f);
-    circle.setFillColor(hg::gr::Color{self.color});
+    circle.setFillColor(hg::uwga::Color{self.color});
     circle.setPosition(self.x, self.y);
     canvas.draw(circle);
 }
@@ -103,7 +103,7 @@ void AutodiffActor::_didAttach(hg::QAO_Runtime& aRuntime) {
     }
 }
 
-void AutodiffActor::init(float aX, float aY, hg::gr::Color aColor, std::int8_t aIndex) {
+void AutodiffActor::init(float aX, float aY, hg::uwga::Color aColor, std::int8_t aIndex) {
     HG_HARD_ASSERT(isMasterObject());
     auto& self = _getCurrentState();
     self.x     = aX;
@@ -155,13 +155,13 @@ void AutodiffActor::_eventDraw1() {
     }
 
     auto& winMgr = ccomp<spe::WindowManagerInterface>();
-    auto& canvas = winMgr.getCanvas();
+    auto& canvas = winMgr.getActiveCanvas();
 
     const auto& self = _getCurrentState();
 
-    hg::gr::CircleShape circle{32.f};
+    hg::uwga::CircleShape circle{canvas.getSystem(), 32.f};
     circle.setOrigin(32.f, 32.f);
-    circle.setFillColor(hg::gr::Color{self.color});
+    circle.setFillColor(hg::uwga::Color{self.color});
     circle.setPosition(self.x, self.y);
     canvas.draw(circle);
 }
@@ -192,7 +192,7 @@ void AlternatingActor::_didAttach(hg::QAO_Runtime& aRuntime) {
     _enableAlternatingUpdates();
 }
 
-void AlternatingActor::init(float aX, float aY, hg::gr::Color aColor, std::int8_t aIndex) {
+void AlternatingActor::init(float aX, float aY, hg::uwga::Color aColor, std::int8_t aIndex) {
     HG_HARD_ASSERT(isMasterObject());
     auto& self = _getCurrentState();
     self.x     = aX;
@@ -240,14 +240,14 @@ void AlternatingActor::_eventDraw1() {
     }
 
     auto& winMgr = ccomp<spe::WindowManagerInterface>();
-    auto& canvas = winMgr.getCanvas();
+    auto& canvas = winMgr.getActiveCanvas();
 
     const auto& self_curr = _getCurrentState();
     const auto& self_next = _getFollowingState();
 
-    hg::gr::CircleShape circle{32.f};
+    hg::uwga::CircleShape circle{canvas.getSystem(), 32.f};
     circle.setOrigin(32.f, 32.f);
-    circle.setFillColor(hg::gr::Color{self_curr.color});
+    circle.setFillColor(hg::uwga::Color{self_curr.color});
     circle.setPosition((self_curr.x + self_next.x) / 2.0, (self_curr.y + self_next.y) / 2.0);
     canvas.draw(circle);
 }
@@ -283,7 +283,7 @@ void AlternatingAutodiffActor::_didAttach(hg::QAO_Runtime& aRuntime) {
     }
 }
 
-void AlternatingAutodiffActor::init(float aX, float aY, hg::gr::Color aColor, std::int8_t aIndex) {
+void AlternatingAutodiffActor::init(float aX, float aY, hg::uwga::Color aColor, std::int8_t aIndex) {
     HG_HARD_ASSERT(isMasterObject());
     auto& self = _getCurrentState();
     self.x     = aX;
@@ -337,14 +337,14 @@ void AlternatingAutodiffActor::_eventDraw1() {
     }
 
     auto& winMgr = ccomp<spe::WindowManagerInterface>();
-    auto& canvas = winMgr.getCanvas();
+    auto& canvas = winMgr.getActiveCanvas();
 
     const auto& self_curr = _getCurrentState();
     const auto& self_next = _getFollowingState();
 
-    hg::gr::CircleShape circle{32.f};
+    hg::uwga::CircleShape circle{canvas.getSystem(), 32.f};
     circle.setOrigin(32.f, 32.f);
-    circle.setFillColor(hg::gr::Color{self_curr.color});
+    circle.setFillColor(hg::uwga::Color{self_curr.color});
     circle.setPosition((self_curr.x + self_next.x) / 2.0, (self_curr.y + self_next.y) / 2.0);
     canvas.draw(circle);
 }

@@ -12,5 +12,5 @@ PUBLIC
     "Hobgoblin.Common"
     "Hobgoblin.ChipmunkPhysics"
     "Hobgoblin.Alvin"
-    "Hobgoblin.Graphics"
+    "Hobgoblin.UWGA"
 )

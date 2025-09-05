@@ -4,17 +4,19 @@
 #ifndef UHOBGOBLIN_UWGA_OPENGL_UTILS_HPP
 #define UHOBGOBLIN_UWGA_OPENGL_UTILS_HPP
 
-#include <Hobgoblin/UWGA/Canvas.hpp>
-#include <Hobgoblin/UWGA/Glsl_shader.hpp>
-
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
 HOBGOBLIN_NAMESPACE_BEGIN
 namespace uwga {
+
+class Canvas;
+class GLSLShader;
+class Texture;
+
 namespace opengl {
 
 //! \brief Save the current OpenGL render states and matrices.
-//! 
+//!
 //! This function can be used when you mix UWGA drawing and direct OpenGL rendering.
 //! Combined with `PopStates`, it ensures that:
 //! - UWGA's internal states are not messed up by your OpenGL code
@@ -51,7 +53,7 @@ void PopStates(Canvas& aCanvas);
 
 //! \brief Reset the internal OpenGL states so that the target is ready for drawing.
 //!
-//! This function can be used when you mix UWGA drawing and direct OpenGL rendering, if you 
+//! This function can be used when you mix UWGA drawing and direct OpenGL rendering, if you
 //! choose not to use `PushStates`/`PopStates`. It makes sure that all OpenGL states needed by UWGA
 //! are set, so that subsequent draw() calls will work as expected.
 //!
@@ -85,25 +87,45 @@ void ResetStates(Canvas& aCanvas);
 //! \throws TracedLogicError if `aCanvas.getSystem().getGraphicsAPI() != System::GraphicsAPI::OPENGL`.
 bool SetActive(Canvas& aCanvas, bool aActive = true);
 
-/// \brief Bind a shader for rendering
-///
-/// This function is not part of the graphics API, it mustn't be
-/// used when drawing SFML entities. It must be used only if you
-/// mix `sf::Shader` with OpenGL code.
-///
-/// \code
-/// sf::Shader s1, s2;
-/// ...
-/// sf::Shader::bind(&s1);
-/// // draw OpenGL stuff that use s1...
-/// sf::Shader::bind(&s2);
-/// // draw OpenGL stuff that use s2...
-/// sf::Shader::bind(nullptr);
-/// // draw OpenGL stuff that use no shader...
-/// \endcode
-///
-/// \param shader Shader to bind, can be null to use no shader
+//! \brief Bind a shader for rendering.
+//!
+//! This function is not part of the graphics API, it mustn't be used when drawing UWGA entities.
+//! It must be used only if you mix `uwga::Shader` with OpenGL code.
+//!
+//! \code
+//! uwga::Shader& s1 = ...;
+//! uwga::Shader& s2 = ...;
+//! ...
+//! uwga::opengl::Bind(&s1);
+//! // draw OpenGL stuff that use s1...
+//! uwga::opengl::Bind(&s2);
+//! // draw OpenGL stuff that use s2...
+//! uwga::opengl::Bind(nullptr);
+//! // draw OpenGL stuff that use no shader...
+//! \endcode
+//!
+//! \param aShader Shader to bind, can be null to use no shader.
 void Bind(const GLSLShader* aShader);
+
+//! \brief Bind a texture for rendering.
+//!
+//! This function is not part of the graphics API, it mustn't be used when drawing UWGA entities.
+//! It must be used only if you mix `uwga::Texture` with OpenGL code.
+//!
+//! \code
+//! uwga::Texture& t1 = ...;
+//! uwga::Texture& t2 = ...;
+//! ...
+//! uwga::opengl::Bind(&t1);
+//! // draw OpenGL stuff that use t1...
+//! uwga::opengl::Bind(&t2);
+//! // draw OpenGL stuff that use t2...
+//! uwga::opengl::Bind(nullptr);
+//! // draw OpenGL stuff that use no texture...
+//! \endcode
+//!
+//! \param aTexture Texture to bind, can be null to use no texture.
+void Bind(const Texture* aTexture); // TODO: coord type !!!!!!!!!!!!!!!!!!!!!!!
 
 } // namespace opengl
 } // namespace uwga

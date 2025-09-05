@@ -46,6 +46,6 @@ PUBLIC
     "sfml::sfml"
 )
 
-add_library("Hobgoblin_L01_S02_Utility" ALIAS ${COMPONENT_NAME})
+add_library("Hobgoblin_L01_S01_Utility" ALIAS ${COMPONENT_NAME})
 
 add_subdirectory("Test")

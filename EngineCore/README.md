@@ -7,4 +7,3 @@ Here you will find:
 - **Docs:** Unfortunately, nothing useful here for now. If you need information about a specific module, open
 `Modules/<Module name>/README.md` and look there.
 - **Test:** Unit tests for the core of the engine.
-- **DebugExe:** Some old executables used for debugging a long time ago. Don't worry about them.

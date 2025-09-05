@@ -5,6 +5,7 @@
 
 #include <Hobgoblin/UWGA/Canvas.hpp>
 #include <Hobgoblin/UWGA/System.hpp>
+#include <Hobgoblin/UWGA/Texture.hpp>
 
 #include <Hobgoblin/HGExcept.hpp>
 
@@ -21,25 +22,34 @@ namespace {
 int Modulus(int aA, int aB) {
     return (aA % aB + aB) % aB;
 }
+
+TextureRect TextureRectCoveringWholeTexture(const Texture& aTexture) {
+    const auto texSize = math::VectorCast<std::uint16_t>(aTexture.getSize());
+    return {0, 0, texSize.x, texSize.y};
+}
 } // namespace
 
 Sprite::Sprite(const System& aSystem, const Texture* aTexture)
     : Transformable{_createTransform(aSystem)}
-    , _system{&aSystem}
     , _texture{aTexture} {}
 
 Sprite::Sprite(const System& aSystem, const Texture* aTexture, const Subsprite& aSubsprite)
     : Transformable{_createTransform(aSystem)}
-    , _system{&aSystem}
     , _texture{aTexture} //
 {
     addSubsprite(aSubsprite);
 }
 
+Sprite::Sprite(const Texture& aTexture)
+    : Transformable{_createTransform(aTexture.getSystem())}
+    , _texture{&aTexture} //
+{
+    addSubsprite(Subsprite{aTexture});
+}
+
 Sprite::Sprite(const Sprite& aOther)
     : Transformable(aOther)
     , subsprites{aOther.subsprites}
-    , _system{aOther._system}
     , _texture{aOther._texture}
     , _subspriteSelector{aOther._subspriteSelector}
     , _color{aOther._color} {}
@@ -50,7 +60,6 @@ Sprite& Sprite::operator=(const Sprite& aOther) {
 
         subsprites = aOther.subsprites;
 
-        _system            = aOther._system;
         _texture           = aOther._texture;
         _subspriteSelector = aOther._subspriteSelector;
         _color             = aOther._color;
@@ -61,7 +70,6 @@ Sprite& Sprite::operator=(const Sprite& aOther) {
 Sprite::Sprite(Sprite&& aOther)
     : Transformable(std::move(aOther))
     , subsprites{std::move(aOther.subsprites)}
-    , _system{aOther._system}
     , _texture{aOther._texture}
     , _subspriteSelector{aOther._subspriteSelector}
     , _color{aOther._color} {}
@@ -72,7 +80,6 @@ Sprite& Sprite::operator=(Sprite&& aOther) {
 
         subsprites = std::move(aOther.subsprites);
 
-        _system            = aOther._system;
         _texture           = aOther._texture;
         _subspriteSelector = aOther._subspriteSelector;
         _color             = aOther._color;
@@ -81,7 +88,7 @@ Sprite& Sprite::operator=(Sprite&& aOther) {
 }
 
 const System& Sprite::getSystem() const {
-    return *_system;
+    return Transformable::getTransform().getSystem();
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -124,6 +131,13 @@ Sprite::Subsprite::Subsprite(TextureRect aTextureRect)
         _vertices[2].texCoords = math::Vector2f{left, bottom};
         _vertices[3].texCoords = math::Vector2f{right, bottom};
     }
+}
+
+Sprite::Subsprite::Subsprite(const Texture& aTexture)
+    : Subsprite{TextureRectCoveringWholeTexture(aTexture)} {}
+
+TextureRect Sprite::Subsprite::getTextureRect() const {
+    return _textureRect;
 }
 
 math::Rectangle<float> Sprite::Subsprite::getLocalBounds() const {

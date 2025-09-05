@@ -188,9 +188,9 @@ public:
     void loadSpriteManifest(const std::filesystem::path&  aManifestFilePath,
                             SpriteManifestEnumerationMap* aSpriteManifestEnumerationMap = nullptr);
 
-    SpriteBlueprint getBlueprint(SpriteIdNumerical aSpriteId) const;
+    const SpriteBlueprint& getBlueprint(SpriteIdNumerical aSpriteId) const;
 
-    SpriteBlueprint getBlueprint(const SpriteIdTextual& aSpriteId) const;
+    const SpriteBlueprint& getBlueprint(const SpriteIdTextual& aSpriteId) const;
 
     //! Deletes all texture and sprite blueprint data from the loader,
     //! returning it to its initial state. Be careful not to keep using

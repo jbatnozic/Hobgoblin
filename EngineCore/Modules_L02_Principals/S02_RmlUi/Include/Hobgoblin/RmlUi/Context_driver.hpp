@@ -6,11 +6,10 @@
 
 #include <RmlUi/Core.h>
 
-#include <Hobgoblin/Graphics/Canvas.hpp>
 #include <Hobgoblin/Math/Vector.hpp>
-#include <Hobgoblin/Window.hpp>
+#include <Hobgoblin/UWGA/Canvas.hpp>
+#include <Hobgoblin/UWGA/Window.hpp>
 
-#include <memory>
 #include <string>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
@@ -20,7 +19,7 @@ namespace rml {
 //! TODO(add description)
 class ContextDriver {
 public:
-    ContextDriver(const std::string& aContextName, gr::Canvas& aCanvas);
+    ContextDriver(const std::string& aContextName, uwga::Canvas& aCanvas);
     ~ContextDriver();
 
     Rml::Context&       operator*();
@@ -32,15 +31,15 @@ public:
     void render();
 
     //! Returns: Whether the event was consumed by an element (true) in the context or not (false).
-    bool processEvent(const win::Event& aEvent);
+    bool processEvent(const uwga::WindowEvent& aEvent);
 
     void update();
 
-    void setCanvas(gr::Canvas& aCanvas);
+    void setCanvas(uwga::Canvas& aCanvas);
 
 private:
-    NeverNull<gr::Canvas*> _canvas;
-    Rml::Context*          _context = nullptr;
+    NeverNull<uwga::Canvas*> _canvas;
+    Rml::Context*            _context = nullptr;
 };
 
 } // namespace rml

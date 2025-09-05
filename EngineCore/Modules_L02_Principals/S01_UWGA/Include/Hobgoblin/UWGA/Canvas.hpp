@@ -201,6 +201,13 @@ public:
     virtual PerformanceCounters getAndResetPerformanceCounters() = 0;
 };
 
+//! Some classes like, `RenderTexture` and `RenderWindow` inherit `getSize()` both from their
+//! `Canvas` base class and from their other base class, making it ambigous when called.
+//! Instead, you can use this utility function to get their size.
+inline math::Vector2pz GetSize(const Canvas& aCanvas) {
+    return aCanvas.getSize();
+}
+
 ///////////////////////////////////////////////////////////////////////////
 // MARK: INLINE DEFINITIONS                                              //
 ///////////////////////////////////////////////////////////////////////////

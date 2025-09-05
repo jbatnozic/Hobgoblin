@@ -32,10 +32,12 @@ PUBLIC
     "Hobgoblin_L00_S02_HGExcept"
     "Hobgoblin_L00_S03_Logging"
 
+    # Utilities
+    "Hobgoblin_L01_S01_Utility"
+
     # Principals
     "Hobgoblin_L02_S00_Input"
-    "Hobgoblin_L02_S00_Window"
-    "Hobgoblin_L02_S01_Graphics"
+    "Hobgoblin_L02_S01_UWGA"
 
     # External
     "GLEW::GLEW"

@@ -2,6 +2,8 @@
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
 #include <Hobgoblin/HGExcept.hpp>
+#include <Hobgoblin/UWGA/Canvas.hpp>
+#include <Hobgoblin/UWGA/Glsl_shader.hpp>
 #include <Hobgoblin/UWGA/Opengl_utils.hpp>
 #include <Hobgoblin/UWGA/System.hpp>
 
@@ -139,6 +141,33 @@ void Bind(const GLSLShader* aShader) {
                         "opengl::Bind - '{}' (graphics API = '{}').",
                         aShader->getSystem().getProviderName(),
                         aShader->getSystem().getGraphicsAPIName());
+    }
+}
+
+void Bind(const Texture* aTexture) {
+    if (aTexture == nullptr) {
+        sf::Texture::bind(nullptr);
+    }
+
+    switch (aTexture->getSystem().getProvider()) {
+    case System::Provider::SFML:
+        if (auto* tp = dynamic_cast<const SFMLTextureProvider*>(aTexture); tp) {
+            sf::Texture::bind(&(tp->getUnderlyingTexture()));
+        } else {
+            HG_THROW_TRACED(TracedLogicError,
+                            0,
+                            "Unknown SFML Texture implementation '{}'.",
+                            typeid(*aTexture).name());
+        }
+        break;
+
+    default:
+        HG_THROW_TRACED(TracedLogicError,
+                        0,
+                        "Texture is from a graphics system provider which doesn't support "
+                        "opengl::Bind - '{}' (graphics API = '{}').",
+                        aTexture->getSystem().getProviderName(),
+                        aTexture->getSystem().getGraphicsAPIName());
     }
 }
 

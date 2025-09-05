@@ -7,7 +7,6 @@
 #define SPEMPE_MANAGERS_AUTHORIZATION_MANAGER_INTERFACE_HPP
 
 #include <SPeMPE/GameContext/Context_components.hpp>
-#include <SPeMPE/Managers/Authorization_manager_interface.hpp>
 
 #include <optional>
 #include <string>

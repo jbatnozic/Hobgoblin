@@ -1,14 +1,14 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-// clang-format off
-
 #ifndef UHOBGOBLIN_RMLUI_HOBGOBLIN_BACKEND_HPP
 #define UHOBGOBLIN_RMLUI_HOBGOBLIN_BACKEND_HPP
 
-#include <RmlUi/Core.h>
+#include <Hobgoblin/Input/Mouse_button.hpp>
 #include <Hobgoblin/Input/Virtual_keyboard_key.hpp>
-#include <Hobgoblin/Window.hpp>
+#include <Hobgoblin/UWGA/System.hpp>
+#include <Hobgoblin/UWGA/Window.hpp>
+#include <RmlUi/Core.h>
 
 #include <memory>
 
@@ -30,7 +30,8 @@ public:
         ~BackendLifecycleGuard();
     };
 
-    static std::unique_ptr<BackendLifecycleGuard> initialize();
+    static std::unique_ptr<BackendLifecycleGuard> initialize(
+        std::shared_ptr<uwga::System> aGraphicsSystem);
 
     //! Convenience function to convert from a Hobgoblin.Input key to RmlUi key.
     static Rml::Input::KeyIdentifier translateKey(in::VirtualKeyboardKey aKey);
@@ -45,7 +46,7 @@ public:
 private:
     friend class ContextDriver;
 
-    static detail::RmlUiHobgoblinSystem* getSystem();
+    static detail::RmlUiHobgoblinSystem*   getSystem();
     static detail::RmlUiHobgoblinRenderer* getRenderer();
 };
 
@@ -55,5 +56,3 @@ HOBGOBLIN_NAMESPACE_END
 #include <Hobgoblin/Private/Short_namespace.hpp>
 
 #endif // !UHOBGOBLIN_RMLUI_HOBGOBLIN_BACKEND_HPP
-
-// clang-format on

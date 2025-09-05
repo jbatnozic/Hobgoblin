@@ -6,7 +6,6 @@ add_subdirectory("Modules_L01_Utilities")
 add_subdirectory("Modules_L02_Principals")
 
 add_subdirectory("Test")
-add_subdirectory("DebugExe")
 
 # ===== BUILD AGGREGATE =====
 

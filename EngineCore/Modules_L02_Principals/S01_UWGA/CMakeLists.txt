@@ -76,10 +76,10 @@ PUBLIC
 
     # Utilities
     "Hobgoblin_L01_S00_Math"
-    "Hobgoblin_L01_S02_Utility"
+    "Hobgoblin_L01_S01_Utility"
 
     # Principals
-    "Hobgoblin_L02_S00_Window"
+    "Hobgoblin_L02_S00_Input"
 
     # External
     "sfml::sfml"

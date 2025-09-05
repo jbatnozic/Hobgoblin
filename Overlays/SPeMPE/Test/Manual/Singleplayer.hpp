@@ -9,6 +9,8 @@
 #include "Engine.hpp"
 #include "Main_gameplay_manager.hpp"
 
+#include <Hobgoblin/UWGA.hpp>
+
 #include <SPeMPE/Managers/Networking_manager_default.hpp>
 
 #include <memory>
@@ -33,10 +35,11 @@ std::unique_ptr<spe::GameContext> CreateGameContext() {
     auto winMgr = QAO_Create<spe::DefaultWindowManager>(context->getQAORuntime().nonOwning(),
                                                         PRIORITY_WINDOWMGR);
     winMgr->setToNormalMode(
+        hg::uwga::CreateGraphicsSystem("SFML"),
         spe::WindowManagerInterface::WindowConfig{
-            hg::win::VideoMode{WINDOW_WIDTH, WINDOW_HEIGHT},
-            "SPeMPE Manual Test (Singleplayer)",
-            hg::win::WindowStyle::Default
+            .size = {WINDOW_WIDTH, WINDOW_HEIGHT},
+            .title = "SPeMPE Manual Test (Singleplayer)",
+            .style = hg::uwga::WindowStyle::DEFAULT
         },
         spe::WindowManagerInterface::MainRenderTextureConfig{{WINDOW_WIDTH, WINDOW_HEIGHT}},
         spe::WindowManagerInterface::TimingConfig{

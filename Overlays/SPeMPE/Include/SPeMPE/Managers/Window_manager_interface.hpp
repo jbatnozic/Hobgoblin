@@ -4,10 +4,14 @@
 #ifndef SPEMPE_MANAGERS_WINDOW_MANAGER_INTERFACE_HPP
 #define SPEMPE_MANAGERS_WINDOW_MANAGER_INTERFACE_HPP
 
-#include <Hobgoblin/Graphics.hpp>
+#include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/Math/Vector.hpp>
 #include <Hobgoblin/RmlUi.hpp>
-#include <Hobgoblin/Window.hpp>
+#include <Hobgoblin/UWGA/Canvas.hpp>
+#include <Hobgoblin/UWGA/Render_texture.hpp>
+#include <Hobgoblin/UWGA/Render_window.hpp>
+#include <Hobgoblin/UWGA/System.hpp>
+#include <Hobgoblin/Unicode.hpp>
 
 #include <SPeMPE/GameContext/Context_components.hpp>
 #include <SPeMPE/Utility/Timing.hpp>
@@ -37,35 +41,22 @@ public:
         //! In this mode no window is actually opened.
         //! (This mode exists to make writing headless servers and
         //!  their clients more uniform.)
-        Headless,
+        HEADLESS,
 
         //! The 'usual' mode in which a single window is opened and
         //! operated by the WindowManager to display the game.
-        Normal
+        NORMAL
     };
 
     struct WindowConfig {
-        WindowConfig(
-            const hg::win::VideoMode&       aVideoMode,
-            const std::string&              aTitle,
-            hg::win::WindowStyle            aStyle                 = hg::win::WindowStyle::Default,
-            const hg::win::ContextSettings& aOpenGlContextSettings = hg::win::ContextSettings{});
-
-        hg::win::VideoMode       videoMode;
-        std::string              title;
-        hg::win::WindowStyle     style;
-        hg::win::ContextSettings openGlContextSettings;
+        hg::math::Vector2pz   size = {640, 480};
+        hg::UnicodeString     title;
+        hg::uwga::WindowStyle style;
     };
 
     struct MainRenderTextureConfig {
-        MainRenderTextureConfig(
-            const hg::math::Vector2pz&      aSize,
-            const bool                      aSmooth                = true,
-            const hg::win::ContextSettings& aOpenGlContextSettings = hg::win::ContextSettings{});
-
-        hg::math::Vector2pz      size;
-        bool                     smooth;
-        hg::win::ContextSettings openGlContextSettings;
+        hg::math::Vector2pz size   = {640, 480};
+        bool                smooth = true;
     };
 
     struct TimingConfig {
@@ -119,7 +110,8 @@ public:
 
     virtual void setToHeadlessMode(const TimingConfig& aTimingConfig) = 0;
 
-    virtual void setToNormalMode(const WindowConfig&            aWindowConfig,
+    virtual void setToNormalMode(hg::AvoidNull<std::shared_ptr<hg::uwga::System>> aGraphicsSystem,
+                                 const WindowConfig&                              aWindowConfig,
                                  const MainRenderTextureConfig& aMainRenderTextureConfig,
                                  const TimingConfig&            aTimingConfig) = 0;
 
@@ -150,69 +142,48 @@ public:
     // GRAPHICS & DRAWING                                                    //
     ///////////////////////////////////////////////////////////////////////////
 
-    // sf::RenderTexture& getMainRenderTexture();
+    virtual hg::uwga::System& getGraphicsSystem() const = 0;
 
-    virtual hg::gr::Canvas& getCanvas() = 0;
+    virtual const hg::uwga::RenderWindow& getWindow() const = 0;
+
+    virtual const hg::uwga::RenderTexture& getMainRenderTexture() const = 0;
+
+    //! Return a reference to the currently active canvas object:
+    //! - during the `DRAW_GUI` QAO event, this is the window itself (as returned by `getWindow()`).
+    //! - during other events, this is the main render texture (as returned by `getMainRenderTexture()`).
+    //!
+    //! \throws if the manager is in Headless mode.
+    virtual hg::uwga::Canvas& getActiveCanvas() = 0;
 
     enum class DrawPosition {
-        None,    //! Not drawn at all.
-        Fill,    //! Scaled (keeping aspect ratio) and centred so that the whole window is filled.
-        Fit,     //! Scaled (keeping aspect ratio) and centred so that the whole texture is visible.
-        Centre,  //! Kept at original size and just centred in the window.
-        Stretch, //! Stretched (or compressed) to the window's exact size.
-        TopLeft, //! Kept at original size and top left corner aligned with window's top left corner.
+        NONE,     //!< Not drawn at all.
+        FILL,     //!< Scaled (keeping aspect ratio) and centred so that the whole window is filled.
+        FIT,      //!< Scaled (keeping aspect ratio) and centred so that the whole texture is visible.
+        CENTER,   //!< Kept at original size and just centred in the window.
+        STRETCH,  //!< Stretched (or compressed) to the window's exact size.
+        TOP_LEFT, //!< Kept at original size and top left corner aligned with window's top left corner.
     };
 
-    //! Default draw position is Fit.
+    //! Default draw position is FIT.
     virtual void setMainRenderTextureDrawPosition(DrawPosition aDrawPosition) = 0;
 
     ///////////////////////////////////////////////////////////////////////////
     // VIEWS                                                                 //
     ///////////////////////////////////////////////////////////////////////////
 
-    //! Returns the view controller for the main render texture.
-    //!
-    //! \warning unlike `getCanvas()`, which can return a different canvas depending on whether
-    //!          it's called during a DRAW_GUI event or not, this method always returns the view
-    //!          controller of the main render texture, so you can only ever set/get views into
-    //!          the game world (GUI doesn't support views anyway).
-    virtual hg::gr::ViewController& getViewController() = 0;
+    //! TODO
+    virtual hg::math::Vector2d mapPixelToCoords(const hg::math::Vector2f& aPoint,
+                                                const hg::uwga::View&     aView) const = 0;
 
-    //! Returns the view controller for the main render texture.
-    //!
-    //! \warning unlike `getCanvas()`, which can return a different canvas depending on whether
-    //!          it's called during a DRAW_GUI event or not, this method always returns the view
-    //!          controller of the main render texture, so you can only ever set/get views into
-    //!          the game world (GUI doesn't support views anyway).
-    virtual const hg::gr::ViewController& getViewController() const = 0;
+    //! TODO
+    virtual hg::math::Vector2d mapPixelToCoords(const hg::math::Vector2f& aPoint) const = 0;
 
-    //! Equivalent to `getViewController().setViewCount()`.
-    virtual void setViewCount(hg::PZInteger aViewCount) = 0;
+    //! TODO
+    virtual hg::math::Vector2f mapCoordsToPixel(const hg::math::Vector2d& aPoint,
+                                                const hg::uwga::View&     aView) const = 0;
 
-    //! Equivalent to `getViewController().getViewCount()`.
-    virtual hg::PZInteger getViewCount() const = 0;
-
-    //! Equivalent to `getViewController().getView()`.
-    virtual hg::gr::View& getView(hg::PZInteger aViewIndex = 0) = 0;
-
-    //! Equivalent to `getViewController().getView()`.
-    virtual const hg::gr::View& getView(hg::PZInteger aViewIndex = 0) const = 0;
-
-    //! Equivalent to `getViewController().mapPixelToCoords()`.
-    virtual hg::math::Vector2f mapPixelToCoords(const hg::math::Vector2i& aPoint,
-                                                const hg::gr::View&       aView) const = 0;
-
-    //! Equivalent to `getViewController().mapPixelToCoords()`.
-    virtual hg::math::Vector2f mapPixelToCoords(const hg::math::Vector2i& aPoint,
-                                                hg::PZInteger             aViewIdx = 0) const = 0;
-
-    //! Equivalent to `getViewController().mapCoordsToPixel()`.
-    virtual hg::math::Vector2i mapCoordsToPixel(const hg::math::Vector2f& aPoint,
-                                                const hg::gr::View&       aView) const = 0;
-
-    //! Equivalent to `getViewController().mapCoordsToPixel()`.
-    virtual hg::math::Vector2i mapCoordsToPixel(const hg::math::Vector2f& aPoint,
-                                                hg::PZInteger             aViewIdx = 0) const = 0;
+    //! TODO
+    virtual hg::math::Vector2f mapCoordsToPixel(const hg::math::Vector2d& aPoint) const = 0;
 
     ///////////////////////////////////////////////////////////////////////////
     // GUI                                                                   //
@@ -229,24 +200,6 @@ public:
 private:
     SPEMPE_CTXCOMP_TAG("jbatnozic::spempe::WindowManagerInterface");
 };
-
-inline WindowManagerInterface::WindowConfig::WindowConfig(
-    const hg::win::VideoMode&       aVideoMode,
-    const std::string&              aTitle,
-    hg::win::WindowStyle            aStyle,
-    const hg::win::ContextSettings& aOpenGlContextSettings)
-    : videoMode{aVideoMode}
-    , title{aTitle}
-    , style{aStyle}
-    , openGlContextSettings{aOpenGlContextSettings} {}
-
-inline WindowManagerInterface::MainRenderTextureConfig::MainRenderTextureConfig(
-    const hg::math::Vector2pz&      aSize,
-    const bool                      aSmooth,
-    const hg::win::ContextSettings& aOpenGlContextSettings)
-    : size{aSize}
-    , smooth{aSmooth}
-    , openGlContextSettings{aOpenGlContextSettings} {}
 
 inline WindowManagerInterface::TimingConfig::TimingConfig(FrameRate aFrameRateLimit,
                                                           bool      aBusyWaitPreventionEnabled,

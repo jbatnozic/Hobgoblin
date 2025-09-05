@@ -110,7 +110,7 @@ public:
 
 protected:
     // General graphics elements
-    std::unique_ptr<System>    _graphicsSystem;
+    std::shared_ptr<System>    _graphicsSystem;
     std::unique_ptr<Texture>   _texture1;
     std::unique_ptr<Texture>   _texture2;
     std::unique_ptr<Transform> _transform1;
