@@ -56,7 +56,7 @@ struct BatchingConfig {
         FAST_N_LOOSE
     };
 
-    Strategy strategy;
+    Strategy strategy = Strategy::DISABLED;
 };
 
 } // namespace uwga

@@ -29,8 +29,9 @@ DefaultWindowManager::DefaultWindowManager(hobgoblin::QAO_InstGuard aInstGuard, 
 
 void DefaultWindowManager::setToHeadlessMode(const TimingConfig& aTimingConfig) {
     SPEMPE_VALIDATE_GAME_CONTEXT_FLAGS(ctx(), headless == true);
+    HG_HARD_ASSERT(_mode == Mode::UNINITIALIZED);
 
-    _headless     = true;
+    _mode         = Mode::HEADLESS;
     _timingConfig = aTimingConfig;
 
     _mainRenderTexture.reset();
@@ -44,14 +45,16 @@ void DefaultWindowManager::setToNormalMode(
     const TimingConfig&                              aTimingConfig) //
 {
     SPEMPE_VALIDATE_GAME_CONTEXT_FLAGS(ctx(), headless == false);
+    HG_HARD_ASSERT(_mode == Mode::UNINITIALIZED);
 
     _graphicsSystem = std::move(aGraphicsSystem);
 
-    _headless     = false;
+    _mode         = Mode::NORMAL;
     _timingConfig = aTimingConfig;
 
     // Create window:
-    _window = _graphicsSystem->createRenderWindow(aWindowConfig.size.x, // TODO: batching config
+    _window = _graphicsSystem->createRenderWindow(aWindowConfig.batchingConfig,
+                                                  aWindowConfig.size.x,
                                                   aWindowConfig.size.y,
                                                   aWindowConfig.style,
                                                   aWindowConfig.title);
@@ -59,17 +62,25 @@ void DefaultWindowManager::setToNormalMode(
     _window->setFramerateLimit(_timingConfig.lowLevelFramerateLimiter);
     _window->setVerticalSyncEnabled(_timingConfig.verticalSyncEnabled);
 
+    _windowClearingColor = aWindowConfig.clearingColor;
+
     // Create main render texture:
-    _mainRenderTexture =
-        _graphicsSystem->createRenderTexture(aMainRenderTextureConfig.size); // TODO: batching config
+    _mainRenderTexture = _graphicsSystem->createRenderTexture(aMainRenderTextureConfig.batchingConfig,
+                                                              aMainRenderTextureConfig.size);
     _mainRenderTexture->setSmooth(aMainRenderTextureConfig.smooth);
 
     _mrtSprite = std::make_unique<hg::uwga::Sprite>(*_graphicsSystem);
     _mrtSprite->addSubsprite(hg::uwga::TextureRect{});
 
+    _mrtClearingColor = aMainRenderTextureConfig.clearingColor;
+
     // Create GUI:
     _rmlUiBackendLifecycleGuard = hg::rml::HobgoblinBackend::initialize(_graphicsSystem);
     _rmlUiContextDriver.emplace("DefaultWindowManager::RmlContext", *_window);
+}
+
+DefaultWindowManager::Mode DefaultWindowManager::getMode() const {
+    return _mode;
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -89,22 +100,22 @@ void DefaultWindowManager::setStopIfCloseClicked(bool aStop) {
 ///////////////////////////////////////////////////////////////////////////
 
 hg::uwga::System& DefaultWindowManager::getGraphicsSystem() const {
-    HG_HARD_ASSERT(!_headless && "Method not available in Headless mode.");
+    HG_HARD_ASSERT(_mode == Mode::NORMAL && "Method only available in NORMAL mode.");
     return *_graphicsSystem;
 }
 
 const hg::uwga::RenderWindow& DefaultWindowManager::getWindow() const {
-    HG_HARD_ASSERT(!_headless && "Method not available in Headless mode.");
+    HG_HARD_ASSERT(_mode == Mode::NORMAL && "Method only available in NORMAL mode.");
     return *_window;
 }
 
 const hg::uwga::RenderTexture& DefaultWindowManager::getMainRenderTexture() const {
-    HG_HARD_ASSERT(!_headless && "Method not available in Headless mode.");
+    HG_HARD_ASSERT(_mode == Mode::NORMAL && "Method only available in NORMAL mode.");
     return *_mainRenderTexture;
 }
 
 hg::uwga::Canvas& DefaultWindowManager::getActiveCanvas() {
-    HG_HARD_ASSERT(!_headless && "Method not available in Headless mode.");
+    HG_HARD_ASSERT(_mode == Mode::NORMAL && "Method only available in NORMAL mode.");
     if (getRuntime()->getCurrentEvent() == hg::QAO_Event::DRAW_GUI) {
         return *_window;
     } else {
@@ -122,7 +133,7 @@ void DefaultWindowManager::setMainRenderTextureDrawPosition(DrawPosition aDrawPo
 
 hg::math::Vector2d DefaultWindowManager::mapPixelToCoords(const hg::math::Vector2f& aPixel,
                                                           const hg::uwga::View&     aView) const {
-    HG_HARD_ASSERT(!_headless && "Method not available in Headless mode.");
+    HG_HARD_ASSERT(_mode == Mode::NORMAL && "Method only available in NORMAL mode.");
 
     const auto mrtPositioning = _getMainRenderTexturePositioningData();
 
@@ -141,7 +152,7 @@ hg::math::Vector2d DefaultWindowManager::mapPixelToCoords(const hg::math::Vector
 
 hg::math::Vector2f DefaultWindowManager::mapCoordsToPixel(const hg::math::Vector2d& aCoords,
                                                           const hg::uwga::View&     aView) const {
-    HG_HARD_ASSERT(!_headless && "Method not available in Headless mode.");
+    HG_HARD_ASSERT(_mode == Mode::NORMAL && "Method only available in NORMAL mode.");
 
     const auto mrtPositioning = _getMainRenderTexturePositioningData();
 
@@ -163,7 +174,7 @@ hg::math::Vector2f DefaultWindowManager::mapCoordsToPixel(const hg::math::Vector
 ///////////////////////////////////////////////////////////////////////////
 
 Rml::Context& DefaultWindowManager::getGUIContext() {
-    HG_HARD_ASSERT(!_headless && "Method not available in Headless mode.");
+    HG_HARD_ASSERT(_mode == Mode::NORMAL && "Method only available in NORMAL mode.");
     return *(*_rmlUiContextDriver);
 }
 
@@ -211,20 +222,24 @@ void DefaultWindowManager::_eventPreUpdate() {
 }
 
 void DefaultWindowManager::_eventPreDraw() {
-    if (!_headless) {
-        _mainRenderTexture->clear({55, 55, 55}); // TODO Parametrize colour
+    if (_mode == Mode::NORMAL) {
+        if (_mrtClearingColor.has_value()) {
+            _mainRenderTexture->clear(*_mrtClearingColor);
+        }
     }
 }
 
 void DefaultWindowManager::_eventDraw2() {
-    if (!_headless) {
-        _window->clear(hg::uwga::COLOR_BLACK); // TODO Parametrize colour
+    if (_mode == Mode::NORMAL) {
+        if (_windowClearingColor.has_value()) {
+            _window->clear(*_windowClearingColor);
+        }
         _drawMainRenderTexture();
     }
 }
 
 void DefaultWindowManager::_eventDrawGUI() {
-    if (!_headless) {
+    if (_mode == Mode::NORMAL) {
         _window->flush();
         _rmlUiContextDriver->update();
         _rmlUiContextDriver->render();
@@ -233,7 +248,7 @@ void DefaultWindowManager::_eventDrawGUI() {
 }
 
 void DefaultWindowManager::_eventDisplay() {
-    if (!_headless) {
+    if (_mode == Mode::NORMAL) {
         _displayWindowAndPollEvents();
     }
     if (_timingConfig.busyWaitPreventionEnabled) {
@@ -345,7 +360,7 @@ void DefaultWindowManager::_sleepUntilNextStep() {
     auto       timeUntilUpdate =
         updateDeltaTime - duration_cast<Duration>(now - ctx().getPerformanceInfo().updateStart);
 
-    if (!_headless) {
+    if (_mode == Mode::NORMAL) {
         if (_timingConfig.framerateLimit.has_value()) {
             const auto displayDeltaTime = duration_cast<Duration>(_getFrameDeltaTime());
             auto       timeUntilDisplay =
@@ -369,7 +384,7 @@ FloatSeconds DefaultWindowManager::_getFrameDeltaTime() const {
 }
 
 hg::math::Vector2d DefaultWindowManager::_getViewRelativeMousePos(const hg::uwga::View* aView) const {
-    if (_headless) {
+    if (_mode != Mode::NORMAL) {
         return {0.f, 0.f};
     }
 
@@ -387,7 +402,7 @@ hg::math::Vector2d DefaultWindowManager::_getViewRelativeMousePos(const hg::uwga
 }
 
 hg::math::Vector2f DefaultWindowManager::_getWindowRelativeMousePos() const {
-    if (_headless) {
+    if (_mode != Mode::NORMAL) {
         return {0, 0};
     }
 

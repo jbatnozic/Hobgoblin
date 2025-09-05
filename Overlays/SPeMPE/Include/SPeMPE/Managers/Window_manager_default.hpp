@@ -42,6 +42,8 @@ public:
                          const MainRenderTextureConfig&                   aMainRenderTextureConfig,
                          const TimingConfig&                              aTimingConfig) override;
 
+    Mode getMode() const override;
+
     ///////////////////////////////////////////////////////////////////////////
     // WINDOW MANAGEMENT                                                     //
     ///////////////////////////////////////////////////////////////////////////
@@ -98,7 +100,7 @@ private:
     };
 
     // Configuration:
-    bool         _headless;
+    Mode         _mode = Mode::UNINITIALIZED;
     TimingConfig _timingConfig;
 
     // Graphics system:
@@ -106,6 +108,7 @@ private:
 
     // Window management:
     std::unique_ptr<hg::uwga::RenderWindow> _window;
+    std::optional<hg::uwga::Color>          _windowClearingColor;
     hg::util::Stopwatch                     _timeSinceLastDisplay;
     bool                                    _stopIfCloseClicked = false;
 
@@ -113,6 +116,7 @@ private:
 
     // Main render texture:
     std::unique_ptr<hg::uwga::RenderTexture> _mainRenderTexture;
+    std::optional<hg::uwga::Color>           _mrtClearingColor;
     std::unique_ptr<hg::uwga::Sprite>        _mrtSprite;
 
     DrawPosition _mainRenderTextureDrawPos = DrawPosition::FIT;

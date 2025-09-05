@@ -7,7 +7,9 @@
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/Math/Vector.hpp>
 #include <Hobgoblin/RmlUi.hpp>
+#include <Hobgoblin/UWGA/Batching_config.hpp>
 #include <Hobgoblin/UWGA/Canvas.hpp>
+#include <Hobgoblin/UWGA/Color.hpp>
 #include <Hobgoblin/UWGA/Render_texture.hpp>
 #include <Hobgoblin/UWGA/Render_window.hpp>
 #include <Hobgoblin/UWGA/System.hpp>
@@ -38,6 +40,8 @@ public:
     ///////////////////////////////////////////////////////////////////////////
 
     enum class Mode {
+        UNINITIALIZED,
+
         //! In this mode no window is actually opened.
         //! (This mode exists to make writing headless servers and
         //!  their clients more uniform.)
@@ -49,14 +53,18 @@ public:
     };
 
     struct WindowConfig {
-        hg::math::Vector2pz   size = {640, 480};
-        hg::UnicodeString     title;
-        hg::uwga::WindowStyle style;
+        hg::math::Vector2pz            size           = {640, 480};
+        hg::UnicodeString              title          = "SPeMPE Window";
+        hg::uwga::WindowStyle          style          = hg::uwga::WindowStyle::DEFAULT;
+        hg::uwga::BatchingConfig       batchingConfig = {/* By default it's disabled */};
+        std::optional<hg::uwga::Color> clearingColor  = hg::uwga::COLOR_BLACK;
     };
 
     struct MainRenderTextureConfig {
-        hg::math::Vector2pz size   = {640, 480};
-        bool                smooth = true;
+        hg::math::Vector2pz            size           = {640, 480};
+        bool                           smooth         = true;
+        hg::uwga::BatchingConfig       batchingConfig = {/* By default it's disabled */};
+        std::optional<hg::uwga::Color> clearingColor  = hg::uwga::COLOR_BLACK;
     };
 
     struct TimingConfig {
@@ -115,6 +123,8 @@ public:
                                  const MainRenderTextureConfig& aMainRenderTextureConfig,
                                  const TimingConfig&            aTimingConfig) = 0;
 
+    virtual Mode getMode() const = 0;
+
     ///////////////////////////////////////////////////////////////////////////
     // WINDOW MANAGEMENT                                                     //
     ///////////////////////////////////////////////////////////////////////////
@@ -152,7 +162,7 @@ public:
     //! - during the `DRAW_GUI` QAO event, this is the window itself (as returned by `getWindow()`).
     //! - during other events, this is the main render texture (as returned by `getMainRenderTexture()`).
     //!
-    //! \throws if the manager is in Headless mode.
+    //! \throws unless the manager is in NORMAL mode.
     virtual hg::uwga::Canvas& getActiveCanvas() = 0;
 
     enum class DrawPosition {
