@@ -55,9 +55,9 @@ public:
     //! \param y Y coordinate
     constexpr Vector2(T aX, T aY);
 
-    //! \brief Converts the vector to another type of vector
+    //! Converts the vector to another type of vector provided that T is implicitly convertible to U.
     template <class U, T_ENABLE_IF(std::is_convertible_v<T, U>)>
-    constexpr explicit operator Vector2<U>() const;
+    constexpr operator Vector2<U>() const;
 
     //! Cast the vector into a different type into which it isn't implicitly convertible.
     //!
