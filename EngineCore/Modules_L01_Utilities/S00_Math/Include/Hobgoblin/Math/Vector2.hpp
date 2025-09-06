@@ -30,7 +30,6 @@
 #define UHOBGOBLIN_MATH_VECTOR2_HPP
 
 #include <Hobgoblin/Common.hpp>
-#include <SFML/System/Vector3.hpp>
 
 #include <cassert>
 #include <cmath>
@@ -98,7 +97,7 @@ public:
     //! Returns `*this` rotated by +90 degrees; (x,y) becomes (-y,x).
     //! For example, the vector (1,0) is transformed to (0,1).
     //!
-    //! In SFML's default coordinate system with +X aRhs and +Y down,
+    //! In Hobgoblin's default coordinate system with +X aRhs and +Y down,
     //! this amounts to a clockwise rotation.
     [[nodiscard]] constexpr Vector2 perpendicular() const;
 
