@@ -94,9 +94,9 @@ public:
 
 private:
     struct MainRenderTexturePositioningData {
-        sf::Vector2f position;
-        sf::Vector2f origin;
-        sf::Vector2f scale;
+        hg::math::Vector2f position;
+        hg::math::Vector2f origin;
+        hg::math::Vector2f scale;
     };
 
     // Configuration:

@@ -24,7 +24,7 @@ int Modulus(int aA, int aB) {
 }
 
 TextureRect TextureRectCoveringWholeTexture(const Texture& aTexture) {
-    const auto texSize = math::VectorCast<std::uint16_t>(aTexture.getSize());
+    const auto texSize = (aTexture.getSize()).cast<std::uint16_t>();
     return {0, 0, texSize.x, texSize.y};
 }
 } // namespace

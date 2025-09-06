@@ -122,8 +122,7 @@ void RunTransformInRenderWindowTest() {
             // If space is pressed, print the screen coordinates of the box
             if (in::CheckPressedPK(in::PK_SPACE)) {
                 const auto px = window->mapCoordsToPixel(
-                    math::VectorCast<double>(transform->transformPoint(vertices[0].position)) +
-                    boxAnchor);
+                    transform->transformPoint(vertices[0].position).cast<double>() + boxAnchor);
                 HG_LOG_INFO(LOG_ID, "Box screen coordinates are: {}, {}", px.x, px.y);
             }
         }

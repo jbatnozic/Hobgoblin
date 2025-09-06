@@ -128,7 +128,7 @@ public:
 
     static Angle fromVector(Real x, Real y); // Implementation @ end of file
 
-    static Angle fromVector(const Vector2d& vector) {
+    static Angle fromVector(const Vector2<taReal>& vector) {
         return fromVector(vector.x, vector.y);
     }
 
@@ -329,12 +329,12 @@ Angle<taReal> Angle<taReal>::fromVector(taReal x, taReal y) {
 //! User-defined literals for Angle<double>.
 namespace angle_literals {
 inline
-AngleD operator "" _rad(long double aAngleInRadians) {
+AngleD operator""_rad(long double aAngleInRadians) {
     return AngleD::fromRadians(static_cast<double>(aAngleInRadians));
 }
 
 inline
-AngleD operator "" _deg(long double aAngleInDegrees) {
+AngleD operator""_deg(long double aAngleInDegrees) {
     return AngleD::fromDegrees(static_cast<double>(aAngleInDegrees));
 }
 } // namespace angle_literals
@@ -342,12 +342,12 @@ AngleD operator "" _deg(long double aAngleInDegrees) {
   //! User-defined literals for Angle<float>.
 namespace angle_literals_f {
 inline
-AngleF operator "" _rad(long double aAngleInRadians) {
+AngleF operator""_rad(long double aAngleInRadians) {
     return AngleF::fromRadians(static_cast<float>(aAngleInRadians));
 }
 
 inline
-AngleF operator "" _deg(long double aAngleInDegrees) {
+AngleF operator""_deg(long double aAngleInDegrees) {
     return AngleF::fromDegrees(static_cast<float>(aAngleInDegrees));
 }
 } // namespace angle_literals_f

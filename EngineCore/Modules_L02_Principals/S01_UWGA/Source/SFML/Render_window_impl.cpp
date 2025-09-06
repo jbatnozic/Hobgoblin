@@ -137,7 +137,7 @@ void SFMLRenderWindowImpl::setMouseCursorGrabbed(bool aGrabbed) {
 }
 
 math::Vector2f SFMLRenderWindowImpl::getRelativeCursorPosition() const {
-    return math::VectorCast<float>(ToHg(sf::Mouse::getPosition(_window)));
+    return ToHg(sf::Mouse::getPosition(_window)).cast<float>();
 }
 
 // Contents
@@ -193,7 +193,7 @@ std::unique_ptr<View> SFMLRenderWindowImpl::createDefaultView() const {
 }
 
 math::Rectangle<int> SFMLRenderWindowImpl::viewportToPixels(const View& aView) const {
-    const auto size = math::VectorCast<float>(getSize());
+    const auto size = getSize().cast<float>();
 
     const auto viewport = _activeView.getViewport();
 

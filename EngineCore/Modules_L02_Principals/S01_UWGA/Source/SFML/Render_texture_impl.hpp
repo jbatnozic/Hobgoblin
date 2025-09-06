@@ -208,7 +208,7 @@ public:
     }
 
     math::Rectangle<int> viewportToPixels(const View& aView) const override {
-        const auto size = math::VectorCast<float>(getSize());
+        const auto size = getSize().cast<float>();
 
         const auto viewport = _activeView.getViewport();
 

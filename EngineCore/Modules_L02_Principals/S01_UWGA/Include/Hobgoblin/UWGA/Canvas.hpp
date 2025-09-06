@@ -220,7 +220,7 @@ inline math::Vector2d Canvas::mapPixelToCoords(math::Vector2f aPixel, const View
     normalized.x = -1.f + 2.f * (aPixel.x - (float)viewport.x) / (float)viewport.w;
     normalized.y = +1.f - 2.f * (aPixel.y - (float)viewport.y) / (float)viewport.h;
 
-    return math::VectorCast<double>(aView.inverseTransformPoint(normalized)) + anchor;
+    return aView.inverseTransformPoint(normalized).cast<double>() + anchor;
 }
 
 inline math::Vector2d Canvas::mapPixelToCoords(math::Vector2f aPixel) const {
@@ -228,7 +228,7 @@ inline math::Vector2d Canvas::mapPixelToCoords(math::Vector2f aPixel) const {
 }
 
 inline math::Vector2f Canvas::mapCoordsToPixel(math::Vector2d aCoords, const View& aView) const {
-    const auto fpoint     = math::VectorCast<float>(aCoords - aView.getAnchor());
+    const auto fpoint     = (aCoords - aView.getAnchor()).cast<float>();
     const auto normalized = aView.transformPoint(fpoint); // In range -1 .. +1
 
     const auto     viewport = viewportToPixels(aView);
