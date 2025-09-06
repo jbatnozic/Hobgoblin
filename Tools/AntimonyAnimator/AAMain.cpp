@@ -4,15 +4,14 @@
 #define HOBGOBLIN_SHORT_NAMESPACE
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/Format.hpp>
-#include <Hobgoblin/Graphics.hpp>
 #include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/Logging.hpp>
 #include <Hobgoblin/Math.hpp>
+#include <Hobgoblin/UWGA.hpp>
 #include <Hobgoblin/Unicode.hpp>
 
 #include <SPeMPE/SPeMPE.hpp>
 
-#include <chrono>
 #include <cstdlib>
 #include <filesystem>
 #include <memory>
@@ -20,8 +19,8 @@
 #include <string>
 #include <vector>
 
-namespace gr  = hg::gr;
-namespace spe = ::jbatnozic::spempe;
+namespace uwga = hg::uwga;
+namespace spe  = ::jbatnozic::spempe;
 
 constexpr auto LOG_ID = "Antimony";
 
@@ -30,27 +29,30 @@ constexpr auto LOG_ID = "Antimony";
 
 class MasterLoader {
 public:
-    MasterLoader(const std::filesystem::path& aDirectory,
+    MasterLoader(const uwga::System&          aGraphicsSystem,
+                 const std::filesystem::path& aDirectory,
                  const std::string&           aBaseSpriteName,
-                 hg::PZInteger                aSpriteCount) {
+                 hg::PZInteger                aSpriteCount)
+        : _loader{aGraphicsSystem} //
+    {
         for (hg::PZInteger i = 0; i < aSpriteCount; i += 1) {
             std::filesystem::path specificSpriteName = {aBaseSpriteName + std::to_string(i) + ".png"};
             const auto&           texture            = _loader.startTexture(2048, 2048)
                                       ->addSprite(i, aDirectory / specificSpriteName)
-                                      ->finalize(gr::TexturePackingHeuristic::BestAreaFit);
+                                      ->finalize(uwga::TexturePackingHeuristic::BEST_AREA_FIT);
             _textures.push_back(&texture);
         }
     }
 
-    gr::SpriteBlueprint getMasterBlueprint(hg::PZInteger aIndex) const {
+    uwga::SpriteBlueprint getMasterBlueprint(hg::PZInteger aIndex) const {
         return _loader.getBlueprint(aIndex);
     }
 
 private:
-    static constexpr gr::SpriteIdNumerical SPRITE_ID = 0;
+    static constexpr uwga::SpriteIdNumerical SPRITE_ID = 0;
 
-    gr::SpriteLoader                _loader;
-    std::vector<const gr::Texture*> _textures;
+    uwga::SpriteLoader                _loader;
+    std::vector<const uwga::Texture*> _textures;
 };
 
 class Editor {
@@ -60,12 +62,12 @@ public:
         _offsets.resize(static_cast<std::size_t>(aMasterCount * (aLerpCount + 1)));
     }
 
-    void onLeftClick(hg::math::Vector2f aWorldPosition) {
+    void onLeftClick(hg::math::Vector2d aWorldPosition) {
         _origin = aWorldPosition;
     }
 
     void draw(spe::WindowManagerInterface& aWinMgr) {
-        auto& canvas = aWinMgr.getCanvas();
+        auto& canvas = aWinMgr.getActiveCanvas();
 
         // Draw master
         const auto blueprint = _masterLoader.getMasterBlueprint(_stage);
@@ -76,7 +78,8 @@ public:
     }
 
     void drawGui(spe::WindowManagerInterface& aWinMgr) {
-        auto& canvas = aWinMgr.getCanvas();
+        auto& grSystem = aWinMgr.getGraphicsSystem();
+        auto& canvas   = aWinMgr.getActiveCanvas();
 
         const auto string = hg::UFormat(HG_UNIFMT("Stage: {} / {} \n"
                                                   "Origin: {}, {}"),
@@ -85,15 +88,15 @@ public:
                                         (_origin) ? _origin->x : 0.f,
                                         (_origin) ? _origin->y : 0.f);
 
-        const auto& font = gr::BuiltInFonts::getFont(gr::BuiltInFonts::TITILLIUM_REGULAR);
-        gr::Text    text{font, string};
-        text.setPosition({32.f, 32.f});
-        text.setFillColor(gr::COLOR_RED);
-        text.setStyle(gr::Text::REGULAR);
-        canvas.draw(text);
+        const auto& font = grSystem.getBuiltinFont(uwga::BuiltInFont::TITILLIUM_REGULAR);
+        auto        text = grSystem.createText(font, string);
+        text->setPosition({32.f, 32.f});
+        text->setFillColor(uwga::COLOR_RED);
+        text->setStyle(uwga::Text::REGULAR);
+        canvas.draw(*text);
 
         if (_origin.has_value()) {
-            _drawCrosshairs(aWinMgr, *_origin, gr::COLOR_RED);
+            _drawCrosshairs(aWinMgr, *_origin, uwga::COLOR_RED);
         }
     }
 
@@ -110,7 +113,7 @@ public:
 private:
     const MasterLoader& _masterLoader;
 
-    std::optional<hg::math::Vector2f>              _origin;
+    std::optional<hg::math::Vector2d>              _origin;
     std::vector<std::optional<hg::math::Vector2f>> _offsets;
 
     enum class Substage {
@@ -125,12 +128,12 @@ private:
     int _substage = 0;
 
     void _drawCrosshairs(spe::WindowManagerInterface& aWinMgr,
-                         hg::math::Vector2f           aCenter,
-                         gr::Color                    aColor) {
-        auto&      canvas    = aWinMgr.getCanvas();
+                         hg::math::Vector2d           aCenter,
+                         uwga::Color                  aColor) {
+        auto&      canvas    = aWinMgr.getActiveCanvas();
         const auto screenPos = aWinMgr.mapCoordsToPixel({aCenter.x, aCenter.y});
 
-        gr::RectangleShape rect;
+        uwga::RectangleShape rect{canvas.getSystem()};
         rect.setFillColor(aColor);
 
         // Horizontal
@@ -169,14 +172,15 @@ public:
             _editor->onLeftClick(input.getViewRelativeMousePos());
         }
 
-        winMgr.getView().setSize({1024.f, 1024.f});
-        winMgr.getView().zoom(_editorZoom);
+        auto view = winMgr.getMainRenderTexture().getView().clone();
+        view->setSize({1024.f, 1024.f});
+        // winMgr.getView().zoom(_editorZoom);
 
         const auto xOff =
             ((float)input.checkPressed(hg::in::PK_D) - (float)input.checkPressed(hg::in::PK_A)) * 8.f;
         const auto yOff =
             ((float)input.checkPressed(hg::in::PK_S) - (float)input.checkPressed(hg::in::PK_W)) * 8.f;
-        winMgr.getView().move({xOff, yOff});
+        view->setCenter(view->getCenter() + hg::math::Vector2f{xOff, yOff});
     }
 
     void _eventDraw1() override {
@@ -211,6 +215,8 @@ private:
 #endif
 
 std::unique_ptr<spe::GameContext> CreateContex() {
+    auto uwgaSystem = uwga::CreateGraphicsSystem("SFML");
+
     spe::GameContext::RuntimeConfig rtConfig{spe::TickRate{TICK_RATE}};
     auto                            ctx = std::make_unique<spe::GameContext>(rtConfig);
 
@@ -219,13 +225,13 @@ std::unique_ptr<spe::GameContext> CreateContex() {
                                                             PRIORITY_WINDOW_MANAGER);
     // clang-format off
     spe::WindowManagerInterface::WindowConfig windowConfig{
-        hg::win::VideoMode::getDesktopMode(),
-        "Antimony Animator",
-        hg::win::WindowStyle::Default
+        .size  = {1200, 800},
+        .title = "Antimony Animator",
+        .style = hg::uwga::WindowStyle::DEFAULT
     };
     spe::WindowManagerInterface::MainRenderTextureConfig mrtConfig{
-        /* SIZE */  {800, 600},
-        /* SMOOTH*/ true
+        .size   = {800, 600},
+        .smooth = true
     };
     spe::WindowManagerInterface::TimingConfig timingConfig{
     #ifdef _MSC_VER
@@ -239,8 +245,8 @@ std::unique_ptr<spe::GameContext> CreateContex() {
     #endif
     };
     // clang-format on
-    winMgr->setToNormalMode(windowConfig, mrtConfig, timingConfig);
-    winMgr->setMainRenderTextureDrawPosition(spe::WindowManagerInterface::DrawPosition::Fit);
+    winMgr->setToNormalMode(uwgaSystem, windowConfig, mrtConfig, timingConfig);
+    winMgr->setMainRenderTextureDrawPosition(spe::WindowManagerInterface::DrawPosition::FIT);
     winMgr->setStopIfCloseClicked(true);
 
     ctx->attachAndOwnComponent(std::move(winMgr));
@@ -266,8 +272,12 @@ int main(int argc, char* argv[]) try {
 
     auto context = CreateContex();
 
-    MasterLoader loader{spriteDir, spriteBaseName, masterCount};
-    Editor       editor{loader, masterCount, lerpCount};
+    MasterLoader loader{context->getComponent<spe::WindowManagerInterface>().getGraphicsSystem(),
+                        spriteDir,
+                        spriteBaseName,
+                        masterCount};
+
+    Editor editor{loader, masterCount, lerpCount};
 
     auto editorDriver = hg::QAO_Create<EditorDriver>(context->getQAORuntime(), PRIORITY_EDITOR_DRIVER);
     editorDriver->init(editor);

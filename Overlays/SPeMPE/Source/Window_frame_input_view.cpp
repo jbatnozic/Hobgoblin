@@ -37,6 +37,10 @@ bool WindowFrameInputView::checkMouseMoved() const {
     return _tracker.checkMouseMoved();
 }
 
+hg::math::Vector2d WindowFrameInputView::getViewRelativeMousePos() const {
+    return _tracker.getViewRelativeMousePos();
+}
+
 hg::math::Vector2d WindowFrameInputView::getViewRelativeMousePos(
     const hobgoblin::uwga::View& aView) const //
 {
