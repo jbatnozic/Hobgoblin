@@ -11,11 +11,10 @@
 #include "Player_character_basic.hpp"
 
 #include <Hobgoblin/Logging.hpp>
+#include <Hobgoblin/UWGA.hpp>
 #include <Hobgoblin/Utility/Randomization.hpp>
-#include <Hobgoblin/Window.hpp>
 
 #include <cstdint>
-#include <iostream>
 
 static constexpr auto LOG_ID = "MultiplayerFoundation";
 
@@ -70,10 +69,11 @@ std::unique_ptr<spe::GameContext> MakeGameContext(GameMode      aGameMode,
         winMgr->setToHeadlessMode(timingConfig);
     } else {
         winMgr->setToNormalMode(
+            hg::uwga::CreateGraphicsSystem("SFML"),
             spe::WindowManagerInterface::WindowConfig{
-                hg::win::VideoMode{WINDOW_WIDTH, WINDOW_HEIGHT},
-                "SPeMPE Multiplayer Foundation",
-                hg::win::WindowStyle::Default
+                .size  = {WINDOW_WIDTH, WINDOW_HEIGHT},
+                .title = "SPeMPE Multiplayer Foundation",
+                .style = hg::uwga::WindowStyle::DEFAULT
         },
             spe::WindowManagerInterface::MainRenderTextureConfig{{WINDOW_WIDTH, WINDOW_HEIGHT}},
             timingConfig);

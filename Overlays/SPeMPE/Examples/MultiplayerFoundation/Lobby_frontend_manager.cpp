@@ -6,6 +6,7 @@
 #include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/Logging.hpp>
 #include <Hobgoblin/RigelNet_macros.hpp>
+#include <Hobgoblin/RmlUi.hpp>
 #include <Hobgoblin/Utility/No_copy_no_move.hpp>
 
 namespace {
@@ -261,12 +262,13 @@ public:
             lobbyBackendMgr.setLocalUniqueId(aUniqueId);
         }
 
-        auto& guiContext = CCOMP<MWindow>().getGUIContext();
+        auto& winMgr     = CCOMP<MWindow>();
+        auto& guiContext = winMgr.getGUIContext();
         auto  handle     = _setUpDataBinding(guiContext);
         HG_HARD_ASSERT(handle.has_value()); // TODO
         _dataModelHandle = *handle;
 
-        hg::rml::PreprocessRcssFile("assets/lobby.rcss.fp");
+        hg::rml::PreprocessRcssFile("assets/lobby.rcss.fp", winMgr.getGraphicsSystem());
         _document = guiContext.LoadDocument("assets/lobby.rml");
         if (_document) {
             _document->Show();
