@@ -385,8 +385,7 @@ int main(int argc, char* argv[]) {
             break;
         }
 
-        const auto worldPos =
-            window->mapPixelToCoords(hg::math::VectorCast<float>(mousePos), window->getView());
+        const auto worldPos = window->mapPixelToCoords(mousePos.cast<float>(), window->getView());
         if (lmbPressed) {
             balls.emplace_back(space, worldPos);
             balls.back().addListInfo(balls, std::prev(balls.end()));

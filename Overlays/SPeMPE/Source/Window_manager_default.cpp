@@ -143,7 +143,7 @@ hg::math::Vector2d DefaultWindowManager::mapPixelToCoords(const hg::math::Vector
     windowPos.y =
         (windowPos.y - mrtPositioning.position.y) / mrtPositioning.scale.y + mrtPositioning.origin.y;
 
-    return _mainRenderTexture->mapPixelToCoords(hg::math::VectorCast<float>(windowPos), aView);
+    return _mainRenderTexture->mapPixelToCoords(windowPos.cast<float>(), aView);
 }
 
 hg::math::Vector2d DefaultWindowManager::mapPixelToCoords(const hg::math::Vector2f& aPixel) const {
@@ -391,14 +391,14 @@ hg::math::Vector2d DefaultWindowManager::_getViewRelativeMousePos(const hg::uwga
     const auto mrtPositioning = _getMainRenderTexturePositioningData();
     const auto pixelPos       = _window->getRelativeCursorPosition();
 
-    auto windowPos = _window->mapPixelToCoords(hg::math::VectorCast<float>(pixelPos),
-                                               aView ? *aView : _window->getView());
+    auto windowPos =
+        _window->mapPixelToCoords(pixelPos.cast<float>(), aView ? *aView : _window->getView());
     windowPos.x =
         (windowPos.x - mrtPositioning.position.x) / mrtPositioning.scale.x + mrtPositioning.origin.x;
     windowPos.y =
         (windowPos.y - mrtPositioning.position.y) / mrtPositioning.scale.y + mrtPositioning.origin.y;
 
-    return _mainRenderTexture->mapPixelToCoords(hg::math::VectorCast<float>(windowPos));
+    return _mainRenderTexture->mapPixelToCoords(windowPos.cast<float>());
 }
 
 hg::math::Vector2f DefaultWindowManager::_getWindowRelativeMousePos() const {

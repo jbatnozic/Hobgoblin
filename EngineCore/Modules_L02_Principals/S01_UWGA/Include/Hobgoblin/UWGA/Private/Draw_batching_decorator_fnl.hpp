@@ -97,7 +97,7 @@ public:
                 auto it = _va.vertices.insert(_va.vertices.end(), aVertices, aVertices + aVertexCount);
                 ++_perfCnt.currentAggregation;
                 if (!AreAnchorsApproxEq(aAnchor, _va.anchor)) {
-                    const auto delta = math::VectorCast<float>(aAnchor - _va.anchor);
+                    const auto delta = (aAnchor - _va.anchor).cast<float>();
                     if (HG_LIKELY_CONDITION(!majorityIsNew)) {
                         HG_LIKELY_BRANCH;
                         auto end = _va.vertices.end();

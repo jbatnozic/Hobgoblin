@@ -43,33 +43,10 @@ HOBGOBLIN_NAMESPACE_BEGIN
 namespace uwga {
 
 namespace {
-math::Vector2f Perpendicular(math::Vector2f aVector) {
-    return {-aVector.y, aVector.x};
-}
-
-float Dot(math::Vector2f aLhs, math::Vector2f aRhs) {
-    return aLhs.x * aRhs.x + aLhs.y * aRhs.y;
-}
-
-float Cross(math::Vector2f aLhs, math::Vector2f aRhs) {
-    return aLhs.x * aRhs.y - aLhs.y * aRhs.x;
-}
-
-math::Vector2f ComponentWiseMul(math::Vector2f aLhs, math::Vector2f aRhs) {
-    return {aLhs.x * aRhs.x, aLhs.y * aRhs.y};
-}
-
-math::Vector2f ComponentWiseDiv(math::Vector2f aLhs, math::Vector2f aRhs) {
-    assert(aRhs.x != 0 && "Vector2::componentWiseDiv() cannot divide by 0");
-    assert(aRhs.y != 0 && "Vector2::componentWiseDiv() cannot divide by 0");
-
-    return {aLhs.x / aRhs.x, aLhs.y / aRhs.y};
-}
-
 // Compute the direction of a segment
-sf::Vector2f ComputeDirection(sf::Vector2f aLhs, sf::Vector2f aRhs) {
-    sf::Vector2f direction = aRhs - aLhs;
-    const float  length    = std::sqrt(math::Sqr(direction.x) + math::Sqr(direction.y));
+math::Vector2f ComputeDirection(math::Vector2f aLhs, math::Vector2f aRhs) {
+    math::Vector2f direction = aRhs - aLhs;
+    const float    length    = std::sqrt(math::Sqr(direction.x) + math::Sqr(direction.y));
     if (length != 0.f) {
         direction /= length;
     }
@@ -178,7 +155,7 @@ void Shape::setMiterLimit(float aMiterLimit) {
         auto previousPoint = getPoint(count - 1);
         for (PZInteger i = 0; i < count; ++i) {
             const auto  currentPoint = getPoint(i);
-            const float product      = Cross(previousPoint, currentPoint);
+            const float product      = previousPoint.cross(currentPoint);
             twiceArea += product;
             centroid += (currentPoint + previousPoint) * product;
 
@@ -327,12 +304,11 @@ void Shape::_updateTexCoords() const {
                                         _insideBounds.h > 0 ? _insideBounds.h : 1.f);
 
     for (auto& vertex : _vertices.vertices) {
-        const math::Vector2f ratio =
-            ComponentWiseDiv(vertex.position - math::Vector2f{_insideBounds.x, _insideBounds.y},
-                             safeInsideSize);
+        const math::Vector2f ratio = (vertex.position - math::Vector2f{_insideBounds.x, _insideBounds.y})
+                                         .componentWiseDiv(safeInsideSize);
         vertex.texCoords =
             math::Vector2f{convertedTextureRect.x, convertedTextureRect.y} +
-            ComponentWiseMul(math::Vector2f{convertedTextureRect.w, convertedTextureRect.h}, ratio);
+            math::Vector2f{convertedTextureRect.w, convertedTextureRect.h}.componentWiseMul(ratio);
     }
 }
 
@@ -353,11 +329,11 @@ void Shape::_updateOutline() const {
     // computation.
     const bool flipNormals = [this, count]() {
         // p0 is either strictly inside the shape, or on an edge.
-        const sf::Vector2f p0 = _vertices.vertices[0].position;
+        const math::Vector2f p0 = _vertices.vertices[0].position;
         for (std::size_t i = 0; i < count; ++i) {
-            const sf::Vector2f p1      = _vertices.vertices[i + 1].position;
-            const sf::Vector2f p2      = _vertices.vertices[i + 2].position;
-            const float        product = Cross(p1 - p0, p2 - p0);
+            const math::Vector2f p1      = _vertices.vertices[i + 1].position;
+            const math::Vector2f p2      = _vertices.vertices[i + 2].position;
+            const float          product = (p1 - p0).cross(p2 - p0);
             if (product == 0.f) {
                 // p0 is on the edge p1-p2. We cannot determine shape orientation yet, so continue.
                 continue;
@@ -382,13 +358,13 @@ void Shape::_updateOutline() const {
         const math::Vector2f d2 = ComputeDirection(p1, p2);
 
         // Compute their normal pointing towards the outside of the shape
-        const math::Vector2f n1 = flipNormals ? Perpendicular(-d1) : Perpendicular(d1);
-        const math::Vector2f n2 = flipNormals ? Perpendicular(-d2) : Perpendicular(d2);
+        const math::Vector2f n1 = flipNormals ? (-d1).perpendicular() : d1.perpendicular();
+        const math::Vector2f n2 = flipNormals ? (-d2).perpendicular() : d2.perpendicular();
 
         // Decide whether to add a bevel or not
-        const float twoCos2            = 1.f + Dot(n1, n2);
+        const float twoCos2            = 1.f + n1.dot(n2);
         const float squaredLengthRatio = _miterLimit * _miterLimit * twoCos2 / 2.f;
-        const bool  isConvexCorner     = Dot(n1, n2) * _outlineThickness >= 0.f;
+        const bool  isConvexCorner     = n1.dot(n2) * _outlineThickness >= 0.f;
         const bool  needsBevel         = twoCos2 == 0.f || (squaredLengthRatio < 1.f && isConvexCorner);
 
         if (needsBevel) {
@@ -397,10 +373,10 @@ void Shape::_updateOutline() const {
 
             // Combine normals to get bevel edge's direction and normal vector pointing towards the
             // outside of the shape
-            const float          twoSin2   = 1.f - Dot(n1, n2);
+            const float          twoSin2   = 1.f - n1.dot(n2);
             const math::Vector2f direction = (n2 - n1) / twoSin2; // Length is 1 / sin
             const math::Vector2f extrusion =
-                Perpendicular(flipNormals != (Dot(n1, n2) >= 0.f) ? direction : -direction);
+                (flipNormals != (n1.dot(n2) >= 0.f) ? direction : -direction).perpendicular();
 
             // Compute bevel corner position in (direction, extrusion) coordinates
             const float sin = std::sqrt(twoSin2 / 2.f);
