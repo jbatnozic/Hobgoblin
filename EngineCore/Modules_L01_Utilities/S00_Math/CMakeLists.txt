@@ -15,6 +15,11 @@ set(COMPONENT_SOURCES
 add_library(${COMPONENT_NAME} INTERFACE ${COMPONENT_SOURCES})
 target_include_directories(${COMPONENT_NAME} INTERFACE "Include/")
 
+target_link_libraries(${COMPONENT_NAME}
+INTERFACE
+    "Hobgoblin_L00_S01_Common"
+)
+
 add_library("Hobgoblin_L01_S00_Math" ALIAS ${COMPONENT_NAME})
 
 add_subdirectory("Test")
