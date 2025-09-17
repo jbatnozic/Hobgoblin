@@ -36,7 +36,7 @@ QAO_Handle<T> QAO_Create(QAO_RuntimeRef aRuntimeRef, taArgs&&... aArgs) {
 
     bool didSetUp = false;
     try {
-        object->_setUp();
+        static_cast<QAO_Base*>(object)->_setUp();
         didSetUp = true;
 
         auto* rt = aRuntimeRef.ptr();
@@ -48,7 +48,7 @@ QAO_Handle<T> QAO_Create(QAO_RuntimeRef aRuntimeRef, taArgs&&... aArgs) {
         return qao_detail::QAO_HandleFactory::createHandle(object, true);
     } catch (...) {
         if (didSetUp) {
-            object->_tearDown();
+            static_cast<QAO_Base*>(object)->_tearDown();
         }
         delete object;
         throw;
