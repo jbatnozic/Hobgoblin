@@ -292,7 +292,7 @@ void PreprocessRcssFile(std::filesystem::path aFilePath, const uwga::System& aGr
         }
     };
 
-    ForEachLineInFileDo(aFilePath, lineAction);
+    ForEachLineInFileDo(aFilePath.string(), lineAction);
 
     // Use gathered/generated information to output a new .rcss file:
     {

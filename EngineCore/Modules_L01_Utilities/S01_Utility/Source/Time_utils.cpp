@@ -13,8 +13,8 @@
 // clang-format off
 #ifdef _WIN32
     #define WIN32_LEAN_AND_MEAN
-    #include <Mmsystem.h>
     #include <Windows.h>
+    #include <Mmsystem.h>
 #else
     #include <errno.h>
     #include <time.h>

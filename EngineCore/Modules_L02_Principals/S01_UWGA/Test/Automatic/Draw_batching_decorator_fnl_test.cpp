@@ -89,8 +89,8 @@ public:
     void SetUp() override {
         _graphicsSystem = CreateGraphicsSystem("SFML");
 
-        _texture1 = _graphicsSystem->createTexture({128, 128});
-        _texture2 = _graphicsSystem->createTexture({128, 128});
+        _texture1 = _graphicsSystem->createTexture(128, 128);
+        _texture2 = _graphicsSystem->createTexture(128, 128);
 
         _transform1 = _graphicsSystem->createTransform();
         _transform1->setToIdentity();
