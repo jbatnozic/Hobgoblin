@@ -21,6 +21,3 @@ PUBLIC
 )
 
 hg_copy_test_assets(${PROJECT_NAME} "Assets")
-
-include(GoogleTest)
-gtest_discover_tests(${PROJECT_NAME})

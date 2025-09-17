@@ -290,11 +290,13 @@ void Sprite::drawOnto(Canvas& aCanvas, const RenderStates& aRenderStates) const 
     std::array<Vertex, 6> vertices;
     std::memcpy(vertices.data(), subspr._vertices.data(), Subsprite::VERTEX_COUNT * sizeof(Vertex));
 
-    const auto& transform = getTransform();
-    for (std::size_t i = 0; i < Subsprite::VERTEX_COUNT; ++i) {
-        vertices[i].color    = _color;
-        vertices[i].position = transform.transformPoint(vertices[i].position);
-    }
+    static_assert(Subsprite::VERTEX_COUNT == 4);
+    vertices[0].color = vertices[1].color = vertices[2].color = vertices[3].color = _color;
+    getTransform().transformPoints(4,
+                                   &vertices[0].position,
+                                   &vertices[1].position,
+                                   &vertices[2].position,
+                                   &vertices[3].position);
 
     vertices[4] = vertices[2];
     vertices[5] = vertices[1];

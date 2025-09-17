@@ -53,6 +53,7 @@ public:
 
     math::Vector2f transformPoint(float aX, float aY) const override;
     math::Vector2f transformPoint(const math::Vector2f& aPoint) const override;
+    void           transformPoints(PZInteger aPointCount, ...) const override;
 
     math::Rectangle<float> transformRect(const math::Rectangle<float>& aRectangle) const override;
 

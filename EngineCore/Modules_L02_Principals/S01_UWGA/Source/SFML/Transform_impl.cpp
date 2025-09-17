@@ -6,6 +6,7 @@
 #include "SFML/SFML_conversions.hpp"
 
 #include <cassert>
+#include <cstdarg>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
@@ -83,6 +84,18 @@ math::Vector2f SFMLTransformImpl::transformPoint(float aX, float aY) const {
 
 math::Vector2f SFMLTransformImpl::transformPoint(const math::Vector2f& aPoint) const {
     return ToHg(_getTransform().transformPoint(aPoint.x, aPoint.y));
+}
+
+void SFMLTransformImpl::transformPoints(PZInteger aPointCount, ...) const {
+    va_list args;
+    va_start(args, aPointCount);
+
+    for (PZInteger i = 0; i < aPointCount; ++i) {
+        auto* point = va_arg(args, math::Vector2f*);
+        (*point)    = ToHg(_getTransform().transformPoint(point->x, point->y));
+    }
+
+    va_end(args);
 }
 
 math::Rectangle<float> SFMLTransformImpl::transformRect(const math::Rectangle<float>& aRectangle) const {
