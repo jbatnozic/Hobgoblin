@@ -95,6 +95,13 @@ public:
     //! \brief Transform a 2D point by applying this transformation to it.
     virtual math::Vector2f transformPoint(const math::Vector2f& aPoint) const = 0;
 
+    //! \brief Transform multiple 2D points by applying this transformation to them.
+    //!
+    //! \param aPointCount tells the number of parameters in the variadic parameter pack.
+    //! \param ... non-const pointers to objects of type `math::Vector2f`. This function
+    //!            modifies (transforms) these points in-place.
+    virtual void transformPoints(PZInteger aPointCount, ...) const = 0;
+
     //! \brief Transform a 2D rectangle by applying this transformation to it.
     //!
     //! \warning Since oriented rectangles are NOT supported, the result of this function is

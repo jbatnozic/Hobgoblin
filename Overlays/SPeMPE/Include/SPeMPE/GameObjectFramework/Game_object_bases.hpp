@@ -14,6 +14,7 @@
 #include <SPeMPE/GameObjectFramework/Autodiff_state.hpp>
 #include <SPeMPE/GameObjectFramework/Synchronized_object_registry.hpp>
 #include <SPeMPE/GameObjectFramework/Sync_id.hpp>
+#include <SPeMPE/GameObjectFramework/Sync_obj_role_specific_data.hpp>
 
 #include <cassert>
 #include <optional>
@@ -247,14 +248,58 @@ public:
     void __spempeimpl_setStateSchedulerDefaultDelay(hg::PZInteger aNewDefaultDelaySteps);
 };
 
+// clang-format on
+
 // MARK: Template
 
 //! Objects which are essential to the game's state, so they are both saved when
 //! writing game state, and synchronized with clients in multiplayer sessions.
-//! For example, units, terrain, interactible items (and, basically, most other 
+//! For example, units, terrain, interactible items (and, basically, most other
 //! game objects).
-template <class taVisibleState>
-class SynchronizedObject : public SynchronizedObjectBase {
+//!
+//! ===== ROLE-SPECIFIC DATA =====
+//!
+//! The template parameters `taMasterSpecificInlineData` and `taMasterSpecificHeapData` are used
+//! to specify the type of an object which will be created only when the instance is created and
+//! attached to a networking manager as a Master object. Note that only one of these can be
+//! non-`void`. (but both can be left as `void` if you don't need this functionality).
+//! If the master data is not `void`, it can be referred to by the protected pointer `_masterData`.
+//!
+//! The template parameters `taDummySpecificInlineData` and `taDummySpecificHeapData` are used
+//! to specify the type of an object which will be created only when the instance is created and
+//! attached to a networking manager as a Master object. Note that only one of these can be
+//! non-`void`. (but both can be left as `void` if you don't need this functionality).
+//! If the dummy data is not `void`, it can be referred to by the protected pointer `_dummyData`.
+//!
+//! Role-specific data (master-specific and role-specific) data is cleaned up when the instance is
+//! detached from the networking manager - the relevant pointers will be null after that.
+//!
+//! Role-specific data comes in 2 flavours: 'inline' and 'heap'. Their lifetimes are the same, but
+//! the difference is that 'inline' data is stored as a regular member of the instance (if both master
+//! and dummy data types are non-`void`, a union will be used to save memory), while 'heap' data will
+//! be dynamically allocated on the heap. While it is possible to use one flavour for master-specific
+//! data and the other for dummy-specific data, it's not recommended. With the 'heap' flavour, the
+//! pointers `_masterData` and `_dummyData` will be `std::unique_ptr`s to relevant types - but you
+//! can reset or reassign them if needed (SPeMPE doesn't use them for anything).
+//!
+//! \see macros `SPEMPE_RSDATA_INLINE`, `SPEMPE_RSDATA_HEAP`.
+//!
+//! Examples:
+//!     class MySyncObj1<VisibleState1, SPEMPE_RSDATA_INLINE(StructA, StructB)> { ... };
+//!     class MySyncObj1<VisibleState1, SPEMPE_RSDATA_INLINE(void, StructB)> { ... };
+//!     class MySyncObj2<VisibleState2, SPEMPE_RSDATA_HEAP(StructA, StructB)> { ... };
+//!     class MySyncObj2<VisibleState2, SPEMPE_RSDATA_HEAP(StructA, void)> { ... };
+template <class taVisibleState,
+          class taMasterSpecificInlineData = void,
+          class taDummySpecificInlineData  = void,
+          class taMasterSpecificHeapData   = void,
+          class taDummySpecificHeapData    = void>
+class SynchronizedObject
+    : public SynchronizedObjectBase
+    , protected detail::RoleSpecificData<taMasterSpecificInlineData,
+                                         taDummySpecificInlineData,
+                                         taMasterSpecificHeapData,
+                                         taDummySpecificHeapData> {
 public:
     using VisibleState = taVisibleState;
 
@@ -270,12 +315,7 @@ protected:
                        int                   aExecutionPriority,
                        std::string           aName,
                        SyncId                aSyncId = SYNC_ID_NEW)
-        : SynchronizedObjectBase{ aInstGuard
-                                , aTypeInfo
-                                , aExecutionPriority
-                                , std::move(aName)
-                                , aSyncId
-                                }
+        : SynchronizedObjectBase{aInstGuard, aTypeInfo, aExecutionPriority, std::move(aName), aSyncId}
         , _ssch{0} {}
 
     taVisibleState& _getCurrentState() {
@@ -304,8 +344,39 @@ protected:
 protected:
     // Lifecycle
     void _didAttach(hg::QAO_Runtime& aRuntime) override {
-        SynchronizedObjectBase::_didAttach(aRuntime);   
+        SynchronizedObjectBase::_didAttach(aRuntime);
+
         _ssch.getCurrentState().status.isDeactivated = !isMasterObject();
+
+        using RoleSpecific = detail::RoleSpecificData<taMasterSpecificInlineData,
+                                                      taDummySpecificInlineData,
+                                                      taMasterSpecificHeapData,
+                                                      taDummySpecificHeapData>;
+
+        if (isMasterObject()) {
+            RoleSpecific::__spempeimpl_initMasterSpecificInlineData();
+            RoleSpecific::__spempeimpl_initMasterSpecificHeapData();
+        } else {
+            RoleSpecific::__spempeimpl_initDummySpecificInlineData();
+            RoleSpecific::__spempeimpl_initDummySpecificHeapData();
+        }
+    }
+
+    void _willDetach(hg::QAO_Runtime& aRuntime) override {
+        using RoleSpecific = detail::RoleSpecificData<taMasterSpecificInlineData,
+                                                      taDummySpecificInlineData,
+                                                      taMasterSpecificHeapData,
+                                                      taDummySpecificHeapData>;
+
+        if (isMasterObject()) {
+            RoleSpecific::__spempeimpl_cleanupMasterSpecificInlineData();
+            RoleSpecific::__spempeimpl_cleanupMasterSpecificHeapData();
+        } else {
+            RoleSpecific::__spempeimpl_cleanupDummySpecificInlineData();
+            RoleSpecific::__spempeimpl_cleanupDummySpecificHeapData();
+        }
+
+        SynchronizedObjectBase::_willDetach(aRuntime);
     }
 
 private:
@@ -323,22 +394,21 @@ private:
 
     struct SchedulerPair {
         taVisibleState visibleState;
-        DummyStatus status;
+        DummyStatus    status;
 
-        friend
-        std::ostream& operator<<(std::ostream& aOstream, const SchedulerPair& aSPair) {
+        friend std::ostream& operator<<(std::ostream& aOstream, const SchedulerPair& aSPair) {
             return (aOstream << aSPair.visibleState << (aSPair.status.isDeactivated ? " [D]" : ""));
         }
     };
 
     struct DeferredState {
         taVisibleState state;
-        hg::PZInteger delay;
+        hg::PZInteger  delay;
     };
 
     struct PacemakerPulse {
         hg::PZInteger delay;
-        bool happened = false;
+        bool          happened = false;
     };
 
     hg::util::SimpleStateScheduler<SchedulerPair> _ssch;
@@ -365,7 +435,8 @@ private:
         }
 
         if (_deferredState.has_value()) {
-            _ssch.putNewState(SchedulerPair{_deferredState->state, DummyStatus::active()}, _deferredState->delay);
+            _ssch.putNewState(SchedulerPair{_deferredState->state, DummyStatus::active()},
+                              _deferredState->delay);
             _deferredState.reset();
         }
 
@@ -388,7 +459,9 @@ private:
 
 public:
     //! \warning Internal implementation, do not call in user code!
-    void __spempeimpl_applyUpdate(const VisibleState& aNewState, hg::PZInteger aDelaySteps, SyncFlags aFlags) {
+    void __spempeimpl_applyUpdate(const VisibleState& aNewState,
+                                  hg::PZInteger       aDelaySteps,
+                                  SyncFlags           aFlags) {
         VisibleState stateToSchedule = [this, &aNewState, aFlags]() {
             if constexpr (std::is_base_of<detail::AutodiffStateTag, VisibleState>::value) {
                 if (!IsFullStateFlagSet(aFlags)) {
@@ -401,13 +474,13 @@ public:
         }();
 
         if (!IsPacemakerPulseFlagSet(aFlags)) {
-        // NORMAL UPDATE
+            // NORMAL UPDATE
             if (!isUsingAlternatingUpdates()) {
                 _ssch.putNewState(SchedulerPair{stateToSchedule, DummyStatus::active()}, aDelaySteps);
-            }
-            else {
+            } else {
                 if (_deferredState.has_value()) {
-                    _ssch.putNewState(SchedulerPair{_deferredState->state,  DummyStatus::active()}, _deferredState->delay);
+                    _ssch.putNewState(SchedulerPair{_deferredState->state, DummyStatus::active()},
+                                      _deferredState->delay);
                     _deferredState.reset();
                 }
 
@@ -422,21 +495,20 @@ public:
             // sometimes dummies with alternating updates can trigger 'pacemaking'
             // themselves to get out of degenerate states, and then they will need
             // to know the delay.
-            //if (_pacemakerPulse.happened) {
-                // This is in the correct place because the pacemaker 
-                // pulse actually affects the *following* update.
-                _pacemakerPulse.delay = aDelaySteps;
+            // if (_pacemakerPulse.happened) {
+            // This is in the correct place because the pacemaker
+            // pulse actually affects the *following* update.
+            _pacemakerPulse.delay = aDelaySteps;
             //}
         } else {
-        // PACEMAKER UPDATE
+            // PACEMAKER UPDATE
             if (!isUsingAlternatingUpdates()) {
                 _ssch.putNewState(SchedulerPair{stateToSchedule, DummyStatus::active()}, aDelaySteps);
-            }
-            else {
+            } else {
                 // When using alternating updates, a pacemaker pulse happens inbetween actual updates
             }
             _pacemakerPulse.happened = true;
-            _pacemakerPulse.delay = aDelaySteps;
+            _pacemakerPulse.delay    = aDelaySteps;
         }
     }
 
@@ -450,5 +522,3 @@ public:
 } // namespace jbatnozic
 
 #endif // !SPEMPE_GAME_OBJECT_FRAMEWORK_GAME_OBJECT_BASES_HPP
-
-// clang-format on

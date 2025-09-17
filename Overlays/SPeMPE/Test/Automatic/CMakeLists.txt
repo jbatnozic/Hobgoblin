@@ -12,6 +12,7 @@ add_executable(${PROJECT_NAME}
     "Input_sync_manager_test.cpp"
     # "Keyboard_input_test.cpp"
     "SPeMPE_test.cpp"
+    "Sync_obj_role_specific_data_test.cpp"
     "Timing_test.cpp"
 )
 

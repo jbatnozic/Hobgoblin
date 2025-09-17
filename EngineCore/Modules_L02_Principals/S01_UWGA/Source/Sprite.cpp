@@ -289,20 +289,25 @@ void Sprite::drawOnto(Canvas& aCanvas, const RenderStates& aRenderStates) const 
     // Prepare vertices
     std::array<Vertex, 6> vertices;
     std::memcpy(vertices.data(), subspr._vertices.data(), Subsprite::VERTEX_COUNT * sizeof(Vertex));
+
+    static_assert(Subsprite::VERTEX_COUNT == 4);
+    vertices[0].color = vertices[1].color = vertices[2].color = vertices[3].color = _color;
+    getTransform().transformPoints(4,
+                                   &vertices[0].position,
+                                   &vertices[1].position,
+                                   &vertices[2].position,
+                                   &vertices[3].position);
+
     vertices[4] = vertices[2];
     vertices[5] = vertices[1];
 
-    const auto& transform = getTransform();
-    for (auto& vertex : vertices) {
-        vertex.color    = _color;
-        vertex.position = transform.transformPoint(vertex.position);
-    }
-
+    // Prepare render states
     const auto renderStates = RenderStates{.texture   = _texture,
                                            .shader    = aRenderStates.shader,
                                            .transform = aRenderStates.transform,
                                            .blendMode = aRenderStates.blendMode};
 
+    // Draw
     aCanvas.draw(vertices.data(),
                  stopz(vertices.size()),
                  PrimitiveType::TRIANGLES,

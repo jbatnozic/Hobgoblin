@@ -81,10 +81,10 @@ public:
 
     template <class T, T_ENABLE_IF(std::is_base_of_v<taObject, T> && !std::is_same_v<taObject, T>)>
     QAO_Handle& operator=(const QAO_Handle<T>& aOther) {
-        if (&aOther != this) {
-            reset();
-            _object = aOther._object;
-        }
+        // if (&aOther != this) { // aOther must be a different object because it's of a different type
+        reset();
+        _object = aOther._object;
+        // }
         return SELF;
     }
 
@@ -126,13 +126,13 @@ public:
 
     template <class T, T_ENABLE_IF(std::is_base_of_v<taObject, T> && !std::is_same_v<taObject, T>)>
     QAO_Handle& operator=(QAO_Handle<T>&& aOther) {
-        if (&aOther != this) {
-            reset();
-            _object          = aOther._object;
-            _isOwning        = aOther._isOwning;
-            aOther._object   = nullptr;
-            aOther._isOwning = false;
-        }
+        // if (&aOther != this) { // aOther must be a different object because it's of a different type
+        reset();
+        _object          = aOther._object;
+        _isOwning        = aOther._isOwning;
+        aOther._object   = nullptr;
+        aOther._isOwning = false;
+        // }
         return SELF;
     }
 
