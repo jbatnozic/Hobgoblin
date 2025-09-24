@@ -1,11 +1,10 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#include <Hobgoblin/Graphics.hpp>
 #include <Hobgoblin/Input.hpp>
 #include <Hobgoblin/Math.hpp>
+#include <Hobgoblin/UWGA.hpp>
 #include <Hobgoblin/Utility/Time_utils.hpp>
-#include <Hobgoblin/Window.hpp>
 
 #include "../../Source/Detail_access.hpp"
 #include "Fake_disk_io_handler.hpp"
@@ -24,7 +23,9 @@ namespace hg = jbatnozic::hobgoblin;
 namespace {
 constexpr auto LOG_ID = "GridGoblin.ManualTest";
 
-class Fixture : private Binder {
+class Fixture
+    : private Binder
+    , public hg::uwga::Drawable {
 public:
     Fixture()
         : _world{_makeWorldConfig()}
@@ -90,7 +91,10 @@ public:
         }
     }
 
-    void draw(hg::gr::Canvas& aCanvas) {
+    void drawOnto(
+        hg::uwga::Canvas&             aCanvas,
+        const hg::uwga::RenderStates& aRenderStates = hg::uwga::RENDER_STATES_DEFAULT) const override //
+    {
         for (hg::PZInteger y = 0; y < _world.getChunkCountY(); y += 1) {
             for (hg::PZInteger x = 0; x < _world.getChunkCountX(); x += 1) {
                 auto* chunk = _world.getChunkAtId({x, y});
@@ -120,19 +124,23 @@ private:
                 .chunkDirectoryPath          = "GGManualTest_WorkDir"};
     }
 
-    void _drawChunk(hg::gr::Canvas& aCanvas, const Chunk& aChunk, ChunkId aChunkId) const {
+    void _drawChunk(hg::uwga::Canvas& aCanvas, const Chunk& aChunk, ChunkId aChunkId) const {
+        const auto& uwgaSystem = aCanvas.getSystem();
+
         const auto         cellRes = (float)_world.getCellResolution();
         hg::math::Vector2f start{aChunkId.x * aChunk.getCellCountX() * cellRes,
                                  aChunkId.y * aChunk.getCellCountY() * cellRes};
 
-        hg::gr::RectangleShape rect{
+        hg::uwga::RectangleShape rect{
+            uwgaSystem,
             {cellRes, cellRes}
         };
-        rect.setOutlineColor(hg::gr::COLOR_BLACK);
+        rect.setOutlineColor(hg::uwga::COLOR_BLACK);
         rect.setOutlineThickness(1.f);
 
-        hg::gr::Text text{hg::gr::BuiltInFonts::getFont(hg::gr::BuiltInFonts::TITILLIUM_REGULAR)};
-        text.setFillColor(hg::gr::COLOR_YELLOW);
+        auto text =
+            uwgaSystem.createText(uwgaSystem.getBuiltinFont(hg::uwga::BuiltInFont::TITILLIUM_REGULAR));
+        text->setFillColor(hg::uwga::COLOR_YELLOW);
 
         const float textOffset = 4.f;
 
@@ -141,16 +149,17 @@ private:
                 rect.setPosition(start.x + x * cellRes, start.y + y * cellRes);
                 const auto& cell = aChunk.getCellAtUnchecked(x, y);
                 if (cell.isWallInitialized()) {
-                    rect.setFillColor(hg::gr::COLOR_BLACK);
+                    rect.setFillColor(hg::uwga::COLOR_BLACK);
                 } else {
-                    rect.setFillColor(hg::gr::COLOR_TRANSPARENT);
+                    rect.setFillColor(hg::uwga::COLOR_TRANSPARENT);
                 }
                 aCanvas.draw(rect);
 
-                text.setString(std::to_string((int)cell.getOpenness()));
-                text.setPosition(start.x + x * cellRes + textOffset, start.y + y * cellRes + textOffset);
-                text.setScale({0.75f, 0.75f});
-                aCanvas.draw(text);
+                text->setString(std::to_string((int)cell.getOpenness()));
+                text->setPosition(start.x + x * cellRes + textOffset,
+                                  start.y + y * cellRes + textOffset);
+                text->setScale({0.75f, 0.75f});
+                aCanvas.draw(*text);
             }
         }
     }
@@ -211,31 +220,37 @@ private:
 void RunDefaultDiskIoTest() {
     Fixture fixture;
 
-    hg::gr::RenderWindow window;
-    window.create(hg::win::VideoMode{1024, 1024}, "DefaultDiskIOTest");
-    window.setViewCount(1);
-    window.getView(0).setCenter({512, 512});
-    window.getView(0).setSize({1024, 1024});
-    window.getView(0).setViewport({0.f, 0.f, 1.f, 1.f});
-    window.setFramerateLimit(60);
+    auto system = hg::uwga::CreateGraphicsSystem("SFML");
+    auto window =
+        system->createRenderWindow(1024, 1024, hg::uwga::WindowStyle::DEFAULT, "DefaultDiskIOTest");
+    window->setFramerateLimit(60);
 
-    while (window.isOpen()) {
-        hg::win::Event ev;
-        while (window.pollEvent(ev)) {
+    auto view = system->createView();
+    view->setCenter({512, 512});
+    view->setSize({1024, 1024});
+    view->setViewport({0.f, 0.f, 1.f, 1.f});
+    window->setView(*view);
+
+    while (true) {
+        hg::uwga::WindowEvent ev;
+        while (window && window->pollEvent(ev)) {
             ev.visit(
-                [&](const hg::win::Event::Closed&) {
-                    window.close();
+                [&](const hg::uwga::WindowEvent::Closed&) {
+                    window.reset();
                 },
-                [&](const hg::win::Event::MouseButtonPressed& aData) {
+                [&](const hg::uwga::WindowEvent::MouseButtonPressed& aData) {
                     fixture.onMouseButtonPressed(aData.button,
-                                                 window.mapPixelToCoords({aData.x, aData.y}));
+                                                 window->mapPixelToCoords({aData.x, aData.y}));
                 });
         }
+        if (!window) {
+            break;
+        }
 
-        window.clear(hg::gr::COLOR_DARK_GRAY);
+        window->clear(hg::uwga::COLOR_DARK_GRAY);
         fixture.update();
-        fixture.draw(window);
-        window.display();
+        window->draw(fixture);
+        window->display();
     }
 }
 } // namespace

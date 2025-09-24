@@ -33,9 +33,9 @@ bool IsPointInsideTriangle(const Vector2<T>& aPoint, const Triangle<T>& aTriangl
     };
 
     // Compute the cross products for the point with respect to the triangle's edges
-    const float cross1 = CrossProduct::calculate(aTriangle.a, aTriangle.b, aPoint);
-    const float cross2 = CrossProduct::calculate(aTriangle.b, aTriangle.c, aPoint);
-    const float cross3 = CrossProduct::calculate(aTriangle.c, aTriangle.a, aPoint);
+    const auto cross1 = CrossProduct::calculate(aTriangle.a, aTriangle.b, aPoint);
+    const auto cross2 = CrossProduct::calculate(aTriangle.b, aTriangle.c, aPoint);
+    const auto cross3 = CrossProduct::calculate(aTriangle.c, aTriangle.a, aPoint);
 
     // Check if all the cross products have the same sign (either all positive or all negative)
     const bool hasSameSign =

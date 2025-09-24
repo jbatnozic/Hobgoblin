@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <Hobgoblin/Graphics.hpp>
+#include <Hobgoblin/UWGA/Canvas.hpp>
 
 #include <GridGoblin/Spatial/Position_in_view.hpp>
 #include <GridGoblin/Spatial/Spatial_info.hpp>
@@ -40,7 +40,7 @@ public:
     //!                   parameter is needed because some renderers (for example, the dimetric one)
     //!                   transform the positions of objects in ways that don't correspond 1:1 to
     //!                   the coordinate system of the view.
-    virtual void render(hg::gr::Canvas& aCanvas, PositionInView aPosInView) const = 0;
+    virtual void render(hg::uwga::Canvas& aCanvas, PositionInView aPosInView) const = 0;
 
 protected:
     //! Spatial info describing where in the world the object is placed. Remember to keep his information

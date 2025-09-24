@@ -65,7 +65,7 @@ void DimetricRenderer::_diagonalTraverse(const World&                           
 // MARK: Public
 
 DimetricRenderer::DimetricRenderer(const World&                  aWorld,
-                                   const hg::gr::SpriteLoader&   aSpriteLoader,
+                                   const hg::uwga::SpriteLoader& aSpriteLoader,
                                    const DimetricRendererConfig& aConfig)
     : _world{aWorld}
     , _spriteLoader{aSpriteLoader}
@@ -126,7 +126,7 @@ void DimetricRenderer::endPrepareToRender() {
               });
 }
 
-void DimetricRenderer::render(hg::gr::Canvas& aCanvas) {
+void DimetricRenderer::render(hg::uwga::Canvas& aCanvas) {
     for (const auto& object : _objectsToRender) {
         const auto& spatialInfo = object->getSpatialInfo();
         auto        posInView   = dimetric::ToPositionInView(spatialInfo.getCenter());
@@ -138,7 +138,7 @@ void DimetricRenderer::render(hg::gr::Canvas& aCanvas) {
 
 // MARK: Private
 
-hg::gr::Sprite& DimetricRenderer::_getSprite(SpriteId aSpriteId) const {
+hg::uwga::Sprite& DimetricRenderer::_getSprite(SpriteId aSpriteId) const {
     aSpriteId = ((aSpriteId & SPRITEID_IDENTIFIER_MASK) | SPRITEID_PROJECTION_DIMETRIC);
 
     const auto iter = _spriteCache.find(aSpriteId);
@@ -372,14 +372,14 @@ DimetricRenderer::CellToRenderedObjectAdapter::CellToRenderedObjectAdapter(
     , _cell{aCell}
     , _rendererMask{aRendererMask} {}
 
-void DimetricRenderer::CellToRenderedObjectAdapter::render(hg::gr::Canvas& aCanvas,
-                                                           PositionInView  aScreenPosition) const {
+void DimetricRenderer::CellToRenderedObjectAdapter::render(hg::uwga::Canvas& aCanvas,
+                                                           PositionInView    aScreenPosition) const {
     switch (_spatialInfo.getLayer()) {
     case Layer::FLOOR:
         {
             auto& sprite = _renderer._getSprite(_cell.getFloor().spriteId);
             sprite.setPosition(vector_cast<float>(*aScreenPosition));
-            sprite.setColor(hg::gr::COLOR_WHITE);
+            sprite.setColor(hg::uwga::COLOR_WHITE);
             aCanvas.draw(sprite);
         }
         break;
@@ -407,7 +407,7 @@ void DimetricRenderer::CellToRenderedObjectAdapter::render(hg::gr::Canvas& aCanv
                 auto& reducedSprite = _renderer._getSprite(_cell.getWall().spriteId_reduced);
 
                 reducedSprite.setPosition(vector_cast<float>(*aScreenPosition));
-                reducedSprite.setColor(hg::gr::COLOR_WHITE);
+                reducedSprite.setColor(hg::uwga::COLOR_WHITE);
                 aCanvas.draw(reducedSprite);
             }
 
@@ -415,7 +415,7 @@ void DimetricRenderer::CellToRenderedObjectAdapter::render(hg::gr::Canvas& aCanv
                 auto& fullSprite = _renderer._getSprite(_cell.getWall().spriteId);
 
                 fullSprite.setPosition(vector_cast<float>(*aScreenPosition));
-                fullSprite.setColor(hg::gr::COLOR_WHITE.withAlpha(opacity));
+                fullSprite.setColor(hg::uwga::COLOR_WHITE.withAlpha(opacity));
                 aCanvas.draw(fullSprite);
             }
         }

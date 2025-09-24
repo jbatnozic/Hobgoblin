@@ -82,15 +82,15 @@ struct WindowEvent {
     //! A mouse button was pressed.
     struct MouseButtonPressed {
         in::MouseButton button; //!< Code of the button that has been pressed
-        int             x; //!< X position of the mouse pointer, relative to the left of the owner window
-        int             y; //!< Y position of the mouse pointer, relative to the top of the owner window
+        float           x; //!< X position of the mouse pointer, relative to the left of the owner window
+        float           y; //!< Y position of the mouse pointer, relative to the top of the owner window
     };
 
     //! A mouse button was released.
     struct MouseButtonReleased {
         in::MouseButton button; //!< Code of the button that has been pressed
-        int             x; //!< X position of the mouse pointer, relative to the left of the owner window
-        int             y; //!< Y position of the mouse pointer, relative to the top of the owner window
+        float           x; //!< X position of the mouse pointer, relative to the left of the owner window
+        float           y; //!< Y position of the mouse pointer, relative to the top of the owner window
     };
 
     //! The mouse cursor entered the area of the window.
@@ -101,17 +101,17 @@ struct WindowEvent {
 
     //! The mouse cursor moved.
     struct MouseMoved {
-        int x; //!< X position of the mouse pointer, relative to the left of the owner window
-        int y; //!< Y position of the mouse pointer, relative to the top of the owner window
+        float x; //!< X position of the mouse pointer, relative to the left of the owner window
+        float y; //!< Y position of the mouse pointer, relative to the top of the owner window
     };
 
     //! The mouse wheel was scrolled.
     struct MouseWheelScrolled {
         in::MouseWheel wheel; //!< Which wheel (for mice with multiple ones).
-        float delta; //!< Wheel offset (positive is up/left, negative is down/right). High-precision mice
-                     //!< may use non-integral offsets.
-        int x;       //!< X position of the mouse pointer, relative to the left of the owner window.
-        int y;       //!< Y position of the mouse pointer, relative to the top of the owner window.
+        float          delta; //!< Wheel offset (positive is up/left, negative is down/right).
+                              //!< High-precision mice may use non-integral offsets.
+        float x; //!< X position of the mouse pointer, relative to the left of the owner window.
+        float y; //!< Y position of the mouse pointer, relative to the top of the owner window.
     };
 
     //! The window was resized.

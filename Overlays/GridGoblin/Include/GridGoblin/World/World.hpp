@@ -4,8 +4,6 @@
 #pragma once
 
 #include <Hobgoblin/Common.hpp>
-#include <Hobgoblin/Graphics/Render_texture.hpp>
-#include <Hobgoblin/Graphics/Sprite_loader.hpp>
 #include <Hobgoblin/Math.hpp>
 #include <Hobgoblin/Utility/Grids.hpp>
 #include <Hobgoblin/Utility/Semaphore.hpp>

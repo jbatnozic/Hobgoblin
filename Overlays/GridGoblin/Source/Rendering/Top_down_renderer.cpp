@@ -17,9 +17,9 @@ namespace gridgoblin {
 
 // MARK: Public
 
-TopDownRenderer::TopDownRenderer(const World&                 aWorld,
-                                 const hg::gr::SpriteLoader&  aSpriteLoader,
-                                 const TopDownRendererConfig& aConfig)
+TopDownRenderer::TopDownRenderer(const World&                  aWorld,
+                                 const hg::uwga::SpriteLoader& aSpriteLoader,
+                                 const TopDownRendererConfig&  aConfig)
     : _world{aWorld}
     , _spriteLoader{aSpriteLoader} {}
 
@@ -66,7 +66,7 @@ void TopDownRenderer::endPrepareToRender() {
               });
 }
 
-void TopDownRenderer::render(hg::gr::Canvas& aCanvas) {
+void TopDownRenderer::render(hg::uwga::Canvas& aCanvas) {
     for (const auto& object : _objectsToRender) {
         const auto& spatialInfo = object->getSpatialInfo();
         auto        posInView   = topdown::ToPositionInView(spatialInfo.getCenter());
@@ -78,7 +78,7 @@ void TopDownRenderer::render(hg::gr::Canvas& aCanvas) {
 
 // MARK: Private
 
-hg::gr::Sprite& TopDownRenderer::_getSprite(SpriteId aSpriteId) const {
+hg::uwga::Sprite& TopDownRenderer::_getSprite(SpriteId aSpriteId) const {
     aSpriteId = ((aSpriteId & SPRITEID_IDENTIFIER_MASK) | SPRITEID_PROJECTION_TOPDOWN);
 
     const auto iter = _spriteCache.find(aSpriteId);
@@ -151,8 +151,8 @@ TopDownRenderer::CellToRenderedObjectAdapter::CellToRenderedObjectAdapter(
     , _renderer{aRenderer}
     , _cell{aCell} {}
 
-void TopDownRenderer::CellToRenderedObjectAdapter::render(hg::gr::Canvas& aCanvas,
-                                                          PositionInView  aScreenPosition) const {
+void TopDownRenderer::CellToRenderedObjectAdapter::render(hg::uwga::Canvas& aCanvas,
+                                                          PositionInView    aScreenPosition) const {
     // Select sprite ID based on layer
     SpriteId spriteId;
     switch (_spatialInfo.getLayer()) {
@@ -171,7 +171,7 @@ void TopDownRenderer::CellToRenderedObjectAdapter::render(hg::gr::Canvas& aCanva
     // Draw
     auto& sprite = _renderer._getSprite(spriteId);
 
-    sprite.setColor(hg::gr::COLOR_WHITE);
+    sprite.setColor(hg::uwga::COLOR_WHITE);
     sprite.setPosition(hg::math::VectorCast<float>(*aScreenPosition));
 
     {

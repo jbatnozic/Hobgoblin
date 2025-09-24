@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include <Hobgoblin/Graphics/Color.hpp>
-#include <Hobgoblin/Graphics/Render_texture.hpp>
-#include <Hobgoblin/Graphics/Texture.hpp>
 #include <Hobgoblin/Math.hpp>
+#include <Hobgoblin/UWGA/Color.hpp>
+#include <Hobgoblin/UWGA/Render_texture.hpp>
+#include <Hobgoblin/UWGA/Texture.hpp>
 #include <Hobgoblin/Utility/Grids.hpp>
 
 #include <GridGoblin/Rendering/Visibility_provider.hpp>
@@ -15,6 +15,7 @@
 
 #include <array>
 #include <cstdint>
+#include <memory>
 #include <vector>
 
 namespace jbatnozic {
@@ -43,7 +44,7 @@ public:
     std::optional<bool> testVisibilityAt(PositionInWorld aPos) const override;
 
     //! For debug purposes only.
-    const hg::gr::Texture& __ggimpl_getTexture(hg::math::Vector2f* aRecommendedScale = nullptr) const;
+    const hg::uwga::Texture& __ggimpl_getTexture(hg::math::Vector2f* aRecommendedScale = nullptr) const;
 
 private:
     const World& _world;
@@ -54,7 +55,7 @@ private:
     hg::math::Vector2d _viewCenterOffset;
 
     //! Texture to which visibility is rendered.
-    hg::gr::RenderTexture _renderTexture;
+    std::unique_ptr<hg::uwga::RenderTexture> _renderTexture;
 
     //! Width and Height of _renderTexture (it's always a square).
     hg::PZInteger _textureSize;

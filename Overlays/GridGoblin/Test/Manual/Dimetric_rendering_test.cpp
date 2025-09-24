@@ -3,12 +3,11 @@
 
 #include <GridGoblin/GridGoblin.hpp>
 
-#include <Hobgoblin/Graphics.hpp>
 #include <Hobgoblin/Input.hpp>
 #include <Hobgoblin/Math.hpp>
+#include <Hobgoblin/UWGA.hpp>
 #include <Hobgoblin/Utility/Randomization.hpp>
 #include <Hobgoblin/Utility/Time_utils.hpp>
-#include <Hobgoblin/Window.hpp>
 
 #include <GL/glew.h>
 
@@ -25,9 +24,9 @@ namespace hg = jbatnozic::hobgoblin;
 
 #define vector_cast hg::math::VectorCast
 
-void DrawIsometricSquareAt(hg::gr::Canvas&    aCanvas,
+void DrawIsometricSquareAt(hg::uwga::Canvas&  aCanvas,
                            float              aSize,
-                           hg::gr::Color      aColor,
+                           hg::uwga::Color    aColor,
                            hg::math::Vector2f aPosition) {
     const float coords[5][2] = {
         {  0.f,   0.f},
@@ -37,11 +36,11 @@ void DrawIsometricSquareAt(hg::gr::Canvas&    aCanvas,
         {  0.f,   0.f}
     };
 
-    using hg::gr::Vertex;
-    using hg::gr::VertexArray;
+    using hg::uwga::Vertex;
+    using hg::uwga::VertexArray;
 
     // VertexArray va;
-    // va.primitiveType = hg::gr::PrimitiveType::LINE_STRIP;
+    // va.primitiveType = hg::uwga::PrimitiveType::LINE_STRIP;
 
     // for (int i = 0; i < 5; i += 1) {
     //     auto iso = gridworld::IsometricCoordinatesToScreen(
@@ -60,13 +59,13 @@ void DrawIsometricSquareAt(hg::gr::Canvas&    aCanvas,
 void RunDimetricRenderingTestImpl() {
     hg::log::SetMinimalLogSeverity(hg::log::Severity::Info);
 
-    hg::gr::SpriteLoader loader;
+    hg::uwga::SpriteLoader loader;
     loader.startTexture(1024, 1024)
         ->addSprite(SPR_STONE_TILE, (HG_TEST_ASSET_DIR "/isometric-stone-tile.png"))
         ->addSprite(SPR_WALL, (HG_TEST_ASSET_DIR "/isometric-wall.png"))
         ->addSprite(SPR_WALL_SHORT, (HG_TEST_ASSET_DIR "/isometric-wall-short.png"))
         ->addSprite(SPR_LIGHT, (HG_TEST_ASSET_DIR "/light.png"))
-        ->finalize(hg::gr::TexturePackingHeuristic::BestAreaFit);
+        ->finalize(hg::uwga::TexturePackingHeuristic::BestAreaFit);
 
     WorldConfig config{.chunkCountX                 = 8,
                        .chunkCountY                 = 8,
@@ -97,7 +96,7 @@ void RunDimetricRenderingTestImpl() {
         world.toggleGeneratorMode(*perm, false);
     }
 
-    hg::gr::RenderWindow window{
+    hg::uwga::RenderWindow window{
         hg::win::VideoMode{1280, 950},
         "GridWorld"
     };
@@ -152,7 +151,7 @@ void RunDimetricRenderingTestImpl() {
             renderingYOffset += ud * 4.0;
         }
 
-        window.clear(hg::gr::Color{0, 0, 55});
+        window.clear(hg::uwga::Color{0, 0, 55});
 
         const auto mouseWindowPos = hg::win::GetMousePositionRelativeToWindow(window);
         const auto cursorInWorld  = dimetric::ToPositionInWorld(
@@ -224,7 +223,7 @@ void RunDimetricRenderingTestImpl() {
         // if (true) {
         //     const float xx = floorf(isoCoords.x / 32.f) * 32.f;
         //     const float yy = floorf(isoCoords.y / 32.f) * 32.f;
-        //     DrawIsometricSquareAt(window, 32.f, hg::gr::COLOR_RED, {xx, yy});
+        //     DrawIsometricSquareAt(window, 32.f, hg::uwga::COLOR_RED, {xx, yy});
         // }
 
         window.display();

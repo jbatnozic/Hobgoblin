@@ -1,10 +1,9 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#include <Hobgoblin/Graphics.hpp>
 #include <Hobgoblin/Logging.hpp>
+#include <Hobgoblin/UWGA.hpp>
 #include <Hobgoblin/Utility/Grids.hpp>
-#include <Hobgoblin/Window.hpp>
 
 #include "Fake_disk_io_handler.hpp"
 #include <GridGoblin/Private/Chunk_spooler_default.hpp>
@@ -24,7 +23,7 @@ using jbatnozic::gridgoblin::detail::ChunkSpoolerInterface;
 namespace {
 constexpr auto LOG_ID = "GridGoblin.ManualTest";
 
-class FakeWorld {
+class FakeWorld : public hg::uwga::Drawable {
 public:
     FakeWorld(hg::PZInteger          aWorldWidth,
               hg::PZInteger          aWorldHeight,
@@ -130,20 +129,27 @@ public:
         _chunkspool.unpause();
     }
 
-    void draw(hg::gr::Canvas& aCanvas) {
+    void drawOnto(
+        hg::uwga::Canvas&             aCanvas,
+        const hg::uwga::RenderStates& aRenderStates = hg::uwga::RENDER_STATES_DEFAULT) const override //
+    {
+        const auto& uwgaSystem = aCanvas.getSystem();
+
         const float resolution = 16.f;
 
-        hg::gr::RectangleShape emptyRect{
+        hg::uwga::RectangleShape emptyRect{
+            uwgaSystem,
             {resolution, resolution}
         };
-        emptyRect.setFillColor(hg::gr::COLOR_TRANSPARENT);
-        emptyRect.setOutlineColor(hg::gr::COLOR_BLACK);
+        emptyRect.setFillColor(hg::uwga::COLOR_TRANSPARENT);
+        emptyRect.setOutlineColor(hg::uwga::COLOR_BLACK);
         emptyRect.setOutlineThickness(2.f);
 
-        hg::gr::RectangleShape filledRect{
+        hg::uwga::RectangleShape filledRect{
+            uwgaSystem,
             {resolution, resolution}
         };
-        filledRect.setFillColor(hg::gr::COLOR_GREEN);
+        filledRect.setFillColor(hg::uwga::COLOR_GREEN);
 
         for (hg::PZInteger y = 0; y < _chunkGrid.getHeight(); y += 1) {
             for (hg::PZInteger x = 0; x < _chunkGrid.getWidth(); x += 1) {
@@ -155,8 +161,8 @@ public:
                     aCanvas.draw(filledRect);
                 }
                 if (x == _playerPosition.x && y == _playerPosition.y) {
-                    hg::gr::CircleShape circle{resolution / 4.f};
-                    circle.setFillColor(hg::gr::COLOR_RED);
+                    hg::uwga::CircleShape circle{uwgaSystem, resolution / 4.f};
+                    circle.setFillColor(hg::uwga::COLOR_RED);
                     circle.setOrigin({resolution / 4.f, resolution / 4.f});
                     circle.setPosition({(x + 0.5f) * resolution, (y + 0.5f) * resolution});
                     aCanvas.draw(circle);
@@ -191,25 +197,27 @@ public:
 void RunSpoolingTest(int, const char**) {
     Fixture fixture;
 
-    hg::gr::RenderWindow window;
-    window.create(hg::win::VideoMode{800, 800}, "SpoolingTest");
-    window.setViewCount(1);
-    window.getView(0).setCenter({16 * 16.f, 16 * 16.f});
-    window.getView(0).setSize({32 * 16.f, 32 * 16.f});
-    window.getView(0).setViewport({0.f, 0.f, 1.f, 1.f});
-    window.setFramerateLimit(60);
+    auto system = hg::uwga::CreateGraphicsSystem("SFML");
+    auto window = system->createRenderWindow(800, 800, hg::uwga::WindowStyle::DEFAULT, "SpoolingTest");
+    window->setFramerateLimit(60);
+
+    auto view = system->createView();
+    view->setCenter({16 * 16.f, 16 * 16.f});
+    view->setSize({32 * 16.f, 32 * 16.f});
+    view->setViewport({0.f, 0.f, 1.f, 1.f});
+    window->setView(*view);
 
     hg::math::Vector2pz playerPosition{0, 0};
     fixture._fakeWorld.update(playerPosition);
 
-    while (window.isOpen()) {
-        hg::win::Event ev;
-        while (window.pollEvent(ev)) {
+    while (true) {
+        hg::uwga::WindowEvent ev;
+        while (window && window->pollEvent(ev)) {
             ev.visit(
-                [&](const hg::win::Event::Closed&) {
-                    window.close();
+                [&](const hg::uwga::WindowEvent::Closed&) {
+                    window.reset();
                 },
-                [&](const hg::win::Event::KeyPressed& aData) {
+                [&](const hg::uwga::WindowEvent::KeyPressed& aData) {
                     switch (aData.physicalKey) {
                     case hg::in::PK_LEFT:
                         if (playerPosition.x > 0) {
@@ -240,10 +248,13 @@ void RunSpoolingTest(int, const char**) {
                     }
                 });
         }
+        if (!window) {
+            break;
+        }
 
-        window.clear(hg::gr::COLOR_LIGHT_GRAY);
+        window->clear(hg::uwga::COLOR_LIGHT_GRAY);
         fixture._fakeWorld.update(playerPosition);
-        fixture._fakeWorld.draw(window);
-        window.display();
+        window->draw(fixture._fakeWorld);
+        window->display();
     }
 }

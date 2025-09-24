@@ -38,7 +38,7 @@ struct DimetricRendererConfig {
 class DimetricRenderer : public Renderer {
 public:
     DimetricRenderer(const World&                  aWorld,
-                     const hg::gr::SpriteLoader&   aSpriteLoader,
+                     const hg::uwga::SpriteLoader& aSpriteLoader,
                      const DimetricRendererConfig& aConfig = {});
 
     void startPrepareToRender(const RenderParameters&   aRenderParams,
@@ -49,13 +49,13 @@ public:
 
     void endPrepareToRender() override;
 
-    void render(hg::gr::Canvas& aCanvas) override;
+    void render(hg::uwga::Canvas& aCanvas) override;
 
 private:
     // ===== Dependencies =====
 
-    const World&                _world;
-    const hg::gr::SpriteLoader& _spriteLoader;
+    const World&                  _world;
+    const hg::uwga::SpriteLoader& _spriteLoader;
 
     // ===== Configuration =====
 
@@ -90,7 +90,7 @@ private:
                                     const SpatialInfo& aSpatialInfo,
                                     std::uint16_t      aRendererMask);
 
-        void render(hg::gr::Canvas& aCanvas, PositionInView aPosInView) const override;
+        void render(hg::uwga::Canvas& aCanvas, PositionInView aPosInView) const override;
 
     private:
         DimetricRenderer& _renderer;
@@ -110,11 +110,11 @@ private:
 
     // ===== Sprite cache =====
 
-    mutable std::unordered_map<SpriteId, hg::gr::Sprite> _spriteCache;
+    mutable std::unordered_map<SpriteId, hg::uwga::Sprite> _spriteCache;
 
     // ===== Methods =====
 
-    hg::gr::Sprite& _getSprite(SpriteId aSpriteId) const;
+    hg::uwga::Sprite& _getSprite(SpriteId aSpriteId) const;
 
     template <class taCallable>
     void _diagonalTraverse(const World&               aWorld,

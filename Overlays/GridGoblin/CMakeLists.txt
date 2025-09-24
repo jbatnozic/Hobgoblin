@@ -20,11 +20,11 @@ add_library(${PROJECT_NAME}
     "Source/Private/Model_conversions.cpp"
 
     # Rendering
-    "Source/Rendering/Dimetric_renderer.cpp"
+    # "Source/Rendering/Dimetric_renderer.cpp"
     "Source/Rendering/Drawing_order.cpp"
-    "Source/Rendering/Top_down_los_renderer.cpp"
+    # "Source/Rendering/Top_down_los_renderer.cpp"
     "Source/Rendering/OpenGL_helpers.cpp"
-    "Source/Rendering/Top_down_renderer.cpp"
+    # "Source/Rendering/Top_down_renderer.cpp"
     "Source/Rendering/Visibility_calculator.cpp"
 
     # Spatial
@@ -56,8 +56,7 @@ PUBLIC
     "Hobgoblin.Utility"
 
     # Principals
-    "Hobgoblin.Window"
-    "Hobgoblin.Graphics"
+    "Hobgoblin.UWGA"
 
     # External
     "GLEW::GLEW"

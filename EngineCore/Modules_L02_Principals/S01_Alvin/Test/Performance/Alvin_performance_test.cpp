@@ -340,7 +340,7 @@ int main(int argc, char* argv[]) {
         {0.0, 0.0}
     };
 
-    math::Vector2i mousePos   = {0, 0};
+    math::Vector2f mousePos   = {0.f, 0.f};
     bool           lmbPressed = false;
     bool           rmbPressed = false;
 
@@ -385,7 +385,7 @@ int main(int argc, char* argv[]) {
             break;
         }
 
-        const auto worldPos = window->mapPixelToCoords(mousePos.cast<float>(), window->getView());
+        const auto worldPos = window->mapPixelToCoords(mousePos, window->getView());
         if (lmbPressed) {
             balls.emplace_back(space, worldPos);
             balls.back().addListInfo(balls, std::prev(balls.end()));

@@ -9,7 +9,7 @@
 #include <GridGoblin/Spatial/Position_in_world.hpp>
 #include <GridGoblin/World/World.hpp>
 
-#include <Hobgoblin/Graphics.hpp>
+#include <Hobgoblin/UWGA/Canvas.hpp>
 
 namespace jbatnozic {
 namespace gridgoblin {
@@ -55,7 +55,7 @@ public:
 
     virtual void endPrepareToRender() = 0;
 
-    virtual void render(hg::gr::Canvas& aCanvas) = 0;
+    virtual void render(hg::uwga::Canvas& aCanvas) = 0;
 };
 
 } // namespace gridgoblin

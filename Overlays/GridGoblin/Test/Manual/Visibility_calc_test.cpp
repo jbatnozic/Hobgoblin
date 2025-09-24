@@ -5,13 +5,12 @@
 
 #include <GridGoblin/Rendering/Visibility_calculator.hpp>
 
-#include <Hobgoblin/Graphics.hpp>
 #include <Hobgoblin/Input.hpp>
 #include <Hobgoblin/Math.hpp>
+#include <Hobgoblin/UWGA.hpp>
 #include <Hobgoblin/Utility/Log_with_scoped_stopwatch.hpp>
 #include <Hobgoblin/Utility/Randomization.hpp>
 #include <Hobgoblin/Utility/Time_utils.hpp>
-#include <Hobgoblin/Window.hpp>
 
 #include <array>
 #include <chrono>
@@ -99,7 +98,7 @@ void RunVisibilityCalculatorTestImpl() {
 
     const auto root = std::filesystem::path{HG_TEST_ASSET_DIR};
 
-    hg::gr::SpriteLoader loader;
+    hg::uwga::SpriteLoader loader;
     // clang-format off
     loader.startTexture(256, 256)
         ->addSprite(TopDown(SPR_FULL_SQUARE),             root / "full-square.png")
@@ -110,7 +109,7 @@ void RunVisibilityCalculatorTestImpl() {
         ->addSprite(TopDown(SPR_SMALL_TRIANGLE_VER),      root / "small-triangle-ver.png")
         ->addSprite(TopDown(SPR_TALL_SMALL_TRIANGLE_VER), root / "tall-small-triangle-ver.png")
         ->addSprite(TopDown(SPR_HALF_SQUARE_VER),         root / "half-square-ver.png")
-        ->finalize(hg::gr::TexturePackingHeuristic::BestAreaFit);
+        ->finalize(hg::uwga::TexturePackingHeuristic::BEST_AREA_FIT);
     // clang-format on
 
     WorldConfig config{.chunkCountX                 = 1,
@@ -163,8 +162,8 @@ void RunVisibilityCalculatorTestImpl() {
 
     TopDownRenderer      renderer{world, loader};
     VisibilityCalculator visCalc{world};
-    hg::gr::Image        vcImage;
-    hg::gr::Texture      vcTexture;
+    hg::uwga::Image      vcImage;
+    hg::uwga::Texture    vcTexture;
 
     const auto generateLoS = [&](hg::math::Vector2d pos) {
         HG_LOG_INFO(LOG_ID, "===============================================");
@@ -190,9 +189,9 @@ void RunVisibilityCalculatorTestImpl() {
                 for (int x = 0; x < hg::ToPz(CELL_COUNT_Y * CELLRES); x += 1) {
                     const auto v = visCalc.testVisibilityAt({(double)x, (double)y});
                     if (!v.has_value() || *v == false) {
-                        vcImage.setPixel(x, y, hg::gr::COLOR_BLACK.withAlpha(150));
+                        vcImage.setPixel(x, y, hg::uwga::COLOR_BLACK.withAlpha(150));
                     } else {
-                        vcImage.setPixel(x, y, hg::gr::COLOR_TRANSPARENT);
+                        vcImage.setPixel(x, y, hg::uwga::COLOR_TRANSPARENT);
                     }
                 }
             }
@@ -204,10 +203,10 @@ void RunVisibilityCalculatorTestImpl() {
 
     generateLoS({CELL_COUNT_X * CELLRES * 0.5f, CELL_COUNT_Y * CELLRES * 0.5f});
 
-    hg::gr::Sprite vcSprite;
+    hg::uwga::Sprite vcSprite;
     vcSprite.setTexture(&vcTexture, true);
 
-    hg::gr::RenderWindow window{
+    hg::uwga::RenderWindow window{
         hg::win::VideoMode{1280, 1280},
         "GridWorld"
     };
@@ -221,15 +220,15 @@ void RunVisibilityCalculatorTestImpl() {
     while (window.isOpen()) {
         const auto frameTime = swatch.restart<std::chrono::microseconds>();
 
-        bool           mouseLClick = false;
-        bool           mouseRClick = false;
-        hg::win::Event ev;
+        bool                  mouseLClick = false;
+        bool                  mouseRClick = false;
+        hg::uwga::WindowEvent ev;
         while (window.pollEvent(ev)) {
             ev.visit(
-                [&](hg::win::Event::Closed&) {
+                [&](hg::uwga::WindowEvent::Closed&) {
                     window.close();
                 },
-                [&](hg::win::Event::MouseButtonPressed& aButton) {
+                [&](hg::uwga::WindowEvent::MouseButtonPressed& aButton) {
                     if (aButton.button == hg::in::MB_LEFT) {
                         const auto coords = window.mapPixelToCoords({aButton.x, aButton.y});
                         HG_LOG_INFO(LOG_ID, "Coords = {}, {}", coords.x, coords.y);
@@ -239,7 +238,7 @@ void RunVisibilityCalculatorTestImpl() {
                 });
         } // end event processing
 
-        window.clear(hg::gr::Color{155, 155, 155});
+        window.clear(hg::uwga::Color{155, 155, 155});
 
         const Renderer::RenderParameters renderParams{
             .viewCenter  = PositionInWorld{vector_cast<double>(window.getView(0).getCenter())},

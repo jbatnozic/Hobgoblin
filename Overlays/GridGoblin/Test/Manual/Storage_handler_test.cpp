@@ -4,16 +4,16 @@
 #include <GridGoblin/Private/Chunk_spooler_default.hpp>
 #include <GridGoblin/Private/Chunk_storage_handler.hpp>
 
-#include <Hobgoblin/Graphics.hpp>
 #include <Hobgoblin/Logging.hpp>
+#include <Hobgoblin/UWGA.hpp>
 #include <Hobgoblin/Utility/Grids.hpp>
-#include <Hobgoblin/Window.hpp>
 
 #include "Fake_disk_io_handler.hpp"
 
 namespace hg = jbatnozic::hobgoblin;
 
 using jbatnozic::gridgoblin::ActiveArea;
+using jbatnozic::gridgoblin::Binder;
 using jbatnozic::gridgoblin::ChunkId;
 using jbatnozic::gridgoblin::WorldConfig;
 using jbatnozic::gridgoblin::detail::ChunkSpoolerInterface;
@@ -35,7 +35,9 @@ bool Contains(const taContainer& aContainer, const typename taContainer::value_t
     return false;
 }
 
-class FakeWorld {
+class FakeWorld
+    : public Binder
+    , public hg::uwga::Drawable {
 public:
     FakeWorld(hg::PZInteger          aWorldWidth,
               hg::PZInteger          aWorldHeight,
@@ -44,6 +46,7 @@ public:
         , _activeArea{_chunkStorageHandler.createNewActiveArea()} //
     {
         _chunkStorageHandler.setChunkSpooler(&aChunkSpooler);
+        _chunkStorageHandler.setBinder(this);
     }
 
     void update(hg::math::Vector2pz aPosition) {
@@ -57,20 +60,27 @@ public:
         _chunkStorageHandler.prune();
     }
 
-    void draw(hg::gr::Canvas& aCanvas) {
+    void drawOnto(
+        hg::uwga::Canvas&             aCanvas,
+        const hg::uwga::RenderStates& aRenderStates = hg::uwga::RENDER_STATES_DEFAULT) const override //
+    {
+        const auto& uwgaSystem = aCanvas.getSystem();
+
         const float resolution = 16.f;
 
-        hg::gr::RectangleShape emptyRect{
+        hg::uwga::RectangleShape emptyRect{
+            uwgaSystem,
             {resolution, resolution}
         };
-        emptyRect.setFillColor(hg::gr::COLOR_TRANSPARENT);
-        emptyRect.setOutlineColor(hg::gr::COLOR_BLACK);
+        emptyRect.setFillColor(hg::uwga::COLOR_TRANSPARENT);
+        emptyRect.setOutlineColor(hg::uwga::COLOR_BLACK);
         emptyRect.setOutlineThickness(2.f);
 
-        hg::gr::RectangleShape filledRect{
+        hg::uwga::RectangleShape filledRect{
+            uwgaSystem,
             {resolution, resolution}
         };
-        filledRect.setFillColor(hg::gr::COLOR_GREEN);
+        filledRect.setFillColor(hg::uwga::COLOR_GREEN);
 
         for (hg::PZInteger y = 0; y < CHUNK_COUNT_Y; y += 1) {
             for (hg::PZInteger x = 0; x < CHUNK_COUNT_X; x += 1) {
@@ -79,16 +89,16 @@ public:
                     aCanvas.draw(emptyRect);
                 } else {
                     if (Contains(_activeArea.getChunkList(), ChunkId{x, y})) {
-                        filledRect.setFillColor(hg::gr::COLOR_GREEN);
+                        filledRect.setFillColor(hg::uwga::COLOR_GREEN);
                     } else {
-                        filledRect.setFillColor(hg::gr::COLOR_DARK_TURQUOISE);
+                        filledRect.setFillColor(hg::uwga::COLOR_DARK_TURQUOISE);
                     }
                     filledRect.setPosition({x * resolution, y * resolution});
                     aCanvas.draw(filledRect);
                 }
                 if (x == _playerPosition.x && y == _playerPosition.y) {
-                    hg::gr::CircleShape circle{resolution / 4.f};
-                    circle.setFillColor(hg::gr::COLOR_RED);
+                    hg::uwga::CircleShape circle{uwgaSystem, resolution / 4.f};
+                    circle.setFillColor(hg::uwga::COLOR_RED);
                     circle.setOrigin({resolution / 4.f, resolution / 4.f});
                     circle.setPosition({(x + 0.5f) * resolution, (y + 0.5f) * resolution});
                     aCanvas.draw(circle);
@@ -129,25 +139,28 @@ public:
 void RunStorageHandlerTest(int, const char**) {
     Fixture fixture;
 
-    hg::gr::RenderWindow window;
-    window.create(hg::win::VideoMode{800, 800}, "StorageHandlerTest");
-    window.setViewCount(1);
-    window.getView(0).setCenter({16 * 16.f, 16 * 16.f});
-    window.getView(0).setSize({32 * 16.f, 32 * 16.f});
-    window.getView(0).setViewport({0.f, 0.f, 1.f, 1.f});
-    window.setFramerateLimit(60);
+    auto system = hg::uwga::CreateGraphicsSystem("SFML");
+    auto window =
+        system->createRenderWindow(800, 800, hg::uwga::WindowStyle::DEFAULT, "StorageHandlerTest");
+    window->setFramerateLimit(60);
+
+    auto view = system->createView();
+    view->setCenter({16 * 16.f, 16 * 16.f});
+    view->setSize({32 * 16.f, 32 * 16.f});
+    view->setViewport({0.f, 0.f, 1.f, 1.f});
+    window->setView(*view);
 
     hg::math::Vector2pz playerPosition{0, 0};
     fixture._fakeWorld.update(playerPosition);
 
-    while (window.isOpen()) {
-        hg::win::Event ev;
-        while (window.pollEvent(ev)) {
+    while (true) {
+        hg::uwga::WindowEvent ev;
+        while (window && window->pollEvent(ev)) {
             ev.visit(
-                [&](const hg::win::Event::Closed&) {
-                    window.close();
+                [&](const hg::uwga::WindowEvent::Closed&) {
+                    window.reset();
                 },
-                [&](const hg::win::Event::KeyPressed& aData) {
+                [&](const hg::uwga::WindowEvent::KeyPressed& aData) {
                     switch (aData.physicalKey) {
                     case hg::in::PK_LEFT:
                         if (playerPosition.x > 0) {
@@ -178,10 +191,13 @@ void RunStorageHandlerTest(int, const char**) {
                     }
                 });
         }
+        if (!window) {
+            return;
+        }
 
-        window.clear(hg::gr::COLOR_LIGHT_GRAY);
+        window->clear(hg::uwga::COLOR_LIGHT_GRAY);
         fixture._fakeWorld.update(playerPosition);
-        fixture._fakeWorld.draw(window);
-        window.display();
+        window->draw(fixture._fakeWorld);
+        window->display();
     }
 }

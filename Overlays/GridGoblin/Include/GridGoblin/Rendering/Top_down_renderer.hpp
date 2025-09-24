@@ -10,7 +10,9 @@
 #include <GridGoblin/Spatial/Position_in_world.hpp>
 #include <GridGoblin/World/World.hpp>
 
-#include <Hobgoblin/Graphics.hpp>
+#include <Hobgoblin/UWGA/Canvas.hpp>
+#include <Hobgoblin/UWGA/Sprite.hpp>
+#include <Hobgoblin/UWGA/Sprite_loader.hpp>
 
 #include <vector>
 
@@ -25,9 +27,9 @@ struct TopDownRendererConfig {
 //! \note Doesn't ever reduce walls.
 class TopDownRenderer : public Renderer {
 public:
-    TopDownRenderer(const World&                 aWorld,
-                    const hg::gr::SpriteLoader&  aSpriteLoader,
-                    const TopDownRendererConfig& aConfig = {});
+    TopDownRenderer(const World&                  aWorld,
+                    const hg::uwga::SpriteLoader& aSpriteLoader,
+                    const TopDownRendererConfig&  aConfig = {});
 
     void startPrepareToRender(const RenderParameters&   aRenderParams,
                               std::int32_t              aRenderFlags,
@@ -37,13 +39,13 @@ public:
 
     void endPrepareToRender() override;
 
-    void render(hg::gr::Canvas& aCanvas) override;
+    void render(hg::uwga::Canvas& aCanvas) override;
 
 private:
     // ===== Dependencies =====
 
-    const World&                _world;
-    const hg::gr::SpriteLoader& _spriteLoader;
+    const World&                  _world;
+    const hg::uwga::SpriteLoader& _spriteLoader;
 
     // ===== Render parameters =====
 
@@ -57,7 +59,7 @@ private:
                                     const CellModel&   aCell,
                                     const SpatialInfo& aSpatialInfo);
 
-        void render(hg::gr::Canvas& aCanvas, PositionInView aPosInView) const override;
+        void render(hg::uwga::Canvas& aCanvas, PositionInView aPosInView) const override;
 
     private:
         TopDownRenderer& _renderer;
@@ -74,11 +76,11 @@ private:
 
     // ===== Sprite cache =====
 
-    mutable std::unordered_map<SpriteId, hg::gr::Sprite> _spriteCache;
+    mutable std::unordered_map<SpriteId, hg::uwga::Sprite> _spriteCache;
 
     // ===== Methods =====
 
-    hg::gr::Sprite& _getSprite(SpriteId aSpriteId) const;
+    hg::uwga::Sprite& _getSprite(SpriteId aSpriteId) const;
 
     void _prepareCells(std::int32_t aRenderFlags, const VisibilityProvider* aVisProv);
 };
