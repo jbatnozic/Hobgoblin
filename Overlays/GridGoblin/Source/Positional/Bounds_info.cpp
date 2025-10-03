@@ -1,7 +1,7 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#include <GridGoblin/Spatial/Spatial_info.hpp>
+#include <GridGoblin/Positional/Bounds_info.hpp>
 
 namespace jbatnozic {
 namespace gridgoblin {
@@ -12,29 +12,29 @@ constexpr double Half(double aF) {
 }
 } // namespace
 
-SpatialInfo::SpatialInfo(Layer aLayer)
+BoundsInfo::BoundsInfo(Layer aLayer)
     : _layer{aLayer} {}
 
-SpatialInfo SpatialInfo::fromCenterAndSize(PositionInWorld    aCenter,
-                                           hg::math::Vector2d aSize,
-                                           Layer              aLayer) {
-    SpatialInfo result{aLayer};
+BoundsInfo BoundsInfo::fromCenterAndSize(PositionInWorld    aCenter,
+                                         hg::math::Vector2d aSize,
+                                         Layer              aLayer) {
+    BoundsInfo result{aLayer};
     result._center = aCenter;
     result.setSizeMaintainingCenter(aSize);
     return result;
 }
 
-SpatialInfo SpatialInfo::fromTopLeftAndSize(PositionInWorld    aTopLeft,
-                                            hg::math::Vector2d aSize,
-                                            Layer              aLayer) {
-    SpatialInfo result{aLayer};
+BoundsInfo BoundsInfo::fromTopLeftAndSize(PositionInWorld    aTopLeft,
+                                          hg::math::Vector2d aSize,
+                                          Layer              aLayer) {
+    BoundsInfo result{aLayer};
     result._bbox.x = aTopLeft->x;
     result._bbox.y = aTopLeft->y;
     result.setSize(aSize);
     return result;
 }
 
-void SpatialInfo::setCenter(PositionInWorld aPoint) {
+void BoundsInfo::setCenter(PositionInWorld aPoint) {
     _center->x = aPoint->x;
     _center->y = aPoint->y;
 
@@ -42,7 +42,7 @@ void SpatialInfo::setCenter(PositionInWorld aPoint) {
     _bbox.y = aPoint->y - Half(_bbox.h);
 }
 
-void SpatialInfo::setTopLeft(PositionInWorld aPoint) {
+void BoundsInfo::setTopLeft(PositionInWorld aPoint) {
     _bbox.x = aPoint->x;
     _bbox.y = aPoint->y;
 
@@ -50,7 +50,7 @@ void SpatialInfo::setTopLeft(PositionInWorld aPoint) {
     _center->y = aPoint->y + Half(_bbox.h);
 }
 
-void SpatialInfo::setSize(hg::math::Vector2d aSize) {
+void BoundsInfo::setSize(hg::math::Vector2d aSize) {
     _bbox.w = aSize.x;
     _bbox.h = aSize.y;
 
@@ -58,7 +58,7 @@ void SpatialInfo::setSize(hg::math::Vector2d aSize) {
     _center->y = _bbox.y + Half(aSize.y);
 }
 
-void SpatialInfo::setSizeMaintainingCenter(hg::math::Vector2d aSize) {
+void BoundsInfo::setSizeMaintainingCenter(hg::math::Vector2d aSize) {
     _bbox.w = aSize.x;
     _bbox.h = aSize.y;
 

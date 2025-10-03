@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <GridGoblin/Spatial/Spatial_info.hpp>
+#include <GridGoblin/Positional/Bounds_info.hpp>
 
 namespace jbatnozic {
 namespace gridgoblin {
@@ -25,7 +25,7 @@ enum CheckDrawingOrderResult {
 //!
 //! Note: if the bounding boxes overlap, there is technically no correct answer, so a simple
 //!       check is done to see which centre is lower on the screen.
-int CheckDrawingOrder(const SpatialInfo& aLhs, const SpatialInfo& aRhs);
+int CheckDrawingOrder(const BoundsInfo& aLhs, const BoundsInfo& aRhs);
 
 } // namespace dimetric
 } // namespace gridgoblin

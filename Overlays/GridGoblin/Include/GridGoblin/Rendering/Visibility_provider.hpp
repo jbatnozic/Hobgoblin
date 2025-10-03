@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <GridGoblin/Spatial/Position_in_world.hpp>
+#include <GridGoblin/Positional/Position_in_world.hpp>
 
 #include <optional>
 

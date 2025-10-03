@@ -34,7 +34,7 @@ std::array<int, 16> CHECK_DRAWING_ORDER_LOOKUP_TABLE = {DRAW_LHS_FIRST,
 #endif
 
 // clang-format off
-int CheckDrawingOrder(const SpatialInfo& aLhs, const SpatialInfo& aRhs) {
+int CheckDrawingOrder(const BoundsInfo& aLhs, const BoundsInfo& aRhs) {
     if (aLhs.getLayer() < aRhs.getLayer()) {
         return DRAW_LHS_FIRST;
     }

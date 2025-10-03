@@ -1,9 +1,9 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
+#include <GridGoblin/Positional/Position_conversions.hpp>
 #include <GridGoblin/Rendering/Drawing_order.hpp>
 #include <GridGoblin/Rendering/Top_down_renderer.hpp>
-#include <GridGoblin/Spatial/Position_conversions.hpp>
 
 #include "../Detail_access.hpp"
 
@@ -47,7 +47,7 @@ void TopDownRenderer::endPrepareToRender() {
                   HG_ASSERT(aLhs != nullptr && aRhs != nullptr);
 
                   const auto order =
-                      dimetric::CheckDrawingOrder(aLhs->getSpatialInfo(), aRhs->getSpatialInfo());
+                      dimetric::CheckDrawingOrder(aLhs->getBoundsInfo(), aRhs->getBoundsInfo());
 
                   switch (order) {
                   case dimetric::DRAW_LHS_FIRST:
@@ -68,8 +68,8 @@ void TopDownRenderer::endPrepareToRender() {
 
 void TopDownRenderer::render(hg::uwga::Canvas& aCanvas) {
     for (const auto& object : _objectsToRender) {
-        const auto& spatialInfo = object->getSpatialInfo();
-        auto        posInView   = topdown::ToPositionInView(spatialInfo.getCenter());
+        const auto& boundsInfo = object->getBoundsInfo();
+        auto        posInView  = topdown::ToPositionInView(boundsInfo.getCenter());
         posInView->x += _renderParams.xOffset;
         posInView->y += _renderParams.yOffset;
         object->render(aCanvas, posInView);
@@ -122,7 +122,7 @@ void TopDownRenderer::_prepareCells(std::int32_t aRenderFlags, const VisibilityP
                 _cellAdapters.emplace_back(
                     *this,
                     *cell,
-                    SpatialInfo::fromTopLeftAndSize({x * cr, y * cr}, {cr, cr}, Layer::WALL));
+                    BoundsInfo::fromTopLeftAndSize({x * cr, y * cr}, {cr, cr}, Layer::WALL));
                 if (cell->getWall().shape == Shape::FULL_SQUARE) {
                     skipFloor = true; // Don't draw the floor if wall would fully cover it
                 }
@@ -131,7 +131,7 @@ void TopDownRenderer::_prepareCells(std::int32_t aRenderFlags, const VisibilityP
                 _cellAdapters.emplace_back(
                     *this,
                     *cell,
-                    SpatialInfo::fromTopLeftAndSize({x * cr, y * cr}, {cr, cr}, Layer::FLOOR));
+                    BoundsInfo::fromTopLeftAndSize({x * cr, y * cr}, {cr, cr}, Layer::FLOOR));
             }
         }
     }
@@ -143,11 +143,10 @@ void TopDownRenderer::_prepareCells(std::int32_t aRenderFlags, const VisibilityP
 
 // MARK: Cell adapter impl
 
-TopDownRenderer::CellToRenderedObjectAdapter::CellToRenderedObjectAdapter(
-    TopDownRenderer&   aRenderer,
-    const CellModel&   aCell,
-    const SpatialInfo& aSpatialInfo)
-    : RenderedObject{aSpatialInfo}
+TopDownRenderer::CellToRenderedObjectAdapter::CellToRenderedObjectAdapter(TopDownRenderer&  aRenderer,
+                                                                          const CellModel&  aCell,
+                                                                          const BoundsInfo& aBoundsInfo)
+    : RenderedObject{aBoundsInfo}
     , _renderer{aRenderer}
     , _cell{aCell} {}
 
@@ -155,7 +154,7 @@ void TopDownRenderer::CellToRenderedObjectAdapter::render(hg::uwga::Canvas& aCan
                                                           PositionInView    aScreenPosition) const {
     // Select sprite ID based on layer
     SpriteId spriteId;
-    switch (_spatialInfo.getLayer()) {
+    switch (_boundsInfo.getLayer()) {
     case Layer::FLOOR:
         spriteId = _cell.getFloor().spriteId;
         break;
@@ -164,7 +163,7 @@ void TopDownRenderer::CellToRenderedObjectAdapter::render(hg::uwga::Canvas& aCan
         break;
 
     default:
-        HG_UNREACHABLE("Invalid value for Layer ({}).", (int)_spatialInfo.getLayer());
+        HG_UNREACHABLE("Invalid value for Layer ({}).", (int)_boundsInfo.getLayer());
         break;
     }
 

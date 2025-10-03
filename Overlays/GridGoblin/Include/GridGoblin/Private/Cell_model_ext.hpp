@@ -4,7 +4,7 @@
 #pragma once
 
 #include <GridGoblin/Model/Cell_model.hpp>
-#include <GridGoblin/Spatial/Position_in_world.hpp>
+#include <GridGoblin/Positional/Position_in_world.hpp>
 
 #include <Hobgoblin/Math/Vector.hpp>
 

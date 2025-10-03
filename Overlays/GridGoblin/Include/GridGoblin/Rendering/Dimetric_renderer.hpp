@@ -3,11 +3,11 @@
 
 #pragma once
 
+#include <GridGoblin/Positional/Position_in_view.hpp>
+#include <GridGoblin/Positional/Position_in_world.hpp>
 #include <GridGoblin/Rendering/Rendered_object.hpp>
 #include <GridGoblin/Rendering/Renderer.hpp>
 #include <GridGoblin/Rendering/Visibility_provider.hpp>
-#include <GridGoblin/Spatial/Position_in_view.hpp>
-#include <GridGoblin/Spatial/Position_in_world.hpp>
 #include <GridGoblin/World/World.hpp>
 
 #include <Hobgoblin/Graphics.hpp>
@@ -85,10 +85,10 @@ private:
 
     class CellToRenderedObjectAdapter : public RenderedObject {
     public:
-        CellToRenderedObjectAdapter(DimetricRenderer&  aRenderer,
-                                    const CellModel&   aCell,
-                                    const SpatialInfo& aSpatialInfo,
-                                    std::uint16_t      aRendererMask);
+        CellToRenderedObjectAdapter(DimetricRenderer& aRenderer,
+                                    const CellModel&  aCell,
+                                    const BoundsInfo& aBoundsInfo,
+                                    std::uint16_t     aRendererMask);
 
         void render(hg::uwga::Canvas& aCanvas, PositionInView aPosInView) const override;
 

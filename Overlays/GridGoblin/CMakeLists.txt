@@ -12,6 +12,10 @@ add_library(${PROJECT_NAME}
     "Source/Model/Shape_visibility_vertices.cpp"
     "Source/Model/Shape.cpp"
 
+    # Positional
+    "Source/Positional/Bounds_info.cpp"
+    "Source/Positional/Position_conversions.cpp"
+
     # Private
     "Source/Private/Cell_model_ext.cpp"
     "Source/Private/Chunk_disk_io_handler_default.cpp"
@@ -26,10 +30,6 @@ add_library(${PROJECT_NAME}
     "Source/Rendering/OpenGL_helpers.cpp"
     # "Source/Rendering/Top_down_renderer.cpp"
     "Source/Rendering/Visibility_calculator.cpp"
-
-    # Spatial
-    "Source/Spatial/Position_conversions.cpp"
-    "Source/Spatial/Spatial_info.cpp"
 
     # World
     "Source/World/Active_area.cpp"

@@ -1,8 +1,8 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
+#include <GridGoblin/Positional/Bounds_info.hpp>
 #include <GridGoblin/Rendering/Drawing_order.hpp>
-#include <GridGoblin/Spatial/Spatial_info.hpp>
 
 #include <gtest/gtest.h>
 
@@ -11,8 +11,8 @@
 namespace jbatnozic {
 namespace gridgoblin {
 
-TEST(GridGoblinSpatialInfoDrawingOrderTest, FourSeparateRectangles) {
-    std::array<SpatialInfo, 4> infos;
+TEST(GridGoblinBoundsInfoDrawingOrderTest, FourSeparateRectangles) {
+    std::array<BoundsInfo, 4> infos;
 
     infos[0].setTopLeft({6.5, 1.0});
     infos[0].setSize({1.5, 1.5});
@@ -34,8 +34,8 @@ TEST(GridGoblinSpatialInfoDrawingOrderTest, FourSeparateRectangles) {
     }
 }
 
-TEST(GridGoblinSpatialInfoDrawingOrderTest, TouchingRectanglesCycle) {
-    std::array<SpatialInfo, 4> infos;
+TEST(GridGoblinBoundsInfoDrawingOrderTest, TouchingRectanglesCycle) {
+    std::array<BoundsInfo, 4> infos;
 
     infos[0].setTopLeft({2.0, 0.0});
     infos[0].setSize({6.0, 2.0});
@@ -59,8 +59,8 @@ TEST(GridGoblinSpatialInfoDrawingOrderTest, TouchingRectanglesCycle) {
 
 // TODO(doesn't matter - test)
 
-TEST(GridGoblinSpatialInfoDrawingOrderTest, CircleOrbitingAnotherCircle) {
-    // SpatialInfos are technically rectangles, not circles, but we pretend they are
+TEST(GridGoblinBoundsInfoDrawingOrderTest, CircleOrbitingAnotherCircle) {
+    // BoundsInfos are technically rectangles, not circles, but we pretend they are
     // circles with R=2, and we set the spatial info params according to the bounding
     // boxes of those circles.
     // Pivot orbits the axis with a distance of 4 between their centres.
@@ -69,11 +69,11 @@ TEST(GridGoblinSpatialInfoDrawingOrderTest, CircleOrbitingAnotherCircle) {
     const double centreX = 8.0;
     const double centreY = 8.0;
 
-    SpatialInfo axis;
+    BoundsInfo axis;
     axis.setCenter({centreX, centreX});
     axis.setSizeMaintainingCenter({2.0 * R, 2.0 * R});
 
-    SpatialInfo pivot;
+    BoundsInfo pivot;
     pivot.setSizeMaintainingCenter({2.0 * R, 2.0 * R});
 
     for (int i = 0; i < 360; i += 1) {

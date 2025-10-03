@@ -12,6 +12,11 @@
 #include <GridGoblin/Model/Shape_vertices.hpp>
 #include <GridGoblin/Model/Sprites.hpp>
 
+#include <GridGoblin/Positional/Bounds_info.hpp>
+#include <GridGoblin/Positional/Position_conversions.hpp>
+#include <GridGoblin/Positional/Position_in_view.hpp>
+#include <GridGoblin/Positional/Position_in_world.hpp>
+
 // #include <GridGoblin/Rendering/Dimetric_renderer.hpp>
 #include <GridGoblin/Rendering/Drawing_order.hpp>
 // #include <GridGoblin/Rendering/Rendered_object.hpp>
@@ -20,11 +25,6 @@
 #include <GridGoblin/Rendering/Visibility_calculator.hpp>
 // #include <GridGoblin/Rendering/Visibility_provider.hpp>
 // // #include <GridGoblin/Rendering/Top_down_los_renderer.hpp>
-
-#include <GridGoblin/Spatial/Position_conversions.hpp>
-#include <GridGoblin/Spatial/Position_in_view.hpp>
-#include <GridGoblin/Spatial/Position_in_world.hpp>
-#include <GridGoblin/Spatial/Spatial_info.hpp>
 
 #include <GridGoblin/World/Active_area.hpp>
 #include <GridGoblin/World/Binder.hpp>

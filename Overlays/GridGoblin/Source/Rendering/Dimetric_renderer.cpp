@@ -1,9 +1,9 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
+#include <GridGoblin/Positional/Position_conversions.hpp>
 #include <GridGoblin/Rendering/Dimetric_renderer.hpp>
 #include <GridGoblin/Rendering/Drawing_order.hpp>
-#include <GridGoblin/Spatial/Position_conversions.hpp>
 
 #include "../Detail_access.hpp"
 
@@ -107,7 +107,7 @@ void DimetricRenderer::endPrepareToRender() {
                   HG_ASSERT(aLhs != nullptr && aRhs != nullptr);
 
                   const auto order =
-                      dimetric::CheckDrawingOrder(aLhs->getSpatialInfo(), aRhs->getSpatialInfo());
+                      dimetric::CheckDrawingOrder(aLhs->getBoundsInfo(), aRhs->getBoundsInfo());
 
                   switch (order) {
                   case dimetric::DRAW_LHS_FIRST:
@@ -128,8 +128,8 @@ void DimetricRenderer::endPrepareToRender() {
 
 void DimetricRenderer::render(hg::uwga::Canvas& aCanvas) {
     for (const auto& object : _objectsToRender) {
-        const auto& spatialInfo = object->getSpatialInfo();
-        auto        posInView   = dimetric::ToPositionInView(spatialInfo.getCenter());
+        const auto& boundsInfo = object->getBoundsInfo();
+        auto        posInView  = dimetric::ToPositionInView(boundsInfo.getCenter());
         posInView->x += _renderParams.xOffset;
         posInView->y += _renderParams.yOffset;
         object->render(aCanvas, posInView);
@@ -255,17 +255,17 @@ void DimetricRenderer::_prepareCells(std::int32_t aRenderFlags, const Visibility
                 _cellAdapters.emplace_back(
                     *this,
                     *aCellInfo.cell,
-                    SpatialInfo::fromTopLeftAndSize({aCellInfo.gridX * cr, aCellInfo.gridY * cr},
-                                                    {cr, cr},
-                                                    Layer::WALL),
+                    BoundsInfo::fromTopLeftAndSize({aCellInfo.gridX * cr, aCellInfo.gridY * cr},
+                                                   {cr, cr},
+                                                   Layer::WALL),
                     mask);
             } else if (flags & CellModel::FLOOR_INITIALIZED) {
                 _cellAdapters.emplace_back(
                     *this,
                     *aCellInfo.cell,
-                    SpatialInfo::fromTopLeftAndSize({aCellInfo.gridX * cr, aCellInfo.gridY * cr},
-                                                    {cr, cr},
-                                                    Layer::FLOOR),
+                    BoundsInfo::fromTopLeftAndSize({aCellInfo.gridX * cr, aCellInfo.gridY * cr},
+                                                   {cr, cr},
+                                                   Layer::FLOOR),
                     mask);
             }
         });
@@ -362,19 +362,18 @@ std::uint16_t DimetricRenderer::_updateFadeValueOfCellRendererMask(
 
 // MARK: Cell adapter impl
 
-DimetricRenderer::CellToRenderedObjectAdapter::CellToRenderedObjectAdapter(
-    DimetricRenderer&  aRenderer,
-    const CellModel&   aCell,
-    const SpatialInfo& aSpatialInfo,
-    std::uint16_t      aRendererMask)
-    : RenderedObject{aSpatialInfo}
+DimetricRenderer::CellToRenderedObjectAdapter::CellToRenderedObjectAdapter(DimetricRenderer& aRenderer,
+                                                                           const CellModel&  aCell,
+                                                                           const BoundsInfo& aBoundsInfo,
+                                                                           std::uint16_t aRendererMask)
+    : RenderedObject{aBoundsInfo}
     , _renderer{aRenderer}
     , _cell{aCell}
     , _rendererMask{aRendererMask} {}
 
 void DimetricRenderer::CellToRenderedObjectAdapter::render(hg::uwga::Canvas& aCanvas,
                                                            PositionInView    aScreenPosition) const {
-    switch (_spatialInfo.getLayer()) {
+    switch (_boundsInfo.getLayer()) {
     case Layer::FLOOR:
         {
             auto& sprite = _renderer._getSprite(_cell.getFloor().spriteId);
@@ -422,7 +421,7 @@ void DimetricRenderer::CellToRenderedObjectAdapter::render(hg::uwga::Canvas& aCa
         break;
 
     default:
-        HG_UNREACHABLE("Invalid value for Layer ({}).", (int)_spatialInfo.getLayer());
+        HG_UNREACHABLE("Invalid value for Layer ({}).", (int)_boundsInfo.getLayer());
         break;
     }
 }

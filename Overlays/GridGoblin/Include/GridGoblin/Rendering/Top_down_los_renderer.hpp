@@ -9,8 +9,8 @@
 #include <Hobgoblin/UWGA/Texture.hpp>
 #include <Hobgoblin/Utility/Grids.hpp>
 
+#include <GridGoblin/Positional/Position_in_world.hpp>
 #include <GridGoblin/Rendering/Visibility_provider.hpp>
-#include <GridGoblin/Spatial/Position_in_world.hpp>
 #include <GridGoblin/World/World.hpp>
 
 #include <array>

@@ -5,8 +5,8 @@
 
 #include <Hobgoblin/UWGA/Canvas.hpp>
 
-#include <GridGoblin/Spatial/Position_in_view.hpp>
-#include <GridGoblin/Spatial/Spatial_info.hpp>
+#include <GridGoblin/Positional/Bounds_info.hpp>
+#include <GridGoblin/Positional/Position_in_view.hpp>
 
 namespace jbatnozic {
 namespace gridgoblin {
@@ -24,11 +24,11 @@ public:
     //!          initialize the spatial info object (see below) with default values.
     RenderedObject() = default;
 
-    RenderedObject(const SpatialInfo& aSpatialInfo)
-        : _spatialInfo{aSpatialInfo} {}
+    RenderedObject(const BoundsInfo& aBoundsInfo)
+        : _boundsInfo{aBoundsInfo} {}
 
-    const SpatialInfo& getSpatialInfo() const {
-        return _spatialInfo;
+    const BoundsInfo& getBoundsInfo() const {
+        return _boundsInfo;
     }
 
     //! Called by the renderer to render/draw the object.
@@ -43,10 +43,10 @@ public:
     virtual void render(hg::uwga::Canvas& aCanvas, PositionInView aPosInView) const = 0;
 
 protected:
-    //! Spatial info describing where in the world the object is placed. Remember to keep his information
+    //! Bounds info describing where in the world the object is placed. Remember to keep his information
     //! up to date in derived classes, so renderers can draw the object properly and in correct relation
     //! with other rendered objects and terrain.
-    SpatialInfo _spatialInfo;
+    BoundsInfo _boundsInfo;
 };
 
 } // namespace gridgoblin

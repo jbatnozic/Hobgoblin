@@ -15,7 +15,84 @@
 namespace jbatnozic {
 namespace gridgoblin {
 
-namespace hg = jbatnozic::hobgoblin;
+enum class BuildingBlock {
+    CELL_KIND_ID      = 0x01,
+    FLOOR_SPRITE      = 0x02,
+    RESERVED_1        = 0x04,
+    WALL_SPRITE       = 0x08,
+    RESERVED_2        = 0x10,
+    SPATIAL_INFO      = 0x20,
+    RENDERER_AUX_DATA = 0x40,
+    USER_DATA         = 0x80,
+};
+
+namespace cell {
+
+// Refreshing algo :
+// - Openness algo    : needs wall shape, sets openness
+// - Obstruction algo : needs wall shape, sets obstructed-by flags
+//
+// Rendering algo :
+// - Visibility calc algo : needs wall shape, obstructed-by flags, and openness
+// - Drawing algo : needs sprite IDs, renderer mask, and wall shape + whether the wall is initialized or
+// not
+
+struct CellKindID {
+    std::uint16_t value;
+};
+
+struct FloorSprite {
+    SpriteId id;
+};
+
+struct WallSprite {
+    SpriteId id;
+    SpriteId id_reduced;
+};
+
+enum ObstructedByFlags : std::uint8_t {
+    // Obstructed-by flags:
+    //     bits 0..3 -> any
+    //     bits 4..7 -> full
+    OBSTRUCTED_BY_NORTH_NEIGHBOR       = (1 << 0),
+    OBSTRUCTED_FULLY_BY_NORTH_NEIGHBOR = (1 << 4),
+    OBSTRUCTED_BY_WEST_NEIGHBOR        = (1 << 1),
+    OBSTRUCTED_FULLY_BY_WEST_NEIGHBOR  = (1 << 5),
+    OBSTRUCTED_BY_EAST_NEIGHBOR        = (1 << 2),
+    OBSTRUCTED_FULLY_BY_EAST_NEIGHBOR  = (1 << 6),
+    OBSTRUCTED_BY_SOUTH_NEIGHBOR       = (1 << 3),
+    OBSTRUCTED_FULLY_BY_SOUTH_NEIGHBOR = (1 << 7),
+};
+
+struct SpatialInfo {
+    Shape        shape;
+    std::uint8_t obFlags;
+    std::uint8_t openness;
+};
+
+struct RendererAuxData {
+    std::uint16_t mask;
+};
+
+struct UserData {
+    union {
+        std::int64_t  i64;
+        std::uint64_t u64;
+        double        f64;
+        void*         ptr;
+    };
+};
+
+} // namespace cell
+
+struct FatCell {
+    cell::UserData        userData;
+    cell::CellKindID      id;
+    cell::FloorSprite     floorSprite;
+    cell::WallSprite      wallSprite;
+    cell::RendererAuxData rendaux;
+    cell::SpatialInfo     si;
+};
 
 //! A single cell of a GridGoblin World.
 class CellModel {
