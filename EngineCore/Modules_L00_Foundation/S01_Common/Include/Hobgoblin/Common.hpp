@@ -4,6 +4,7 @@
 #ifndef UHOBGOBLIN_COMMON_HPP
 #define UHOBGOBLIN_COMMON_HPP
 
+#include <Hobgoblin/Common/Aligned_alloc.hpp>
 #include <Hobgoblin/Common/Branches.hpp>
 #include <Hobgoblin/Common/Build_type.hpp>
 #include <Hobgoblin/Common/Endianess.hpp>

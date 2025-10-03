@@ -3,11 +3,15 @@
 
 project("Hobgoblin.Common")
 
-add_library(${PROJECT_NAME} INTERFACE)
-target_include_directories(${PROJECT_NAME} INTERFACE "Include/")
+add_library(${PROJECT_NAME}
+STATIC
+    "Source/Aligned_alloc.cpp"
+)
+
+target_include_directories(${PROJECT_NAME} PUBLIC "Include/")
 
 target_link_libraries(${PROJECT_NAME}
-INTERFACE
+PUBLIC
     # Foundation
     "Hobgoblin_L00_S00_PDef"
 )
