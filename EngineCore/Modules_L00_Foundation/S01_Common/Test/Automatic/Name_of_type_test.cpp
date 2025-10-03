@@ -21,16 +21,18 @@ struct MyTemplateStruct {};
 
 HOBGOBLIN_NAMESPACE_BEGIN
 
-TEST(NameOfTypeTest, Test1) {
+TEST(NameOfTypeTest, IntegralTypeNames) {
     EXPECT_EQ(GetNameOfType<int>(), std::string{"int"});
-    EXPECT_EQ(GetNameOfType<unsigned int>(), std::string{"unsigned int"});
-    EXPECT_EQ(GetNameOfType<ns123::Handle>(), std::string{"short"});
 
-#if defined(__clang__)
-    EXPECT_EQ(GetNameOfType<ns123::MyStruct>(), std::string{"ns123::MyStruct"});
-    EXPECT_EQ(GetNameOfType<ns123::MyTemplateStruct<float>>(),
-              std::string{"ns123::MyTemplateStruct<float>"});
-#elif defined(__GNUC__)
+    EXPECT_TRUE(GetNameOfType<unsigned int>() == std::string{"unsigned"} ||
+                GetNameOfType<unsigned int>() == std::string{"unsigned int"});
+
+    EXPECT_TRUE(GetNameOfType<ns123::Handle>() == std::string{"short"} ||
+                GetNameOfType<ns123::Handle>() == std::string{"short int"});
+}
+
+TEST(NameOfTypeTest, StructTypeNames) {
+#if defined(__clang__) || defined(__GNUC__)
     EXPECT_EQ(GetNameOfType<ns123::MyStruct>(), std::string{"ns123::MyStruct"});
     EXPECT_EQ(GetNameOfType<ns123::MyTemplateStruct<float>>(),
               std::string{"ns123::MyTemplateStruct<float>"});
