@@ -162,7 +162,9 @@ void RunVisibilityCalculatorTestImpl() {
     }
 
     // TopDownRenderer      renderer{world, loader};
-    VisibilityCalculator visCalc{world};
+    VisibilityCalculatorConfig visCalcConfig;
+    // visCalcConfig.minRingsBeforeRaycasting = 0;
+    VisibilityCalculator visCalc{world, visCalcConfig};
     auto                 vcImage   = uwgaSystem->createImage();
     auto                 vcTexture = uwgaSystem->createTexture();
 
@@ -220,9 +222,6 @@ void RunVisibilityCalculatorTestImpl() {
     while (true) {
         const auto frameTime = swatch.restart<std::chrono::microseconds>();
 
-        bool mouseLClick = false;
-        bool mouseRClick = false;
-
         hg::uwga::WindowEvent ev;
         while (window && window->pollEvent(ev)) {
             ev.visit(
@@ -234,7 +233,6 @@ void RunVisibilityCalculatorTestImpl() {
                         const auto coords = window->mapPixelToCoords({aButton.x, aButton.y});
                         HG_LOG_INFO(LOG_ID, "Coords = {}, {}", coords.x, coords.y);
                         generateLoS(coords.cast<double>());
-                        mouseLClick = true;
                     }
                 });
         } // end event processing

@@ -98,11 +98,11 @@ private:
         Triangle(hg::math::Vector2d aA,
                  hg::math::Vector2d aB,
                  hg::math::Vector2d aC,
-                 std::uint16_t      aFlags)
+                 std::uint8_t       aFlags)
             : hg::math::TriangleD{aA, aB, aC}
             , flags{aFlags} {}
 
-        std::uint16_t flags;
+        std::uint8_t flags;
     };
 
     std::vector<Triangle> _triangles;
@@ -127,7 +127,7 @@ private:
 
     bool _areAnyVerticesVisible(const std::array<hg::math::Vector2d, 8>& aVertices,
                                 std::size_t                              aVertCount,
-                                std::uint16_t                            aEdgesOfInterest) const;
+                                std::uint8_t                             aEdgesOfInterest) const;
 
     void _processRing(hg::PZInteger aRingIndex);
 
@@ -139,11 +139,11 @@ private:
 
     void _castRay(hg::PZInteger aRayIndex);
 
-    bool _isPointVisible(PositionInWorld aPosInWorld, std::uint16_t aFlags) const;
+    bool _isPointVisible(PositionInWorld aPosInWorld, std::uint8_t aFlags, bool aLazy) const;
 
     bool _isLineVisible(PositionInWorld aP1,
                         PositionInWorld aP2,
-                        std::uint16_t   aFlags,
+                        std::uint8_t    aFlags,
                         hg::PZInteger   aLevels) const;
 };
 
