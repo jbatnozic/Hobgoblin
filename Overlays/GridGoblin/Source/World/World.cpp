@@ -646,6 +646,10 @@ void World::_refreshCellAtUnchecked(hg::PZInteger aX, hg::PZInteger aY) {
 
     if (chunk) {
         cell::SpatialInfo spatialInfo;
+        chunk->getCellDataAtUnchecked(getChunkMemoryLayoutInfo(),
+                                      aX % _config.cellsPerChunkX,
+                                      aY % _config.cellsPerChunkY,
+                                      &spatialInfo);
 
         spatialInfo.openness = static_cast<std::uint8_t>(_calcOpennessAt<false>(aX, aY));
         spatialInfo.obFlags  = [this, aX, aY, chunk, spatialInfo]() -> std::uint8_t {

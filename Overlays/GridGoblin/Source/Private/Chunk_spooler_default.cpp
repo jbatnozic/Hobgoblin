@@ -212,6 +212,8 @@ std::vector<std::shared_ptr<DefaultChunkSpooler::RequestHandleInterface>> Defaul
 }
 
 hg::PZInteger DefaultChunkSpooler::unloadChunk(ChunkId aChunkId, Chunk&& aChunk) {
+    HG_HARD_ASSERT(!aChunk.isEmpty());
+
     std::unique_lock<Mutex> lock{_mutex};
 
     const auto iter = _requests.find(aChunkId);
