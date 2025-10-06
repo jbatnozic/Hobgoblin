@@ -5,9 +5,9 @@
 #include <Hobgoblin/Logging.hpp>
 #include <Hobgoblin/Private/Manual_test_framework.hpp>
 
+#include <exception>
 #include <filesystem>
 #include <iostream>
-#include <exception>
 
 #include "Test_list.hpp"
 

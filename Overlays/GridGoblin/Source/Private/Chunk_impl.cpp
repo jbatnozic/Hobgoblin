@@ -22,8 +22,8 @@ void IncUntilAligned(std::size_t& aByteCounter, std::size_t aAlignment) {
 namespace detail {
 
 ChunkImpl::MemoryLayoutInfo ChunkImpl::calcMemoryLayoutInfo(hg::PZInteger     aChunkWidth,
-                                                hg::PZInteger     aChunkHeight,
-                                                BuildingBlockMask aBuildingBlocks) {
+                                                            hg::PZInteger     aChunkHeight,
+                                                            BuildingBlockMask aBuildingBlocks) {
     MemoryLayoutInfo meminfo{.chunkWidth = aChunkWidth, .chunkHeight = aChunkHeight};
 
     const auto cellCount = static_cast<std::size_t>(aChunkWidth * aChunkHeight);
@@ -86,8 +86,7 @@ ChunkImpl::MemoryLayoutInfo ChunkImpl::calcMemoryLayoutInfo(hg::PZInteger     aC
 }
 
 ChunkImpl::ChunkImpl(ChunkImpl&& aOther)
-    : _mem{aOther._mem}
-{
+    : _mem{aOther._mem} {
     aOther._mem = nullptr;
 }
 
@@ -157,7 +156,7 @@ void ChunkImpl::_storeChunkExtensionPointer(ChunkExtensionInterface* aChunkExten
 
     // The 'array' always has exactly one element (max one extension per chunk)
     auto* array = reinterpret_cast<ChunkExtensionInterface**>(_mem + EXTENSION_OFFSET);
-    array[0] = aChunkExtensionPointer;
+    array[0]    = aChunkExtensionPointer;
 }
 
 ChunkExtensionInterface* ChunkImpl::_loadChunkExtensionPointer() const {

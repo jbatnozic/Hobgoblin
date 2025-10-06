@@ -47,7 +47,7 @@ public:
 
     ChunkImpl() = default;
 
-    ChunkImpl(const ChunkImpl& aOther) = delete;
+    ChunkImpl(const ChunkImpl& aOther)            = delete;
     ChunkImpl& operator=(const ChunkImpl& aOther) = delete;
 
     ChunkImpl(ChunkImpl&& aOther);

@@ -159,7 +159,9 @@ public:
     [[nodiscard]] bool getCellDataAt(hg::math::Vector2pz aCell, taPtrs&&... aPtrs) const;
 
     template <class... taPtrs>
-    [[nodiscard]] bool getCellDataAtUnchecked(hg::PZInteger aX, hg::PZInteger aY, taPtrs&&... aPtrs) const;
+    [[nodiscard]] bool getCellDataAtUnchecked(hg::PZInteger aX,
+                                              hg::PZInteger aY,
+                                              taPtrs&&... aPtrs) const;
 
     template <class... taPtrs>
     [[nodiscard]] bool getCellDataAtUnchecked(hg::math::Vector2pz aCell, taPtrs&&... aPtrs) const;
@@ -422,10 +424,12 @@ private:
 
     void _refreshCellAtUnchecked(hg::PZInteger aX, hg::PZInteger aY);
 
-    void _setCellDataAtUnchecked(Chunk& aChunk, hg::PZInteger aX, hg::PZInteger aY, const cell::SpatialInfo* aSpatialInfo);
+    void _setCellDataAtUnchecked(Chunk&                   aChunk,
+                                 hg::PZInteger            aX,
+                                 hg::PZInteger            aY,
+                                 const cell::SpatialInfo* aSpatialInfo);
 
-    template <class T,
-              typename std::enable_if_t<!std::is_same_v<T, cell::SpatialInfo>> = true>
+    template <class T, typename std::enable_if_t<!std::is_same_v<T, cell::SpatialInfo>> = true>
     void _setCellDataAtUnchecked(Chunk& aChunk, hg::PZInteger aX, hg::PZInteger aY, const T* aPtr);
 };
 
@@ -446,7 +450,9 @@ template <class... taPtrs>
 }
 
 template <class... taPtrs>
-[[nodiscard]] bool World::getCellDataAtUnchecked(hg::PZInteger aX, hg::PZInteger aY, taPtrs&&... aPtrs) const {
+[[nodiscard]] bool World::getCellDataAtUnchecked(hg::PZInteger aX,
+                                                 hg::PZInteger aY,
+                                                 taPtrs&&... aPtrs) const {
     const auto chunkX = aX / _config.cellsPerChunkX;
     const auto chunkY = aY / _config.cellsPerChunkY;
 
@@ -538,8 +544,7 @@ void World::Editor::setCellDataAtUnchecked(hg::math::Vector2pz aCell, taPtrs&&..
     setCellDataAtUnchecked(aCell.x, aCell.y, std::forward<taPtrs>(aPtrs)...);
 }
 
-template <class T,
-          typename std::enable_if_t<!std::is_same_v<T, cell::SpatialInfo>>>
+template <class T, typename std::enable_if_t<!std::is_same_v<T, cell::SpatialInfo>>>
 void World::_setCellDataAtUnchecked(Chunk& aChunk, hg::PZInteger aX, hg::PZInteger aY, const T* aPtr) {
     aChunk.setCellDataAtUnchecked(getChunkMemoryLayoutInfo(), aX, aY, aPtr);
 }

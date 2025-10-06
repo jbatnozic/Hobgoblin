@@ -1,8 +1,8 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#include <GridGoblin/Private/Chunk_spooler_default.hpp>
 #include <GridGoblin/Private/Chunk_holder.hpp>
+#include <GridGoblin/Private/Chunk_spooler_default.hpp>
 
 #include <Hobgoblin/Logging.hpp>
 #include <Hobgoblin/UWGA.hpp>
@@ -16,8 +16,8 @@ using jbatnozic::gridgoblin::ActiveArea;
 using jbatnozic::gridgoblin::Binder;
 using jbatnozic::gridgoblin::ChunkId;
 using jbatnozic::gridgoblin::WorldConfig;
-using jbatnozic::gridgoblin::detail::ChunkSpoolerInterface;
 using jbatnozic::gridgoblin::detail::ChunkHolder;
+using jbatnozic::gridgoblin::detail::ChunkSpoolerInterface;
 
 #define CHUNK_COUNT_X 32
 #define CHUNK_COUNT_Y 32
@@ -108,7 +108,7 @@ public:
     }
 
 private:
-    ChunkHolder _chunkStorageHandler;
+    ChunkHolder         _chunkStorageHandler;
     hg::math::Vector2pz _playerPosition;
     ActiveArea          _activeArea;
 

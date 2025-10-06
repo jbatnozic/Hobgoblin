@@ -279,7 +279,7 @@ void VisibilityCalculator::_processRing(hg::PZInteger aRingIndex) {
 
 void VisibilityCalculator::_processCell(Vector2pz aCell, hg::PZInteger aRingIndex) {
     cell::SpatialInfo spatialInfo;
-    const auto cellIsLoaded = _world.getCellDataAtUnchecked(aCell, &spatialInfo);
+    const auto        cellIsLoaded = _world.getCellDataAtUnchecked(aCell, &spatialInfo);
     if (HG_UNLIKELY_CONDITION(!cellIsLoaded)) {
         HG_UNLIKELY_BRANCH;
         return;
@@ -374,9 +374,9 @@ void VisibilityCalculator::_castRay(hg::PZInteger aRayIndex) {
             break;
         }
 
-        const auto  coords = _world.posToCellUnchecked(point);
+        const auto        coords = _world.posToCellUnchecked(point);
         cell::SpatialInfo spatialInfo;
-        const auto cellIsLoaded = _world.getCellDataAtUnchecked(coords);
+        const auto        cellIsLoaded = _world.getCellDataAtUnchecked(coords);
 
         if (HG_UNLIKELY_CONDITION(!cellIsLoaded)) {
             HG_UNLIKELY_BRANCH;

@@ -107,7 +107,7 @@ private:
         : _storageHandler{aStorageHandler} {}
 
     hg::NeverNull<detail::ChunkHolder*> _storageHandler;
-    std::vector<ChunkId>                        _chunkList;
+    std::vector<ChunkId>                _chunkList;
 };
 
 namespace detail {

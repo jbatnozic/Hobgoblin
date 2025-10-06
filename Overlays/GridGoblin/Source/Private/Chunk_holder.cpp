@@ -182,10 +182,7 @@ void ChunkHolder::_createDefaultChunk(ChunkId aChunkId) {
     _binder->onChunkCreated(aChunkId, chunk);
 }
 
-void ChunkHolder::_updateChunkUsage(
-    const std::vector<detail::ChunkUsageChange>& aChunkUsageChanges)
-//
-{
+void ChunkHolder::_updateChunkUsage(const std::vector<detail::ChunkUsageChange>& aChunkUsageChanges) {
     // Chunk control blocks and the associated chunk load requests which are to be passed
     // to the spooler. The vectors are to be kept in sync: the handle belonging to requests[N]
     // will be held by cbs[N].
@@ -370,10 +367,9 @@ bool ChunkHolder::AvailableChunkIterator::equals(const AvailableChunkIterator& a
     return false;
 }
 
-ChunkHolder::AvailableChunkIterator::AvailableChunkIterator(
-    const decltype(_chunkControlBlocks)& aCbMap,
-    const decltype(_freeChunks)&         aFcMap,
-    bool                                 aIsEndIter)
+ChunkHolder::AvailableChunkIterator::AvailableChunkIterator(const decltype(_chunkControlBlocks)& aCbMap,
+                                                            const decltype(_freeChunks)&         aFcMap,
+                                                            bool aIsEndIter)
     : _cbMap{aCbMap}
     , _cbIter{_cbMap.begin()}
     , _fcMap{aFcMap}
