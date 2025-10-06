@@ -1,4 +1,4 @@
-// Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
+// Copyright 2025 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
 #pragma once
@@ -11,31 +11,29 @@
 namespace jbatnozic {
 namespace gridgoblin {
 
+//! The `cell` namespace contains struct definitions for all building blocks that make up cells
+//! of a Chunk. A single logical cell has one `CellKindId`, one `FloorSprite`, one `WallSprite`,
+//! and so on (though a World can be configured to not allocate certain building blocks if they
+//! are not needed).
+//!
+//! \see BuildingBlock
 namespace cell {
 
-// Refreshing algo :
-// - Openness algo    : needs wall shape, sets openness
-// - Obstruction algo : needs wall shape, sets obstructed-by flags
-//
-// Rendering algo :
-// - Visibility calc algo : needs wall shape, obstructed-by flags, and openness
-// - Drawing algo : needs sprite IDs, renderer mask, and wall shape + whether the wall is initialized or
-// not
-
 struct CellKindId {
-    std::uint16_t value;
+    std::uint16_t value = 0;
 };
 
 struct FloorSprite {
-    SpriteId id;
+    SpriteId id = SPRITEID_NONE;
 };
 
 struct WallSprite {
-    SpriteId id;
-    SpriteId id_reduced;
+    SpriteId id         = SPRITEID_NONE;
+    SpriteId id_reduced = SPRITEID_NONE;
 };
 
 enum ObstructedByFlags : std::uint8_t {
+    OBSTRUCTED_NONE = 0,
     // Obstructed-by flags:
     //     bits 0..3 -> any
     //     bits 4..7 -> full
@@ -50,9 +48,9 @@ enum ObstructedByFlags : std::uint8_t {
 };
 
 struct SpatialInfo {
-    Shape        wallShape;
-    std::uint8_t obFlags;
-    std::uint8_t openness;
+    Shape        wallShape = Shape::EMPTY;
+    std::uint8_t obFlags   = OBSTRUCTED_NONE;
+    std::uint8_t openness  = 0;
 
     bool hasNonEmptyWallShape() const {
         return ((wallShape & Shape::BASE_SHAPE_MASK) != Shape::EMPTY);
@@ -60,8 +58,8 @@ struct SpatialInfo {
 };
 
 struct RendererAuxData {
-    std::uint16_t mask;
-    std::uint16_t mask2;
+    std::uint16_t mask  = 0;
+    std::uint16_t mask2 = 0;
 };
 
 struct UserData {
@@ -83,51 +81,6 @@ struct FatCell {
     cell::RendererAuxData rendererAuxData;
     cell::UserData        userData;
 };
-
-#if 0
-//! CellModel::Floor equality operator.
-inline bool operator==(const CellModel::Floor& aLhs, const CellModel::Floor& aRhs) {
-    return aLhs.spriteId == aRhs.spriteId;
-}
-
-//! CellModel::Floor inequality operator.
-inline bool operator!=(const CellModel::Floor& aLhs, const CellModel::Floor& aRhs) {
-    return !(aLhs == aRhs);
-}
-
-//! CellModel::Wall equality operator.
-inline bool operator==(const CellModel::Wall& aLhs, const CellModel::Wall& aRhs) {
-    return std::tie(aLhs.spriteId, aLhs.spriteId_reduced, aLhs.shape) ==
-           std::tie(aRhs.spriteId, aRhs.spriteId_reduced, aRhs.shape);
-}
-
-//! CellModel::Wall inequality operator.
-inline bool operator!=(const CellModel::Wall& aLhs, const CellModel::Wall& aRhs) {
-    return !(aLhs == aRhs);
-}
-
-//! CellModel equality operator.
-inline bool operator==(const CellModel& aLhs, const CellModel& aRhs) {
-    if (aLhs.getFlags() != aRhs.getFlags()) {
-        return false;
-    }
-
-    if (aLhs.isFloorInitialized() && (aLhs.getFloor() != aRhs.getFloor())) {
-        return false;
-    }
-
-    if (aLhs.isWallInitialized() && (aLhs.getWall() != aRhs.getWall())) {
-        return false;
-    }
-
-    return true;
-}
-
-//! CellModel inequality operator.
-inline bool operator!=(const CellModel& aLhs, const CellModel& aRhs) {
-    return !(aLhs == aRhs);
-}
-#endif
 
 } // namespace gridgoblin
 } // namespace jbatnozic

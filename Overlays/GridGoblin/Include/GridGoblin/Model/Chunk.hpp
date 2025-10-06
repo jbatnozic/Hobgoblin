@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <Hobgoblin/Math/Vector2.hpp>
+
 #include <GridGoblin/Model/Cell.hpp>
 #include <GridGoblin/Private/Chunk_impl.hpp>
 
@@ -13,7 +15,6 @@ namespace gridgoblin {
 
 namespace hg = jbatnozic::hobgoblin;
 
-class World;
 class ChunkExtensionInterface;
 
 //! TODO(add description)
@@ -42,18 +43,56 @@ public:
     // MARK: CELLS                                                           //
     ///////////////////////////////////////////////////////////////////////////
 
-    //! TODO(add description)
+    //! \brief Retrieve cell data at a specified position within the chunk without bounds checking.
+    //!
+    //! This function accesses the data stored at the cell located at the given (`aX`, `aY`)
+    //! coordinates, relative to the top-left of the chunk.
+    //! \warning This function performs no bounds checking, so the caller must ensure the
+    //!          coordinates are in range!
+    //!
+    //! The data is copied into preallocated objects from the `cell` namespace - the pointers
+    //! `aPtrs...` must point to these preallocated objects.
+    //! \warning passing any null pointers will lead to undefined behaviour!
+    //!
+    //! \param aMemLayout Memory layout descriptor for the chunk.
+    //! \param aX X-coordinate of the target cell, relative to the top-left of the chunk.
+    //! \param aY Y-coordinate of the target cell, relative to the top-left of the chunk.
+    //! \param aPtrs One or more non-null pointers to objects from the `cell` namespace
+    //!              where the retrieved data should be copied.
+    //!
+    //! Example of usage:
+    //! \code
+    //!     cell::CellKindId  cellKindId;
+    //!     cell::SpatialInfo spatialInfo;
+    //!     chunk.getCellDataAtUnchecked(memLayoutInfo, x, y, &cellKindId, &spatialInfo);
+    //! \endcode
     template <class... taPtrs>
     void getCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
                                 hg::PZInteger                aX,
                                 hg::PZInteger                aY,
                                 taPtrs&&... aPtrs) const;
 
-    //! TODO(add description)
+    //! Same as the pther overload of `getCellDataAtUnchecked`,
+    //! but here the coordinates are given as a vector.
+    template <class... taPtrs>
+    void getCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
+                                hg::math::Vector2pz          aCell,
+                                taPtrs&&... aPtrs) const;
+
+    //! This function does the opposite of `getCellDataAtUnchecked` - the semantics of all the
+    //! parameters are the same, but it copies the data from the objects pointed to by `aPtrs`
+    //! into the chunk instead of the other way around.
     template <class... taPtrs>
     void setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
                                 hg::PZInteger                aX,
                                 hg::PZInteger                aY,
+                                taPtrs&&... aPtrs);
+
+    //! Same as the pther overload of `setCellDataAtUnchecked`,
+    //! but here the coordinates are given as a vector.
+    template <class... taPtrs>
+    void setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
+                                hg::math::Vector2pz          aCell,
                                 taPtrs&&... aPtrs);
 
     //! Set all the cells in the chunk to the given value, unless the chunk is empty. Utility method.
@@ -184,6 +223,8 @@ private:
     }
 };
 
+static_assert(sizeof(Chunk) == sizeof(void*));
+
 namespace detail {
 bool AreCellsEqual(const Chunk& aChunk1, const Chunk& aChunk2);
 } // namespace detail
@@ -207,11 +248,25 @@ inline void Chunk::getCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayou
 }
 
 template <class... taPtrs>
+void Chunk::getCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
+                                   hg::math::Vector2pz          aCell,
+                                   taPtrs&&... aPtrs) const {
+    (_getCellDataAtUnchecked(aMemLayout, aCell.x, aCell.y, aPtrs), ...);
+}
+
+template <class... taPtrs>
 inline void Chunk::setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
                                           hg::PZInteger                aX,
                                           hg::PZInteger                aY,
                                           taPtrs&&... aPtrs) {
     (_setCellDataAtUnchecked(aMemLayout, aX, aY, aPtrs), ...);
+}
+
+template <class... taPtrs>
+inline void Chunk::setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
+                                          hg::math::Vector2pz          aCell,
+                                          taPtrs&&... aPtrs) {
+    (_setCellDataAtUnchecked(aMemLayout, aCell.x, aCell.y, aPtrs), ...);
 }
 
 inline ChunkExtensionInterface* Chunk::getExtension() const {

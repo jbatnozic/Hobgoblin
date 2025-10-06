@@ -31,7 +31,7 @@ int main() try {
     HG_ADD_MANUAL_TEST(testRunner, RunOpennessTest);
     HG_ADD_MANUAL_TEST(testRunner, RunSpoolingTest);
     // HG_ADD_MANUAL_TEST(testRunner, RunDimetricRenderingTest);
-    // HG_ADD_MANUAL_TEST(testRunner, RunVisibilityCalculatorTest);
+    HG_ADD_MANUAL_TEST(testRunner, RunVisibilityCalculatorTest);
 
     testRunner.runTest();
 
