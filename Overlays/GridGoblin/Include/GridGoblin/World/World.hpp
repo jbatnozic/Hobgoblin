@@ -424,11 +424,18 @@ private:
 
     void _refreshCellAtUnchecked(hg::PZInteger aX, hg::PZInteger aY);
 
+    //! \param aChunk chunk where the `aX` and `aY` coordinates lie
+    //! \param aX absolute X coordinate of the cell (NOT relative to chunk top-left)
+    //! \param aY absolute Y coordinate of the cell (NOT relative to chunk top-left)
+    //! \param aSpatialInfo pointer to SpatialInfo object to copy over (UB if null)
     void _setCellDataAtUnchecked(Chunk&                   aChunk,
                                  hg::PZInteger            aX,
                                  hg::PZInteger            aY,
                                  const cell::SpatialInfo* aSpatialInfo);
 
+    //! \param aChunk chunk where the `aX` and `aY` coordinates lie
+    //! \param aX absolute X coordinate of the cell (NOT relative to chunk top-left)
+    //! \param aY absolute Y coordinate of the cell (NOT relative to chunk top-left)
     template <class T, typename std::enable_if_t<!std::is_same_v<T, cell::SpatialInfo>> = true>
     void _setCellDataAtUnchecked(Chunk& aChunk, hg::PZInteger aX, hg::PZInteger aY, const T* aPtr);
 };
@@ -533,10 +540,7 @@ void World::Editor::setCellDataAtUnchecked(hg::PZInteger aX, hg::PZInteger aY, t
     const auto chunkY = aY / _world._config.cellsPerChunkY;
 
     auto& chunk = _world._chunkStorage.getChunkAtIdUnchecked({chunkX, chunkY}, detail::LOAD_IF_MISSING);
-    _world._setCellDataAtUnchecked(chunk,
-                                   aX % _world._config.cellsPerChunkX,
-                                   aY % _world._config.cellsPerChunkY,
-                                   std::forward<taPtrs>(aPtrs)...);
+    _world._setCellDataAtUnchecked(chunk, aX, aY, std::forward<taPtrs>(aPtrs)...);
 }
 
 template <class... taPtrs>
@@ -546,7 +550,9 @@ void World::Editor::setCellDataAtUnchecked(hg::math::Vector2pz aCell, taPtrs&&..
 
 template <class T, typename std::enable_if_t<!std::is_same_v<T, cell::SpatialInfo>>>
 void World::_setCellDataAtUnchecked(Chunk& aChunk, hg::PZInteger aX, hg::PZInteger aY, const T* aPtr) {
-    aChunk.setCellDataAtUnchecked(getChunkMemoryLayoutInfo(), aX, aY, aPtr);
+    const auto cellRelativeX = aX % _config.cellsPerChunkX;
+    const auto cellRelativeY = aY % _config.cellsPerChunkY;
+    aChunk.setCellDataAtUnchecked(getChunkMemoryLayoutInfo(), cellRelativeX, cellRelativeY, aPtr);
 }
 
 inline BuildingBlockMask World::getBuildingBlocks() const {

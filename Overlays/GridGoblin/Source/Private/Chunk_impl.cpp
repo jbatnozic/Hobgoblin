@@ -40,7 +40,7 @@ ChunkImpl::MemoryLayoutInfo ChunkImpl::calcMemoryLayoutInfo(hg::PZInteger     aC
 
     // Cell kind ID
     if ((aBuildingBlocks & BuildingBlock::CELL_KIND_ID) != BuildingBlock::NONE) {
-        IncUntilAligned(byteCounter, alignof(ChunkExtensionInterface*));
+        IncUntilAligned(byteCounter, alignof(cell::CellKindId));
         meminfo.offset.cellKindId = byteCounter;
         byteCounter += cellCount * sizeof(cell::CellKindId);
     }

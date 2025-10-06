@@ -701,8 +701,11 @@ void World::_setCellDataAtUnchecked(Chunk&                   aChunk,
                                     hg::PZInteger            aX,
                                     hg::PZInteger            aY,
                                     const cell::SpatialInfo* aSpatialInfo) {
+    const auto cellRelativeX = aX % _config.cellsPerChunkX;
+    const auto cellRelativeY = aY % _config.cellsPerChunkY;
+
     cell::SpatialInfo currentSi;
-    aChunk.getCellDataAtUnchecked(getChunkMemoryLayoutInfo(), aX, aY, &currentSi);
+    aChunk.getCellDataAtUnchecked(getChunkMemoryLayoutInfo(), cellRelativeX, cellRelativeY, &currentSi);
 
     if (currentSi.wallShape == aSpatialInfo->wallShape) {
         // In this case, there is no refresh needed because the walls are of the same shape,
@@ -725,7 +728,10 @@ void World::_setCellDataAtUnchecked(Chunk&                   aChunk,
     }
 
 SWAP_WALL:
-    aChunk.setCellDataAtUnchecked(getChunkMemoryLayoutInfo(), aX, aY, aSpatialInfo);
+    aChunk.setCellDataAtUnchecked(getChunkMemoryLayoutInfo(),
+                                  cellRelativeX,
+                                  cellRelativeY,
+                                  aSpatialInfo);
 
     // clang-format off
     _cellEditInfos.push_back({{aX, aY}, Binder::CellEditInfo::WALL}); // !!!!!!!!!!!! SKIP IN GENERATOR MODE !!!!!!!!!!!!!!!!

@@ -78,9 +78,14 @@ struct WorldConfig {
     std::uint8_t maxCellOpenness = 0;
 
     //! The maximum number of chunks that can stay loaded and available after pruning a World instance
-    //! even when they are not in any of the active areas. Note that a chunk takes up up to 40 bytes
-    //! per cell, more if you give it an extension, so take this into consideration when setting this
-    //! value. The minimum is 0, though it is not recommended.
+    //! even when they are not in any of the active areas. Note that an instance of each enabled
+    //! building block (see `buildingBlocks` and the `cell` namespace) is allocated for each cell,
+    //! and that that could be up to 24 bytes per cell, so take this into consideration when setting
+    //! this value. The minimum is 0, though it is strongly not recommended.
+    //!
+    //! \warning openness values (see `maxCellOpenness`) can be inaccurate near chunks that aren't
+    //!          currently loaded, though they are guaranteed to never be higher than the correct
+    //!          values.
     //!
     //! \see World, ActiveArea
     hg::PZInteger maxLoadedNonessentialChunks = 0;

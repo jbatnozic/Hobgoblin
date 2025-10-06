@@ -6,6 +6,7 @@
 #include <Hobgoblin/Utility/Grids.hpp>
 
 #include "Fake_disk_io_handler.hpp"
+#include <GridGoblin/Private/Chunk_impl.hpp>
 #include <GridGoblin/Private/Chunk_spooler_default.hpp>
 
 #include <memory>
@@ -13,8 +14,11 @@
 
 namespace hg = jbatnozic::hobgoblin;
 
+using jbatnozic::gridgoblin::BuildingBlockMask;
 using jbatnozic::gridgoblin::Chunk;
 using jbatnozic::gridgoblin::ChunkId;
+using jbatnozic::gridgoblin::ChunkMemoryLayoutInfo;
+using jbatnozic::gridgoblin::detail::ChunkImpl;
 using jbatnozic::gridgoblin::detail::ChunkSpoolerInterface;
 
 #define CHUNK_COUNT_X 32
@@ -25,10 +29,13 @@ constexpr auto LOG_ID = "GridGoblin.ManualTest";
 
 class FakeWorld : public hg::uwga::Drawable {
 public:
-    FakeWorld(hg::PZInteger          aWorldWidth,
-              hg::PZInteger          aWorldHeight,
-              ChunkSpoolerInterface& aChunkSpooler)
-        : _chunkspool{aChunkSpooler} {
+    FakeWorld(hg::PZInteger                aWorldWidth,
+              hg::PZInteger                aWorldHeight,
+              ChunkSpoolerInterface&       aChunkSpooler,
+              const ChunkMemoryLayoutInfo& aChunkMemLayout)
+        : _chunkspool{aChunkSpooler}
+        , _chunkMemLayout{aChunkMemLayout} //
+    {
         _chunkGrid.reset(aWorldWidth, aWorldHeight);
     }
 
@@ -51,7 +58,7 @@ public:
                         HG_LOG_INFO(LOG_ID, "Loaded chunk {}, {} from disk.", id.x, id.y);
                     } else {
                         // create new one
-                        _chunkGrid.at(id.y, id.x) = std::make_unique<Chunk>(1, 1);
+                        _chunkGrid.at(id.y, id.x) = std::make_unique<Chunk>(_chunkMemLayout);
                         HG_LOG_INFO(LOG_ID, "Created chunk {}, {}.", id.x, id.y);
                     }
                     iter = _requests.erase(iter);
@@ -174,6 +181,8 @@ public:
 private:
     ChunkSpoolerInterface& _chunkspool;
 
+    const ChunkMemoryLayoutInfo& _chunkMemLayout;
+
     hg::util::RowMajorGrid<std::unique_ptr<Chunk>> _chunkGrid;
 
     std::unordered_map<ChunkId, std::shared_ptr<ChunkSpoolerInterface::RequestHandleInterface>>
@@ -184,9 +193,16 @@ private:
 
 class Fixture {
 public:
+    ChunkImpl::MemoryLayoutInfo _memoryLayoutInfoImpl =
+        ChunkImpl::calcMemoryLayoutInfo(1, 1, BuildingBlockMask::ALL);
+
+    const ChunkMemoryLayoutInfo& _memoryLayout =
+        reinterpret_cast<const ChunkMemoryLayoutInfo&>(_memoryLayoutInfoImpl);
+
     jbatnozic::gridgoblin::test::FakeDiskIoHandler     _fakeDiskIoHandler;
-    jbatnozic::gridgoblin::detail::DefaultChunkSpooler _chunkSpooler;
-    FakeWorld                                          _fakeWorld{32, 32, _chunkSpooler};
+    jbatnozic::gridgoblin::detail::DefaultChunkSpooler _chunkSpooler{BuildingBlockMask::ALL,
+                                                                     _memoryLayout};
+    FakeWorld                                          _fakeWorld{32, 32, _chunkSpooler, _memoryLayout};
 
     Fixture() {
         _chunkSpooler.setDiskIoHandler(&_fakeDiskIoHandler);

@@ -3,6 +3,8 @@
 
 # ===== COMPONENT SETUP =====
 
+find_package(SFML CONFIG REQUIRED)
+
 set(COMPONENT_NAME "Hobgoblin.Math")
 
 # ===== GATHER SOURCES ======
@@ -17,7 +19,11 @@ target_include_directories(${COMPONENT_NAME} INTERFACE "Include/")
 
 target_link_libraries(${COMPONENT_NAME}
 INTERFACE
+    # Foudnation
     "Hobgoblin_L00_S01_Common"
+
+    # Enternal
+    "sfml::sfml"
 )
 
 add_library("Hobgoblin_L01_S00_Math" ALIAS ${COMPONENT_NAME})

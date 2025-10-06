@@ -57,9 +57,17 @@ taReal EuclideanDist(taReal aOriginX, taReal aOriginY, taReal aTargetX, taReal a
 }
 
 //! Calculates (divident / divisor), rounding UP.
-template <class T>
-constexpr typename std::enable_if_t<std::is_integral_v<T>, T> IntegralCeilDiv(T dividend, T divisor) {
-    return dividend / divisor - ((-(dividend % divisor)) >> (sizeof(T) * CHAR_BIT - 1));
+//! \see https://stackoverflow.com/a/63436491
+template <typename T,
+          T_ENABLE_IF(std::is_integral_v<T>)>
+constexpr T IntegralCeilDiv(T dividend, T divisor) {
+    if constexpr (std::is_unsigned_v<T>) {
+        return dividend / divisor + (dividend % divisor != 0);
+    } else {
+        // signed char quotientSgn = sgn(x) * sgn(y);
+        // return x / y + (x % y != 0) * quotientSgn;
+        return dividend / divisor - ((-(dividend % divisor)) >> (sizeof(T) * CHAR_BIT - 1));
+    }
 }
 
 // Solves a quadratic equation
