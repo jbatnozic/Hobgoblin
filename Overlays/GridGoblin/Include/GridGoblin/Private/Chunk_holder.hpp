@@ -7,8 +7,8 @@
 
 #include <GridGoblin/Model/Chunk.hpp>
 #include <GridGoblin/Model/Chunk_id.hpp>
-#include <GridGoblin/Private/Cell_model_ext.hpp>
 #include <GridGoblin/Private/Chunk_spooler_interface.hpp>
+#include <GridGoblin/Private/Chunk_impl.hpp>
 #include <GridGoblin/World/Active_area.hpp>
 #include <GridGoblin/World/Binder.hpp>
 #include <GridGoblin/World/World_config.hpp>
@@ -23,22 +23,21 @@
 namespace jbatnozic {
 namespace gridgoblin {
 
-namespace hg = jbatnozic::hobgoblin;
-
 class Binder;
 
 namespace detail {
 
+namespace hg = jbatnozic::hobgoblin;
+
 HG_DECLARE_TAG_TYPE(LOAD_IF_MISSING);
 
 //! This class handles the storage of chunks both in RAM and in on-disk caches.
-//! TODO: rename to ChunkHolder
-class ChunkStorageHandler {
+class ChunkHolder {
 private:
-    using Self = ChunkStorageHandler;
+    using Self = ChunkHolder;
 
 public:
-    ChunkStorageHandler(const WorldConfig& aConfig);
+    ChunkHolder(const WorldConfig& aConfig);
 
     ///////////////////////////////////////////////////////////////////////////
     // MARK: DEPENDENCIES                                                    //
@@ -76,6 +75,10 @@ public:
     //! Returns the number of chunks along the Y axis.
     hg::PZInteger getChunkCountY() const {
         return _chunks.getHeight();
+    }
+
+    const auto& GetChunkMemoryLayoutInfo() const {
+        return _chunkMemoryLayoutInfo;
     }
 
     //! Returns a mutable reference to the chunk with the given ID WITHOUT CHECKING BOUNDS.
@@ -123,61 +126,6 @@ public:
         return const_cast<Self*>(this)->getChunkAtIdUnchecked(aChunkId);
     }
 
-    ///////////////////////////////////////////////////////////////////////////
-    // MARK: CELL GETTERS                                                    //
-    ///////////////////////////////////////////////////////////////////////////
-
-    //! Returns a mutable reference to the cell at (aX, aY) WITHOUT CHECKING BOUNDS.
-    //! The containing chunk will be loaded if it isn't already, and will remain loaded until
-    //! the next call to `prune()`.
-    CellModelExt& getCellAtUnchecked(hg::PZInteger aX, hg::PZInteger aY, LOAD_IF_MISSING_Tag) {
-        const auto chunkX = aX / _chunkWidth;
-        const auto chunkY = aY / _chunkHeight;
-
-        auto& chunk = _chunks[chunkY][chunkX];
-        if (HG_LIKELY_CONDITION(!chunk.isEmpty())) {
-            HG_LIKELY_BRANCH;
-            return chunk._getCellExtAtUnchecked(aX % _chunkWidth, aY % _chunkHeight);
-        } else {
-            HG_UNLIKELY_BRANCH;
-            _loadChunkImmediately({chunkX, chunkY});
-            return chunk._getCellExtAtUnchecked(aX % _chunkWidth, aY % _chunkHeight);
-        }
-    }
-
-    //! Returns a const reference to the cell at (aX, aY) WITHOUT CHECKING BOUNDS.
-    //! The containing chunk will be loaded if it isn't already, and will remain loaded until
-    //! the next call to `prune()`.
-    const CellModelExt& getCellAtUnchecked(hg::PZInteger aX,
-                                           hg::PZInteger aY,
-                                           LOAD_IF_MISSING_Tag) const {
-        return const_cast<Self*>(this)->getCellAtUnchecked(aX, aY, LOAD_IF_MISSING);
-    }
-
-    //! Returns a mutable pointer to the cell at (aX, aY) WITHOUT CHECKING BOUNDS.
-    //! If the containing chunk is already loaded, it will remain loaded until the next call
-    //! to `prune()`. Otherwise, `nullptr` will be returned.
-    CellModelExt* getCellAtUnchecked(hg::PZInteger aX, hg::PZInteger aY) {
-        const auto chunkX = aX / _chunkWidth;
-        const auto chunkY = aY / _chunkHeight;
-
-        auto& chunk = _chunks[chunkY][chunkX];
-        if (HG_LIKELY_CONDITION(!chunk.isEmpty())) {
-            HG_LIKELY_BRANCH;
-            return &(chunk._getCellExtAtUnchecked(aX % _chunkWidth, aY % _chunkHeight));
-        } else {
-            HG_UNLIKELY_BRANCH;
-            return nullptr;
-        }
-    }
-
-    //! Returns a const pointer to the cell at (aX, aY) WITHOUT CHECKING BOUNDS.
-    //! If the containing chunk is already loaded, it will remain loaded until the next call
-    //! to `prune()`. Otherwise, `nullptr` will be returned.
-    const CellModelExt* getCellAtUnchecked(hg::PZInteger aX, hg::PZInteger aY) const {
-        return const_cast<Self*>(this)->getCellAtUnchecked(aX, aY);
-    }
-
 private:
     friend class ::jbatnozic::gridgoblin::ActiveArea;
 
@@ -186,6 +134,8 @@ private:
     Binder* _binder = nullptr;
 
     // ===== Chunk Grid
+
+    detail::ChunkImpl::MemoryLayoutInfo _chunkMemoryLayoutInfo;
 
     mutable hg::util::RowMajorGrid<Chunk> _chunks;
 
@@ -245,7 +195,7 @@ public:
         bool equals(const AvailableChunkIterator& aOther) const;
 
     private:
-        friend class ChunkStorageHandler;
+        friend class ChunkHolder;
 
         AvailableChunkIterator(const decltype(_chunkControlBlocks)& aCbMap,
                                const decltype(_freeChunks)&         aFcMap,

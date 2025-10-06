@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <GridGoblin/Model/Building_block.hpp>
 #include <GridGoblin/Model/Chunk_extension.hpp>
 
 #include <Hobgoblin/Common.hpp>
@@ -30,6 +31,9 @@ struct WorldConfig {
     //! Total count of cells in a single chunk in the vertical (Y) direction.
     //! Must be between 1 and 1024.
     hg::PZInteger cellsPerChunkY;
+
+    //! Building blocks of chunks that will be allocated and available for use.
+    BuildingBlockMask buildingBlocks = BuildingBlockMask::ALL;
 
     //! The width and height of a single cell, in pixels. Must be positive.
     double cellResolution = 32.0;

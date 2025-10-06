@@ -1,7 +1,7 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#include <GridGoblin/Private/Chunk_storage_handler.hpp>
+#include <GridGoblin/Private/Chunk_holder.hpp>
 
 #include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/Logging.hpp>
@@ -15,11 +15,20 @@ namespace detail {
 
 static constexpr auto LOG_ID = "GridGoblin";
 
+namespace {
+detail::ChunkImpl::MemoryLayoutInfo ChunkMemoryLayoutInfoFromWorldConfig(const WorldConfig& aConfig) {
+    return detail::ChunkImpl::calcMemoryLayoutInfo(aConfig.cellsPerChunkX,
+                                                   aConfig.cellsPerChunkY,
+                                                   aConfig.buildingBlocks);
+}
+} // namespace
+
 #define CHUNK_AT_ID(_id_) \
     (_chunks[static_cast<hg::PZInteger>((_id_).y)][static_cast<hg::PZInteger>((_id_).x)])
 
-ChunkStorageHandler::ChunkStorageHandler(const WorldConfig& aConfig)
-    : _chunks{aConfig.chunkCountX, aConfig.chunkCountY}
+ChunkHolder::ChunkHolder(const WorldConfig& aConfig)
+    : _chunkMemoryLayoutInfo{ChunkMemoryLayoutInfoFromWorldConfig(aConfig)}
+    , _chunks{aConfig.chunkCountX, aConfig.chunkCountY}
     , _chunkWidth{aConfig.cellsPerChunkX}
     , _chunkHeight{aConfig.cellsPerChunkY}
     , _freeChunkLimit{aConfig.maxLoadedNonessentialChunks} {}
@@ -28,11 +37,11 @@ ChunkStorageHandler::ChunkStorageHandler(const WorldConfig& aConfig)
 // MARK: DEPENDENCIES                                                    //
 ///////////////////////////////////////////////////////////////////////////
 
-void ChunkStorageHandler::setChunkSpooler(ChunkSpoolerInterface* aChunkSpooler) {
+void ChunkHolder::setChunkSpooler(ChunkSpoolerInterface* aChunkSpooler) {
     _chunkSpooler = aChunkSpooler;
 }
 
-void ChunkStorageHandler::setBinder(Binder* aBinder) {
+void ChunkHolder::setBinder(Binder* aBinder) {
     _binder = aBinder;
 }
 
@@ -40,7 +49,7 @@ void ChunkStorageHandler::setBinder(Binder* aBinder) {
 // MARK: ACTIVE AREAS                                                    //
 ///////////////////////////////////////////////////////////////////////////
 
-ActiveArea ChunkStorageHandler::createNewActiveArea() {
+ActiveArea ChunkHolder::createNewActiveArea() {
     return ActiveArea{this};
 }
 
@@ -48,7 +57,7 @@ ActiveArea ChunkStorageHandler::createNewActiveArea() {
 // MARK: CYCLE                                                           //
 ///////////////////////////////////////////////////////////////////////////
 
-void ChunkStorageHandler::update() {
+void ChunkHolder::update() {
     auto iter = _chunkControlBlocks.begin();
     for (; iter != _chunkControlBlocks.end(); iter = std::next(iter)) {
         auto& cb = iter->second;
@@ -65,7 +74,7 @@ void ChunkStorageHandler::update() {
     }
 }
 
-void ChunkStorageHandler::prune() {
+void ChunkHolder::prune() {
     HG_ASSERT(_chunkSpooler != nullptr);
 
     if (_freeChunks.size() <= hg::pztos(_freeChunkLimit)) {
@@ -96,7 +105,7 @@ void ChunkStorageHandler::prune() {
  * Note: Expect 10ms latency to read file from a HDD, and 1ms to read a file
  *       from an SSD (rough numbers but the orders of magnitude should be correct).
  */
-void ChunkStorageHandler::_loadChunkImmediately(ChunkId aChunkId) {
+void ChunkHolder::_loadChunkImmediately(ChunkId aChunkId) {
     const auto id = aChunkId;
 
     HG_LOG_WARN(LOG_ID,
@@ -144,7 +153,7 @@ void ChunkStorageHandler::_loadChunkImmediately(ChunkId aChunkId) {
     }
 }
 
-void ChunkStorageHandler::_onChunkLoaded(ChunkId aChunkId, Chunk&& aChunk) {
+void ChunkHolder::_onChunkLoaded(ChunkId aChunkId, Chunk&& aChunk) {
     HG_HARD_ASSERT(!aChunk.isEmpty());
 
     auto& chunk = (CHUNK_AT_ID(aChunkId) = std::move(aChunk));
@@ -154,10 +163,10 @@ void ChunkStorageHandler::_onChunkLoaded(ChunkId aChunkId, Chunk&& aChunk) {
     _binder->onChunkLoaded(aChunkId, chunk);
 }
 
-void ChunkStorageHandler::_createDefaultChunk(ChunkId aChunkId) {
+void ChunkHolder::_createDefaultChunk(ChunkId aChunkId) {
     // Construct a chunk where all cells are in their default state
     // (floor, wall, etc. - all uninitialized).
-    auto defaultChunk = Chunk{_chunkWidth, _chunkHeight};
+    auto defaultChunk = Chunk{reinterpret_cast<const ChunkMemoryLayoutInfo&>(_chunkMemoryLayoutInfo)};
 
     // Attach an extension if possible
     HG_ASSERT(_binder != nullptr);
@@ -173,7 +182,7 @@ void ChunkStorageHandler::_createDefaultChunk(ChunkId aChunkId) {
     _binder->onChunkCreated(aChunkId, chunk);
 }
 
-void ChunkStorageHandler::_updateChunkUsage(
+void ChunkHolder::_updateChunkUsage(
     const std::vector<detail::ChunkUsageChange>& aChunkUsageChanges)
 //
 {
@@ -286,7 +295,7 @@ void ChunkStorageHandler::_updateChunkUsage(
 // MARK: ITERATOR                                                        //
 ///////////////////////////////////////////////////////////////////////////
 
-void ChunkStorageHandler::AvailableChunkIterator::advance() {
+void ChunkHolder::AvailableChunkIterator::advance() {
     if (_isEndIter) {
         return;
     }
@@ -321,7 +330,7 @@ void ChunkStorageHandler::AvailableChunkIterator::advance() {
     }
 }
 
-ChunkId ChunkStorageHandler::AvailableChunkIterator::dereference() const {
+ChunkId ChunkHolder::AvailableChunkIterator::dereference() const {
     HG_ASSERT(!_isEndIter);
     if (_isEndIter) {
         return {};
@@ -339,7 +348,7 @@ ChunkId ChunkStorageHandler::AvailableChunkIterator::dereference() const {
     }
 }
 
-bool ChunkStorageHandler::AvailableChunkIterator::equals(const AvailableChunkIterator& aOther) const {
+bool ChunkHolder::AvailableChunkIterator::equals(const AvailableChunkIterator& aOther) const {
     if (&_cbMap == &aOther._cbMap && &_fcMap == &aOther._fcMap) {
         if (_isEndIter && aOther._isEndIter) {
             return true;
@@ -361,7 +370,7 @@ bool ChunkStorageHandler::AvailableChunkIterator::equals(const AvailableChunkIte
     return false;
 }
 
-ChunkStorageHandler::AvailableChunkIterator::AvailableChunkIterator(
+ChunkHolder::AvailableChunkIterator::AvailableChunkIterator(
     const decltype(_chunkControlBlocks)& aCbMap,
     const decltype(_freeChunks)&         aFcMap,
     bool                                 aIsEndIter)

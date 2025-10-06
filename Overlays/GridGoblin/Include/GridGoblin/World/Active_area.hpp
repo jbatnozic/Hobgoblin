@@ -14,7 +14,7 @@ namespace jbatnozic {
 namespace gridgoblin {
 
 namespace detail {
-class ChunkStorageHandler;
+class ChunkHolder;
 } // namespace detail
 
 namespace hg = jbatnozic::hobgoblin;
@@ -102,11 +102,11 @@ public:
     const std::vector<ChunkId>& getChunkList() const;
 
 private:
-    friend class detail::ChunkStorageHandler;
-    explicit ActiveArea(hg::NeverNull<detail::ChunkStorageHandler*> aStorageHandler)
+    friend class detail::ChunkHolder;
+    explicit ActiveArea(hg::NeverNull<detail::ChunkHolder*> aStorageHandler)
         : _storageHandler{aStorageHandler} {}
 
-    hg::NeverNull<detail::ChunkStorageHandler*> _storageHandler;
+    hg::NeverNull<detail::ChunkHolder*> _storageHandler;
     std::vector<ChunkId>                        _chunkList;
 };
 

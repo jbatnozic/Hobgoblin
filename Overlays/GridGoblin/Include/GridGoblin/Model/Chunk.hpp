@@ -3,23 +3,22 @@
 
 #pragma once
 
-#include <GridGoblin/Model/Cell_model.hpp>
-#include <GridGoblin/Private/Cell_grid.hpp>
-#include <GridGoblin/Private/Cell_model_ext.hpp>
+#include <GridGoblin/Model/Cell.hpp>
+#include <GridGoblin/Private/Chunk_impl.hpp>
+
+#include <cassert>
 
 namespace jbatnozic {
 namespace gridgoblin {
 
 namespace hg = jbatnozic::hobgoblin;
 
-namespace detail {
-class ChunkStorageHandler;
-} // namespace detail
-
+class World;
 class ChunkExtensionInterface;
 
-//! \note definitions of some methods are intentionally left right here in the header,
-//!       to help the compiler inline and optimize calls to them.
+//! TODO(add description)
+struct ChunkMemoryLayoutInfo;
+
 class Chunk {
 public:
     // clang-format off
@@ -33,40 +32,35 @@ public:
     Chunk& operator=(Chunk&&)      = default;
     // clang-format on
 
-    Chunk(hg::PZInteger aWidth, hg::PZInteger aHeight);
-    ~Chunk();
+    Chunk(const ChunkMemoryLayoutInfo& aMemLayout);
 
-    bool isEmpty() const {
-        return _cells.getWidth() == 0;
-    }
+    bool isEmpty() const;
 
     void makeEmpty();
 
     ///////////////////////////////////////////////////////////////////////////
-    // CELLS                                                                 //
+    // MARK: CELLS                                                           //
     ///////////////////////////////////////////////////////////////////////////
 
-    hg::PZInteger getCellCountX() const {
-        return _cells.getWidth();
-    }
+    //! TODO(add description)
+    template <class... taPtrs>
+    void getCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
+                                hg::PZInteger                aX,
+                                hg::PZInteger                aY,
+                                taPtrs&&... aPtrs) const;
 
-    hg::PZInteger getCellCountY() const {
-        return _cells.getHeight();
-    }
-
-    const CellModel& getCellAtUnchecked(hg::PZInteger aX, hg::PZInteger aY) const {
-        return _cells[aY][aX];
-    }
-
-    CellModel& getCellAtUnchecked(hg::PZInteger aX, hg::PZInteger aY) {
-        return _cells[aY][aX];
-    }
+    //! TODO(add description)
+    template <class... taPtrs>
+    void setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
+                                hg::PZInteger                aX,
+                                hg::PZInteger                aY,
+                                taPtrs&&... aPtrs);
 
     //! Set all the cells in the chunk to the given value, unless the chunk is empty. Utility method.
-    void setAll(const CellModel& aCell);
+    // void setAll(const CellModel& aCell);
 
     ///////////////////////////////////////////////////////////////////////////
-    // EXTENSIONS                                                            //
+    // MARK: EXTENSIONS                                                      //
     ///////////////////////////////////////////////////////////////////////////
 
     //! Set a new extension for the chunk, destroying the old one (if any).
@@ -81,25 +75,148 @@ public:
     std::unique_ptr<ChunkExtensionInterface> releaseExtension();
 
 private:
-    friend class detail::ChunkStorageHandler;
+    detail::ChunkImpl _impl;
 
-    detail::CellGrid _cells;
-
-    detail::CellModelExt& _getCellExtAtUnchecked(hg::PZInteger aX, hg::PZInteger aY) {
-        return _cells[aY][aX];
+    static auto convertMemLayoutInfo(const ChunkMemoryLayoutInfo& aMemLayoutInfo) {
+        return reinterpret_cast<const detail::ChunkImpl::MemoryLayoutInfo&>(aMemLayoutInfo);
     }
 
-    const detail::CellModelExt& _getCellExtAtUnchecked(hg::PZInteger aX, hg::PZInteger aY) const {
-        return _cells[aY][aX];
+    // Getters
+
+    void _getCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
+                                 hg::PZInteger                aX,
+                                 hg::PZInteger                aY,
+                                 cell::CellKindId*            aCellKindId) const {
+        assert(aCellKindId != nullptr);
+        *aCellKindId = _impl.getCellKindIdAtUnchecked(convertMemLayoutInfo(aMemLayout), {aX, aY});
     }
 
-    void _storeChunkExtensionPointer(ChunkExtensionInterface* aChunkExtensionPointer);
-    ChunkExtensionInterface* _loadChunkExtensionPointer() const;
+    void _getCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
+                                 hg::PZInteger                aX,
+                                 hg::PZInteger                aY,
+                                 cell::FloorSprite*           aFloorSprite) const {
+        assert(aFloorSprite != nullptr);
+        *aFloorSprite = _impl.getFloorSpriteAtUnchecked(convertMemLayoutInfo(aMemLayout), {aX, aY});
+    }
+
+    void _getCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
+                                 hg::PZInteger                aX,
+                                 hg::PZInteger                aY,
+                                 cell::WallSprite*            aWallSprite) const {
+        assert(aWallSprite != nullptr);
+        *aWallSprite = _impl.getWallSpriteAtUnchecked(convertMemLayoutInfo(aMemLayout), {aX, aY});
+    }
+
+    void _getCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
+                                 hg::PZInteger                aX,
+                                 hg::PZInteger                aY,
+                                 cell::SpatialInfo*           aSpatialInfo) const {
+        assert(aSpatialInfo != nullptr);
+        *aSpatialInfo = _impl.getSpatialInfoAtUnchecked(convertMemLayoutInfo(aMemLayout), {aX, aY});
+    }
+
+    void _getCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
+                                 hg::PZInteger                aX,
+                                 hg::PZInteger                aY,
+                                 cell::RendererAuxData*       aRendererAuxData) const {
+        assert(aRendererAuxData != nullptr);
+        *aRendererAuxData =
+            _impl.getRendererAuxDataAtUnchecked(convertMemLayoutInfo(aMemLayout), {aX, aY});
+    }
+
+    void _getCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
+                                 hg::PZInteger                aX,
+                                 hg::PZInteger                aY,
+                                 cell::UserData*              aUserData) const {
+        assert(aUserData != nullptr);
+        *aUserData = _impl.getUserDataAtUnchecked(convertMemLayoutInfo(aMemLayout), {aX, aY});
+    }
+
+    // Setters
+
+    void _setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
+                                 hg::PZInteger                aX,
+                                 hg::PZInteger                aY,
+                                 const cell::CellKindId*      aCellKindId) {
+        assert(aCellKindId != nullptr);
+        _impl.getCellKindIdAtUnchecked(convertMemLayoutInfo(aMemLayout), {aX, aY}) = *aCellKindId;
+    }
+
+    void _setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
+                                 hg::PZInteger                aX,
+                                 hg::PZInteger                aY,
+                                 const cell::FloorSprite*     aFloorSprite) {
+        assert(aFloorSprite != nullptr);
+        _impl.getFloorSpriteAtUnchecked(convertMemLayoutInfo(aMemLayout), {aX, aY}) = *aFloorSprite;
+    }
+
+    void _setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
+                                 hg::PZInteger                aX,
+                                 hg::PZInteger                aY,
+                                 const cell::WallSprite*      aWallSprite) {
+        assert(aWallSprite != nullptr);
+        _impl.getWallSpriteAtUnchecked(convertMemLayoutInfo(aMemLayout), {aX, aY}) = *aWallSprite;
+    }
+
+    void _setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
+                                 hg::PZInteger                aX,
+                                 hg::PZInteger                aY,
+                                 const cell::SpatialInfo*     aSpatialInfo) {
+        assert(aSpatialInfo != nullptr);
+        _impl.getSpatialInfoAtUnchecked(convertMemLayoutInfo(aMemLayout), {aX, aY}) = *aSpatialInfo;
+    }
+
+    void _setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
+                                 hg::PZInteger                aX,
+                                 hg::PZInteger                aY,
+                                 const cell::RendererAuxData* aRendererAuxData) {
+        assert(aRendererAuxData != nullptr);
+        _impl.getRendererAuxDataAtUnchecked(convertMemLayoutInfo(aMemLayout), {aX, aY}) =
+            *aRendererAuxData;
+    }
+
+    void _setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
+                                 hg::PZInteger                aX,
+                                 hg::PZInteger                aY,
+                                 const cell::UserData*        aUserData) {
+        assert(aUserData != nullptr);
+        _impl.getUserDataAtUnchecked(convertMemLayoutInfo(aMemLayout), {aX, aY}) = *aUserData;
+    }
 };
 
 namespace detail {
 bool AreCellsEqual(const Chunk& aChunk1, const Chunk& aChunk2);
 } // namespace detail
+
+// MARK: Inline impl.
+
+inline bool Chunk::isEmpty() const {
+    return _impl.isEmpty();
+}
+
+inline void Chunk::makeEmpty() {
+    _impl.makeEmpty();
+}
+
+template <class... taPtrs>
+inline void Chunk::getCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
+                                          hg::PZInteger                aX,
+                                          hg::PZInteger                aY,
+                                          taPtrs&&... aPtrs) const {
+    (_getCellDataAtUnchecked(aMemLayout, aX, aY, aPtrs), ...);
+}
+
+template <class... taPtrs>
+inline void Chunk::setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
+                                          hg::PZInteger                aX,
+                                          hg::PZInteger                aY,
+                                          taPtrs&&... aPtrs) {
+    (_setCellDataAtUnchecked(aMemLayout, aX, aY, aPtrs), ...);
+}
+
+inline ChunkExtensionInterface* Chunk::getExtension() const {
+    return _impl.getExtension();
+}
 
 } // namespace gridgoblin
 } // namespace jbatnozic

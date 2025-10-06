@@ -3,12 +3,11 @@
 
 #pragma once
 
-#include <GridGoblin/Model/Cell_model.hpp>
 #include <GridGoblin/Model/Chunk.hpp>
 #include <GridGoblin/Model/Chunk_extension.hpp>
 #include <GridGoblin/Model/Chunk_id.hpp>
 
-#include <GridGoblin/Private/Chunk_storage_handler.hpp>
+#include <GridGoblin/Private/Chunk_holder.hpp>
 
 #include <Hobgoblin/Math/Vector.hpp>
 

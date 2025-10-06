@@ -29,34 +29,47 @@ public:
 
     void setBinder(Binder*) override {}
 
-    std::optional<Chunk> loadChunkFromRuntimeCache(ChunkId aChunkId) override {
+    std::optional<Chunk> loadChunkFromRuntimeCache(
+        ChunkId                      aChunkId,
+        const ChunkMemoryLayoutInfo& aChunkMemoryLayout) override //
+    {
         std::this_thread::sleep_for(std::chrono::milliseconds{_runtimeCacheDelay});
 
         const auto iter = _runtimeCache.find(aChunkId);
         if (iter == _runtimeCache.end()) {
             return {};
         }
-        return detail::JsonStringToChunk(iter->second);
+        return detail::JsonStringToChunk(iter->second, aChunkMemoryLayout);
     }
 
-    void storeChunkInRuntimeCache(const Chunk& aChunk, ChunkId aChunkId) override {
+    void storeChunkInRuntimeCache(const Chunk&                 aChunk,
+                                  ChunkId                      aChunkId,
+                                  BuildingBlockMask            aBuildingBlocks,
+                                  const ChunkMemoryLayoutInfo& aChunkMemoryLayout) override {
         std::this_thread::sleep_for(std::chrono::milliseconds{_runtimeCacheDelay});
-        _runtimeCache[aChunkId] = detail::ChunkToJsonString(aChunk);
+        _runtimeCache[aChunkId] = detail::ChunkToJsonString(aChunk, aBuildingBlocks, aChunkMemoryLayout);
     }
 
-    std::optional<Chunk> loadChunkFromPersistentCache(ChunkId aChunkId) override {
+    std::optional<Chunk> loadChunkFromPersistentCache(
+        ChunkId                      aChunkId,
+        const ChunkMemoryLayoutInfo& aChunkMemoryLayout) override //
+    {
         std::this_thread::sleep_for(std::chrono::milliseconds{_persistentCacheDelay});
 
         const auto iter = _persistentCache.find(aChunkId);
         if (iter == _persistentCache.end()) {
             return {};
         }
-        return detail::JsonStringToChunk(iter->second);
+        return detail::JsonStringToChunk(iter->second, aChunkMemoryLayout);
     }
 
-    void storeChunkInPersistentCache(const Chunk& aChunk, ChunkId aChunkId) override {
+    void storeChunkInPersistentCache(const Chunk&                 aChunk,
+                                     ChunkId                      aChunkId,
+                                     BuildingBlockMask            aBuildingBlocks,
+                                     const ChunkMemoryLayoutInfo& aChunkMemoryLayout) override {
         std::this_thread::sleep_for(std::chrono::milliseconds{_persistentCacheDelay});
-        _persistentCache[aChunkId] = detail::ChunkToJsonString(aChunk);
+        _persistentCache[aChunkId] =
+            detail::ChunkToJsonString(aChunk, aBuildingBlocks, aChunkMemoryLayout);
     }
 
     void dumpRuntimeCache() override {

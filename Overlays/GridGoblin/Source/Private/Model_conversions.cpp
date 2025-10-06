@@ -6,7 +6,6 @@
 
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/HGExcept.hpp>
-#include <Hobgoblin/Logging.hpp>
 #include <Hobgoblin/Utility/Base64.hpp>
 #include <Hobgoblin/Utility/Stream.hpp>
 
@@ -14,7 +13,6 @@
 #include <rapidjson/prettywriter.h>
 #include <rapidjson/stringbuffer.h>
 
-#include <chrono>
 #include <optional>
 #include <string>
 #include <type_traits>
@@ -39,8 +37,6 @@ void DeleteReusableConversionBuffers(ReusableConversionBuffers* aBuffers) {
 }
 
 namespace {
-constexpr auto LOG_ID = "GridGoblin";
-
 const std::string TAG_EMPTY     = "empty";
 const std::string TAG_BINSTREAM = "binary_stream";
 
@@ -155,107 +151,226 @@ void Base64Decode(
                        (int)aPreferredSerializationMethod);
     }
 }
-
-//! Named based on the 'elvis operator' (?:) from other languages
-#define ELVIS(_lhs_, _rhs_) ((_lhs_) ? (_lhs_) : (_rhs_))
 } // namespace
 
 // MARK: Cell <-> JSON
 
-json::Value CellToJson(const CellModel& aCell, json::Document& aDocument) {
-    const auto cellFlags = aCell.getFlags();
-
-    auto& allocator = aDocument.GetAllocator();
-
+json::Value CellKindIdToJson(cell::CellKindId aCellKindId, JsonAllocator& aAllocator) {
     json::Value value;
     value.SetObject();
 
-    value.AddMember("flags", json::Value{cellFlags}.Move(), allocator);
-
-    if (cellFlags & CellModel::FLOOR_INITIALIZED) {
-        const auto& floor = aCell.getFloor();
-
-        json::Value jsonFloor;
-        jsonFloor.SetObject();
-
-        jsonFloor.AddMember("spriteId", json::Value{floor.spriteId}.Move(), allocator);
-
-        value.AddMember("floor", jsonFloor, allocator);
-    }
-
-    if (cellFlags & CellModel::WALL_INITIALIZED) {
-        const auto& wall = aCell.getWall();
-
-        json::Value jsonWall;
-        jsonWall.SetObject();
-
-        jsonWall.AddMember("spriteId", json::Value{wall.spriteId}.Move(), allocator);
-        jsonWall.AddMember("spriteId_reduced", json::Value{wall.spriteId_reduced}.Move(), allocator);
-        jsonWall.AddMember("shape", json::Value{ShapeToString(wall.shape), allocator}.Move(), allocator);
-
-        value.AddMember("wall", jsonWall, allocator);
-    }
+    value.AddMember("value", json::Value{aCellKindId.value}.Move(), aAllocator);
 
     return value;
 }
 
-CellModel JsonToCell(const json::Value& aJson) {
-    CellModel cell;
+json::Value FloorSpriteToJson(cell::FloorSprite aFloorSprite, JsonAllocator& aAllocator) {
+    json::Value value;
+    value.SetObject();
 
-    const auto flags = GetIntMember<decltype(cell.getFlags())>(aJson, "flags");
+    value.AddMember("id", json::Value{aFloorSprite.id}.Move(), aAllocator);
 
-    if (flags & CellModel::FLOOR_INITIALIZED) {
-        if (!aJson.HasMember("floor") || !aJson["floor"].IsObject()) {
-            HG_THROW_TRACED(JsonParseError, 0, "No object member '{}' found.", "floor");
-        }
+    return value;
+}
 
-        CellModel::Floor floor;
-        floor.spriteId = GetIntMember<decltype(floor.spriteId)>(aJson["floor"], "spriteId");
+json::Value WallSpriteToJson(cell::WallSprite aWallSprite, JsonAllocator& aAllocator) {
+    json::Value value;
+    value.SetObject();
 
-        cell.setFloor(floor);
-    }
+    value.AddMember("id", json::Value{aWallSprite.id}.Move(), aAllocator);
+    value.AddMember("id_reduced", json::Value{aWallSprite.id_reduced}.Move(), aAllocator);
 
-    if (flags & CellModel::WALL_INITIALIZED) {
-        if (!aJson.HasMember("wall") || !aJson["wall"].IsObject()) {
-            HG_THROW_TRACED(JsonParseError, 0, "No object member '{}' found.", "wall");
-        }
+    return value;
+}
 
-        CellModel::Wall wall;
-        wall.spriteId = GetIntMember<decltype(wall.spriteId)>(aJson["wall"], "spriteId");
-        wall.spriteId_reduced =
-            GetIntMember<decltype(wall.spriteId_reduced)>(aJson["wall"], "spriteId_reduced");
-        wall.shape = StringToShape(aJson["wall"]["shape"].GetString());
+json::Value SpatialInfoToJson(cell::SpatialInfo aSpatialInfo, JsonAllocator& aAllocator) {
+    json::Value value;
+    value.SetObject();
 
-        cell.setWall(wall);
-    }
+    value.AddMember("wallShape",
+                    json::Value{ShapeToString(aSpatialInfo.wallShape), aAllocator}.Move(),
+                    aAllocator);
+    value.AddMember("obFlags", json::Value{aSpatialInfo.obFlags}.Move(), aAllocator);
+    value.AddMember("openness", json::Value{aSpatialInfo.openness}.Move(), aAllocator);
 
-    return cell;
+    return value;
+}
+
+json::Value RendererAuxDataToJson(cell::RendererAuxData aRendererAuxData, JsonAllocator& aAllocator) {
+    json::Value value;
+    value.SetObject();
+
+    value.AddMember("mask", json::Value{aRendererAuxData.mask}.Move(), aAllocator);
+    value.AddMember("mask2", json::Value{aRendererAuxData.mask2}.Move(), aAllocator);
+
+    return value;
+}
+
+json::Value UserDataToJson(cell::UserData aUserData, JsonAllocator& aAllocator) {
+    json::Value value;
+    value.SetObject();
+
+    value.AddMember("i64", json::Value{aUserData.i64}.Move(), aAllocator);
+
+    return value;
+}
+
+cell::CellKindId JsonToCellKindId(const json::Value& aJsonValue) {
+    cell::CellKindId result;
+    result.value = GetIntMember<decltype(result.value)>(aJsonValue, "value");
+    return result;
+}
+
+cell::FloorSprite JsonToFloorSprite(const json::Value& aJsonValue) {
+    cell::FloorSprite result;
+    result.id = GetIntMember<decltype(result.id)>(aJsonValue, "id");
+    return result;
+}
+
+cell::WallSprite JsonToWallSprite(const json::Value& aJsonValue) {
+    cell::WallSprite result;
+    result.id         = GetIntMember<decltype(result.id)>(aJsonValue, "id");
+    result.id_reduced = GetIntMember<decltype(result.id_reduced)>(aJsonValue, "id_reduced");
+    return result;
+}
+
+cell::SpatialInfo JsonToSpatialInfo(const json::Value& aJsonValue) {
+    cell::SpatialInfo result;
+    result.wallShape = StringToShape(aJsonValue["wallShape"].GetString());
+    result.obFlags   = GetIntMember<decltype(result.obFlags)>(aJsonValue, "obFlags");
+    result.openness  = GetIntMember<decltype(result.openness)>(aJsonValue, "openness");
+    return result;
+}
+
+cell::RendererAuxData JsonToRendererAuxData(const json::Value& aJsonValue) {
+    cell::RendererAuxData result;
+    result.mask  = GetIntMember<decltype(result.mask)>(aJsonValue, "mask");
+    result.mask2 = GetIntMember<decltype(result.mask2)>(aJsonValue, "mask2");
+    return result;
+}
+
+cell::UserData JsonToUserData(const json::Value& aJsonValue) {
+    cell::UserData result;
+    result.i64 = GetIntMember<decltype(result.i64)>(aJsonValue, "i64");
+    return result;
 }
 
 // MARK: Chunk <-> JSON
 
-json::Document ChunkToJson(const Chunk& aChunk, ReusableConversionBuffers* aReusableConversionBuffers) {
-    const auto chunkWidth  = aChunk.getCellCountX();
-    const auto chunkHeight = aChunk.getCellCountY();
+json::Document ChunkToJson(const Chunk&                 aChunk,
+                           BuildingBlockMask            aBuildingBlocks,
+                           const ChunkMemoryLayoutInfo& aChunkMemLayout,
+                           ReusableConversionBuffers*   aReusableConversionBuffers) {
+    const auto& chunkMemLayoutImpl =
+        reinterpret_cast<const ChunkImpl::MemoryLayoutInfo&>(aChunkMemLayout);
+    const auto chunkWidth  = chunkMemLayoutImpl.chunkWidth;
+    const auto chunkHeight = chunkMemLayoutImpl.chunkHeight;
 
     json::Document doc;
     auto&          allocator = doc.GetAllocator();
     doc.SetObject();
 
-    // Add dimensions
-    doc.AddMember("width", json::Value{chunkWidth}.Move(), allocator);
-    doc.AddMember("height", json::Value{chunkHeight}.Move(), allocator);
-
-    // Add cells
-    json::Value cellArray{json::kArrayType};
-    cellArray.Reserve(chunkWidth * chunkHeight, allocator);
-    for (hg::PZInteger y = 0; y < chunkHeight; y += 1) {
-        for (hg::PZInteger x = 0; x < chunkWidth; x += 1) {
-            auto value = CellToJson(aChunk.getCellAtUnchecked(x, y), doc);
-            cellArray.PushBack(value, allocator);
+    // Add CellKindId
+    {
+        json::Value array{json::kArrayType};
+        if ((aBuildingBlocks & BuildingBlock::CELL_KIND_ID) != BuildingBlock::NONE) {
+            array.Reserve(static_cast<unsigned>(chunkWidth * chunkHeight), allocator);
+            cell::CellKindId cellKindId;
+            for (hg::PZInteger y = 0; y < chunkHeight; y += 1) {
+                for (hg::PZInteger x = 0; x < chunkWidth; x += 1) {
+                    aChunk.getCellDataAtUnchecked(aChunkMemLayout, x, y, &cellKindId);
+                    auto value = CellKindIdToJson(cellKindId, doc.GetAllocator());
+                    array.PushBack(value, allocator);
+                }
+            }
         }
+        doc.AddMember("cellKindIds", array, allocator);
     }
-    doc.AddMember("cells", cellArray, allocator);
+
+    // Add FloorSprite
+    {
+        json::Value array{json::kArrayType};
+        if ((aBuildingBlocks & BuildingBlock::FLOOR_SPRITE) != BuildingBlock::NONE) {
+            array.Reserve(static_cast<unsigned>(chunkWidth * chunkHeight), allocator);
+            cell::FloorSprite floorSprite;
+            for (hg::PZInteger y = 0; y < chunkHeight; y += 1) {
+                for (hg::PZInteger x = 0; x < chunkWidth; x += 1) {
+                    aChunk.getCellDataAtUnchecked(aChunkMemLayout, x, y, &floorSprite);
+                    auto value = FloorSpriteToJson(floorSprite, doc.GetAllocator());
+                    array.PushBack(value, allocator);
+                }
+            }
+        }
+        doc.AddMember("floorSprites", array, allocator);
+    }
+
+    // Add WallSprite
+    {
+        json::Value array{json::kArrayType};
+        if ((aBuildingBlocks & BuildingBlock::WALL_SPRITE) != BuildingBlock::NONE) {
+            array.Reserve(static_cast<unsigned>(chunkWidth * chunkHeight), allocator);
+            cell::WallSprite wallSprite;
+            for (hg::PZInteger y = 0; y < chunkHeight; y += 1) {
+                for (hg::PZInteger x = 0; x < chunkWidth; x += 1) {
+                    aChunk.getCellDataAtUnchecked(aChunkMemLayout, x, y, &wallSprite);
+                    auto value = WallSpriteToJson(wallSprite, doc.GetAllocator());
+                    array.PushBack(value, allocator);
+                }
+            }
+        }
+        doc.AddMember("wallSprites", array, allocator);
+    }
+
+    // Add SpatialInfo
+    {
+        json::Value array{json::kArrayType};
+        if ((aBuildingBlocks & BuildingBlock::SPATIAL_INFO) != BuildingBlock::NONE) {
+            array.Reserve(static_cast<unsigned>(chunkWidth * chunkHeight), allocator);
+            cell::SpatialInfo spatialInfo;
+            for (hg::PZInteger y = 0; y < chunkHeight; y += 1) {
+                for (hg::PZInteger x = 0; x < chunkWidth; x += 1) {
+                    aChunk.getCellDataAtUnchecked(aChunkMemLayout, x, y, &spatialInfo);
+                    auto value = SpatialInfoToJson(spatialInfo, doc.GetAllocator());
+                    array.PushBack(value, allocator);
+                }
+            }
+        }
+        doc.AddMember("spatialInfos", array, allocator);
+    }
+
+    // Add RendererAuxData
+    {
+        json::Value array{json::kArrayType};
+        if ((aBuildingBlocks & BuildingBlock::RENDERER_AUX_DATA) != BuildingBlock::NONE) {
+            array.Reserve(static_cast<unsigned>(chunkWidth * chunkHeight), allocator);
+            cell::RendererAuxData rendererAuxData;
+            for (hg::PZInteger y = 0; y < chunkHeight; y += 1) {
+                for (hg::PZInteger x = 0; x < chunkWidth; x += 1) {
+                    aChunk.getCellDataAtUnchecked(aChunkMemLayout, x, y, &rendererAuxData);
+                    auto value = RendererAuxDataToJson(rendererAuxData, doc.GetAllocator());
+                    array.PushBack(value, allocator);
+                }
+            }
+        }
+        doc.AddMember("rendererAuxData", array, allocator);
+    }
+
+    // Add UserData
+    {
+        json::Value array{json::kArrayType};
+        if ((aBuildingBlocks & BuildingBlock::USER_DATA) != BuildingBlock::NONE) {
+            array.Reserve(static_cast<unsigned>(chunkWidth * chunkHeight), allocator);
+            cell::UserData userData;
+            for (hg::PZInteger y = 0; y < chunkHeight; y += 1) {
+                for (hg::PZInteger x = 0; x < chunkWidth; x += 1) {
+                    aChunk.getCellDataAtUnchecked(aChunkMemLayout, x, y, &userData);
+                    auto value = UserDataToJson(userData, doc.GetAllocator());
+                    array.PushBack(value, allocator);
+                }
+            }
+        }
+        doc.AddMember("userData", array, allocator);
+    }
 
     // Add extension
     const auto* extension = aChunk.getExtension();
@@ -293,31 +408,127 @@ json::Document ChunkToJson(const Chunk& aChunk, ReusableConversionBuffers* aReus
 }
 
 Chunk JsonToChunk(const json::Document&        aJsonDocument,
+                  const ChunkMemoryLayoutInfo& aChunkMemLayout,
                   const ChunkExtensionFactory& aChunkExtensionFactory,
                   ReusableConversionBuffers*   aReusableConversionBuffers) {
-    // Read dimensions
-    const auto chunkWidth  = GetIntMember<hg::PZInteger>(aJsonDocument, "width");
-    const auto chunkHeight = GetIntMember<hg::PZInteger>(aJsonDocument, "height");
+    Chunk chunk{aChunkMemLayout};
 
-    Chunk chunk{chunkWidth, chunkHeight};
+    const auto& chunkMemLayoutImpl =
+        reinterpret_cast<const ChunkImpl::MemoryLayoutInfo&>(aChunkMemLayout);
+    const auto chunkWidth  = chunkMemLayoutImpl.chunkWidth;
+    const auto chunkHeight = chunkMemLayoutImpl.chunkHeight;
 
-    // Read cells
-    ENSURE_JSON_CONTAINS(aJsonDocument, "cells", Array);
+    // Read CellKindId
+    {
+        ENSURE_JSON_CONTAINS(aJsonDocument, "cellKindIds", Array);
+        const auto len = aJsonDocument["cellKindIds"].GetArray().Size();
 
-    const auto& array = aJsonDocument["cells"];
-    if (array.Size() != hg::pztos(chunkWidth * chunkHeight)) {
-        HG_THROW_TRACED(JsonParseError,
-                        0,
-                        "Cell array is {} (expected {}).",
-                        array.Size(),
-                        chunkWidth * chunkHeight);
+        if (len > 0) {
+            HG_HARD_ASSERT(len == static_cast<unsigned>(chunkWidth * chunkHeight));
+            auto             iter = aJsonDocument["cellKindIds"].GetArray().begin();
+            cell::CellKindId cellKindId;
+            for (hg::PZInteger y = 0; y < chunkHeight; y += 1) {
+                for (hg::PZInteger x = 0; x < chunkWidth; x += 1) {
+                    cellKindId = JsonToCellKindId(*iter);
+                    chunk.setCellDataAtUnchecked(aChunkMemLayout, x, y, &cellKindId);
+                    ++iter;
+                }
+            }
+        }
     }
 
-    auto* valuePtr = array.Begin();
-    for (hg::PZInteger y = 0; y < chunkHeight; y += 1) {
-        for (hg::PZInteger x = 0; x < chunkWidth; x += 1) {
-            chunk.getCellAtUnchecked(x, y) = CellModel{JsonToCell(*valuePtr)};
-            valuePtr++;
+    // Read FloorSprite
+    {
+        ENSURE_JSON_CONTAINS(aJsonDocument, "floorSprites", Array);
+        const auto len = aJsonDocument["floorSprites"].GetArray().Size();
+
+        if (len > 0) {
+            HG_HARD_ASSERT(len == static_cast<unsigned>(chunkWidth * chunkHeight));
+            auto              iter = aJsonDocument["floorSprites"].GetArray().begin();
+            cell::FloorSprite floorSprite;
+            for (hg::PZInteger y = 0; y < chunkHeight; y += 1) {
+                for (hg::PZInteger x = 0; x < chunkWidth; x += 1) {
+                    floorSprite = JsonToFloorSprite(*iter);
+                    chunk.setCellDataAtUnchecked(aChunkMemLayout, x, y, &floorSprite);
+                    ++iter;
+                }
+            }
+        }
+    }
+
+    // Read WallSprite
+    {
+        ENSURE_JSON_CONTAINS(aJsonDocument, "wallSprites", Array);
+        const auto len = aJsonDocument["wallSprites"].GetArray().Size();
+
+        if (len > 0) {
+            HG_HARD_ASSERT(len == static_cast<unsigned>(chunkWidth * chunkHeight));
+            auto             iter = aJsonDocument["wallSprites"].GetArray().begin();
+            cell::WallSprite wallSprite;
+            for (hg::PZInteger y = 0; y < chunkHeight; y += 1) {
+                for (hg::PZInteger x = 0; x < chunkWidth; x += 1) {
+                    wallSprite = JsonToWallSprite(*iter);
+                    chunk.setCellDataAtUnchecked(aChunkMemLayout, x, y, &wallSprite);
+                    ++iter;
+                }
+            }
+        }
+    }
+
+    // Read SpatialInfo
+    {
+        ENSURE_JSON_CONTAINS(aJsonDocument, "spatialInfos", Array);
+        const auto len = aJsonDocument["spatialInfos"].GetArray().Size();
+
+        if (len > 0) {
+            HG_HARD_ASSERT(len == static_cast<unsigned>(chunkWidth * chunkHeight));
+            auto              iter = aJsonDocument["spatialInfos"].GetArray().begin();
+            cell::SpatialInfo spatialInfo;
+            for (hg::PZInteger y = 0; y < chunkHeight; y += 1) {
+                for (hg::PZInteger x = 0; x < chunkWidth; x += 1) {
+                    spatialInfo = JsonToSpatialInfo(*iter);
+                    chunk.setCellDataAtUnchecked(aChunkMemLayout, x, y, &spatialInfo);
+                    ++iter;
+                }
+            }
+        }
+    }
+
+    // Read RendererAuxData
+    {
+        ENSURE_JSON_CONTAINS(aJsonDocument, "rendererAuxData", Array);
+        const auto len = aJsonDocument["rendererAuxData"].GetArray().Size();
+
+        if (len > 0) {
+            HG_HARD_ASSERT(len == static_cast<unsigned>(chunkWidth * chunkHeight));
+            auto                  iter = aJsonDocument["rendererAuxData"].GetArray().begin();
+            cell::RendererAuxData rendererAuxData;
+            for (hg::PZInteger y = 0; y < chunkHeight; y += 1) {
+                for (hg::PZInteger x = 0; x < chunkWidth; x += 1) {
+                    rendererAuxData = JsonToRendererAuxData(*iter);
+                    chunk.setCellDataAtUnchecked(aChunkMemLayout, x, y, &rendererAuxData);
+                    ++iter;
+                }
+            }
+        }
+    }
+
+    // Read UserData
+    {
+        ENSURE_JSON_CONTAINS(aJsonDocument, "userData", Array);
+        const auto len = aJsonDocument["userData"].GetArray().Size();
+
+        if (len > 0) {
+            HG_HARD_ASSERT(len == static_cast<unsigned>(chunkWidth * chunkHeight));
+            auto           iter = aJsonDocument["userData"].GetArray().begin();
+            cell::UserData userData;
+            for (hg::PZInteger y = 0; y < chunkHeight; y += 1) {
+                for (hg::PZInteger x = 0; x < chunkWidth; x += 1) {
+                    userData = JsonToUserData(*iter);
+                    chunk.setCellDataAtUnchecked(aChunkMemLayout, x, y, &userData);
+                    ++iter;
+                }
+            }
         }
     }
 
@@ -350,9 +561,10 @@ Chunk JsonToChunk(const json::Document&        aJsonDocument,
                              defaultBuffers.string);
             }
         } else {
-            HG_LOG_WARN(
-                LOG_ID,
-                "Found serialized data for chunk extension but failed to instantiate the extension.");
+            // TODO
+            // HG_LOG_WARN(
+            //     LOG_ID,
+            //     "Found serialized data for chunk extension but failed to instantiate the extension.");
         }
     }
 
@@ -361,15 +573,17 @@ Chunk JsonToChunk(const json::Document&        aJsonDocument,
     return chunk;
 }
 
-std::string ChunkToJsonString(const Chunk&               aChunk,
-                              ReusableConversionBuffers* aReusableConversionBuffers) {
+std::string ChunkToJsonString(const Chunk&                 aChunk,
+                              BuildingBlockMask            aBuildingBlocks,
+                              const ChunkMemoryLayoutInfo& aChunkMemLayout,
+                              ReusableConversionBuffers*   aReusableConversionBuffers) {
 #if HG_BUILD_TYPE == HG_DEBUG
 #define JsonWriter json::PrettyWriter
 #else
 #define JsonWriter json::Writer
 #endif
 
-    const auto doc = ChunkToJson(aChunk, aReusableConversionBuffers);
+    const auto doc = ChunkToJson(aChunk, aBuildingBlocks, aChunkMemLayout, aReusableConversionBuffers);
 
     json::StringBuffer             stringbuf;
     JsonWriter<json::StringBuffer> writer(stringbuf);
@@ -381,18 +595,13 @@ std::string ChunkToJsonString(const Chunk&               aChunk,
 }
 
 Chunk JsonStringToChunk(std::string                  aJsonString,
+                        const ChunkMemoryLayoutInfo& aChunkMemLayout,
                         const ChunkExtensionFactory& aChunkExtensionFactory,
                         ReusableConversionBuffers*   aReusableConversionBuffers) {
-    const auto start = std::chrono::steady_clock::now();
-
     json::Document doc;
     doc.ParseInsitu(aJsonString.data());
 
-    auto result = JsonToChunk(doc, aChunkExtensionFactory, aReusableConversionBuffers);
-
-    const auto end = std::chrono::steady_clock::now();
-    const auto us  = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-    HG_LOG_INFO(LOG_ID, "JsonStringToChunk took {}ms.", us.count() / 1000.0);
+    auto result = JsonToChunk(doc, aChunkMemLayout, aChunkExtensionFactory, aReusableConversionBuffers);
 
     return result;
 }

@@ -8,7 +8,7 @@
 #include <Hobgoblin/Utility/Grids.hpp>
 #include <Hobgoblin/Utility/Semaphore.hpp>
 
-#include <GridGoblin/Model/Cell_model.hpp>
+#include <GridGoblin/Model/Cell.hpp>
 #include <GridGoblin/Model/Chunk.hpp>
 #include <GridGoblin/Model/Chunk_id.hpp>
 #include <GridGoblin/Model/Sprites.hpp>
@@ -17,10 +17,11 @@
 #include <GridGoblin/World/Binder.hpp>
 #include <GridGoblin/World/World_config.hpp>
 
-#include <GridGoblin/Private/Chunk_storage_handler.hpp>
+#include <GridGoblin/Private/Chunk_holder.hpp>
 
 #include <memory>
 #include <optional>
+#include <type_traits>
 #include <vector>
 
 namespace jbatnozic {
@@ -138,7 +139,7 @@ public:
     std::unique_ptr<EditPermission> getPermissionToEdit();
 
     ///////////////////////////////////////////////////////////////////////////
-    // CELL GETTERS                                                          //
+    // MARK: CELL GETTERS                                                    //
     ///////////////////////////////////////////////////////////////////////////
 
     double getCellResolution() const;
@@ -151,28 +152,42 @@ public:
 
     // Without locking (no on-demand loading)
 
-    const CellModel* getCellAt(hg::PZInteger aX, hg::PZInteger aY) const;
+    template <class... taPtrs>
+    [[nodiscard]] bool getCellDataAt(hg::PZInteger aX, hg::PZInteger aY, taPtrs&&... aPtrs) const;
 
-    const CellModel* getCellAt(hg::math::Vector2pz aCell) const;
+    template <class... taPtrs>
+    [[nodiscard]] bool getCellDataAt(hg::math::Vector2pz aCell, taPtrs&&... aPtrs) const;
 
-    const CellModel* getCellAtUnchecked(hg::PZInteger aX, hg::PZInteger aY) const;
+    template <class... taPtrs>
+    [[nodiscard]] bool getCellDataAtUnchecked(hg::PZInteger aX, hg::PZInteger aY, taPtrs&&... aPtrs) const;
 
-    const CellModel* getCellAtUnchecked(hg::math::Vector2pz aCell) const;
+    template <class... taPtrs>
+    [[nodiscard]] bool getCellDataAtUnchecked(hg::math::Vector2pz aCell, taPtrs&&... aPtrs) const;
 
     // With locking (on-demand loading enabled)
 
-    const CellModel& getCellAt(const EditPermission& aPerm, hg::PZInteger aX, hg::PZInteger aY) const;
+    template <class... taPtrs>
+    void getCellDataAt(const EditPermission& aPerm,
+                       hg::PZInteger         aX,
+                       hg::PZInteger         aY,
+                       taPtrs&&... aPtrs) const;
 
-    const CellModel& getCellAt(const EditPermission& aPerm, hg::math::Vector2pz aCell) const;
+    template <class... taPtrs>
+    void getCellDataAt(const EditPermission& aPerm, hg::math::Vector2pz aCell, taPtrs&&... aPtrs) const;
 
-    const CellModel& getCellAtUnchecked(const EditPermission& aPerm,
-                                        hg::PZInteger         aX,
-                                        hg::PZInteger         aY) const;
+    template <class... taPtrs>
+    void getCellDataAtUnchecked(const EditPermission& aPerm,
+                                hg::PZInteger         aX,
+                                hg::PZInteger         aY,
+                                taPtrs&&... aPtrs) const;
 
-    const CellModel& getCellAtUnchecked(const EditPermission& aPerm, hg::math::Vector2pz aCell) const;
+    template <class... taPtrs>
+    void getCellDataAtUnchecked(const EditPermission& aPerm,
+                                hg::math::Vector2pz   aCell,
+                                taPtrs&&... aPtrs) const;
 
     ///////////////////////////////////////////////////////////////////////////
-    // CELL UPDATERS                                                         //
+    // MARK: CELL UPDATERS                                                   //
     ///////////////////////////////////////////////////////////////////////////
 
     //! Generator mode is intended for very long world edits which are expected to touch more chunks
@@ -187,40 +202,22 @@ public:
     //! be refreshed.
     //!
     //! \note nothing can make the World instance unload chunks which are in one or more Active Areas,
-    //!        and this also holds even while generator mode is toggled on.
+    //!       and this also holds even while generator mode is toggled on.
     void toggleGeneratorMode(const EditPermission&, bool aGeneratorMode);
 
     class Editor {
     public:
-        // Floor
+        template <class... taPtrs>
+        void setCellDataAt(hg::PZInteger aX, hg::PZInteger aY, taPtrs&&... aPtrs);
 
-        void setFloorAt(hg::PZInteger                          aX,
-                        hg::PZInteger                          aY,
-                        const std::optional<CellModel::Floor>& aFloorOpt);
+        template <class... taPtrs>
+        void setCellDataAt(hg::math::Vector2pz aCell, taPtrs&&... aPtrs);
 
-        void setFloorAt(hg::math::Vector2pz aCell, const std::optional<CellModel::Floor>& aFloorOpt);
+        template <class... taPtrs>
+        void setCellDataAtUnchecked(hg::PZInteger aX, hg::PZInteger aY, taPtrs&&... aPtrs);
 
-        void setFloorAtUnchecked(hg::PZInteger                          aX,
-                                 hg::PZInteger                          aY,
-                                 const std::optional<CellModel::Floor>& aFloorOpt);
-
-        void setFloorAtUnchecked(hg::math::Vector2pz                    aCell,
-                                 const std::optional<CellModel::Floor>& aFloorOpt);
-
-        // Wall
-
-        void setWallAt(hg::PZInteger                         aX,
-                       hg::PZInteger                         aY,
-                       const std::optional<CellModel::Wall>& aWallOpt);
-
-        void setWallAt(hg::math::Vector2pz aCell, const std::optional<CellModel::Wall>& aWallOpt);
-
-        void setWallAtUnchecked(hg::PZInteger                         aX,
-                                hg::PZInteger                         aY,
-                                const std::optional<CellModel::Wall>& aWallOpt);
-
-        void setWallAtUnchecked(hg::math::Vector2pz                   aCell,
-                                const std::optional<CellModel::Wall>& aWallOpt);
+        template <class... taPtrs>
+        void setCellDataAtUnchecked(hg::math::Vector2pz aCell, taPtrs&&... aPtrs);
 
     private:
         friend class World;
@@ -244,12 +241,20 @@ public:
     }
 
     ///////////////////////////////////////////////////////////////////////////
-    // CHUNKS                                                                //
+    // MARK: CHUNKS                                                          //
     ///////////////////////////////////////////////////////////////////////////
+
+    BuildingBlockMask getBuildingBlocks() const;
 
     hg::PZInteger getChunkCountX() const;
 
     hg::PZInteger getChunkCountY() const;
+
+    hg::PZInteger getCellsPerChunkX() const;
+
+    hg::PZInteger getCellsPerChunkY() const;
+
+    const ChunkMemoryLayoutInfo& getChunkMemoryLayoutInfo() const;
 
     // Without locking (no on-demand loading)
 
@@ -308,10 +313,10 @@ public:
     private:
         friend class World;
 
-        AvailableChunkIterator(detail::ChunkStorageHandler::AvailableChunkIterator aImpl)
+        AvailableChunkIterator(detail::ChunkHolder::AvailableChunkIterator aImpl)
             : _impl{aImpl} {}
 
-        detail::ChunkStorageHandler::AvailableChunkIterator _impl;
+        detail::ChunkHolder::AvailableChunkIterator _impl;
     };
 
     //! Begin interating through available chunks.
@@ -335,7 +340,7 @@ public:
     }
 
     ///////////////////////////////////////////////////////////////////////////
-    // ACTIVE AREAS                                                          //
+    // MARK: ACTIVE AREAS                                                    //
     ///////////////////////////////////////////////////////////////////////////
 
     ActiveArea createActiveArea();
@@ -363,13 +368,13 @@ private:
 
     // ===== Subcomponents =====
 
+    detail::ChunkHolder _chunkStorage;
+
     std::unique_ptr<detail::ChunkDiskIoHandlerInterface> _internalChunkDiskIoHandler;
     detail::ChunkDiskIoHandlerInterface*                 _chunkDiskIoHandler;
 
     std::unique_ptr<detail::ChunkSpoolerInterface> _internalChunkSpooler;
     hg::NeverNull<detail::ChunkSpoolerInterface*>  _chunkSpooler;
-
-    detail::ChunkStorageHandler _chunkStorage;
 
     void _connectSubcomponents();
     void _disconnectSubcomponents();
@@ -405,6 +410,10 @@ private:
     };
 
     template <bool taAllowedToLoadAdjacent>
+    std::optional<cell::SpatialInfo> _getSpatialInfoOfCellAtUnchecked(hg::PZInteger aX,
+                                                                      hg::PZInteger aY) const;
+
+    template <bool taAllowedToLoadAdjacent>
     RingAssessment _assessRing(hg::PZInteger aX, hg::PZInteger aY, hg::PZInteger aRing);
 
     // TODO: since we determine openness at chunk load, this will lead into endless chunk load loop
@@ -413,80 +422,150 @@ private:
 
     void _refreshCellAtUnchecked(hg::PZInteger aX, hg::PZInteger aY);
 
-    void _setFloorAt(hg::PZInteger                          aX,
-                     hg::PZInteger                          aY,
-                     const std::optional<CellModel::Floor>& aFloorOpt);
+    void _setCellDataAtUnchecked(Chunk& aChunk, hg::PZInteger aX, hg::PZInteger aY, const cell::SpatialInfo* aSpatialInfo);
 
-    void _setFloorAt(hg::math::Vector2pz aCell, const std::optional<CellModel::Floor>& aFloorOpt);
-
-    void _setFloorAtUnchecked(hg::PZInteger                          aX,
-                              hg::PZInteger                          aY,
-                              const std::optional<CellModel::Floor>& aFloorOpt);
-
-    void _setFloorAtUnchecked(hg::math::Vector2pz                    aCell,
-                              const std::optional<CellModel::Floor>& aFloorOpt);
-
-    void _setWallAt(hg::PZInteger aX, hg::PZInteger aY, const std::optional<CellModel::Wall>& aWallOpt);
-
-    void _setWallAt(hg::math::Vector2pz aCell, const std::optional<CellModel::Wall>& aWallOpt);
-
-    void _setWallAtUnchecked(hg::PZInteger                         aX,
-                             hg::PZInteger                         aY,
-                             const std::optional<CellModel::Wall>& aWallOpt);
-
-    void _setWallAtUnchecked(hg::math::Vector2pz aCell, const std::optional<CellModel::Wall>& aWallOpt);
+    template <class T,
+              typename std::enable_if_t<!std::is_same_v<T, cell::SpatialInfo>> = true>
+    void _setCellDataAtUnchecked(Chunk& aChunk, hg::PZInteger aX, hg::PZInteger aY, const T* aPtr);
 };
+
+///////////////////////////////////////////////////////////////////////////
+// CELL GETTERS                                                          //
+///////////////////////////////////////////////////////////////////////////
+
+template <class... taPtrs>
+[[nodiscard]] bool World::getCellDataAt(hg::PZInteger aX, hg::PZInteger aY, taPtrs&&... aPtrs) const {
+    // TODO: validate args
+    return getCellDataAtUnchecked(aX, aY, std::forward<taPtrs>(aPtrs)...);
+}
+
+template <class... taPtrs>
+[[nodiscard]] bool World::getCellDataAt(hg::math::Vector2pz aCell, taPtrs&&... aPtrs) const {
+    // TODO: validate args
+    return getCellDataAtUnchecked(aCell.x, aCell.y, std::forward<taPtrs>(aPtrs)...);
+}
+
+template <class... taPtrs>
+[[nodiscard]] bool World::getCellDataAtUnchecked(hg::PZInteger aX, hg::PZInteger aY, taPtrs&&... aPtrs) const {
+    const auto chunkX = aX / _config.cellsPerChunkX;
+    const auto chunkY = aY / _config.cellsPerChunkY;
+
+    if (auto* chunk = _chunkStorage.getChunkAtIdUnchecked({chunkX, chunkY}); chunk) {
+        chunk->getCellDataAtUnchecked(getChunkMemoryLayoutInfo(),
+                                      aX % _config.cellsPerChunkX,
+                                      aY % _config.cellsPerChunkY,
+                                      std::forward<taPtrs>(aPtrs)...);
+        return true;
+    }
+
+    return false;
+}
+
+template <class... taPtrs>
+[[nodiscard]] bool World::getCellDataAtUnchecked(hg::math::Vector2pz aCell, taPtrs&&... aPtrs) const {
+    return getCellDataAtUnchecked(aCell.x, aCell.y, std::forward<taPtrs>(aPtrs)...);
+}
+
+template <class... taPtrs>
+void World::getCellDataAt(const EditPermission& aPerm,
+                          hg::PZInteger         aX,
+                          hg::PZInteger         aY,
+                          taPtrs&&... aPtrs) const {
+    // TODO: validate args
+    getCellDataAtUnchecked(aPerm, aX, aY, std::forward<taPtrs>(aPtrs)...);
+}
+
+template <class... taPtrs>
+void World::getCellDataAt(const EditPermission& aPerm,
+                          hg::math::Vector2pz   aCell,
+                          taPtrs&&... aPtrs) const {
+    // TODO: validate args
+    getCellDataAtUnchecked(aPerm, aCell.x, aCell.y, std::forward<taPtrs>(aPtrs)...);
+}
+
+template <class... taPtrs>
+void World::getCellDataAtUnchecked(const EditPermission& aPerm,
+                                   hg::PZInteger         aX,
+                                   hg::PZInteger         aY,
+                                   taPtrs&&... aPtrs) const {
+    const auto chunkX = aX / _config.cellsPerChunkX;
+    const auto chunkY = aY / _config.cellsPerChunkY;
+
+    const auto& chunk = _chunkStorage.getChunkAtIdUnchecked({chunkX, chunkY}, detail::LOAD_IF_MISSING);
+    chunk.getCellDataAtUnchecked(getChunkMemoryLayoutInfo(),
+                                 aX % _config.cellsPerChunkX,
+                                 aY % _config.cellsPerChunkY,
+                                 std::forward<taPtrs>(aPtrs)...);
+}
+
+template <class... taPtrs>
+void World::getCellDataAtUnchecked(const EditPermission& aPerm,
+                                   hg::math::Vector2pz   aCell,
+                                   taPtrs&&... aPtrs) const {
+    getCellDataAtUnchecked(aPerm, aCell.x, aCell.y, std::forward<taPtrs>(aPtrs)...);
+}
 
 ///////////////////////////////////////////////////////////////////////////
 // CELL UPDATES                                                          //
 ///////////////////////////////////////////////////////////////////////////
 
-// Floor
-
-inline void World::Editor::setFloorAt(hg::PZInteger                          aX,
-                                      hg::PZInteger                          aY,
-                                      const std::optional<CellModel::Floor>& aFloorOpt) {
-    _world._setFloorAt(aX, aY, aFloorOpt);
+template <class... taPtrs>
+void World::Editor::setCellDataAt(hg::PZInteger aX, hg::PZInteger aY, taPtrs&&... aPtrs) {
+    // TODO: validate args
+    setCellDataAtUnchecked(aX, aY, std::forward<taPtrs>(aPtrs)...);
 }
 
-inline void World::Editor::setFloorAt(hg::math::Vector2pz                    aCell,
-                                      const std::optional<CellModel::Floor>& aFloorOpt) {
-    _world._setFloorAt(aCell, aFloorOpt);
+template <class... taPtrs>
+void World::Editor::setCellDataAt(hg::math::Vector2pz aCell, taPtrs&&... aPtrs) {
+    // TODO: validate args
+    setCellDataAtUnchecked(aCell.x, aCell.y, std::forward<taPtrs>(aPtrs)...);
 }
 
-inline void World::Editor::setFloorAtUnchecked(hg::PZInteger                          aX,
-                                               hg::PZInteger                          aY,
-                                               const std::optional<CellModel::Floor>& aFloorOpt) {
-    _world._setFloorAtUnchecked(aX, aY, aFloorOpt);
+template <class... taPtrs>
+void World::Editor::setCellDataAtUnchecked(hg::PZInteger aX, hg::PZInteger aY, taPtrs&&... aPtrs) {
+    const auto chunkX = aX / _world._config.cellsPerChunkX;
+    const auto chunkY = aY / _world._config.cellsPerChunkY;
+
+    auto& chunk = _world._chunkStorage.getChunkAtIdUnchecked({chunkX, chunkY}, detail::LOAD_IF_MISSING);
+    _world._setCellDataAtUnchecked(chunk,
+                                   aX % _world._config.cellsPerChunkX,
+                                   aY % _world._config.cellsPerChunkY,
+                                   std::forward<taPtrs>(aPtrs)...);
 }
 
-inline void World::Editor::setFloorAtUnchecked(hg::math::Vector2pz                    aCell,
-                                               const std::optional<CellModel::Floor>& aFloorOpt) {
-    _world._setFloorAtUnchecked(aCell, aFloorOpt);
+template <class... taPtrs>
+void World::Editor::setCellDataAtUnchecked(hg::math::Vector2pz aCell, taPtrs&&... aPtrs) {
+    setCellDataAtUnchecked(aCell.x, aCell.y, std::forward<taPtrs>(aPtrs)...);
 }
 
-// Wall
-
-inline void World::Editor::setWallAt(hg::PZInteger                         aX,
-                                     hg::PZInteger                         aY,
-                                     const std::optional<CellModel::Wall>& aWallOpt) {
-    _world._setWallAt(aX, aY, aWallOpt);
+template <class T,
+          typename std::enable_if_t<!std::is_same_v<T, cell::SpatialInfo>>>
+void World::_setCellDataAtUnchecked(Chunk& aChunk, hg::PZInteger aX, hg::PZInteger aY, const T* aPtr) {
+    aChunk.setCellDataAtUnchecked(getChunkMemoryLayoutInfo(), aX, aY, aPtr);
 }
 
-inline void World::Editor::setWallAt(hg::math::Vector2pz                   aCell,
-                                     const std::optional<CellModel::Wall>& aWallOpt) {
-    _world._setWallAt(aCell, aWallOpt);
+inline BuildingBlockMask World::getBuildingBlocks() const {
+    return _config.buildingBlocks;
 }
 
-inline void World::Editor::setWallAtUnchecked(hg::PZInteger                         aX,
-                                              hg::PZInteger                         aY,
-                                              const std::optional<CellModel::Wall>& aWallOpt) {
-    _world._setWallAtUnchecked(aX, aY, aWallOpt);
+inline hg::PZInteger World::getChunkCountX() const {
+    return _chunkStorage.getChunkCountX();
 }
 
-inline void World::Editor::setWallAtUnchecked(hg::math::Vector2pz                   aCell,
-                                              const std::optional<CellModel::Wall>& aWallOpt) {
-    _world._setWallAtUnchecked(aCell, aWallOpt);
+inline hg::PZInteger World::getChunkCountY() const {
+    return _chunkStorage.getChunkCountY();
+}
+
+inline hg::PZInteger World::getCellsPerChunkX() const {
+    return _config.cellsPerChunkX;
+}
+
+inline hg::PZInteger World::getCellsPerChunkY() const {
+    return _config.cellsPerChunkY;
+}
+
+inline const ChunkMemoryLayoutInfo& World::getChunkMemoryLayoutInfo() const {
+    return reinterpret_cast<const ChunkMemoryLayoutInfo&>(_chunkStorage.GetChunkMemoryLayoutInfo());
 }
 
 } // namespace gridgoblin

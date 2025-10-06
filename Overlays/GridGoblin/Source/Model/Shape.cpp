@@ -13,6 +13,11 @@ namespace gridgoblin {
 const std::string& ShapeToString(Shape aShape) {
     // clang-format off
     static const std::unordered_map<Shape, std::string> shapeToStringMap = {
+        // Empty square
+        { Shape::EMPTY,                                   "EMPTY()" },
+        { Shape::EMPTY | Shape::HFLIP,                    "EMPTY(HFLIP)" },
+        { Shape::EMPTY | Shape::VFLIP,                    "EMPTY(VFLIP)" },
+        { Shape::EMPTY | Shape::HVFLIP,                   "EMPTY(HVFLIP)" },
         // Full square
         { Shape::FULL_SQUARE,                             "FULL_SQUARE()" },
         { Shape::FULL_SQUARE | Shape::HFLIP,              "FULL_SQUARE(HFLIP)" },
@@ -67,6 +72,11 @@ const std::string& ShapeToString(Shape aShape) {
 Shape StringToShape(std::string_view aString) {
     // clang-format off
     static const std::unordered_map<std::string_view, Shape> stringToShapeMap = {
+        // Empty
+        { "EMPTY()",                              Shape::EMPTY },
+        { "EMPTY(HFLIP)",                         Shape::EMPTY | Shape::HFLIP },
+        { "EMPTY(VFLIP)",                         Shape::EMPTY | Shape::VFLIP },
+        { "EMPTY(HVFLIP)",                        Shape::EMPTY | Shape::HVFLIP },
         // Full square
         { "FULL_SQUARE()",                        Shape::FULL_SQUARE },
         { "FULL_SQUARE(HFLIP)",                   Shape::FULL_SQUARE | Shape::HFLIP },

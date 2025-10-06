@@ -30,13 +30,23 @@ public:
 
     void setBinder(Binder* aBinder) override;
 
-    std::optional<Chunk> loadChunkFromRuntimeCache(ChunkId aChunkId) override;
+    std::optional<Chunk> loadChunkFromRuntimeCache(
+        ChunkId                      aChunkId,
+        const ChunkMemoryLayoutInfo& aChunkMemoryLayout) override;
 
-    void storeChunkInRuntimeCache(const Chunk& aChunk, ChunkId aChunkId) override;
+    void storeChunkInRuntimeCache(const Chunk&                 aChunk,
+                                  ChunkId                      aChunkId,
+                                  BuildingBlockMask            aBuildingBlocks,
+                                  const ChunkMemoryLayoutInfo& aChunkMemoryLayout) override;
 
-    std::optional<Chunk> loadChunkFromPersistentCache(ChunkId aChunkId) override;
+    std::optional<Chunk> loadChunkFromPersistentCache(
+        ChunkId                      aChunkId,
+        const ChunkMemoryLayoutInfo& aChunkMemoryLayout) override;
 
-    void storeChunkInPersistentCache(const Chunk& aChunk, ChunkId aChunkId) override;
+    void storeChunkInPersistentCache(const Chunk&                 aChunk,
+                                     ChunkId                      aChunkId,
+                                     BuildingBlockMask            aBuildingBlocks,
+                                     const ChunkMemoryLayoutInfo& aChunkMemoryLayout) override;
 
     void dumpRuntimeCache() override;
 

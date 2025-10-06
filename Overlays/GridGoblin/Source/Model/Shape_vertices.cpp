@@ -1,7 +1,7 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#include <GridGoblin/Model/Cell_model.hpp>
+#include <GridGoblin/Model/Cell.hpp>
 #include <GridGoblin/Model/Shape.hpp>
 #include <GridGoblin/Model/Shape_vertices.hpp>
 
@@ -17,30 +17,30 @@ namespace gridgoblin {
 namespace hg = ::jbatnozic::hobgoblin;
 
 template <Shape taShape>
-std::size_t GetVisibilityVertices(const CellModel&                   aCell,
-                                  std::uint16_t                      aEdgesOfInterest,
+std::size_t GetVisibilityVertices(cell::SpatialInfo                  aCellSpatialInfo,
+                                  std::uint8_t                       aEdgesOfInterest,
                                   bool                               aAllEdgesOverride,
                                   double                             aPaddingOffset,
                                   std::array<hg::math::Vector2d, 8>& aVertices) {
     return 0; // Dummy
 }
 
-#define GG_EAST(_flags_)  (((_flags_) & CellModel::OBSTRUCTED_FULLY_BY_EAST_NEIGHBOR) == 0)
-#define GG_NORTH(_flags_) (((_flags_) & CellModel::OBSTRUCTED_FULLY_BY_NORTH_NEIGHBOR) == 0)
-#define GG_WEST(_flags_)  (((_flags_) & CellModel::OBSTRUCTED_FULLY_BY_WEST_NEIGHBOR) == 0)
-#define GG_SOUTH(_flags_) (((_flags_) & CellModel::OBSTRUCTED_FULLY_BY_SOUTH_NEIGHBOR) == 0)
+#define GG_EAST(_flags_)  (((_flags_) & cell::OBSTRUCTED_FULLY_BY_EAST_NEIGHBOR) == 0)
+#define GG_NORTH(_flags_) (((_flags_) & cell::OBSTRUCTED_FULLY_BY_NORTH_NEIGHBOR) == 0)
+#define GG_WEST(_flags_)  (((_flags_) & cell::OBSTRUCTED_FULLY_BY_WEST_NEIGHBOR) == 0)
+#define GG_SOUTH(_flags_) (((_flags_) & cell::OBSTRUCTED_FULLY_BY_SOUTH_NEIGHBOR) == 0)
 
 // MARK: FULL_SQUARE
 
 template <>
-std::size_t GetVisibilityVertices<Shape::FULL_SQUARE>(const CellModel& aCell,
-                                                      std::uint16_t    aEdgesOfInterest,
-                                                      bool             aAllEdgesOverride,
-                                                      double           aPaddingOffset,
+std::size_t GetVisibilityVertices<Shape::FULL_SQUARE>(cell::SpatialInfo aCellSpatialInfo,
+                                                      std::uint8_t      aEdgesOfInterest,
+                                                      bool              aAllEdgesOverride,
+                                                      double            aPaddingOffset,
                                                       std::array<hg::math::Vector2d, 8>& aVertices) {
     std::size_t cnt = 0;
 
-    const auto flags = aCell.getFlags() | aEdgesOfInterest;
+    const auto flags = aCellSpatialInfo.obFlags | aEdgesOfInterest;
 
     if (aAllEdgesOverride || GG_EAST(flags)) {
         aVertices[cnt + 0] = {1.0, 1.0 + aPaddingOffset};
@@ -68,12 +68,13 @@ std::size_t GetVisibilityVertices<Shape::FULL_SQUARE>(const CellModel& aCell,
 
 template <>
 std::size_t GetVisibilityVertices<Shape::FULL_SQUARE | Shape::HFLIP>(
-    const CellModel&                   aCell,
-    std::uint16_t                      aEdgesOfInterest,
+    cell::SpatialInfo                  aCellSpatialInfo,
+    std::uint8_t                       aEdgesOfInterest,
     bool                               aAllEdgesOverride,
     double                             aPaddingOffset,
-    std::array<hg::math::Vector2d, 8>& aVertices) {
-    return GetVisibilityVertices<Shape::FULL_SQUARE>(aCell,
+    std::array<hg::math::Vector2d, 8>& aVertices) //
+{
+    return GetVisibilityVertices<Shape::FULL_SQUARE>(aCellSpatialInfo,
                                                      aEdgesOfInterest,
                                                      aAllEdgesOverride,
                                                      aPaddingOffset,
@@ -82,12 +83,13 @@ std::size_t GetVisibilityVertices<Shape::FULL_SQUARE | Shape::HFLIP>(
 
 template <>
 std::size_t GetVisibilityVertices<Shape::FULL_SQUARE | Shape::VFLIP>(
-    const CellModel&                   aCell,
-    std::uint16_t                      aEdgesOfInterest,
+    cell::SpatialInfo                  aCellSpatialInfo,
+    std::uint8_t                       aEdgesOfInterest,
     bool                               aAllEdgesOverride,
     double                             aPaddingOffset,
-    std::array<hg::math::Vector2d, 8>& aVertices) {
-    return GetVisibilityVertices<Shape::FULL_SQUARE>(aCell,
+    std::array<hg::math::Vector2d, 8>& aVertices) //
+{
+    return GetVisibilityVertices<Shape::FULL_SQUARE>(aCellSpatialInfo,
                                                      aEdgesOfInterest,
                                                      aAllEdgesOverride,
                                                      aPaddingOffset,
@@ -96,12 +98,13 @@ std::size_t GetVisibilityVertices<Shape::FULL_SQUARE | Shape::VFLIP>(
 
 template <>
 std::size_t GetVisibilityVertices<Shape::FULL_SQUARE | Shape::HVFLIP>(
-    const CellModel&                   aCell,
-    std::uint16_t                      aEdgesOfInterest,
+    cell::SpatialInfo                  aCellSpatialInfo,
+    std::uint8_t                       aEdgesOfInterest,
     bool                               aAllEdgesOverride,
     double                             aPaddingOffset,
-    std::array<hg::math::Vector2d, 8>& aVertices) {
-    return GetVisibilityVertices<Shape::FULL_SQUARE>(aCell,
+    std::array<hg::math::Vector2d, 8>& aVertices) //
+{
+    return GetVisibilityVertices<Shape::FULL_SQUARE>(aCellSpatialInfo,
                                                      aEdgesOfInterest,
                                                      aAllEdgesOverride,
                                                      aPaddingOffset,
@@ -111,15 +114,15 @@ std::size_t GetVisibilityVertices<Shape::FULL_SQUARE | Shape::HVFLIP>(
 // MARK: LARGE_TRIANGLE
 
 template <>
-std::size_t GetVisibilityVertices<Shape::LARGE_TRIANGLE>(const CellModel& aCell,
-                                                         std::uint16_t    aEdgesOfInterest,
-                                                         bool             aAllEdgesOverride,
-                                                         double           aPaddingOffset,
+std::size_t GetVisibilityVertices<Shape::LARGE_TRIANGLE>(cell::SpatialInfo aCellSpatialInfo,
+                                                         std::uint8_t      aEdgesOfInterest,
+                                                         bool              aAllEdgesOverride,
+                                                         double            aPaddingOffset,
                                                          std::array<hg::math::Vector2d, 8>& aVertices) //
 {
     std::size_t cnt = 0;
 
-    const auto flags = aCell.getFlags() | aEdgesOfInterest;
+    const auto flags = aCellSpatialInfo.obFlags | aEdgesOfInterest;
 
     if (aAllEdgesOverride || GG_EAST(flags) || GG_SOUTH(flags)) {
         aVertices[cnt + 0] = {0.0 - aPaddingOffset, 1.0 + aPaddingOffset};
@@ -142,15 +145,15 @@ std::size_t GetVisibilityVertices<Shape::LARGE_TRIANGLE>(const CellModel& aCell,
 
 template <>
 std::size_t GetVisibilityVertices<Shape::LARGE_TRIANGLE | Shape::HFLIP>(
-    const CellModel&                   aCell,
-    std::uint16_t                      aEdgesOfInterest,
+    cell::SpatialInfo                  aCellSpatialInfo,
+    std::uint8_t                       aEdgesOfInterest,
     bool                               aAllEdgesOverride,
     double                             aPaddingOffset,
     std::array<hg::math::Vector2d, 8>& aVertices) //
 {
     std::size_t cnt = 0;
 
-    const auto flags = aCell.getFlags() | aEdgesOfInterest;
+    const auto flags = aCellSpatialInfo.obFlags | aEdgesOfInterest;
 
     if (aAllEdgesOverride || GG_EAST(flags)) {
         aVertices[cnt + 0] = {1.0, 1.0 + aPaddingOffset};
@@ -173,15 +176,15 @@ std::size_t GetVisibilityVertices<Shape::LARGE_TRIANGLE | Shape::HFLIP>(
 
 template <>
 std::size_t GetVisibilityVertices<Shape::LARGE_TRIANGLE | Shape::VFLIP>(
-    const CellModel&                   aCell,
-    std::uint16_t                      aEdgesOfInterest,
+    cell::SpatialInfo                  aCellSpatialInfo,
+    std::uint8_t                       aEdgesOfInterest,
     bool                               aAllEdgesOverride,
     double                             aPaddingOffset,
     std::array<hg::math::Vector2d, 8>& aVertices) //
 {
     std::size_t cnt = 0;
 
-    const auto flags = aCell.getFlags() | aEdgesOfInterest;
+    const auto flags = aCellSpatialInfo.obFlags | aEdgesOfInterest;
 
     if (aAllEdgesOverride || GG_EAST(flags) || GG_NORTH(flags)) {
         aVertices[cnt + 0] = {1.0 + aPaddingOffset, 1.0 + aPaddingOffset};
@@ -204,15 +207,15 @@ std::size_t GetVisibilityVertices<Shape::LARGE_TRIANGLE | Shape::VFLIP>(
 
 template <>
 std::size_t GetVisibilityVertices<Shape::LARGE_TRIANGLE | Shape::HVFLIP>(
-    const CellModel&                   aCell,
-    std::uint16_t                      aEdgesOfInterest,
+    cell::SpatialInfo                  aCellSpatialInfo,
+    std::uint8_t                       aEdgesOfInterest,
     bool                               aAllEdgesOverride,
     double                             aPaddingOffset,
     std::array<hg::math::Vector2d, 8>& aVertices) //
 {
     std::size_t cnt = 0;
 
-    const auto flags = aCell.getFlags() | aEdgesOfInterest;
+    const auto flags = aCellSpatialInfo.obFlags | aEdgesOfInterest;
 
     if (aAllEdgesOverride || GG_EAST(flags)) {
         aVertices[cnt + 0] = {1.0, 1.0 + aPaddingOffset};
@@ -237,15 +240,15 @@ std::size_t GetVisibilityVertices<Shape::LARGE_TRIANGLE | Shape::HVFLIP>(
 
 template <>
 std::size_t GetVisibilityVertices<Shape::SMALL_TRIANGLE_HOR>(
-    const CellModel&                   aCell,
-    std::uint16_t                      aEdgesOfInterest,
+    cell::SpatialInfo                  aCellSpatialInfo,
+    std::uint8_t                       aEdgesOfInterest,
     bool                               aAllEdgesOverride,
     double                             aPaddingOffset,
     std::array<hg::math::Vector2d, 8>& aVertices) //
 {
     std::size_t cnt = 0;
 
-    const auto flags = aCell.getFlags() | aEdgesOfInterest;
+    const auto flags = aCellSpatialInfo.obFlags | aEdgesOfInterest;
 
     if (aAllEdgesOverride || GG_EAST(flags) || GG_SOUTH(flags)) {
         aVertices[cnt + 0] = {0.0 - aPaddingOffset, 0.5 + aPaddingOffset};
@@ -268,15 +271,15 @@ std::size_t GetVisibilityVertices<Shape::SMALL_TRIANGLE_HOR>(
 
 template <>
 std::size_t GetVisibilityVertices<Shape::SMALL_TRIANGLE_HOR | Shape::HFLIP>(
-    const CellModel&                   aCell,
-    std::uint16_t                      aEdgesOfInterest,
+    cell::SpatialInfo                  aCellSpatialInfo,
+    std::uint8_t                       aEdgesOfInterest,
     bool                               aAllEdgesOverride,
     double                             aPaddingOffset,
     std::array<hg::math::Vector2d, 8>& aVertices) //
 {
     std::size_t cnt = 0;
 
-    const auto flags = aCell.getFlags() | aEdgesOfInterest;
+    const auto flags = aCellSpatialInfo.obFlags | aEdgesOfInterest;
 
     if (aAllEdgesOverride || GG_EAST(flags)) {
         aVertices[cnt + 0] = {1.0, 0.5 + aPaddingOffset};
@@ -299,15 +302,15 @@ std::size_t GetVisibilityVertices<Shape::SMALL_TRIANGLE_HOR | Shape::HFLIP>(
 
 template <>
 std::size_t GetVisibilityVertices<Shape::SMALL_TRIANGLE_HOR | Shape::VFLIP>(
-    const CellModel&                   aCell,
-    std::uint16_t                      aEdgesOfInterest,
+    cell::SpatialInfo                  aCellSpatialInfo,
+    std::uint8_t                       aEdgesOfInterest,
     bool                               aAllEdgesOverride,
     double                             aPaddingOffset,
     std::array<hg::math::Vector2d, 8>& aVertices) //
 {
     std::size_t cnt = 0;
 
-    const auto flags = aCell.getFlags() | aEdgesOfInterest;
+    const auto flags = aCellSpatialInfo.obFlags | aEdgesOfInterest;
 
     if (aAllEdgesOverride || GG_EAST(flags) || GG_NORTH(flags)) {
         aVertices[cnt + 0] = {1.0 + aPaddingOffset, 1.0 + aPaddingOffset};
@@ -330,15 +333,15 @@ std::size_t GetVisibilityVertices<Shape::SMALL_TRIANGLE_HOR | Shape::VFLIP>(
 
 template <>
 std::size_t GetVisibilityVertices<Shape::SMALL_TRIANGLE_HOR | Shape::HVFLIP>(
-    const CellModel&                   aCell,
-    std::uint16_t                      aEdgesOfInterest,
+    cell::SpatialInfo                  aCellSpatialInfo,
+    std::uint8_t                       aEdgesOfInterest,
     bool                               aAllEdgesOverride,
     double                             aPaddingOffset,
     std::array<hg::math::Vector2d, 8>& aVertices) //
 {
     std::size_t cnt = 0;
 
-    const auto flags = aCell.getFlags() | aEdgesOfInterest;
+    const auto flags = aCellSpatialInfo.obFlags | aEdgesOfInterest;
 
     if (aAllEdgesOverride || GG_EAST(flags)) {
         aVertices[cnt + 0] = {1.0, 1.0 + aPaddingOffset};
@@ -363,15 +366,15 @@ std::size_t GetVisibilityVertices<Shape::SMALL_TRIANGLE_HOR | Shape::HVFLIP>(
 
 template <>
 std::size_t GetVisibilityVertices<Shape::TALL_SMALL_TRIANGLE_HOR>(
-    const CellModel&                   aCell,
-    std::uint16_t                      aEdgesOfInterest,
+    cell::SpatialInfo                  aCellSpatialInfo,
+    std::uint8_t                       aEdgesOfInterest,
     bool                               aAllEdgesOverride,
     double                             aPaddingOffset,
     std::array<hg::math::Vector2d, 8>& aVertices) //
 {
     std::size_t cnt = 0;
 
-    const auto flags = aCell.getFlags() | aEdgesOfInterest;
+    const auto flags = aCellSpatialInfo.obFlags | aEdgesOfInterest;
 
     if (aAllEdgesOverride || GG_EAST(flags) || GG_SOUTH(flags)) {
         aVertices[cnt + 0] = {0.0 - aPaddingOffset, 1.0 + aPaddingOffset};
@@ -399,15 +402,15 @@ std::size_t GetVisibilityVertices<Shape::TALL_SMALL_TRIANGLE_HOR>(
 
 template <>
 std::size_t GetVisibilityVertices<Shape::TALL_SMALL_TRIANGLE_HOR | Shape::HFLIP>(
-    const CellModel&                   aCell,
-    std::uint16_t                      aEdgesOfInterest,
+    cell::SpatialInfo                  aCellSpatialInfo,
+    std::uint8_t                       aEdgesOfInterest,
     bool                               aAllEdgesOverride,
     double                             aPaddingOffset,
     std::array<hg::math::Vector2d, 8>& aVertices) //
 {
     std::size_t cnt = 0;
 
-    const auto flags = aCell.getFlags() | aEdgesOfInterest;
+    const auto flags = aCellSpatialInfo.obFlags | aEdgesOfInterest;
 
     if (aAllEdgesOverride || GG_EAST(flags)) {
         aVertices[cnt + 0] = {1.0, 1.0 + aPaddingOffset};
@@ -435,15 +438,15 @@ std::size_t GetVisibilityVertices<Shape::TALL_SMALL_TRIANGLE_HOR | Shape::HFLIP>
 
 template <>
 std::size_t GetVisibilityVertices<Shape::TALL_SMALL_TRIANGLE_HOR | Shape::VFLIP>(
-    const CellModel&                   aCell,
-    std::uint16_t                      aEdgesOfInterest,
+    cell::SpatialInfo                  aCellSpatialInfo,
+    std::uint8_t                       aEdgesOfInterest,
     bool                               aAllEdgesOverride,
     double                             aPaddingOffset,
     std::array<hg::math::Vector2d, 8>& aVertices) //
 {
     std::size_t cnt = 0;
 
-    const auto flags = aCell.getFlags() | aEdgesOfInterest;
+    const auto flags = aCellSpatialInfo.obFlags | aEdgesOfInterest;
 
     if (aAllEdgesOverride || GG_EAST(flags)) {
         aVertices[cnt + 0] = {1.0, 1.0 + aPaddingOffset};
@@ -471,15 +474,15 @@ std::size_t GetVisibilityVertices<Shape::TALL_SMALL_TRIANGLE_HOR | Shape::VFLIP>
 
 template <>
 std::size_t GetVisibilityVertices<Shape::TALL_SMALL_TRIANGLE_HOR | Shape::HVFLIP>(
-    const CellModel&                   aCell,
-    std::uint16_t                      aEdgesOfInterest,
+    cell::SpatialInfo                  aCellSpatialInfo,
+    std::uint8_t                       aEdgesOfInterest,
     bool                               aAllEdgesOverride,
     double                             aPaddingOffset,
     std::array<hg::math::Vector2d, 8>& aVertices) //
 {
     std::size_t cnt = 0;
 
-    const auto flags = aCell.getFlags() | aEdgesOfInterest;
+    const auto flags = aCellSpatialInfo.obFlags | aEdgesOfInterest;
 
     if (aAllEdgesOverride || GG_EAST(flags)) {
         aVertices[cnt + 0] = {1.0, 1.0 + aPaddingOffset};
@@ -508,14 +511,14 @@ std::size_t GetVisibilityVertices<Shape::TALL_SMALL_TRIANGLE_HOR | Shape::HVFLIP
 // MARK: HALF_SQUARE_HOR
 
 template <>
-std::size_t GetVisibilityVertices<Shape::HALF_SQUARE_HOR>(const CellModel& aCell,
-                                                          std::uint16_t    aEdgesOfInterest,
-                                                          bool             aAllEdgesOverride,
-                                                          double           aPaddingOffset,
+std::size_t GetVisibilityVertices<Shape::HALF_SQUARE_HOR>(cell::SpatialInfo aCellSpatialInfo,
+                                                          std::uint8_t      aEdgesOfInterest,
+                                                          bool              aAllEdgesOverride,
+                                                          double            aPaddingOffset,
                                                           std::array<hg::math::Vector2d, 8>& aVertices) {
     std::size_t cnt = 0;
 
-    const auto flags = aCell.getFlags() | aEdgesOfInterest;
+    const auto flags = aCellSpatialInfo.obFlags | aEdgesOfInterest;
 
     if (aAllEdgesOverride || GG_EAST(flags)) {
         aVertices[cnt + 0] = {1.0, 0.5 + aPaddingOffset};
@@ -544,13 +547,13 @@ std::size_t GetVisibilityVertices<Shape::HALF_SQUARE_HOR>(const CellModel& aCell
 
 template <>
 std::size_t GetVisibilityVertices<Shape::HALF_SQUARE_HOR | Shape::HFLIP>(
-    const CellModel&                   aCell,
-    std::uint16_t                      aEdgesOfInterest,
+    cell::SpatialInfo                  aCellSpatialInfo,
+    std::uint8_t                       aEdgesOfInterest,
     bool                               aAllEdgesOverride,
     double                             aPaddingOffset,
     std::array<hg::math::Vector2d, 8>& aVertices) //
 {
-    return GetVisibilityVertices<Shape::HALF_SQUARE_HOR>(aCell,
+    return GetVisibilityVertices<Shape::HALF_SQUARE_HOR>(aCellSpatialInfo,
                                                          aEdgesOfInterest,
                                                          aAllEdgesOverride,
                                                          aPaddingOffset,
@@ -559,15 +562,15 @@ std::size_t GetVisibilityVertices<Shape::HALF_SQUARE_HOR | Shape::HFLIP>(
 
 template <>
 std::size_t GetVisibilityVertices<Shape::HALF_SQUARE_HOR | Shape::VFLIP>(
-    const CellModel&                   aCell,
-    std::uint16_t                      aEdgesOfInterest,
+    cell::SpatialInfo                  aCellSpatialInfo,
+    std::uint8_t                       aEdgesOfInterest,
     bool                               aAllEdgesOverride,
     double                             aPaddingOffset,
     std::array<hg::math::Vector2d, 8>& aVertices) //
 {
     std::size_t cnt = 0;
 
-    const auto flags = aCell.getFlags() | aEdgesOfInterest;
+    const auto flags = aCellSpatialInfo.obFlags | aEdgesOfInterest;
 
     if (aAllEdgesOverride || GG_EAST(flags)) {
         aVertices[cnt + 0] = {1.0, 1.0 + aPaddingOffset};
@@ -595,29 +598,30 @@ std::size_t GetVisibilityVertices<Shape::HALF_SQUARE_HOR | Shape::VFLIP>(
 
 template <>
 std::size_t GetVisibilityVertices<Shape::HALF_SQUARE_HOR | Shape::HVFLIP>(
-    const CellModel&                   aCell,
-    std::uint16_t                      aEdgesOfInterest,
+    cell::SpatialInfo                  aCellSpatialInfo,
+    std::uint8_t                       aEdgesOfInterest,
     bool                               aAllEdgesOverride,
     double                             aPaddingOffset,
     std::array<hg::math::Vector2d, 8>& aVertices) //
 {
     return GetVisibilityVertices < Shape::HALF_SQUARE_HOR |
-           Shape::VFLIP > (aCell, aEdgesOfInterest, aAllEdgesOverride, aPaddingOffset, aVertices);
+           Shape::VFLIP >
+               (aCellSpatialInfo, aEdgesOfInterest, aAllEdgesOverride, aPaddingOffset, aVertices);
 }
 
 // MARK: SMALL_TRIANGLE_VER
 
 template <>
 std::size_t GetVisibilityVertices<Shape::SMALL_TRIANGLE_VER>(
-    const CellModel&                   aCell,
-    std::uint16_t                      aEdgesOfInterest,
+    cell::SpatialInfo                  aCellSpatialInfo,
+    std::uint8_t                       aEdgesOfInterest,
     bool                               aAllEdgesOverride,
     double                             aPaddingOffset,
     std::array<hg::math::Vector2d, 8>& aVertices) //
 {
     std::size_t cnt = 0;
 
-    const auto flags = aCell.getFlags() | aEdgesOfInterest;
+    const auto flags = aCellSpatialInfo.obFlags | aEdgesOfInterest;
 
     if (aAllEdgesOverride || GG_EAST(flags) || GG_SOUTH(flags)) {
         aVertices[cnt + 0] = {0.0 - aPaddingOffset, 1.0 + aPaddingOffset};
@@ -640,15 +644,15 @@ std::size_t GetVisibilityVertices<Shape::SMALL_TRIANGLE_VER>(
 
 template <>
 std::size_t GetVisibilityVertices<Shape::SMALL_TRIANGLE_VER | Shape::HFLIP>(
-    const CellModel&                   aCell,
-    std::uint16_t                      aEdgesOfInterest,
+    cell::SpatialInfo                  aCellSpatialInfo,
+    std::uint8_t                       aEdgesOfInterest,
     bool                               aAllEdgesOverride,
     double                             aPaddingOffset,
     std::array<hg::math::Vector2d, 8>& aVertices) //
 {
     std::size_t cnt = 0;
 
-    const auto flags = aCell.getFlags() | aEdgesOfInterest;
+    const auto flags = aCellSpatialInfo.obFlags | aEdgesOfInterest;
 
     if (aAllEdgesOverride || GG_EAST(flags)) {
         aVertices[cnt + 0] = {1.0, 1.0 + aPaddingOffset};
@@ -671,15 +675,15 @@ std::size_t GetVisibilityVertices<Shape::SMALL_TRIANGLE_VER | Shape::HFLIP>(
 
 template <>
 std::size_t GetVisibilityVertices<Shape::SMALL_TRIANGLE_VER | Shape::VFLIP>(
-    const CellModel&                   aCell,
-    std::uint16_t                      aEdgesOfInterest,
+    cell::SpatialInfo                  aCellSpatialInfo,
+    std::uint8_t                       aEdgesOfInterest,
     bool                               aAllEdgesOverride,
     double                             aPaddingOffset,
     std::array<hg::math::Vector2d, 8>& aVertices) //
 {
     std::size_t cnt = 0;
 
-    const auto flags = aCell.getFlags() | aEdgesOfInterest;
+    const auto flags = aCellSpatialInfo.obFlags | aEdgesOfInterest;
 
     if (aAllEdgesOverride || GG_EAST(flags) || GG_NORTH(flags)) {
         aVertices[cnt + 0] = {0.5 + aPaddingOffset, 1.0 + aPaddingOffset};
@@ -702,15 +706,15 @@ std::size_t GetVisibilityVertices<Shape::SMALL_TRIANGLE_VER | Shape::VFLIP>(
 
 template <>
 std::size_t GetVisibilityVertices<Shape::SMALL_TRIANGLE_VER | Shape::HVFLIP>(
-    const CellModel&                   aCell,
-    std::uint16_t                      aEdgesOfInterest,
+    cell::SpatialInfo                  aCellSpatialInfo,
+    std::uint8_t                       aEdgesOfInterest,
     bool                               aAllEdgesOverride,
     double                             aPaddingOffset,
     std::array<hg::math::Vector2d, 8>& aVertices) //
 {
     std::size_t cnt = 0;
 
-    const auto flags = aCell.getFlags() | aEdgesOfInterest;
+    const auto flags = aCellSpatialInfo.obFlags | aEdgesOfInterest;
 
     if (aAllEdgesOverride || GG_EAST(flags)) {
         aVertices[cnt + 0] = {1.0, 1.0 + aPaddingOffset};
@@ -735,15 +739,15 @@ std::size_t GetVisibilityVertices<Shape::SMALL_TRIANGLE_VER | Shape::HVFLIP>(
 
 template <>
 std::size_t GetVisibilityVertices<Shape::TALL_SMALL_TRIANGLE_VER>(
-    const CellModel&                   aCell,
-    std::uint16_t                      aEdgesOfInterest,
+    cell::SpatialInfo                  aCellSpatialInfo,
+    std::uint8_t                       aEdgesOfInterest,
     bool                               aAllEdgesOverride,
     double                             aPaddingOffset,
     std::array<hg::math::Vector2d, 8>& aVertices) //
 {
     std::size_t cnt = 0;
 
-    const auto flags = aCell.getFlags() | aEdgesOfInterest;
+    const auto flags = aCellSpatialInfo.obFlags | aEdgesOfInterest;
 
     if (aAllEdgesOverride || GG_EAST(flags) || GG_SOUTH(flags)) {
         aVertices[cnt + 0] = {0.5 - aPaddingOffset, 1.0 + aPaddingOffset};
@@ -771,15 +775,15 @@ std::size_t GetVisibilityVertices<Shape::TALL_SMALL_TRIANGLE_VER>(
 
 template <>
 std::size_t GetVisibilityVertices<Shape::TALL_SMALL_TRIANGLE_VER | Shape::HFLIP>(
-    const CellModel&                   aCell,
-    std::uint16_t                      aEdgesOfInterest,
+    cell::SpatialInfo                  aCellSpatialInfo,
+    std::uint8_t                       aEdgesOfInterest,
     bool                               aAllEdgesOverride,
     double                             aPaddingOffset,
     std::array<hg::math::Vector2d, 8>& aVertices) //
 {
     std::size_t cnt = 0;
 
-    const auto flags = aCell.getFlags() | aEdgesOfInterest;
+    const auto flags = aCellSpatialInfo.obFlags | aEdgesOfInterest;
 
     if (aAllEdgesOverride || GG_EAST(flags)) {
         aVertices[cnt + 0] = {1.0, 1.0 + aPaddingOffset};
@@ -807,15 +811,15 @@ std::size_t GetVisibilityVertices<Shape::TALL_SMALL_TRIANGLE_VER | Shape::HFLIP>
 
 template <>
 std::size_t GetVisibilityVertices<Shape::TALL_SMALL_TRIANGLE_VER | Shape::VFLIP>(
-    const CellModel&                   aCell,
-    std::uint16_t                      aEdgesOfInterest,
+    cell::SpatialInfo                  aCellSpatialInfo,
+    std::uint8_t                       aEdgesOfInterest,
     bool                               aAllEdgesOverride,
     double                             aPaddingOffset,
     std::array<hg::math::Vector2d, 8>& aVertices) //
 {
     std::size_t cnt = 0;
 
-    const auto flags = aCell.getFlags() | aEdgesOfInterest;
+    const auto flags = aCellSpatialInfo.obFlags | aEdgesOfInterest;
 
     if (aAllEdgesOverride || GG_EAST(flags) || GG_NORTH(flags)) {
         aVertices[cnt + 0] = {1.0 + aPaddingOffset, 1.0 + aPaddingOffset};
@@ -843,15 +847,15 @@ std::size_t GetVisibilityVertices<Shape::TALL_SMALL_TRIANGLE_VER | Shape::VFLIP>
 
 template <>
 std::size_t GetVisibilityVertices<Shape::TALL_SMALL_TRIANGLE_VER | Shape::HVFLIP>(
-    const CellModel&                   aCell,
-    std::uint16_t                      aEdgesOfInterest,
+    cell::SpatialInfo                  aCellSpatialInfo,
+    std::uint8_t                       aEdgesOfInterest,
     bool                               aAllEdgesOverride,
     double                             aPaddingOffset,
     std::array<hg::math::Vector2d, 8>& aVertices) //
 {
     std::size_t cnt = 0;
 
-    const auto flags = aCell.getFlags() | aEdgesOfInterest;
+    const auto flags = aCellSpatialInfo.obFlags | aEdgesOfInterest;
 
     if (aAllEdgesOverride || GG_EAST(flags)) {
         aVertices[cnt + 0] = {1.0, 1.0 + aPaddingOffset};
@@ -881,15 +885,15 @@ std::size_t GetVisibilityVertices<Shape::TALL_SMALL_TRIANGLE_VER | Shape::HVFLIP
 
 template <>
 std::size_t GetVisibilityVertices<Shape::HALF_SQUARE_VER>(
-    const CellModel&                   aCell,
-    std::uint16_t                      aEdgesOfInterest,
+    cell::SpatialInfo                  aCellSpatialInfo,
+    std::uint8_t                       aEdgesOfInterest,
     bool                               aAllEdgesOverride,
     double                             aPaddingOffset,
     std::array<hg::math::Vector2d, 8>& aVertices) //
 {
     std::size_t cnt = 0;
 
-    const auto flags = aCell.getFlags() | aEdgesOfInterest;
+    const auto flags = aCellSpatialInfo.obFlags | aEdgesOfInterest;
 
     // if (aAllEdgesOverride || GG_EAST(flags)) {
     aVertices[cnt + 0] = {0.5, 1.0 + aPaddingOffset};
@@ -917,15 +921,15 @@ std::size_t GetVisibilityVertices<Shape::HALF_SQUARE_VER>(
 
 template <>
 std::size_t GetVisibilityVertices<Shape::HALF_SQUARE_VER | Shape::HFLIP>(
-    const CellModel&                   aCell,
-    std::uint16_t                      aEdgesOfInterest,
+    cell::SpatialInfo                  aCellSpatialInfo,
+    std::uint8_t                       aEdgesOfInterest,
     bool                               aAllEdgesOverride,
     double                             aPaddingOffset,
     std::array<hg::math::Vector2d, 8>& aVertices) //
 {
     std::size_t cnt = 0;
 
-    const auto flags = aCell.getFlags() | aEdgesOfInterest;
+    const auto flags = aCellSpatialInfo.obFlags | aEdgesOfInterest;
 
     if (aAllEdgesOverride || GG_EAST(flags)) {
         aVertices[cnt + 0] = {1.0, 1.0 + aPaddingOffset};
@@ -953,13 +957,13 @@ std::size_t GetVisibilityVertices<Shape::HALF_SQUARE_VER | Shape::HFLIP>(
 
 template <>
 std::size_t GetVisibilityVertices<Shape::HALF_SQUARE_VER | Shape::VFLIP>(
-    const CellModel&                   aCell,
-    std::uint16_t                      aEdgesOfInterest,
+    cell::SpatialInfo                  aCellSpatialInfo,
+    std::uint8_t                       aEdgesOfInterest,
     bool                               aAllEdgesOverride,
     double                             aPaddingOffset,
     std::array<hg::math::Vector2d, 8>& aVertices) //
 {
-    return GetVisibilityVertices<Shape::HALF_SQUARE_VER>(aCell,
+    return GetVisibilityVertices<Shape::HALF_SQUARE_VER>(aCellSpatialInfo,
                                                          aEdgesOfInterest,
                                                          aAllEdgesOverride,
                                                          aPaddingOffset,
@@ -968,17 +972,18 @@ std::size_t GetVisibilityVertices<Shape::HALF_SQUARE_VER | Shape::VFLIP>(
 
 template <>
 std::size_t GetVisibilityVertices<Shape::HALF_SQUARE_VER | Shape::HVFLIP>(
-    const CellModel&                   aCell,
-    std::uint16_t                      aEdgesOfInterest,
+    cell::SpatialInfo                  aCellSpatialInfo,
+    std::uint8_t                       aEdgesOfInterest,
     bool                               aAllEdgesOverride,
     double                             aPaddingOffset,
     std::array<hg::math::Vector2d, 8>& aVertices) //
 {
     return GetVisibilityVertices < Shape::HALF_SQUARE_VER |
-           Shape::HFLIP > (aCell, aEdgesOfInterest, aAllEdgesOverride, aPaddingOffset, aVertices);
+           Shape::HFLIP >
+               (aCellSpatialInfo, aEdgesOfInterest, aAllEdgesOverride, aPaddingOffset, aVertices);
 }
 
-// MASK: TABLE
+// MARK: TABLE
 
 namespace {
 using GetVisibilityVerticesFunc = decltype(&GetVisibilityVertices<Shape::FULL_SQUARE>);
@@ -1029,19 +1034,19 @@ std::array<GetVisibilityVerticesFunc, MAX_SHAPE_NUMBER + 1> MakeVisibilityVertic
 const auto VISIBILITY_VERTICES_FUNC_TABLE = MakeVisibilityVerticesFuncTable();
 } // namespace
 
-std::size_t GetVisibilityVertices(const CellModel&                   aCell,
-                                  std::uint16_t                      aEdgesOfInterest,
+std::size_t GetVisibilityVertices(cell::SpatialInfo                  aCellSpatialInfo,
+                                  std::uint8_t                       aEdgesOfInterest,
                                   bool                               aAllEdgesOverride,
                                   double                             aPaddingOffset,
                                   std::array<hg::math::Vector2d, 8>& aVertices) //
 {
-    HG_ASSERT(aCell.isWallInitialized());
+    HG_ASSERT(aCellSpatialInfo.hasNonEmptyWallShape());
 
-    const auto funcIdx = static_cast<std::size_t>(aCell.getWall().shape);
+    const auto funcIdx = static_cast<std::size_t>(aCellSpatialInfo.wallShape);
     HG_ASSERT(funcIdx < VISIBILITY_VERTICES_FUNC_TABLE.size());
 
     const auto func = VISIBILITY_VERTICES_FUNC_TABLE[funcIdx];
-    return func(aCell, aEdgesOfInterest, aAllEdgesOverride, aPaddingOffset, aVertices);
+    return func(aCellSpatialInfo, aEdgesOfInterest, aAllEdgesOverride, aPaddingOffset, aVertices);
 }
 
 } // namespace gridgoblin

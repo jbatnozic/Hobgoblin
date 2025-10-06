@@ -123,7 +123,7 @@ private:
                                        hg::math::Vector2d aViewSize,
                                        PositionInWorld    aLineOfSightOrigin);
 
-    std::uint16_t _calcEdgesOfInterest(hg::math::Vector2pz aCell) const;
+    std::uint8_t _calcEdgesOfInterest(hg::math::Vector2pz aCell) const;
 
     bool _areAnyVerticesVisible(const std::array<hg::math::Vector2d, 8>& aVertices,
                                 std::size_t                              aVertCount,

@@ -18,20 +18,26 @@ namespace detail {
 namespace {
 constexpr auto LOG_ID = "GridGoblin";
 
-std::optional<Chunk> LoadChunk(ChunkId aChunkId, ChunkDiskIoHandlerInterface& aDiskIoHandler) {
+std::optional<Chunk> LoadChunk(ChunkId                      aChunkId,
+                               const ChunkMemoryLayoutInfo& aChunkMemLayout,
+                               ChunkDiskIoHandlerInterface& aDiskIoHandler) {
     HG_LOG_WITH_SCOPED_STOPWATCH_MS(INFO, LOG_ID, "Chunk {} loaded in {}ms.", aChunkId, elapsed_time_ms);
 
-    auto rtChunk = aDiskIoHandler.loadChunkFromRuntimeCache(aChunkId);
+    auto rtChunk = aDiskIoHandler.loadChunkFromRuntimeCache(aChunkId, aChunkMemLayout);
     if (rtChunk.has_value()) {
         HG_LOG_DEBUG(LOG_ID, "Chunk {} loaded from runtime cache.", aChunkId);
         return rtChunk;
     }
     HG_LOG_DEBUG(LOG_ID, "Attempting to load Chunk {} from persistent cache.", aChunkId);
-    return aDiskIoHandler.loadChunkFromPersistentCache(aChunkId);
+    return aDiskIoHandler.loadChunkFromPersistentCache(aChunkId, aChunkMemLayout);
 }
 
-void UnloadChunk(const Chunk& aChunk, ChunkId aChunkId, ChunkDiskIoHandlerInterface& aDiskIoHandler) {
-    aDiskIoHandler.storeChunkInRuntimeCache(aChunk, aChunkId);
+void UnloadChunk(const Chunk&                 aChunk,
+                 ChunkId                      aChunkId,
+                 BuildingBlockMask            aBuildingBlocks,
+                 const ChunkMemoryLayoutInfo& aChunkMemLayout,
+                 ChunkDiskIoHandlerInterface& aDiskIoHandler) {
+    aDiskIoHandler.storeChunkInRuntimeCache(aChunk, aChunkId, aBuildingBlocks, aChunkMemLayout);
 }
 } // namespace
 
@@ -136,8 +142,12 @@ private:
 #define HOLDS_LOAD_REQUEST(_variant_)   std::holds_alternative<LoadRequest>(_variant_)
 #define HOLDS_UNLOAD_REQUEST(_variant_) std::holds_alternative<UnloadRequest>(_variant_)
 
-DefaultChunkSpooler::DefaultChunkSpooler()
-    : _worker{&DefaultChunkSpooler::_workerBody, this} {
+DefaultChunkSpooler::DefaultChunkSpooler(BuildingBlockMask            aBuildingBlocks,
+                                         const ChunkMemoryLayoutInfo& aChunkMemLayout)
+    : _buildingBlocks{aBuildingBlocks}
+    , _chunkMemLayout{aChunkMemLayout}
+    , _worker{&DefaultChunkSpooler::_workerBody, this} //
+{
     // SetThreadName(_worker, "chunkspool");
     HG_LOG_INFO(LOG_ID, "Spooler started.");
 }
@@ -282,13 +292,17 @@ void DefaultChunkSpooler::_workerBody() {
 
         if (HOLDS_LOAD_REQUEST(requestVariant)) {
             const auto& loadRequest = std::get<LoadRequest>(requestVariant);
-            auto        chunk       = LoadChunk(loadRequest.chunkId, *_diskIoHandler);
+            auto        chunk       = LoadChunk(loadRequest.chunkId, _chunkMemLayout, *_diskIoHandler);
             if (cb.handle) {
                 cb.handle->giveResult(std::move(chunk));
             }
         } else /*if (HOLDS_UNLOAD_REQUEST(requestVariant))*/ {
             const auto& unloadRequest = std::get<UnloadRequest>(requestVariant);
-            UnloadChunk(unloadRequest.chunk, unloadRequest.id, *_diskIoHandler);
+            UnloadChunk(unloadRequest.chunk,
+                        unloadRequest.id,
+                        _buildingBlocks,
+                        _chunkMemLayout,
+                        *_diskIoHandler);
         }
     }
 }

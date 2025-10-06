@@ -10,13 +10,12 @@
 
 #include <array>
 #include <cmath>
-#include <type_traits>
 
 namespace jbatnozic {
 namespace gridgoblin {
 
 namespace {
-using CellFlags = std::underlying_type_t<CellModel::Flags>;
+using CellFlags = std::uint8_t;
 
 using hg::math::AngleD;
 using hg::math::Clamp;
@@ -25,7 +24,7 @@ using hg::math::Sqr;
 using hg::math::Vector2d;
 using hg::math::Vector2pz;
 
-std::size_t GetUnobstructedVertices(const CellModel&         aCell,
+std::size_t GetUnobstructedVertices(cell::SpatialInfo        aCellSpatialInfo,
                                     Vector2pz                aCellCoords,
                                     CellFlags                aEdgesOfInterest,
                                     bool                     aAllEdgesOverride,
@@ -36,7 +35,7 @@ std::size_t GetUnobstructedVertices(const CellModel&         aCell,
     const double offset = 0.25 / aCellResolution;
 
     const auto cnt =
-        GetVisibilityVertices(aCell, aEdgesOfInterest, aAllEdgesOverride, offset, aVertices);
+        GetVisibilityVertices(aCellSpatialInfo, aEdgesOfInterest, aAllEdgesOverride, offset, aVertices);
 
     const auto tlCorner =
         hg::math::Vector2d{aCellCoords.x * aCellResolution, aCellCoords.y * aCellResolution};
@@ -167,27 +166,27 @@ void VisibilityCalculator::_setInitialCalculationContext(PositionInWorld    aVie
     _rayCheckingEnabled = false;
 }
 
-std::uint16_t VisibilityCalculator::_calcEdgesOfInterest(Vector2pz aCell) const {
+std::uint8_t VisibilityCalculator::_calcEdgesOfInterest(Vector2pz aCell) const {
     static constexpr CellFlags ALL_EDGES =
-        CellModel::OBSTRUCTED_FULLY_BY_NORTH_NEIGHBOR | CellModel::OBSTRUCTED_FULLY_BY_WEST_NEIGHBOR |
-        CellModel::OBSTRUCTED_FULLY_BY_EAST_NEIGHBOR | CellModel::OBSTRUCTED_FULLY_BY_SOUTH_NEIGHBOR;
+        cell::OBSTRUCTED_FULLY_BY_NORTH_NEIGHBOR | cell::OBSTRUCTED_FULLY_BY_WEST_NEIGHBOR |
+        cell::OBSTRUCTED_FULLY_BY_EAST_NEIGHBOR | cell::OBSTRUCTED_FULLY_BY_SOUTH_NEIGHBOR;
 
     CellFlags edgesOfInterest = ALL_EDGES;
 
     switch (Sign(aCell.x - _lineOfSightOriginCell.x)) {
     case -1:
-        edgesOfInterest ^= CellModel::OBSTRUCTED_FULLY_BY_EAST_NEIGHBOR;
+        edgesOfInterest ^= cell::OBSTRUCTED_FULLY_BY_EAST_NEIGHBOR;
         break;
     case +1:
-        edgesOfInterest ^= CellModel::OBSTRUCTED_FULLY_BY_WEST_NEIGHBOR;
+        edgesOfInterest ^= cell::OBSTRUCTED_FULLY_BY_WEST_NEIGHBOR;
         break;
     }
     switch (Sign(aCell.y - _lineOfSightOriginCell.y)) {
     case -1:
-        edgesOfInterest ^= CellModel::OBSTRUCTED_FULLY_BY_SOUTH_NEIGHBOR;
+        edgesOfInterest ^= cell::OBSTRUCTED_FULLY_BY_SOUTH_NEIGHBOR;
         break;
     case 1:
-        edgesOfInterest ^= CellModel::OBSTRUCTED_FULLY_BY_NORTH_NEIGHBOR;
+        edgesOfInterest ^= cell::OBSTRUCTED_FULLY_BY_NORTH_NEIGHBOR;
         break;
     }
 
@@ -279,13 +278,14 @@ void VisibilityCalculator::_processRing(hg::PZInteger aRingIndex) {
 }
 
 void VisibilityCalculator::_processCell(Vector2pz aCell, hg::PZInteger aRingIndex) {
-    const auto* cell = _world.getCellAtUnchecked(aCell);
-    if (HG_UNLIKELY_CONDITION(cell == nullptr)) {
+    cell::SpatialInfo spatialInfo;
+    const auto cellIsLoaded = _world.getCellDataAtUnchecked(aCell, &spatialInfo);
+    if (HG_UNLIKELY_CONDITION(!cellIsLoaded)) {
         HG_UNLIKELY_BRANCH;
         return;
     }
 
-    if (!cell->isWallInitialized()) {
+    if (!spatialInfo.hasNonEmptyWallShape()) {
         return;
     }
 
@@ -294,7 +294,7 @@ void VisibilityCalculator::_processCell(Vector2pz aCell, hg::PZInteger aRingInde
 
     std::array<Vector2d, 8> vertices;
     const auto              vertCnt =
-        GetUnobstructedVertices(*cell, aCell, edgesOfInterest, allEdgesOverride, _cr, vertices);
+        GetUnobstructedVertices(spatialInfo, aCell, edgesOfInterest, allEdgesOverride, _cr, vertices);
 
     if (vertCnt == 0) {
         return;
@@ -375,22 +375,28 @@ void VisibilityCalculator::_castRay(hg::PZInteger aRayIndex) {
         }
 
         const auto  coords = _world.posToCellUnchecked(point);
-        const auto* cell   = _world.getCellAtUnchecked(coords);
+        cell::SpatialInfo spatialInfo;
+        const auto cellIsLoaded = _world.getCellDataAtUnchecked(coords);
 
-        if (HG_UNLIKELY_CONDITION(cell == nullptr)) {
+        if (HG_UNLIKELY_CONDITION(!cellIsLoaded)) {
             HG_UNLIKELY_BRANCH;
             _rays[hg::pztos(aRayIndex)] = _rayRadius + (t + 1) * incrementDistance;
             break;
         }
 
-        const auto openness = cell->getOpenness();
+        const auto openness = spatialInfo.openness;
 
         if (openness < 3 && prevOpenness < 3 && coords.x != prevCoords.x && coords.y != prevCoords.y) {
-            const auto* diagonalNeighbour1 = _world.getCellAtUnchecked(coords.x, prevCoords.y);
-            const auto* diagonalNeighbour2 = _world.getCellAtUnchecked(prevCoords.x, coords.y);
+            cell::SpatialInfo diagonalNeighbour1SpatialInfo;
+            const auto        diagonalNeighbour1IsLoaded =
+                _world.getCellDataAtUnchecked(coords.x, prevCoords.y, &diagonalNeighbour1SpatialInfo);
 
-            if ((!diagonalNeighbour1 || diagonalNeighbour1->isWallInitialized()) &&
-                (!diagonalNeighbour2 || diagonalNeighbour2->isWallInitialized())) {
+            cell::SpatialInfo diagonalNeighbour2SpatialInfo;
+            const auto        diagonalNeighbour2IsLoaded =
+                _world.getCellDataAtUnchecked(prevCoords.x, coords.y, &diagonalNeighbour2SpatialInfo);
+
+            if ((!diagonalNeighbour1IsLoaded || diagonalNeighbour1SpatialInfo.hasNonEmptyWallShape()) &&
+                (!diagonalNeighbour2IsLoaded || diagonalNeighbour2SpatialInfo.hasNonEmptyWallShape())) {
                 _rays[hg::pztos(aRayIndex)] = _rayRadius + t * incrementDistance;
                 return;
             }
@@ -398,7 +404,7 @@ void VisibilityCalculator::_castRay(hg::PZInteger aRayIndex) {
         prevCoords   = coords;
         prevOpenness = openness;
 
-        if (cell->isWallInitialized()) {
+        if (spatialInfo.hasNonEmptyWallShape()) {
             _rays[hg::pztos(aRayIndex)] = _rayRadius + (t + 1) * incrementDistance;
             return;
         }

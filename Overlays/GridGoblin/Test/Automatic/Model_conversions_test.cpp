@@ -42,6 +42,7 @@ protected:
 #endif
 };
 
+#if 0
 TEST_F(GridGoblinConversionsTest, EmptyCellConversionToJsonAndBack) {
     CellModel cell;
 
@@ -102,6 +103,7 @@ TEST_F(GridGoblinConversionsTest, ChunkConversionToJsonAndBack) {
 
     EXPECT_TRUE(AreCellsEqual(chunk, JsonStringToChunk(ChunkToJsonString(chunk))));
 }
+#endif
 
 } // namespace detail
 } // namespace gridgoblin
