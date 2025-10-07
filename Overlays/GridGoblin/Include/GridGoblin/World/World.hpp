@@ -333,7 +333,7 @@ public:
     //!          an `EditPermission` as a parameter). Using an invalid iterator in any way, other than
     //!          to destroy it, can lead to unexpected results, which can include crashes.
     AvailableChunkIterator availableChunksBegin() const {
-        return {_chunkStorage.availableChunksBegin()};
+        return {_chunkHolder.availableChunksBegin()};
     }
 
     //! Obtain an end iterator to compare the others to while iterating.
@@ -343,7 +343,7 @@ public:
     //!          an `EditPermission` as a parameter). Using an invalid iterator in any way, other than
     //!          to destroy it, can lead to unexpected results, which can include crashes.
     AvailableChunkIterator availableChunksEnd() const {
-        return {_chunkStorage.availableChunksEnd()};
+        return {_chunkHolder.availableChunksEnd()};
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -375,7 +375,7 @@ private:
 
     // ===== Subcomponents =====
 
-    detail::ChunkHolder _chunkStorage;
+    detail::ChunkHolder _chunkHolder;
 
     std::unique_ptr<detail::ChunkDiskIoHandlerInterface> _internalChunkDiskIoHandler;
     detail::ChunkDiskIoHandlerInterface*                 _chunkDiskIoHandler;
@@ -474,7 +474,7 @@ template <class... taPtrs>
     const auto chunkX = aX / _config.cellsPerChunkX;
     const auto chunkY = aY / _config.cellsPerChunkY;
 
-    if (auto* chunk = _chunkStorage.getChunkAtIdUnchecked({chunkX, chunkY}); chunk) {
+    if (auto* chunk = _chunkHolder.getChunkAtIdUnchecked({chunkX, chunkY}); chunk) {
         chunk->getCellDataAtUnchecked(getChunkMemoryLayoutInfo(),
                                       aX % _config.cellsPerChunkX,
                                       aY % _config.cellsPerChunkY,
@@ -495,16 +495,7 @@ template <class... taPtrs>
 inline std::optional<cell::SpatialInfo> World::getSpatialInfoAtUnchecked(
     hg::math::Vector2pz aCell) const //
 {
-    const auto chunkX = aCell.x / _config.cellsPerChunkX;
-    const auto chunkY = aCell.y / _config.cellsPerChunkY;
-
-    if (auto* chunk = _chunkStorage.getChunkAtIdUnchecked({chunkX, chunkY}); chunk) {
-        return chunk->getSpatialInfoAtUnchecked(
-            getChunkMemoryLayoutInfo(),
-            {aCell.x % _config.cellsPerChunkX, aCell.y % _config.cellsPerChunkY});
-    }
-
-    return std::nullopt;
+    return _getSpatialInfoOfCellAtUnchecked<false>(aCell.x, aCell.y);
 }
 
 template <class... taPtrs>
@@ -538,7 +529,7 @@ void World::getCellDataAtUnchecked(const EditPermission& aPerm,
     const auto chunkX = aX / _config.cellsPerChunkX;
     const auto chunkY = aY / _config.cellsPerChunkY;
 
-    const auto& chunk = _chunkStorage.getChunkAtIdUnchecked({chunkX, chunkY}, detail::LOAD_IF_MISSING);
+    const auto& chunk = _chunkHolder.getChunkAtIdUnchecked({chunkX, chunkY}, detail::LOAD_IF_MISSING);
     chunk.getCellDataAtUnchecked(getChunkMemoryLayoutInfo(),
                                  aX % _config.cellsPerChunkX,
                                  aY % _config.cellsPerChunkY,
@@ -559,7 +550,7 @@ inline cell::SpatialInfo World::getSpatialInfoAtUnchecked(const EditPermission& 
     const auto chunkX = aCell.x / _config.cellsPerChunkX;
     const auto chunkY = aCell.y / _config.cellsPerChunkY;
 
-    const auto& chunk = _chunkStorage.getChunkAtIdUnchecked({chunkX, chunkY}, detail::LOAD_IF_MISSING);
+    const auto& chunk = _chunkHolder.getChunkAtIdUnchecked({chunkX, chunkY}, detail::LOAD_IF_MISSING);
     return chunk.getSpatialInfoAtUnchecked(
         getChunkMemoryLayoutInfo(),
         {aCell.x % _config.cellsPerChunkX, aCell.y % _config.cellsPerChunkY});
@@ -592,7 +583,7 @@ void World::Editor::setCellDataAtUnchecked(hg::PZInteger aX, hg::PZInteger aY, t
     const auto chunkX = aX / _world._config.cellsPerChunkX;
     const auto chunkY = aY / _world._config.cellsPerChunkY;
 
-    auto& chunk = _world._chunkStorage.getChunkAtIdUnchecked({chunkX, chunkY}, detail::LOAD_IF_MISSING);
+    auto& chunk = _world._chunkHolder.getChunkAtIdUnchecked({chunkX, chunkY}, detail::LOAD_IF_MISSING);
     (_world._setCellDataAtUnchecked(chunk, aX, aY, aPtrs), ...);
 }
 
@@ -615,11 +606,11 @@ inline BuildingBlockMask World::getBuildingBlocks() const {
 }
 
 inline hg::PZInteger World::getChunkCountX() const {
-    return _chunkStorage.getChunkCountX();
+    return _chunkHolder.getChunkCountX();
 }
 
 inline hg::PZInteger World::getChunkCountY() const {
-    return _chunkStorage.getChunkCountY();
+    return _chunkHolder.getChunkCountY();
 }
 
 inline hg::PZInteger World::getCellsPerChunkX() const {
@@ -631,7 +622,7 @@ inline hg::PZInteger World::getCellsPerChunkY() const {
 }
 
 inline const ChunkMemoryLayoutInfo& World::getChunkMemoryLayoutInfo() const {
-    return reinterpret_cast<const ChunkMemoryLayoutInfo&>(_chunkStorage.GetChunkMemoryLayoutInfo());
+    return reinterpret_cast<const ChunkMemoryLayoutInfo&>(_chunkHolder.GetChunkMemoryLayoutInfo());
 }
 
 } // namespace gridgoblin

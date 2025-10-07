@@ -2,6 +2,7 @@
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
 #include <GridGoblin/Private/Chunk_holder.hpp>
+#include <GridGoblin/Private/Chunk_memory_layout_info.hpp>
 
 #include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/Logging.hpp>
@@ -16,10 +17,10 @@ namespace detail {
 static constexpr auto LOG_ID = "GridGoblin";
 
 namespace {
-detail::ChunkImpl::MemoryLayoutInfo ChunkMemoryLayoutInfoFromWorldConfig(const WorldConfig& aConfig) {
-    return detail::ChunkImpl::calcMemoryLayoutInfo(aConfig.cellsPerChunkX,
-                                                   aConfig.cellsPerChunkY,
-                                                   aConfig.buildingBlocks);
+auto ChunkMemoryLayoutInfoFromWorldConfig(const WorldConfig& aConfig) {
+    return CalcChunkMemoryLayoutInfo(aConfig.cellsPerChunkX,
+                                     aConfig.cellsPerChunkY,
+                                     aConfig.buildingBlocks);
 }
 } // namespace
 
@@ -166,7 +167,7 @@ void ChunkHolder::_onChunkLoaded(ChunkId aChunkId, Chunk&& aChunk) {
 void ChunkHolder::_createDefaultChunk(ChunkId aChunkId) {
     // Construct a chunk where all cells are in their default state
     // (floor, wall, etc. - all uninitialized).
-    auto defaultChunk = Chunk{reinterpret_cast<const ChunkMemoryLayoutInfo&>(_chunkMemoryLayoutInfo)};
+    auto defaultChunk = Chunk{_chunkMemoryLayoutInfo};
 
     // Attach an extension if possible
     HG_ASSERT(_binder != nullptr);

@@ -3,7 +3,6 @@
 
 #include <Hobgoblin/Common/Aligned_alloc.hpp>
 #include <Hobgoblin/HGExcept.hpp>
-#include <Hobgoblin/Math/Core.hpp>
 
 #include <GridGoblin/Model/Chunk_extension.hpp>
 #include <GridGoblin/Private/Chunk_impl.hpp>
@@ -20,70 +19,6 @@ void IncUntilAligned(std::size_t& aByteCounter, std::size_t aAlignment) {
 } // namespace
 
 namespace detail {
-
-ChunkImpl::MemoryLayoutInfo ChunkImpl::calcMemoryLayoutInfo(hg::PZInteger     aChunkWidth,
-                                                            hg::PZInteger     aChunkHeight,
-                                                            BuildingBlockMask aBuildingBlocks) {
-    MemoryLayoutInfo meminfo{.chunkWidth = aChunkWidth, .chunkHeight = aChunkHeight};
-
-    const auto cellCount = static_cast<std::size_t>(aChunkWidth * aChunkHeight);
-
-    std::size_t byteCounter = 0;
-
-    // Extension
-    {
-        // IMPORTANT: Extension pointer has to always be at offset zero, so that it can be cleaned
-        //            up in the destructor without having access to a `MemoryLayoutInfo` object.
-        // meminfo.offset.extension = byteCounter;
-        byteCounter += 1 * sizeof(ChunkExtensionInterface*);
-    }
-
-    // Cell kind ID
-    if ((aBuildingBlocks & BuildingBlock::CELL_KIND_ID) != BuildingBlock::NONE) {
-        IncUntilAligned(byteCounter, alignof(cell::CellKindId));
-        meminfo.offset.cellKindId = byteCounter;
-        byteCounter += cellCount * sizeof(cell::CellKindId);
-    }
-
-    // Floor sprite
-    if ((aBuildingBlocks & BuildingBlock::FLOOR_SPRITE) != BuildingBlock::NONE) {
-        IncUntilAligned(byteCounter, alignof(cell::FloorSprite));
-        meminfo.offset.floorSprite = byteCounter;
-        byteCounter += cellCount * sizeof(cell::FloorSprite);
-    }
-
-    // Wall sprite
-    if ((aBuildingBlocks & BuildingBlock::WALL_SPRITE) != BuildingBlock::NONE) {
-        IncUntilAligned(byteCounter, alignof(cell::WallSprite));
-        meminfo.offset.wallSprite = byteCounter;
-        byteCounter += cellCount * sizeof(cell::WallSprite);
-    }
-
-    // Spatial info
-    if ((aBuildingBlocks & BuildingBlock::SPATIAL_INFO) != BuildingBlock::NONE) {
-        IncUntilAligned(byteCounter, alignof(cell::SpatialInfo));
-        meminfo.offset.spatialInfo = byteCounter;
-        byteCounter += cellCount * sizeof(cell::SpatialInfo);
-    }
-
-    // Renderer aux data
-    if ((aBuildingBlocks & BuildingBlock::RENDERER_AUX_DATA) != BuildingBlock::NONE) {
-        IncUntilAligned(byteCounter, alignof(cell::RendererAuxData));
-        meminfo.offset.rendererAuxData = byteCounter;
-        byteCounter += cellCount * sizeof(cell::RendererAuxData);
-    }
-
-    // User data
-    if ((aBuildingBlocks & BuildingBlock::USER_DATA) != BuildingBlock::NONE) {
-        IncUntilAligned(byteCounter, alignof(cell::UserData));
-        meminfo.offset.userData = byteCounter;
-        byteCounter += cellCount * sizeof(cell::UserData);
-    }
-
-    meminfo.totalSize = byteCounter;
-
-    return meminfo;
-}
 
 ChunkImpl::ChunkImpl(ChunkImpl&& aOther)
     : _mem{aOther._mem} {
@@ -103,10 +38,12 @@ ChunkImpl::~ChunkImpl() {
 }
 
 void ChunkImpl::init(const MemoryLayoutInfo& aMemLayout) {
-    _mem = (std::byte*)hg::AlignedAlloc(alignof(void*), aMemLayout.totalSize);
+    const auto totalByteSize = detail::ChunkMemoryLayoutInfoAccessor::getTotalSize(aMemLayout);
+
+    _mem = (std::byte*)hg::AlignedAlloc(alignof(void*), totalByteSize);
     HG_HARD_ASSERT(_mem != nullptr);
 
-    std::memset(_mem, 0x00, aMemLayout.totalSize); // TODO: temp!!!!!!!!!!!!!!!!!!!
+    std::memset(_mem, 0x00, totalByteSize); // TODO: temp!!!!!!!!!!!!!!!!!!!
 
     _storeChunkExtensionPointer(nullptr);
 }

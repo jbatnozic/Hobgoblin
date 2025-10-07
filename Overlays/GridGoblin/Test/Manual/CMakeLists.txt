@@ -4,12 +4,12 @@
 project("GridGoblin.ManualTest")
 
 add_executable(${PROJECT_NAME}
+    "Chunk_holder_test.cpp"
     "Default_disk_io_test.cpp"
     # # "Dimetric_rendering_test.cpp"
     "GridGoblin_manual_test.cpp"
     "Openness_test.cpp"
     "Spooling_test.cpp"
-    # "Storage_handler_test.cpp"
     "Visibility_calc_test.cpp"
 )
 

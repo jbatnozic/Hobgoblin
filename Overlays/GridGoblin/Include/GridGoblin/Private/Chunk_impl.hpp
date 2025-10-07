@@ -5,6 +5,7 @@
 
 #include <GridGoblin/Model/Building_block.hpp>
 #include <GridGoblin/Model/Cell.hpp>
+#include <GridGoblin/Private/Chunk_memory_layout_info.hpp>
 
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/HGExcept.hpp>
@@ -24,26 +25,7 @@ namespace hg = ::jbatnozic::hobgoblin;
 
 class ChunkImpl {
 public:
-    struct MemoryLayoutInfo {
-        hg::PZInteger chunkWidth;  //!< Number of columns in the chunk
-        hg::PZInteger chunkHeight; //!< Number of rows in the chunk
-
-        struct Offsets {
-            std::size_t cellKindId      = static_cast<std::size_t>(-1);
-            std::size_t floorSprite     = static_cast<std::size_t>(-1);
-            std::size_t wallSprite      = static_cast<std::size_t>(-1);
-            std::size_t spatialInfo     = static_cast<std::size_t>(-1);
-            std::size_t rendererAuxData = static_cast<std::size_t>(-1);
-            std::size_t userData        = static_cast<std::size_t>(-1);
-        };
-
-        Offsets     offset;
-        std::size_t totalSize;
-    };
-
-    static MemoryLayoutInfo calcMemoryLayoutInfo(hg::PZInteger     aChunkWidth,
-                                                 hg::PZInteger     aChunkHeight,
-                                                 BuildingBlockMask aBuildingBlocks);
+    using MemoryLayoutInfo = ChunkMemoryLayoutInfo;
 
     ChunkImpl() = default;
 
@@ -55,7 +37,7 @@ public:
 
     ~ChunkImpl();
 
-    void init(const MemoryLayoutInfo& aMemLayout);
+    void init(const MemoryLayoutInfo& aMemLayout); // TODO: fill
 
     bool isEmpty() const {
         return (_mem == nullptr);
@@ -139,12 +121,14 @@ private:
 
 // MARK: Inline getter definitions
 
+#define ACCESSOR detail::ChunkMemoryLayoutInfoAccessor
+
 // CellKindId
 
 inline cell::CellKindId& ChunkImpl::getCellKindIdAtUnchecked(const MemoryLayoutInfo& aMemLayout,
                                                              hg::math::Vector2pz     aCellPos) {
-    auto* array = reinterpret_cast<cell::CellKindId*>(_mem + aMemLayout.offset.cellKindId);
-    return array[(aCellPos.y * aMemLayout.chunkWidth) + aCellPos.x];
+    auto* array = reinterpret_cast<cell::CellKindId*>(_mem + ACCESSOR::getCellKindIdOffset(aMemLayout));
+    return array[(aCellPos.y * ACCESSOR::getChunkWidth(aMemLayout)) + aCellPos.x];
 }
 
 inline const cell::CellKindId& ChunkImpl::getCellKindIdAtUnchecked(const MemoryLayoutInfo& aMemLayout,
@@ -156,8 +140,9 @@ inline const cell::CellKindId& ChunkImpl::getCellKindIdAtUnchecked(const MemoryL
 
 inline cell::FloorSprite& ChunkImpl::getFloorSpriteAtUnchecked(const MemoryLayoutInfo& aMemLayout,
                                                                hg::math::Vector2pz     aCellPos) {
-    auto* array = reinterpret_cast<cell::FloorSprite*>(_mem + aMemLayout.offset.floorSprite);
-    return array[(aCellPos.y * aMemLayout.chunkWidth) + aCellPos.x];
+    auto* array =
+        reinterpret_cast<cell::FloorSprite*>(_mem + ACCESSOR::getFloorSpriteOffset(aMemLayout));
+    return array[(aCellPos.y * ACCESSOR::getChunkWidth(aMemLayout)) + aCellPos.x];
 }
 
 inline const cell::FloorSprite& ChunkImpl::getFloorSpriteAtUnchecked(
@@ -171,8 +156,8 @@ inline const cell::FloorSprite& ChunkImpl::getFloorSpriteAtUnchecked(
 
 inline cell::WallSprite& ChunkImpl::getWallSpriteAtUnchecked(const MemoryLayoutInfo& aMemLayout,
                                                              hg::math::Vector2pz     aCellPos) {
-    auto* array = reinterpret_cast<cell::WallSprite*>(_mem + aMemLayout.offset.wallSprite);
-    return array[(aCellPos.y * aMemLayout.chunkWidth) + aCellPos.x];
+    auto* array = reinterpret_cast<cell::WallSprite*>(_mem + ACCESSOR::getWallSpriteOffset(aMemLayout));
+    return array[(aCellPos.y * ACCESSOR::getChunkWidth(aMemLayout)) + aCellPos.x];
 }
 
 inline const cell::WallSprite& ChunkImpl::getWallSpriteAtUnchecked(const MemoryLayoutInfo& aMemLayout,
@@ -184,8 +169,9 @@ inline const cell::WallSprite& ChunkImpl::getWallSpriteAtUnchecked(const MemoryL
 
 inline cell::SpatialInfo& ChunkImpl::getSpatialInfoAtUnchecked(const MemoryLayoutInfo& aMemLayout,
                                                                hg::math::Vector2pz     aCellPos) {
-    auto* array = reinterpret_cast<cell::SpatialInfo*>(_mem + aMemLayout.offset.spatialInfo);
-    return array[(aCellPos.y * aMemLayout.chunkWidth) + aCellPos.x];
+    auto* array =
+        reinterpret_cast<cell::SpatialInfo*>(_mem + ACCESSOR::getSpatialInfoOffset(aMemLayout));
+    return array[(aCellPos.y * ACCESSOR::getChunkWidth(aMemLayout)) + aCellPos.x];
 }
 
 inline const cell::SpatialInfo& ChunkImpl::getSpatialInfoAtUnchecked(
@@ -201,8 +187,9 @@ inline cell::RendererAuxData& ChunkImpl::getRendererAuxDataAtUnchecked(
     const MemoryLayoutInfo& aMemLayout,
     hg::math::Vector2pz     aCellPos) //
 {
-    auto* array = reinterpret_cast<cell::RendererAuxData*>(_mem + aMemLayout.offset.rendererAuxData);
-    return array[(aCellPos.y * aMemLayout.chunkWidth) + aCellPos.x];
+    auto* array =
+        reinterpret_cast<cell::RendererAuxData*>(_mem + ACCESSOR::getRendererAuxDataOffset(aMemLayout));
+    return array[(aCellPos.y * ACCESSOR::getChunkWidth(aMemLayout)) + aCellPos.x];
 }
 
 inline const cell::RendererAuxData& ChunkImpl::getRendererAuxDataAtUnchecked(
@@ -216,14 +203,16 @@ inline const cell::RendererAuxData& ChunkImpl::getRendererAuxDataAtUnchecked(
 
 inline cell::UserData& ChunkImpl::getUserDataAtUnchecked(const MemoryLayoutInfo& aMemLayout,
                                                          hg::math::Vector2pz     aCellPos) {
-    auto* array = reinterpret_cast<cell::UserData*>(_mem + aMemLayout.offset.userData);
-    return array[(aCellPos.y * aMemLayout.chunkWidth) + aCellPos.x];
+    auto* array = reinterpret_cast<cell::UserData*>(_mem + ACCESSOR::getUserDataOffset(aMemLayout));
+    return array[(aCellPos.y * ACCESSOR::getChunkWidth(aMemLayout)) + aCellPos.x];
 }
 
 inline const cell::UserData& ChunkImpl::getUserDataAtUnchecked(const MemoryLayoutInfo& aMemLayout,
                                                                hg::math::Vector2pz     aCellPos) const {
     return const_cast<ChunkImpl*>(this)->getUserDataAtUnchecked(aMemLayout, aCellPos);
 }
+
+#undef ACCESSOR
 
 } // namespace detail
 

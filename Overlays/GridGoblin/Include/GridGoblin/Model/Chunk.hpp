@@ -17,7 +17,14 @@ namespace hg = jbatnozic::hobgoblin;
 
 class ChunkExtensionInterface;
 
-//! TODO(add description)
+//! All the chunks of a single GridGoblin World must have the same memory layout, so the structure
+//! describing this layout is saved only once, in the World instance, instead of being duplicated
+//! in every chunk.
+//! The downside of this is that when you're working with chunks directly, a lot of methods need a
+//! reference to this structure passed to them - to get it, use `World::getChunkMemoryLayoutInfo()`.
+//!
+//! \note this is an opaque type. As a user of the library, you don't need to worry about the specific
+//!       implementation of it - you'll just be dealing with references to it.
 struct ChunkMemoryLayoutInfo;
 
 class Chunk {
@@ -94,7 +101,7 @@ public:
                                 hg::PZInteger                aY,
                                 taPtrs&&... aPtrs);
 
-    //! Same as the pther overload of `setCellDataAtUnchecked`,
+    //! Same as the other overload of `setCellDataAtUnchecked`,
     //! but here the coordinates are given as a vector.
     template <class... taPtrs>
     void setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
@@ -122,10 +129,6 @@ public:
 private:
     detail::ChunkImpl _impl;
 
-    static auto convertMemLayoutInfo(const ChunkMemoryLayoutInfo& aMemLayoutInfo) {
-        return reinterpret_cast<const detail::ChunkImpl::MemoryLayoutInfo&>(aMemLayoutInfo);
-    }
-
     // Getters
 
     void _getCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
@@ -133,7 +136,7 @@ private:
                                  hg::PZInteger                aY,
                                  cell::CellKindId*            aCellKindId) const {
         assert(aCellKindId != nullptr);
-        *aCellKindId = _impl.getCellKindIdAtUnchecked(convertMemLayoutInfo(aMemLayout), {aX, aY});
+        *aCellKindId = _impl.getCellKindIdAtUnchecked(aMemLayout, {aX, aY});
     }
 
     void _getCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
@@ -141,7 +144,7 @@ private:
                                  hg::PZInteger                aY,
                                  cell::FloorSprite*           aFloorSprite) const {
         assert(aFloorSprite != nullptr);
-        *aFloorSprite = _impl.getFloorSpriteAtUnchecked(convertMemLayoutInfo(aMemLayout), {aX, aY});
+        *aFloorSprite = _impl.getFloorSpriteAtUnchecked(aMemLayout, {aX, aY});
     }
 
     void _getCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
@@ -149,7 +152,7 @@ private:
                                  hg::PZInteger                aY,
                                  cell::WallSprite*            aWallSprite) const {
         assert(aWallSprite != nullptr);
-        *aWallSprite = _impl.getWallSpriteAtUnchecked(convertMemLayoutInfo(aMemLayout), {aX, aY});
+        *aWallSprite = _impl.getWallSpriteAtUnchecked(aMemLayout, {aX, aY});
     }
 
     void _getCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
@@ -157,7 +160,7 @@ private:
                                  hg::PZInteger                aY,
                                  cell::SpatialInfo*           aSpatialInfo) const {
         assert(aSpatialInfo != nullptr);
-        *aSpatialInfo = _impl.getSpatialInfoAtUnchecked(convertMemLayoutInfo(aMemLayout), {aX, aY});
+        *aSpatialInfo = _impl.getSpatialInfoAtUnchecked(aMemLayout, {aX, aY});
     }
 
     void _getCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
@@ -165,8 +168,7 @@ private:
                                  hg::PZInteger                aY,
                                  cell::RendererAuxData*       aRendererAuxData) const {
         assert(aRendererAuxData != nullptr);
-        *aRendererAuxData =
-            _impl.getRendererAuxDataAtUnchecked(convertMemLayoutInfo(aMemLayout), {aX, aY});
+        *aRendererAuxData = _impl.getRendererAuxDataAtUnchecked(aMemLayout, {aX, aY});
     }
 
     void _getCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
@@ -174,7 +176,7 @@ private:
                                  hg::PZInteger                aY,
                                  cell::UserData*              aUserData) const {
         assert(aUserData != nullptr);
-        *aUserData = _impl.getUserDataAtUnchecked(convertMemLayoutInfo(aMemLayout), {aX, aY});
+        *aUserData = _impl.getUserDataAtUnchecked(aMemLayout, {aX, aY});
     }
 
     // Setters
@@ -184,7 +186,7 @@ private:
                                  hg::PZInteger                aY,
                                  const cell::CellKindId*      aCellKindId) {
         assert(aCellKindId != nullptr);
-        _impl.getCellKindIdAtUnchecked(convertMemLayoutInfo(aMemLayout), {aX, aY}) = *aCellKindId;
+        _impl.getCellKindIdAtUnchecked(aMemLayout, {aX, aY}) = *aCellKindId;
     }
 
     void _setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
@@ -192,7 +194,7 @@ private:
                                  hg::PZInteger                aY,
                                  const cell::FloorSprite*     aFloorSprite) {
         assert(aFloorSprite != nullptr);
-        _impl.getFloorSpriteAtUnchecked(convertMemLayoutInfo(aMemLayout), {aX, aY}) = *aFloorSprite;
+        _impl.getFloorSpriteAtUnchecked(aMemLayout, {aX, aY}) = *aFloorSprite;
     }
 
     void _setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
@@ -200,7 +202,7 @@ private:
                                  hg::PZInteger                aY,
                                  const cell::WallSprite*      aWallSprite) {
         assert(aWallSprite != nullptr);
-        _impl.getWallSpriteAtUnchecked(convertMemLayoutInfo(aMemLayout), {aX, aY}) = *aWallSprite;
+        _impl.getWallSpriteAtUnchecked(aMemLayout, {aX, aY}) = *aWallSprite;
     }
 
     void _setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
@@ -208,7 +210,7 @@ private:
                                  hg::PZInteger                aY,
                                  const cell::SpatialInfo*     aSpatialInfo) {
         assert(aSpatialInfo != nullptr);
-        _impl.getSpatialInfoAtUnchecked(convertMemLayoutInfo(aMemLayout), {aX, aY}) = *aSpatialInfo;
+        _impl.getSpatialInfoAtUnchecked(aMemLayout, {aX, aY}) = *aSpatialInfo;
     }
 
     void _setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
@@ -216,8 +218,7 @@ private:
                                  hg::PZInteger                aY,
                                  const cell::RendererAuxData* aRendererAuxData) {
         assert(aRendererAuxData != nullptr);
-        _impl.getRendererAuxDataAtUnchecked(convertMemLayoutInfo(aMemLayout), {aX, aY}) =
-            *aRendererAuxData;
+        _impl.getRendererAuxDataAtUnchecked(aMemLayout, {aX, aY}) = *aRendererAuxData;
     }
 
     void _setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
@@ -225,7 +226,7 @@ private:
                                  hg::PZInteger                aY,
                                  const cell::UserData*        aUserData) {
         assert(aUserData != nullptr);
-        _impl.getUserDataAtUnchecked(convertMemLayoutInfo(aMemLayout), {aX, aY}) = *aUserData;
+        _impl.getUserDataAtUnchecked(aMemLayout, {aX, aY}) = *aUserData;
     }
 };
 
@@ -266,7 +267,7 @@ void Chunk::getCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
 
 inline cell::SpatialInfo Chunk::getSpatialInfoAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
                                                           hg::math::Vector2pz          aCell) const {
-    return _impl.getSpatialInfoAtUnchecked(convertMemLayoutInfo(aMemLayout), aCell);
+    return _impl.getSpatialInfoAtUnchecked(aMemLayout, aCell);
 }
 
 template <class... taPtrs>

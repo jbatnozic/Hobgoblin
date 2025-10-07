@@ -7,6 +7,7 @@
 
 #include "Fake_disk_io_handler.hpp"
 #include <GridGoblin/Private/Chunk_impl.hpp>
+#include <GridGoblin/Private/Chunk_memory_layout_info.hpp>
 #include <GridGoblin/Private/Chunk_spooler_default.hpp>
 
 #include <memory>
@@ -18,7 +19,6 @@ using jbatnozic::gridgoblin::BuildingBlockMask;
 using jbatnozic::gridgoblin::Chunk;
 using jbatnozic::gridgoblin::ChunkId;
 using jbatnozic::gridgoblin::ChunkMemoryLayoutInfo;
-using jbatnozic::gridgoblin::detail::ChunkImpl;
 using jbatnozic::gridgoblin::detail::ChunkSpoolerInterface;
 
 #define CHUNK_COUNT_X 32
@@ -193,16 +193,13 @@ private:
 
 class Fixture {
 public:
-    ChunkImpl::MemoryLayoutInfo _memoryLayoutInfoImpl =
-        ChunkImpl::calcMemoryLayoutInfo(1, 1, BuildingBlockMask::ALL);
-
-    const ChunkMemoryLayoutInfo& _memoryLayout =
-        reinterpret_cast<const ChunkMemoryLayoutInfo&>(_memoryLayoutInfoImpl);
+    ChunkMemoryLayoutInfo _chunkMemoryLayoutInfoImpl =
+        jbatnozic::gridgoblin::detail::CalcChunkMemoryLayoutInfo(1, 1, BuildingBlockMask::ALL);
 
     jbatnozic::gridgoblin::test::FakeDiskIoHandler     _fakeDiskIoHandler;
     jbatnozic::gridgoblin::detail::DefaultChunkSpooler _chunkSpooler{BuildingBlockMask::ALL,
-                                                                     _memoryLayout};
-    FakeWorld                                          _fakeWorld{32, 32, _chunkSpooler, _memoryLayout};
+                                                                     _chunkMemoryLayoutInfoImpl};
+    FakeWorld _fakeWorld{32, 32, _chunkSpooler, _chunkMemoryLayoutInfoImpl};
 
     Fixture() {
         _chunkSpooler.setDiskIoHandler(&_fakeDiskIoHandler);

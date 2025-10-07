@@ -19,7 +19,7 @@ namespace gridgoblin {
 // }
 
 Chunk::Chunk(const ChunkMemoryLayoutInfo& aMemLayout) {
-    _impl.init(reinterpret_cast<const detail::ChunkImpl::MemoryLayoutInfo&>(aMemLayout));
+    _impl.init(aMemLayout);
 }
 
 void Chunk::setExtension(std::unique_ptr<ChunkExtensionInterface> aChunkExtension) {

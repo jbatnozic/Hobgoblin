@@ -30,7 +30,7 @@ std::unique_ptr<detail::ChunkSpoolerInterface> CreateChunkSpooler(
 
 World::World(const WorldConfig& aConfig)
     : _config{WorldConfig::validate(aConfig)}
-    , _chunkStorage{aConfig}
+    , _chunkHolder{aConfig}
     , _internalChunkDiskIoHandler{CreateDiskIoHandler(aConfig)}
     , _chunkDiskIoHandler{_internalChunkDiskIoHandler.get()}
     , _internalChunkSpooler{CreateChunkSpooler(aConfig, getChunkMemoryLayoutInfo())}
@@ -42,7 +42,7 @@ World::World(const WorldConfig& aConfig)
 World::World(const WorldConfig&                                  aConfig,
              hg::NeverNull<detail::ChunkDiskIoHandlerInterface*> aChunkDiskIoHandler)
     : _config{WorldConfig::validate(aConfig)}
-    , _chunkStorage{aConfig}
+    , _chunkHolder{aConfig}
     , _internalChunkDiskIoHandler{nullptr}
     , _chunkDiskIoHandler{aChunkDiskIoHandler}
     , _internalChunkSpooler{CreateChunkSpooler(aConfig, getChunkMemoryLayoutInfo())}
@@ -56,7 +56,7 @@ World::World(const WorldConfig& aConfig, hg::NeverNull<detail::ChunkSpoolerInter
     : _config{WorldConfig::validate(aConfig)}
     , _chunkDiskIoHandler{nullptr}
     , _chunkSpooler{nullptr}
-    , _chunkStorage{*aChunkSpooler, aConfig} {}
+    , _chunkHolder{*aChunkSpooler, aConfig} {}
 #endif
 
 World::~World() {
@@ -87,11 +87,11 @@ std::optional<cell::SpatialInfo> World::_getSpatialInfoOfCellAtUnchecked(hg::PZI
     const Chunk* chunk;
 
     if constexpr (taAllowedToLoadAdjacent) {
-        chunk = &_chunkStorage.getChunkAtIdUnchecked(
+        chunk = &_chunkHolder.getChunkAtIdUnchecked(
             {aX / _config.cellsPerChunkX, aY / _config.cellsPerChunkY},
             detail::LOAD_IF_MISSING);
     } else {
-        chunk = _chunkStorage.getChunkAtIdUnchecked(
+        chunk = _chunkHolder.getChunkAtIdUnchecked(
             {aX / _config.cellsPerChunkX, aY / _config.cellsPerChunkY});
     }
 
@@ -257,11 +257,11 @@ hg::PZInteger World::_calcOpennessAt(hg::PZInteger aX, hg::PZInteger aY) {
 ///////////////////////////////////////////////////////////////////////////
 
 void World::update() {
-    _chunkStorage.update();
+    _chunkHolder.update();
 }
 
 void World::prune() {
-    _chunkStorage.prune();
+    _chunkHolder.prune();
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -342,53 +342,6 @@ hg::PZInteger World::getCellCountY() const {
     return _config.cellCountY;
 }
 
-#if 0
-const CellModel* World::getCellAt(hg::PZInteger aX, hg::PZInteger aY) const {
-    HG_VALIDATE_ARGUMENT(aX < getCellCountX());
-    HG_VALIDATE_ARGUMENT(aY < getCellCountY());
-    return _chunkStorage.getCellAtUnchecked(aX, aY);
-}
-
-const CellModel* World::getCellAt(hg::math::Vector2pz aCell) const {
-    HG_VALIDATE_ARGUMENT(aCell.x < getCellCountX());
-    HG_VALIDATE_ARGUMENT(aCell.y < getCellCountY());
-    return _chunkStorage.getCellAtUnchecked(aCell.x, aCell.y);
-}
-
-const CellModel* World::getCellAtUnchecked(hg::PZInteger aX, hg::PZInteger aY) const {
-    return _chunkStorage.getCellAtUnchecked(aX, aY);
-}
-
-const CellModel* World::getCellAtUnchecked(hg::math::Vector2pz aCell) const {
-    return _chunkStorage.getCellAtUnchecked(aCell.x, aCell.y);
-}
-
-const CellModel& World::getCellAt(const EditPermission& /*aPerm*/,
-                                  hg::PZInteger aX,
-                                  hg::PZInteger aY) const {
-    HG_VALIDATE_ARGUMENT(aX < getCellCountX());
-    HG_VALIDATE_ARGUMENT(aY < getCellCountY());
-    return _chunkStorage.getCellAtUnchecked(aX, aY, detail::LOAD_IF_MISSING);
-}
-
-const CellModel& World::getCellAt(const EditPermission& /*aPerm*/, hg::math::Vector2pz aCell) const {
-    HG_VALIDATE_ARGUMENT(aCell.x < getCellCountX());
-    HG_VALIDATE_ARGUMENT(aCell.y < getCellCountY());
-    return _chunkStorage.getCellAtUnchecked(aCell.x, aCell.y, detail::LOAD_IF_MISSING);
-}
-
-const CellModel& World::getCellAtUnchecked(const EditPermission& /*aPerm*/,
-                                           hg::PZInteger aX,
-                                           hg::PZInteger aY) const {
-    return _chunkStorage.getCellAtUnchecked(aX, aY, detail::LOAD_IF_MISSING);
-}
-
-const CellModel& World::getCellAtUnchecked(const EditPermission& /*aPerm*/,
-                                           hg::math::Vector2pz aCell) const {
-    return _chunkStorage.getCellAtUnchecked(aCell.x, aCell.y, detail::LOAD_IF_MISSING);
-}
-#endif
-
 ///////////////////////////////////////////////////////////////////////////
 // MARK: CELL UPDATERS                                                   //
 ///////////////////////////////////////////////////////////////////////////
@@ -452,7 +405,7 @@ const Chunk* World::getChunkAtId(ChunkId aChunkId) const {
 }
 
 const Chunk* World::getChunkAtIdUnchecked(ChunkId aChunkId) const {
-    return _chunkStorage.getChunkAtIdUnchecked(aChunkId);
+    return _chunkHolder.getChunkAtIdUnchecked(aChunkId);
 }
 
 const Chunk& World::getChunkAt(const EditPermission& aPerm, hg::PZInteger aX, hg::PZInteger aY) const {
@@ -484,7 +437,7 @@ const Chunk& World::getChunkAtId(const EditPermission& aPerm, ChunkId aChunkId) 
 }
 
 const Chunk& World::getChunkAtIdUnchecked(const EditPermission& /*aPerm*/, ChunkId aChunkId) const {
-    return _chunkStorage.getChunkAtIdUnchecked(aChunkId, detail::LOAD_IF_MISSING);
+    return _chunkHolder.getChunkAtIdUnchecked(aChunkId, detail::LOAD_IF_MISSING);
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -492,7 +445,7 @@ const Chunk& World::getChunkAtIdUnchecked(const EditPermission& /*aPerm*/, Chunk
 ///////////////////////////////////////////////////////////////////////////
 
 ActiveArea World::createActiveArea() {
-    return _chunkStorage.createNewActiveArea();
+    return _chunkHolder.createNewActiveArea();
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -522,8 +475,8 @@ void World::_attachBinder(hg::NeverNull<Binder*> aBinder, std::int32_t aPriority
 // ===== Subcomponents =====
 
 void World::_connectSubcomponents() {
-    _chunkStorage.setBinder(this);
-    _chunkStorage.setChunkSpooler(_chunkSpooler);
+    _chunkHolder.setBinder(this);
+    _chunkHolder.setChunkSpooler(_chunkSpooler);
     _chunkDiskIoHandler->setBinder(this);
     _chunkSpooler->setDiskIoHandler(_chunkDiskIoHandler);
 }
@@ -531,8 +484,8 @@ void World::_connectSubcomponents() {
 void World::_disconnectSubcomponents() {
     _chunkSpooler->setDiskIoHandler(nullptr);
     _chunkDiskIoHandler->setBinder(nullptr);
-    _chunkStorage.setChunkSpooler(nullptr);
-    _chunkStorage.setBinder(nullptr);
+    _chunkHolder.setChunkSpooler(nullptr);
+    _chunkHolder.setBinder(nullptr);
 }
 
 // ===== Callbacks =====
@@ -642,7 +595,7 @@ void World::_refreshCellAtUnchecked(hg::PZInteger aX, hg::PZInteger aY) {
     const auto chunkX = aX / _config.cellsPerChunkX;
     const auto chunkY = aY / _config.cellsPerChunkY;
 
-    auto* chunk = _chunkStorage.getChunkAtIdUnchecked({chunkX, chunkY});
+    auto* chunk = _chunkHolder.getChunkAtIdUnchecked({chunkX, chunkY});
 
     if (chunk) {
         cell::SpatialInfo spatialInfo;

@@ -26,11 +26,11 @@ int main() try {
         std::filesystem::remove_all("GGManualTest_WorkDir");
     });
 
+    HG_ADD_MANUAL_TEST(testRunner, RunChunkHolderTest);
     HG_ADD_MANUAL_TEST(testRunner, RunDefaultDiskIoTest);
-    // HG_ADD_MANUAL_TEST(testRunner, RunStorageHandlerTest);
+    // HG_ADD_MANUAL_TEST(testRunner, RunDimetricRenderingTest);
     HG_ADD_MANUAL_TEST(testRunner, RunOpennessTest);
     HG_ADD_MANUAL_TEST(testRunner, RunSpoolingTest);
-    // HG_ADD_MANUAL_TEST(testRunner, RunDimetricRenderingTest);
     HG_ADD_MANUAL_TEST(testRunner, RunVisibilityCalculatorTest);
 
     testRunner.runTest();

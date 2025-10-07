@@ -261,10 +261,8 @@ json::Document ChunkToJson(const Chunk&                 aChunk,
                            BuildingBlockMask            aBuildingBlocks,
                            const ChunkMemoryLayoutInfo& aChunkMemLayout,
                            ReusableConversionBuffers*   aReusableConversionBuffers) {
-    const auto& chunkMemLayoutImpl =
-        reinterpret_cast<const ChunkImpl::MemoryLayoutInfo&>(aChunkMemLayout);
-    const auto chunkWidth  = chunkMemLayoutImpl.chunkWidth;
-    const auto chunkHeight = chunkMemLayoutImpl.chunkHeight;
+    const auto chunkWidth  = ChunkMemoryLayoutInfoAccessor::getChunkWidth(aChunkMemLayout);
+    const auto chunkHeight = ChunkMemoryLayoutInfoAccessor::getChunkHeight(aChunkMemLayout);
 
     json::Document doc;
     auto&          allocator = doc.GetAllocator();
@@ -413,10 +411,8 @@ Chunk JsonToChunk(const json::Document&        aJsonDocument,
                   ReusableConversionBuffers*   aReusableConversionBuffers) {
     Chunk chunk{aChunkMemLayout};
 
-    const auto& chunkMemLayoutImpl =
-        reinterpret_cast<const ChunkImpl::MemoryLayoutInfo&>(aChunkMemLayout);
-    const auto chunkWidth  = chunkMemLayoutImpl.chunkWidth;
-    const auto chunkHeight = chunkMemLayoutImpl.chunkHeight;
+    const auto chunkWidth  = ChunkMemoryLayoutInfoAccessor::getChunkWidth(aChunkMemLayout);
+    const auto chunkHeight = ChunkMemoryLayoutInfoAccessor::getChunkHeight(aChunkMemLayout);
 
     // Read CellKindId
     {
