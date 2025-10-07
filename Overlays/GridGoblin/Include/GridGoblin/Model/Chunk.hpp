@@ -244,6 +244,8 @@ inline void Chunk::getCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayou
                                           hg::PZInteger                aX,
                                           hg::PZInteger                aY,
                                           taPtrs&&... aPtrs) const {
+    static_assert(sizeof...(aPtrs) > 0);
+
     (_getCellDataAtUnchecked(aMemLayout, aX, aY, aPtrs), ...);
 }
 
@@ -251,6 +253,8 @@ template <class... taPtrs>
 void Chunk::getCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
                                    hg::math::Vector2pz          aCell,
                                    taPtrs&&... aPtrs) const {
+    static_assert(sizeof...(aPtrs) > 0);
+
     (_getCellDataAtUnchecked(aMemLayout, aCell.x, aCell.y, aPtrs), ...);
 }
 
@@ -259,6 +263,8 @@ inline void Chunk::setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayou
                                           hg::PZInteger                aX,
                                           hg::PZInteger                aY,
                                           taPtrs&&... aPtrs) {
+    static_assert(sizeof...(aPtrs) > 0);
+
     (_setCellDataAtUnchecked(aMemLayout, aX, aY, aPtrs), ...);
 }
 
@@ -266,6 +272,8 @@ template <class... taPtrs>
 inline void Chunk::setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
                                           hg::math::Vector2pz          aCell,
                                           taPtrs&&... aPtrs) {
+    static_assert(sizeof...(aPtrs) > 0);
+
     (_setCellDataAtUnchecked(aMemLayout, aCell.x, aCell.y, aPtrs), ...);
 }
 

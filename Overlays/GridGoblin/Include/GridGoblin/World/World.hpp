@@ -446,12 +446,16 @@ private:
 
 template <class... taPtrs>
 [[nodiscard]] bool World::getCellDataAt(hg::PZInteger aX, hg::PZInteger aY, taPtrs&&... aPtrs) const {
+    static_assert(sizeof...(aPtrs) > 0);
+
     // TODO: validate args
     return getCellDataAtUnchecked(aX, aY, std::forward<taPtrs>(aPtrs)...);
 }
 
 template <class... taPtrs>
 [[nodiscard]] bool World::getCellDataAt(hg::math::Vector2pz aCell, taPtrs&&... aPtrs) const {
+    static_assert(sizeof...(aPtrs) > 0);
+
     // TODO: validate args
     return getCellDataAtUnchecked(aCell.x, aCell.y, std::forward<taPtrs>(aPtrs)...);
 }
@@ -460,6 +464,8 @@ template <class... taPtrs>
 [[nodiscard]] bool World::getCellDataAtUnchecked(hg::PZInteger aX,
                                                  hg::PZInteger aY,
                                                  taPtrs&&... aPtrs) const {
+    static_assert(sizeof...(aPtrs) > 0);
+
     const auto chunkX = aX / _config.cellsPerChunkX;
     const auto chunkY = aY / _config.cellsPerChunkY;
 
@@ -476,6 +482,8 @@ template <class... taPtrs>
 
 template <class... taPtrs>
 [[nodiscard]] bool World::getCellDataAtUnchecked(hg::math::Vector2pz aCell, taPtrs&&... aPtrs) const {
+    static_assert(sizeof...(aPtrs) > 0);
+
     return getCellDataAtUnchecked(aCell.x, aCell.y, std::forward<taPtrs>(aPtrs)...);
 }
 
@@ -484,6 +492,8 @@ void World::getCellDataAt(const EditPermission& aPerm,
                           hg::PZInteger         aX,
                           hg::PZInteger         aY,
                           taPtrs&&... aPtrs) const {
+    static_assert(sizeof...(aPtrs) > 0);
+
     // TODO: validate args
     getCellDataAtUnchecked(aPerm, aX, aY, std::forward<taPtrs>(aPtrs)...);
 }
@@ -492,6 +502,8 @@ template <class... taPtrs>
 void World::getCellDataAt(const EditPermission& aPerm,
                           hg::math::Vector2pz   aCell,
                           taPtrs&&... aPtrs) const {
+    static_assert(sizeof...(aPtrs) > 0);
+
     // TODO: validate args
     getCellDataAtUnchecked(aPerm, aCell.x, aCell.y, std::forward<taPtrs>(aPtrs)...);
 }
@@ -501,6 +513,8 @@ void World::getCellDataAtUnchecked(const EditPermission& aPerm,
                                    hg::PZInteger         aX,
                                    hg::PZInteger         aY,
                                    taPtrs&&... aPtrs) const {
+    static_assert(sizeof...(aPtrs) > 0);
+
     const auto chunkX = aX / _config.cellsPerChunkX;
     const auto chunkY = aY / _config.cellsPerChunkY;
 
@@ -515,6 +529,8 @@ template <class... taPtrs>
 void World::getCellDataAtUnchecked(const EditPermission& aPerm,
                                    hg::math::Vector2pz   aCell,
                                    taPtrs&&... aPtrs) const {
+    static_assert(sizeof...(aPtrs) > 0);
+
     getCellDataAtUnchecked(aPerm, aCell.x, aCell.y, std::forward<taPtrs>(aPtrs)...);
 }
 
@@ -524,18 +540,24 @@ void World::getCellDataAtUnchecked(const EditPermission& aPerm,
 
 template <class... taPtrs>
 void World::Editor::setCellDataAt(hg::PZInteger aX, hg::PZInteger aY, taPtrs&&... aPtrs) {
+    static_assert(sizeof...(aPtrs) > 0);
+
     // TODO: validate args
     setCellDataAtUnchecked(aX, aY, std::forward<taPtrs>(aPtrs)...);
 }
 
 template <class... taPtrs>
 void World::Editor::setCellDataAt(hg::math::Vector2pz aCell, taPtrs&&... aPtrs) {
+    static_assert(sizeof...(aPtrs) > 0);
+
     // TODO: validate args
     setCellDataAtUnchecked(aCell.x, aCell.y, std::forward<taPtrs>(aPtrs)...);
 }
 
 template <class... taPtrs>
 void World::Editor::setCellDataAtUnchecked(hg::PZInteger aX, hg::PZInteger aY, taPtrs&&... aPtrs) {
+    static_assert(sizeof...(aPtrs) > 0);
+
     const auto chunkX = aX / _world._config.cellsPerChunkX;
     const auto chunkY = aY / _world._config.cellsPerChunkY;
 
@@ -545,6 +567,8 @@ void World::Editor::setCellDataAtUnchecked(hg::PZInteger aX, hg::PZInteger aY, t
 
 template <class... taPtrs>
 void World::Editor::setCellDataAtUnchecked(hg::math::Vector2pz aCell, taPtrs&&... aPtrs) {
+    static_assert(sizeof...(aPtrs) > 0);
+
     setCellDataAtUnchecked(aCell.x, aCell.y, std::forward<taPtrs>(aPtrs)...);
 }
 
