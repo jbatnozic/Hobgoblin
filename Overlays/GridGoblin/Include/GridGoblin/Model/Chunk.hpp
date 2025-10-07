@@ -79,6 +79,12 @@ public:
                                 hg::math::Vector2pz          aCell,
                                 taPtrs&&... aPtrs) const;
 
+    //! Convenience function to get the SpatialInfo specifically of the cell at `aCell`.
+    //! \param aMemLayout Memory layout descriptor for the chunk.
+    //! \param aCell X and Y coordinates of the target cell, relative to the top-left of the chunk.
+    cell::SpatialInfo getSpatialInfoAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
+                                                hg::math::Vector2pz          aCell) const;
+
     //! This function does the opposite of `getCellDataAtUnchecked` - the semantics of all the
     //! parameters are the same, but it copies the data from the objects pointed to by `aPtrs`
     //! into the chunk instead of the other way around.
@@ -256,6 +262,11 @@ void Chunk::getCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
     static_assert(sizeof...(aPtrs) > 0);
 
     (_getCellDataAtUnchecked(aMemLayout, aCell.x, aCell.y, aPtrs), ...);
+}
+
+inline cell::SpatialInfo Chunk::getSpatialInfoAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
+                                                          hg::math::Vector2pz          aCell) const {
+    return _impl.getSpatialInfoAtUnchecked(convertMemLayoutInfo(aMemLayout), aCell);
 }
 
 template <class... taPtrs>

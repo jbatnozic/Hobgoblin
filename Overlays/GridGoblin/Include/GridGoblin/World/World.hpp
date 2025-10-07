@@ -166,6 +166,8 @@ public:
     template <class... taPtrs>
     [[nodiscard]] bool getCellDataAtUnchecked(hg::math::Vector2pz aCell, taPtrs&&... aPtrs) const;
 
+    std::optional<cell::SpatialInfo> getSpatialInfoAtUnchecked(hg::math::Vector2pz aCell) const;
+
     // With locking (on-demand loading enabled)
 
     template <class... taPtrs>
@@ -187,6 +189,9 @@ public:
     void getCellDataAtUnchecked(const EditPermission& aPerm,
                                 hg::math::Vector2pz   aCell,
                                 taPtrs&&... aPtrs) const;
+
+    cell::SpatialInfo getSpatialInfoAtUnchecked(const EditPermission& aPerm,
+                                                hg::math::Vector2pz   aCell) const;
 
     ///////////////////////////////////////////////////////////////////////////
     // MARK: CELL UPDATERS                                                   //
@@ -487,6 +492,21 @@ template <class... taPtrs>
     return getCellDataAtUnchecked(aCell.x, aCell.y, std::forward<taPtrs>(aPtrs)...);
 }
 
+inline std::optional<cell::SpatialInfo> World::getSpatialInfoAtUnchecked(
+    hg::math::Vector2pz aCell) const //
+{
+    const auto chunkX = aCell.x / _config.cellsPerChunkX;
+    const auto chunkY = aCell.y / _config.cellsPerChunkY;
+
+    if (auto* chunk = _chunkStorage.getChunkAtIdUnchecked({chunkX, chunkY}); chunk) {
+        return chunk->getSpatialInfoAtUnchecked(
+            getChunkMemoryLayoutInfo(),
+            {aCell.x % _config.cellsPerChunkX, aCell.y % _config.cellsPerChunkY});
+    }
+
+    return std::nullopt;
+}
+
 template <class... taPtrs>
 void World::getCellDataAt(const EditPermission& aPerm,
                           hg::PZInteger         aX,
@@ -532,6 +552,17 @@ void World::getCellDataAtUnchecked(const EditPermission& aPerm,
     static_assert(sizeof...(aPtrs) > 0);
 
     getCellDataAtUnchecked(aPerm, aCell.x, aCell.y, std::forward<taPtrs>(aPtrs)...);
+}
+
+inline cell::SpatialInfo World::getSpatialInfoAtUnchecked(const EditPermission& aPerm,
+                                                          hg::math::Vector2pz   aCell) const {
+    const auto chunkX = aCell.x / _config.cellsPerChunkX;
+    const auto chunkY = aCell.y / _config.cellsPerChunkY;
+
+    const auto& chunk = _chunkStorage.getChunkAtIdUnchecked({chunkX, chunkY}, detail::LOAD_IF_MISSING);
+    return chunk.getSpatialInfoAtUnchecked(
+        getChunkMemoryLayoutInfo(),
+        {aCell.x % _config.cellsPerChunkX, aCell.y % _config.cellsPerChunkY});
 }
 
 ///////////////////////////////////////////////////////////////////////////

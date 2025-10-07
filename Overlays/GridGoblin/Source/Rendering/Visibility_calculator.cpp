@@ -276,14 +276,13 @@ void VisibilityCalculator::_processRing(hg::PZInteger aRingIndex) {
 }
 
 void VisibilityCalculator::_processCell(Vector2pz aCell, hg::PZInteger aRingIndex) {
-    cell::SpatialInfo spatialInfo;
-    const auto        cellIsLoaded = _world.getCellDataAtUnchecked(aCell, &spatialInfo);
-    if (HG_UNLIKELY_CONDITION(!cellIsLoaded)) {
+    const auto spatialInfo = _world.getSpatialInfoAtUnchecked(aCell);
+    if (HG_UNLIKELY_CONDITION(!spatialInfo.has_value())) {
         HG_UNLIKELY_BRANCH;
         return;
     }
 
-    if (!spatialInfo.hasNonEmptyWallShape()) {
+    if (!spatialInfo->hasNonEmptyWallShape()) {
         return;
     }
 
@@ -292,7 +291,7 @@ void VisibilityCalculator::_processCell(Vector2pz aCell, hg::PZInteger aRingInde
 
     std::array<Vector2d, 8> vertices;
     const auto              vertCnt =
-        GetUnobstructedVertices(spatialInfo, aCell, edgesOfInterest, allEdgesOverride, _cr, vertices);
+        GetUnobstructedVertices(*spatialInfo, aCell, edgesOfInterest, allEdgesOverride, _cr, vertices);
 
     if (vertCnt == 0) {
         return;
@@ -372,37 +371,35 @@ void VisibilityCalculator::_castRay(hg::PZInteger aRayIndex) {
             break;
         }
 
-        const auto        coords = _world.posToCellUnchecked(point);
-        cell::SpatialInfo spatialInfo;
-        const auto        cellIsLoaded = _world.getCellDataAtUnchecked(coords, &spatialInfo);
+        const auto coords      = _world.posToCellUnchecked(point);
+        const auto spatialInfo = _world.getSpatialInfoAtUnchecked(coords);
 
-        if (HG_UNLIKELY_CONDITION(!cellIsLoaded)) {
+        if (HG_UNLIKELY_CONDITION(!spatialInfo.has_value())) {
             HG_UNLIKELY_BRANCH;
             _rays[hg::pztos(aRayIndex)] = _rayRadius + (t + 1) * incrementDistance;
             break;
         }
 
-        const auto openness = spatialInfo.openness;
+        const auto openness = spatialInfo->openness;
 
         if (openness < 3 && prevOpenness < 3 && coords.x != prevCoords.x && coords.y != prevCoords.y) {
-            cell::SpatialInfo diagonalNeighbour1SpatialInfo;
-            const auto        diagonalNeighbour1IsLoaded =
-                _world.getCellDataAtUnchecked(coords.x, prevCoords.y, &diagonalNeighbour1SpatialInfo);
+            const auto diagonalNeighbour1SpatialInfo =
+                _world.getSpatialInfoAtUnchecked({coords.x, prevCoords.y});
+            const auto diagonalNeighbour2SpatialInfo =
+                _world.getSpatialInfoAtUnchecked({prevCoords.x, coords.y});
 
-            cell::SpatialInfo diagonalNeighbour2SpatialInfo;
-            const auto        diagonalNeighbour2IsLoaded =
-                _world.getCellDataAtUnchecked(prevCoords.x, coords.y, &diagonalNeighbour2SpatialInfo);
-
-            if ((!diagonalNeighbour1IsLoaded || diagonalNeighbour1SpatialInfo.hasNonEmptyWallShape()) &&
-                (!diagonalNeighbour2IsLoaded || diagonalNeighbour2SpatialInfo.hasNonEmptyWallShape())) {
+            // clang-format off
+            if ((!diagonalNeighbour1SpatialInfo || diagonalNeighbour1SpatialInfo->hasNonEmptyWallShape()) &&
+                (!diagonalNeighbour2SpatialInfo || diagonalNeighbour2SpatialInfo->hasNonEmptyWallShape())) {
                 _rays[hg::pztos(aRayIndex)] = _rayRadius + t * incrementDistance;
                 return;
             }
+            // clang-format on
         }
         prevCoords   = coords;
         prevOpenness = openness;
 
-        if (spatialInfo.hasNonEmptyWallShape()) {
+        if (spatialInfo->hasNonEmptyWallShape()) {
             _rays[hg::pztos(aRayIndex)] = _rayRadius + (t + 1) * incrementDistance;
             return;
         }
