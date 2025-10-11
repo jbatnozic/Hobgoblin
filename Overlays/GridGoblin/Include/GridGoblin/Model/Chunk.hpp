@@ -30,7 +30,9 @@ struct ChunkMemoryLayoutInfo;
 class Chunk {
 public:
     // clang-format off
-    // Default construction (constructs an empty chunk)
+    //! Default construction (constructs an empty chunk)
+    //! \note if you're not a library maintainer and you're constructing chunks manually,
+    //!       you're most likely doing something wrong.
     Chunk()                        = default;
     // No copying
     Chunk(const Chunk&)            = delete;
@@ -40,11 +42,15 @@ public:
     Chunk& operator=(Chunk&&)      = default;
     // clang-format on
 
+    //! Constructs a non-empty chunk according to the passed memory layout descriptor.
+    //! \note if you're not a library maintainer and you're constructing chunks manually,
+    //!       you're most likely doing something wrong.
     Chunk(const ChunkMemoryLayoutInfo& aMemLayout);
 
+    //! Tell if the chunk is empty.
+    //! \warning when a chunk is empty, all operations on it other than destroying it or
+    //!          assigning a new value to it will produce Undefined Behaviour!
     bool isEmpty() const;
-
-    void makeEmpty();
 
     ///////////////////////////////////////////////////////////////////////////
     // MARK: CELLS                                                           //
@@ -108,8 +114,13 @@ public:
                                 hg::math::Vector2pz          aCell,
                                 taPtrs&&... aPtrs);
 
+    //! Set the values of all the fields of all the cells in this chunk to zero.
+    //! \note the extension pointger remains unchanged.
+    //! \throws PreconditionNotMetError is the chunk is empty.
+    void zeroOut(const ChunkMemoryLayoutInfo& aMemLayout);
+
     //! Set all the cells in the chunk to the given value, unless the chunk is empty. Utility method.
-    // void setAll(const CellModel& aCell);
+    void setAll(const ChunkMemoryLayoutInfo& aMemLayout, const FatCell& aCell);
 
     ///////////////////////////////////////////////////////////////////////////
     // MARK: EXTENSIONS                                                      //
@@ -233,17 +244,15 @@ private:
 static_assert(sizeof(Chunk) == sizeof(void*));
 
 namespace detail {
-bool AreCellsEqual(const Chunk& aChunk1, const Chunk& aChunk2);
+bool ChunksContainIdenticalCellData(const ChunkMemoryLayoutInfo& aMemLayout,
+                                    const Chunk&                 aChunk1,
+                                    const Chunk&                 aChunk2);
 } // namespace detail
 
 // MARK: Inline impl.
 
 inline bool Chunk::isEmpty() const {
     return _impl.isEmpty();
-}
-
-inline void Chunk::makeEmpty() {
-    _impl.makeEmpty();
 }
 
 template <class... taPtrs>

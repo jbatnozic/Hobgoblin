@@ -6,6 +6,7 @@
 
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/HGExcept.hpp>
+#include <Hobgoblin/Logging.hpp>
 #include <Hobgoblin/Utility/Base64.hpp>
 #include <Hobgoblin/Utility/Stream.hpp>
 
@@ -37,13 +38,15 @@ void DeleteReusableConversionBuffers(ReusableConversionBuffers* aBuffers) {
 }
 
 namespace {
+constexpr auto LOG_ID = "GridGoblin";
+
 const std::string TAG_EMPTY     = "empty";
 const std::string TAG_BINSTREAM = "binary_stream";
 
 #define ENSURE_JSON_CONTAINS(_value_, _member_name_, _member_type_)                                 \
     do {                                                                                            \
         if (!(_value_).HasMember(_member_name_) || !(_value_)[_member_name_].Is##_member_type_()) { \
-            HG_THROW_TRACED(JsonParseError, 0, "No array member '{}' found.", _member_name_);       \
+            HG_THROW_TRACED(JsonParseError, 0, "No member named '{}' found.", _member_name_);       \
         }                                                                                           \
     } while (false)
 
@@ -51,9 +54,32 @@ template <class taIntegral>
 taIntegral GetIntMember(const json::Value& aJsonValue, const char* aMemberName) {
     static_assert(std::is_integral<taIntegral>::value, "GetIntMember only works with integral types.");
 
-    ENSURE_JSON_CONTAINS(aJsonValue, aMemberName, Int);
+    using T = std::remove_cvref_t<taIntegral>;
 
-    return static_cast<taIntegral>(aJsonValue[aMemberName].GetInt());
+    if constexpr (std::is_same_v<T, std::int8_t> || std::is_same_v<T, std::int16_t> ||
+                  std::is_same_v<T, std::int32_t>) {
+        ENSURE_JSON_CONTAINS(aJsonValue, aMemberName, Int);
+        return static_cast<taIntegral>(aJsonValue[aMemberName].GetInt());
+    }
+
+    if constexpr (std::is_same_v<T, std::uint8_t> || std::is_same_v<T, std::uint16_t> ||
+                  std::is_same_v<T, std::uint32_t>) {
+        ENSURE_JSON_CONTAINS(aJsonValue, aMemberName, Uint);
+        return static_cast<taIntegral>(aJsonValue[aMemberName].GetUint());
+    }
+
+    if constexpr (std::is_same_v<T, std::int64_t>) {
+        ENSURE_JSON_CONTAINS(aJsonValue, aMemberName, Int64);
+        return static_cast<taIntegral>(aJsonValue[aMemberName].GetInt64());
+    }
+
+    if constexpr (std::is_same_v<T, std::uint64_t>) {
+        ENSURE_JSON_CONTAINS(aJsonValue, aMemberName, Uint64);
+        return static_cast<taIntegral>(aJsonValue[aMemberName].GetUint64());
+    }
+
+    HG_NOT_IMPLEMENTED("Type '" + std::string{hg::GetNameOfType<taIntegral>()} +
+                       "' is not supported by GetIntMember.");
 }
 
 using ExtensionKind = std::optional<ChunkExtensionInterface::SerializationMethod>;
@@ -557,10 +583,9 @@ Chunk JsonToChunk(const json::Document&        aJsonDocument,
                              defaultBuffers.string);
             }
         } else {
-            // TODO
-            // HG_LOG_WARN(
-            //     LOG_ID,
-            //     "Found serialized data for chunk extension but failed to instantiate the extension.");
+            HG_LOG_WARN(
+                LOG_ID,
+                "Found serialized data for chunk extension but failed to instantiate the extension.");
         }
     }
 

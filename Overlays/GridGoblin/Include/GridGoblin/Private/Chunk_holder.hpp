@@ -31,7 +31,8 @@ namespace hg = jbatnozic::hobgoblin;
 
 HG_DECLARE_TAG_TYPE(LOAD_IF_MISSING);
 
-//! This class handles the storage of chunks both in RAM and in on-disk caches.
+//! This class holds chunks in memory (RAM), and also handles loading them into memory when needed,
+//! and unloading them to the disk when no longer needed.
 class ChunkHolder {
 private:
     using Self = ChunkHolder;

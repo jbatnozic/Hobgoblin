@@ -37,7 +37,7 @@ public:
 
     ~ChunkImpl();
 
-    void init(const MemoryLayoutInfo& aMemLayout); // TODO: fill
+    void alloc(const MemoryLayoutInfo& aMemLayout);
 
     bool isEmpty() const {
         return (_mem == nullptr);
@@ -96,6 +96,12 @@ public:
 
     const cell::UserData& getUserDataAtUnchecked(const MemoryLayoutInfo& aMemLayout,
                                                  hg::math::Vector2pz     aCellPos) const;
+
+    // All at once
+
+    void zeroOut(const MemoryLayoutInfo& aMemLayout);
+
+    void setAll(const MemoryLayoutInfo& aMemLayout, const FatCell& aCell);
 
     ///////////////////////////////////////////////////////////////////////////
     // MARK: EXTENSION                                                       //

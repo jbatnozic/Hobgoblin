@@ -88,8 +88,15 @@ void ChunkHolder::prune() {
 
         auto& chunk = CHUNK_AT_ID(id);
         HG_HARD_ASSERT(!chunk.isEmpty());
-        _chunkSpooler->unloadChunk(id, std::move(chunk));
-        chunk.makeEmpty();
+
+        HG_ASSERT(_binder != nullptr);
+        _binder->willSeparateChunk(id, chunk, _chunkMemoryLayoutInfo);
+
+        Chunk separatedChunk = std::move(chunk);
+        HG_ASSERT(chunk.isEmpty());
+        _binder->didSeparateChunk(id, separatedChunk, _chunkMemoryLayoutInfo);
+
+        _chunkSpooler->unloadChunk(id, std::move(separatedChunk));
         _chunksInGridCount -= 1;
 
         _freeChunks.erase(iter);
@@ -157,11 +164,13 @@ void ChunkHolder::_loadChunkImmediately(ChunkId aChunkId) {
 void ChunkHolder::_onChunkLoaded(ChunkId aChunkId, Chunk&& aChunk) {
     HG_HARD_ASSERT(!aChunk.isEmpty());
 
+    HG_ASSERT(_binder != nullptr);
+    _binder->willIntegrateLoadedChunk(aChunkId, aChunk, _chunkMemoryLayoutInfo);
+
     auto& chunk = (CHUNK_AT_ID(aChunkId) = std::move(aChunk));
     _chunksInGridCount += 1;
 
-    HG_ASSERT(_binder != nullptr);
-    _binder->onChunkLoaded(aChunkId, chunk);
+    _binder->didIntegrateChunk(aChunkId, chunk, _chunkMemoryLayoutInfo);
 }
 
 void ChunkHolder::_createDefaultChunk(ChunkId aChunkId) {
@@ -177,10 +186,12 @@ void ChunkHolder::_createDefaultChunk(ChunkId aChunkId) {
     }
     defaultChunk.setExtension(std::move(extension));
 
+    _binder->willIntegrateNewChunk(aChunkId, defaultChunk, _chunkMemoryLayoutInfo);
+
     auto& chunk = (CHUNK_AT_ID(aChunkId) = std::move(defaultChunk));
     _chunksInGridCount += 1;
 
-    _binder->onChunkCreated(aChunkId, chunk);
+    _binder->didIntegrateChunk(aChunkId, chunk, _chunkMemoryLayoutInfo);
 }
 
 void ChunkHolder::_updateChunkUsage(const std::vector<detail::ChunkUsageChange>& aChunkUsageChanges) {

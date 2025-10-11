@@ -71,10 +71,60 @@ struct UserData {
     };
 };
 
+inline bool operator==(CellKindId lhs, CellKindId rhs) {
+    return lhs.value == rhs.value;
+}
+
+inline bool operator!=(CellKindId lhs, CellKindId rhs) {
+    return !(lhs == rhs);
+}
+
+inline bool operator==(FloorSprite lhs, FloorSprite rhs) {
+    return lhs.id == rhs.id;
+}
+
+inline bool operator!=(FloorSprite lhs, FloorSprite rhs) {
+    return !(lhs == rhs);
+}
+
+inline bool operator==(WallSprite lhs, WallSprite rhs) {
+    return lhs.id == rhs.id && lhs.id_reduced == rhs.id_reduced;
+}
+
+inline bool operator!=(WallSprite lhs, WallSprite rhs) {
+    return !(lhs == rhs);
+}
+
+inline bool operator==(SpatialInfo lhs, SpatialInfo rhs) {
+    return lhs.wallShape == rhs.wallShape && lhs.obFlags == rhs.obFlags && lhs.openness == rhs.openness;
+}
+
+inline bool operator!=(SpatialInfo lhs, SpatialInfo rhs) {
+    return !(lhs == rhs);
+}
+
+inline bool operator==(RendererAuxData lhs, RendererAuxData rhs) {
+    return lhs.mask == rhs.mask && lhs.mask2 == rhs.mask2;
+}
+
+inline bool operator!=(RendererAuxData lhs, RendererAuxData rhs) {
+    return !(lhs == rhs);
+}
+
+inline bool operator==(UserData lhs, UserData rhs) {
+    return lhs.u64 == rhs.u64;
+}
+
+inline bool operator!=(UserData lhs, UserData rhs) {
+    return !(lhs == rhs);
+}
+
 } // namespace cell
 
+//! A struct containing all the possible building block structs of a single cell.
+//! \note GridGoblin does NOT store cells like this, but it is useful as a convenience.
 struct FatCell {
-    cell::CellKindId      id;
+    cell::CellKindId      cellKindId;
     cell::FloorSprite     floorSprite;
     cell::WallSprite      wallSprite;
     cell::SpatialInfo     spatialInfo;

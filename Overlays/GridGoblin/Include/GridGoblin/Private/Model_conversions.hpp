@@ -85,7 +85,7 @@ json::Document ChunkToJson(const Chunk&                 aChunk,
 //! \throws JsonParseError is the JSON data does not correspond to the expected format.
 Chunk JsonToChunk(const json::Document&        aJsonDocument,
                   const ChunkMemoryLayoutInfo& aChunkMemLayout,
-                  const ChunkExtensionFactory& aChunkExtensionFactory     = nullptr,
+                  const ChunkExtensionFactory& aChunkExtensionFactory     = {},
                   ReusableConversionBuffers*   aReusableConversionBuffers = nullptr);
 
 //! Creates a JSON-encoded string (without whitespaces, newlines or any pretty
@@ -102,7 +102,7 @@ std::string ChunkToJsonString(const Chunk&                 aChunk,
 //! \throws JsonParseError is the JSON data does not correspond to the expected format.
 Chunk JsonStringToChunk(std::string                  aJsonString,
                         const ChunkMemoryLayoutInfo& aChunkMemLayout,
-                        const ChunkExtensionFactory& aChunkExtensionFactory     = nullptr,
+                        const ChunkExtensionFactory& aChunkExtensionFactory     = {},
                         ReusableConversionBuffers*   aReusableConversionBuffers = nullptr);
 
 } // namespace detail

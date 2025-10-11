@@ -512,37 +512,62 @@ void World::_refreshCellsInAndAroundChunk(ChunkId aChunkId) {
 
 void World::onChunkReady(ChunkId aChunkId) {
     for (const auto& [binder, priority] : _binders) {
+        (void)priority;
         binder->onChunkReady(aChunkId);
     }
 }
 
-void World::onChunkLoaded(ChunkId aChunkId, const Chunk& aChunk) {
-    _refreshCellsInAndAroundChunk(aChunkId);
-
+void World::willIntegrateNewChunk(ChunkId                      aId,
+                                  Chunk&                       aChunk,
+                                  const ChunkMemoryLayoutInfo& aChunkMemLayout) {
     for (const auto& [binder, priority] : _binders) {
-        binder->onChunkLoaded(aChunkId, aChunk);
+        (void)priority;
+        binder->willIntegrateNewChunk(aId, aChunk, aChunkMemLayout);
     }
 }
 
-void World::onChunkCreated(ChunkId aChunkId, const Chunk& aChunk) {
-    _refreshCellsInAndAroundChunk(aChunkId);
-
+void World::willIntegrateLoadedChunk(ChunkId                      aId,
+                                     Chunk&                       aChunk,
+                                     const ChunkMemoryLayoutInfo& aChunkMemLayout) {
     for (const auto& [binder, priority] : _binders) {
-        binder->onChunkCreated(aChunkId, aChunk);
+        (void)priority;
+        binder->willIntegrateLoadedChunk(aId, aChunk, aChunkMemLayout);
     }
 }
 
-void World::onChunkUnloaded(ChunkId aChunkId) {
-    // No need to refresh cell after a chunk is unloaded; cells near the edges of the loaded parts
+void World::didIntegrateChunk(ChunkId                      aId,
+                              const Chunk&                 aChunk,
+                              const ChunkMemoryLayoutInfo& aChunkMemLayout) {
+    _refreshCellsInAndAroundChunk(aId);
+
+    for (const auto& [binder, priority] : _binders) {
+        (void)priority;
+        binder->didIntegrateChunk(aId, aChunk, aChunkMemLayout);
+    }
+}
+
+void World::willSeparateChunk(ChunkId                      aId,
+                              const Chunk&                 aChunk,
+                              const ChunkMemoryLayoutInfo& aChunkMemLayout) {
+    for (const auto& [binder, priority] : _binders) {
+        (void)priority;
+        binder->willSeparateChunk(aId, aChunk, aChunkMemLayout);
+    }
+}
+
+void World::didSeparateChunk(ChunkId aId, Chunk& aChunk, const ChunkMemoryLayoutInfo& aChunkMemLayout) {
+    // No need to refresh cell after a chunk is separated; cells near the edges of the loaded parts
     // of the world can have slightly inaccurate information - it doesn't matter.
 
     for (const auto& [binder, priority] : _binders) {
-        binder->onChunkUnloaded(aChunkId);
+        (void)priority;
+        binder->didSeparateChunk(aId, aChunk, aChunkMemLayout);
     }
 }
 
 std::unique_ptr<ChunkExtensionInterface> World::createChunkExtension() {
     for (const auto& [binder, priority] : _binders) {
+        (void)priority;
         auto extension = binder->createChunkExtension();
         if (extension != nullptr) {
             return extension;

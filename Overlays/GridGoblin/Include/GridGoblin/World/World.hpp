@@ -4,6 +4,7 @@
 #pragma once
 
 #include <Hobgoblin/Common.hpp>
+#include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/Math.hpp>
 #include <Hobgoblin/Utility/Grids.hpp>
 #include <Hobgoblin/Utility/Semaphore.hpp>
@@ -391,9 +392,22 @@ private:
     void _refreshCellsInAndAroundChunk(ChunkId aChunkId);
 
     void onChunkReady(ChunkId aChunkId) override;
-    void onChunkLoaded(ChunkId aChunkId, const Chunk& aChunk) override;
-    void onChunkCreated(ChunkId aChunkId, const Chunk& aChunk) override;
-    void onChunkUnloaded(ChunkId aChunkId) override;
+    void willIntegrateNewChunk(ChunkId                      aId,
+                               Chunk&                       aChunk,
+                               const ChunkMemoryLayoutInfo& aChunkMemLayout) override;
+    void willIntegrateLoadedChunk(ChunkId                      aId,
+                                  Chunk&                       aChunk,
+                                  const ChunkMemoryLayoutInfo& aChunkMemLayout) override;
+    void didIntegrateChunk(ChunkId                      aId,
+                           const Chunk&                 aChunk,
+                           const ChunkMemoryLayoutInfo& aChunkMemLayout) override;
+    void willSeparateChunk(ChunkId                      aId,
+                           const Chunk&                 aChunk,
+                           const ChunkMemoryLayoutInfo& aChunkMemLayout) override;
+    void didSeparateChunk(ChunkId                      aId,
+                          Chunk&                       aChunk,
+                          const ChunkMemoryLayoutInfo& aChunkMemLayout) override;
+
     std::unique_ptr<ChunkExtensionInterface> createChunkExtension() override;
 
     // ===== Editing cells =====
@@ -453,7 +467,9 @@ template <class... taPtrs>
 [[nodiscard]] bool World::getCellDataAt(hg::PZInteger aX, hg::PZInteger aY, taPtrs&&... aPtrs) const {
     static_assert(sizeof...(aPtrs) > 0);
 
-    // TODO: validate args
+    HG_VALIDATE_ARGUMENT(aX < getCellCountX());
+    HG_VALIDATE_ARGUMENT(aY < getCellCountY());
+
     return getCellDataAtUnchecked(aX, aY, std::forward<taPtrs>(aPtrs)...);
 }
 
@@ -461,7 +477,9 @@ template <class... taPtrs>
 [[nodiscard]] bool World::getCellDataAt(hg::math::Vector2pz aCell, taPtrs&&... aPtrs) const {
     static_assert(sizeof...(aPtrs) > 0);
 
-    // TODO: validate args
+    HG_VALIDATE_ARGUMENT(aCell.x < getCellCountX());
+    HG_VALIDATE_ARGUMENT(aCell.y < getCellCountY());
+
     return getCellDataAtUnchecked(aCell.x, aCell.y, std::forward<taPtrs>(aPtrs)...);
 }
 
@@ -505,7 +523,9 @@ void World::getCellDataAt(const EditPermission& aPerm,
                           taPtrs&&... aPtrs) const {
     static_assert(sizeof...(aPtrs) > 0);
 
-    // TODO: validate args
+    HG_VALIDATE_ARGUMENT(aX < getCellCountX());
+    HG_VALIDATE_ARGUMENT(aY < getCellCountY());
+
     getCellDataAtUnchecked(aPerm, aX, aY, std::forward<taPtrs>(aPtrs)...);
 }
 
@@ -515,7 +535,9 @@ void World::getCellDataAt(const EditPermission& aPerm,
                           taPtrs&&... aPtrs) const {
     static_assert(sizeof...(aPtrs) > 0);
 
-    // TODO: validate args
+    HG_VALIDATE_ARGUMENT(aCell.x < getCellCountX());
+    HG_VALIDATE_ARGUMENT(aCell.y < getCellCountY());
+
     getCellDataAtUnchecked(aPerm, aCell.x, aCell.y, std::forward<taPtrs>(aPtrs)...);
 }
 
@@ -564,7 +586,9 @@ template <class... taPtrs>
 void World::Editor::setCellDataAt(hg::PZInteger aX, hg::PZInteger aY, taPtrs&&... aPtrs) {
     static_assert(sizeof...(aPtrs) > 0);
 
-    // TODO: validate args
+    HG_VALIDATE_ARGUMENT(aX < _world.getCellCountX());
+    HG_VALIDATE_ARGUMENT(aY < _world.getCellCountY());
+
     setCellDataAtUnchecked(aX, aY, std::forward<taPtrs>(aPtrs)...);
 }
 
@@ -572,7 +596,9 @@ template <class... taPtrs>
 void World::Editor::setCellDataAt(hg::math::Vector2pz aCell, taPtrs&&... aPtrs) {
     static_assert(sizeof...(aPtrs) > 0);
 
-    // TODO: validate args
+    HG_VALIDATE_ARGUMENT(aCell.x < _world.getCellCountX());
+    HG_VALIDATE_ARGUMENT(aCell.y < _world.getCellCountY());
+
     setCellDataAtUnchecked(aCell.x, aCell.y, std::forward<taPtrs>(aPtrs)...);
 }
 

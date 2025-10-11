@@ -49,6 +49,8 @@ ChunkMemoryLayoutInfo CalcChunkMemoryLayoutInfo(hg::PZInteger     aChunkWidth,
 
 class ChunkMemoryLayoutInfoAccessor {
 public:
+    static constexpr std::size_t INVALID_OFFSET = ChunkMemoryLayoutInfo::INVALID_OFFSET;
+
     // Getters
 
     static hg::PZInteger getChunkWidth(const ChunkMemoryLayoutInfo& aMemLayout) {

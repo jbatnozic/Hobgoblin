@@ -20,6 +20,8 @@ void IncUntilAligned(std::size_t& aByteCounter, std::size_t aAlignment) {
 
 namespace detail {
 
+#define acc ChunkMemoryLayoutInfoAccessor
+
 ChunkImpl::ChunkImpl(ChunkImpl&& aOther)
     : _mem{aOther._mem} {
     aOther._mem = nullptr;
@@ -37,13 +39,11 @@ ChunkImpl::~ChunkImpl() {
     makeEmpty();
 }
 
-void ChunkImpl::init(const MemoryLayoutInfo& aMemLayout) {
-    const auto totalByteSize = detail::ChunkMemoryLayoutInfoAccessor::getTotalSize(aMemLayout);
+void ChunkImpl::alloc(const MemoryLayoutInfo& aMemLayout) {
+    const auto totalByteSize = acc::getTotalSize(aMemLayout);
 
     _mem = (std::byte*)hg::AlignedAlloc(alignof(void*), totalByteSize);
     HG_HARD_ASSERT(_mem != nullptr);
-
-    std::memset(_mem, 0x00, totalByteSize); // TODO: temp!!!!!!!!!!!!!!!!!!!
 
     _storeChunkExtensionPointer(nullptr);
 }
@@ -59,6 +59,70 @@ void ChunkImpl::makeEmpty() {
 ///////////////////////////////////////////////////////////////////////////
 // MARK: CELL DATA                                                       //
 ///////////////////////////////////////////////////////////////////////////
+
+void ChunkImpl::zeroOut(const MemoryLayoutInfo& aMemLayout) {
+    HG_VALIDATE_PRECONDITION(_mem != nullptr);
+
+    const auto totalByteSize = acc::getTotalSize(aMemLayout);
+    std::memset(_mem + sizeof(ChunkExtensionInterface*),
+                0x00,
+                totalByteSize - sizeof(ChunkExtensionInterface*));
+}
+
+void ChunkImpl::setAll(const MemoryLayoutInfo& aMemLayout, const FatCell& aCell) {
+    HG_VALIDATE_PRECONDITION(_mem != nullptr);
+
+    const auto width  = acc::getChunkWidth(aMemLayout);
+    const auto height = acc::getChunkHeight(aMemLayout);
+
+    if (auto offset = acc::getCellKindIdOffset(aMemLayout); offset != acc::INVALID_OFFSET) {
+        for (hg::PZInteger y = 0; y < height; ++y) {
+            for (hg::PZInteger x = 0; x < width; ++x) {
+                getCellKindIdAtUnchecked(aMemLayout, {x, y}) = aCell.cellKindId;
+            }
+        }
+    }
+
+    if (auto offset = acc::getFloorSpriteOffset(aMemLayout); offset != acc::INVALID_OFFSET) {
+        for (hg::PZInteger y = 0; y < height; ++y) {
+            for (hg::PZInteger x = 0; x < width; ++x) {
+                getFloorSpriteAtUnchecked(aMemLayout, {x, y}) = aCell.floorSprite;
+            }
+        }
+    }
+
+    if (auto offset = acc::getWallSpriteOffset(aMemLayout); offset != acc::INVALID_OFFSET) {
+        for (hg::PZInteger y = 0; y < height; ++y) {
+            for (hg::PZInteger x = 0; x < width; ++x) {
+                getWallSpriteAtUnchecked(aMemLayout, {x, y}) = aCell.wallSprite;
+            }
+        }
+    }
+
+    if (auto offset = acc::getSpatialInfoOffset(aMemLayout); offset != acc::INVALID_OFFSET) {
+        for (hg::PZInteger y = 0; y < height; ++y) {
+            for (hg::PZInteger x = 0; x < width; ++x) {
+                getSpatialInfoAtUnchecked(aMemLayout, {x, y}) = aCell.spatialInfo;
+            }
+        }
+    }
+
+    if (auto offset = acc::getRendererAuxDataOffset(aMemLayout); offset != acc::INVALID_OFFSET) {
+        for (hg::PZInteger y = 0; y < height; ++y) {
+            for (hg::PZInteger x = 0; x < width; ++x) {
+                getRendererAuxDataAtUnchecked(aMemLayout, {x, y}) = aCell.rendererAuxData;
+            }
+        }
+    }
+
+    if (auto offset = acc::getUserDataOffset(aMemLayout); offset != acc::INVALID_OFFSET) {
+        for (hg::PZInteger y = 0; y < height; ++y) {
+            for (hg::PZInteger x = 0; x < width; ++x) {
+                getUserDataAtUnchecked(aMemLayout, {x, y}) = aCell.userData;
+            }
+        }
+    }
+}
 
 ///////////////////////////////////////////////////////////////////////////
 // MARK: EXTENSION                                                       //
