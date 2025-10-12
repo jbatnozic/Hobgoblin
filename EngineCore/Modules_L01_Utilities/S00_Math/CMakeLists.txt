@@ -10,15 +10,16 @@ set(COMPONENT_NAME "Hobgoblin.Math")
 # ===== GATHER SOURCES ======
 
 set(COMPONENT_SOURCES
+    "Source/Hash.cpp"
 )
 
 # ===== TARGET SETUP =====
 
-add_library(${COMPONENT_NAME} INTERFACE ${COMPONENT_SOURCES})
-target_include_directories(${COMPONENT_NAME} INTERFACE "Include/")
+add_library(${COMPONENT_NAME} STATIC ${COMPONENT_SOURCES})
+target_include_directories(${COMPONENT_NAME} PUBLIC "Include/")
 
 target_link_libraries(${COMPONENT_NAME}
-INTERFACE
+PUBLIC
     # Foudnation
     "Hobgoblin_L00_S01_Common"
 
