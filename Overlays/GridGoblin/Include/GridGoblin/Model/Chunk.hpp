@@ -101,18 +101,21 @@ public:
     //! This function does the opposite of `getCellDataAtUnchecked` - the semantics of all the
     //! parameters are the same, but it copies the data from the objects pointed to by `aPtrs`
     //! into the chunk instead of the other way around.
+    //!
+    //! \returns the number of elements that were actually changed; i.e., were not set to the same
+    //!          value as they already had.
     template <class... taPtrs>
-    void setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
-                                hg::PZInteger                aX,
-                                hg::PZInteger                aY,
-                                taPtrs&&... aPtrs);
+    int setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
+                               hg::PZInteger                aX,
+                               hg::PZInteger                aY,
+                               taPtrs&&... aPtrs);
 
     //! Same as the other overload of `setCellDataAtUnchecked`,
     //! but here the coordinates are given as a vector.
     template <class... taPtrs>
-    void setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
-                                hg::math::Vector2pz          aCell,
-                                taPtrs&&... aPtrs);
+    int setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
+                               hg::math::Vector2pz          aCell,
+                               taPtrs&&... aPtrs);
 
     //! Set the values of all the fields of all the cells in this chunk to zero.
     //! \note the extension pointger remains unchanged.
@@ -192,52 +195,82 @@ private:
 
     // Setters
 
-    void _setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
-                                 hg::PZInteger                aX,
-                                 hg::PZInteger                aY,
-                                 const cell::CellKindId*      aCellKindId) {
+    int _setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
+                                hg::PZInteger                aX,
+                                hg::PZInteger                aY,
+                                const cell::CellKindId*      aCellKindId) {
         assert(aCellKindId != nullptr);
-        _impl.getCellKindIdAtUnchecked(aMemLayout, {aX, aY}) = *aCellKindId;
+        auto& ckid = _impl.getCellKindIdAtUnchecked(aMemLayout, {aX, aY});
+        if (ckid == *aCellKindId) {
+            return 0;
+        }
+        ckid = *aCellKindId;
+        return 1;
     }
 
-    void _setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
-                                 hg::PZInteger                aX,
-                                 hg::PZInteger                aY,
-                                 const cell::FloorSprite*     aFloorSprite) {
+    int _setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
+                                hg::PZInteger                aX,
+                                hg::PZInteger                aY,
+                                const cell::FloorSprite*     aFloorSprite) {
         assert(aFloorSprite != nullptr);
-        _impl.getFloorSpriteAtUnchecked(aMemLayout, {aX, aY}) = *aFloorSprite;
+        auto& fs = _impl.getFloorSpriteAtUnchecked(aMemLayout, {aX, aY});
+        if (fs == *aFloorSprite) {
+            return 0;
+        }
+        fs = *aFloorSprite;
+        return 1;
     }
 
-    void _setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
-                                 hg::PZInteger                aX,
-                                 hg::PZInteger                aY,
-                                 const cell::WallSprite*      aWallSprite) {
+    int _setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
+                                hg::PZInteger                aX,
+                                hg::PZInteger                aY,
+                                const cell::WallSprite*      aWallSprite) {
         assert(aWallSprite != nullptr);
-        _impl.getWallSpriteAtUnchecked(aMemLayout, {aX, aY}) = *aWallSprite;
+        auto& ws = _impl.getWallSpriteAtUnchecked(aMemLayout, {aX, aY});
+        if (ws == *aWallSprite) {
+            return 0;
+        }
+        ws = *aWallSprite;
+        return 1;
     }
 
-    void _setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
-                                 hg::PZInteger                aX,
-                                 hg::PZInteger                aY,
-                                 const cell::SpatialInfo*     aSpatialInfo) {
+    int _setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
+                                hg::PZInteger                aX,
+                                hg::PZInteger                aY,
+                                const cell::SpatialInfo*     aSpatialInfo) {
         assert(aSpatialInfo != nullptr);
-        _impl.getSpatialInfoAtUnchecked(aMemLayout, {aX, aY}) = *aSpatialInfo;
+        auto& si = _impl.getSpatialInfoAtUnchecked(aMemLayout, {aX, aY});
+        if (si == *aSpatialInfo) {
+            return 0;
+        }
+        si = *aSpatialInfo;
+        return 1;
     }
 
-    void _setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
-                                 hg::PZInteger                aX,
-                                 hg::PZInteger                aY,
-                                 const cell::RendererAuxData* aRendererAuxData) {
+    int _setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
+                                hg::PZInteger                aX,
+                                hg::PZInteger                aY,
+                                const cell::RendererAuxData* aRendererAuxData) {
         assert(aRendererAuxData != nullptr);
-        _impl.getRendererAuxDataAtUnchecked(aMemLayout, {aX, aY}) = *aRendererAuxData;
+        auto& rad = _impl.getRendererAuxDataAtUnchecked(aMemLayout, {aX, aY});
+        if (rad == *aRendererAuxData) {
+            return 0;
+        }
+        rad = *aRendererAuxData;
+        return 1;
     }
 
-    void _setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
-                                 hg::PZInteger                aX,
-                                 hg::PZInteger                aY,
-                                 const cell::UserData*        aUserData) {
+    int _setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
+                                hg::PZInteger                aX,
+                                hg::PZInteger                aY,
+                                const cell::UserData*        aUserData) {
         assert(aUserData != nullptr);
-        _impl.getUserDataAtUnchecked(aMemLayout, {aX, aY}) = *aUserData;
+        auto& ud = _impl.getUserDataAtUnchecked(aMemLayout, {aX, aY});
+        if (ud == *aUserData) {
+            return 0;
+        }
+        ud = *aUserData;
+        return 1;
     }
 };
 
@@ -280,22 +313,22 @@ inline cell::SpatialInfo Chunk::getSpatialInfoAtUnchecked(const ChunkMemoryLayou
 }
 
 template <class... taPtrs>
-inline void Chunk::setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
-                                          hg::PZInteger                aX,
-                                          hg::PZInteger                aY,
-                                          taPtrs&&... aPtrs) {
+inline int Chunk::setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
+                                         hg::PZInteger                aX,
+                                         hg::PZInteger                aY,
+                                         taPtrs&&... aPtrs) {
     static_assert(sizeof...(aPtrs) > 0);
 
-    (_setCellDataAtUnchecked(aMemLayout, aX, aY, aPtrs), ...);
+    return (_setCellDataAtUnchecked(aMemLayout, aX, aY, aPtrs) + ...);
 }
 
 template <class... taPtrs>
-inline void Chunk::setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
-                                          hg::math::Vector2pz          aCell,
-                                          taPtrs&&... aPtrs) {
+inline int Chunk::setCellDataAtUnchecked(const ChunkMemoryLayoutInfo& aMemLayout,
+                                         hg::math::Vector2pz          aCell,
+                                         taPtrs&&... aPtrs) {
     static_assert(sizeof...(aPtrs) > 0);
 
-    (_setCellDataAtUnchecked(aMemLayout, aCell.x, aCell.y, aPtrs), ...);
+    return (_setCellDataAtUnchecked(aMemLayout, aCell.x, aCell.y, aPtrs) + ...);
 }
 
 inline ChunkExtensionInterface* Chunk::getExtension() const {

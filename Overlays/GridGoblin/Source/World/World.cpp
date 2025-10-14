@@ -374,6 +374,10 @@ void World::toggleGeneratorMode(const EditPermission&, bool aGeneratorMode) {
     }
 }
 
+void World::toggleEditJournaling(bool aEditJournalingEnabled) {
+    _journalingEnabled = aEditJournalingEnabled;
+}
+
 ///////////////////////////////////////////////////////////////////////////
 // MARK: CHUNKS                                                          //
 ///////////////////////////////////////////////////////////////////////////
@@ -510,10 +514,10 @@ void World::_refreshCellsInAndAroundChunk(ChunkId aChunkId) {
     }
 }
 
-void World::onChunkReady(ChunkId aChunkId) {
+void World::didPrepareChunk(ChunkId aChunkId) {
     for (const auto& [binder, priority] : _binders) {
         (void)priority;
-        binder->onChunkReady(aChunkId);
+        binder->didPrepareChunk(aChunkId);
     }
 }
 
@@ -588,7 +592,7 @@ void World::_startEdit() {
     _editMaxX = -1;
     _editMaxY = -1;
 
-    _cellEditInfos.clear();
+    _editedCells.clear();
 }
 
 void World::_endEdit() {
@@ -609,8 +613,10 @@ void World::_endEdit() {
         }
     }
 
-    for (const auto& [binder, priority] : _binders) {
-        binder->onCellsEdited(_cellEditInfos);
+    if (!_editedCells.empty()) {
+        for (const auto& [binder, priority] : _binders) {
+            binder->didEditCells(_editedCells);
+        }
     }
 
     _isInEditMode = false;
@@ -686,8 +692,7 @@ void World::_setCellDataAtUnchecked(Chunk&                   aChunk,
     aChunk.getCellDataAtUnchecked(getChunkMemoryLayoutInfo(), cellRelativeX, cellRelativeY, &currentSi);
 
     if (currentSi.wallShape == aSpatialInfo->wallShape) {
-        // In this case, there is no refresh needed because the walls are of the same shape,
-        // or are both non-existent
+        // In this case, there is no refresh needed because the walls are of the same shape
         goto SWAP_WALL;
     }
 
@@ -706,17 +711,30 @@ void World::_setCellDataAtUnchecked(Chunk&                   aChunk,
     }
 
 SWAP_WALL:
-    aChunk.setCellDataAtUnchecked(getChunkMemoryLayoutInfo(),
-                                  cellRelativeX,
-                                  cellRelativeY,
-                                  aSpatialInfo);
+    if (aChunk.setCellDataAtUnchecked(getChunkMemoryLayoutInfo(),
+                                      cellRelativeX,
+                                      cellRelativeY,
+                                      aSpatialInfo) > 0) {
+        if (_journalingEnabled) {
+            _addEditedCell({aX, aY}, BuildingBlock::SPATIAL_INFO);
+        }
+    }
 
-    // clang-format off
-    _cellEditInfos.push_back({{aX, aY}, Binder::CellEditInfo::WALL}); // !!!!!!!!!!!! SKIP IN GENERATOR MODE !!!!!!!!!!!!!!!!
     if (_isInGeneratorMode) {
         prune();
     }
-    // clang-format on
+}
+
+void World::_addEditedCell(hg::math::Vector2pz aCell, BuildingBlock aBb) {
+    const auto it = _editedCells.find(aCell);
+    if (it == _editedCells.end()) {
+        auto info = CellEditInfo{.bbMask = aBb};
+        _editedCells.insert(std::make_pair(aCell, info));
+        return;
+    }
+
+    auto& info  = it->second;
+    info.bbMask = (info.bbMask | aBb);
 }
 
 } // namespace gridgoblin

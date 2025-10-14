@@ -278,7 +278,7 @@ void ChunkHolder::_updateChunkUsage(const std::vector<detail::ChunkUsageChange>&
             cbs.push_back(&cb);
             requests.push_back({chunkId, change.loadPriority, [this](ChunkId aChunkId) {
                                     if (_binder != nullptr) {
-                                        _binder->onChunkReady(aChunkId);
+                                        _binder->didPrepareChunk(aChunkId);
                                     }
                                 }});
         } else {

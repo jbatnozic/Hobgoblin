@@ -213,6 +213,11 @@ public:
     //!       and this also holds even while generator mode is toggled on.
     void toggleGeneratorMode(const EditPermission&, bool aGeneratorMode);
 
+    //! Disabling edit journaling will mean that the world instance won't keep track of which cells
+    //! are being edited and thus no `didEditCells` callbacks will be invoked for registered Binders.
+    //! \note by default it's enabled.
+    void toggleEditJournaling(bool aEditJournalingEnabled);
+
     class Editor {
     public:
         template <class... taPtrs>
@@ -391,7 +396,7 @@ private:
 
     void _refreshCellsInAndAroundChunk(ChunkId aChunkId);
 
-    void onChunkReady(ChunkId aChunkId) override;
+    void didPrepareChunk(ChunkId aChunkId) override;
     void willIntegrateNewChunk(ChunkId                      aId,
                                Chunk&                       aChunk,
                                const ChunkMemoryLayoutInfo& aChunkMemLayout) override;
@@ -412,7 +417,7 @@ private:
 
     // ===== Editing cells =====
 
-    std::vector<Binder::CellEditInfo> _cellEditInfos;
+    CellEditInfos _editedCells;
 
     int _editMinX = -1;
     int _editMinY = -1;
@@ -421,6 +426,7 @@ private:
 
     bool _isInEditMode      = false;
     bool _isInGeneratorMode = false;
+    bool _journalingEnabled = true;
 
     void _startEdit();
     void _endEdit();
@@ -446,17 +452,33 @@ private:
     //! \param aChunk chunk where the `aX` and `aY` coordinates lie
     //! \param aX absolute X coordinate of the cell (NOT relative to chunk top-left)
     //! \param aY absolute Y coordinate of the cell (NOT relative to chunk top-left)
-    //! \param aSpatialInfo pointer to SpatialInfo object to copy over (UB if null)
+    //! \param a* pointer to a `cell::*` object to copy over (UB if null)
+    void _setCellDataAtUnchecked(Chunk&                  aChunk,
+                                 hg::PZInteger           aX,
+                                 hg::PZInteger           aY,
+                                 const cell::CellKindId* aCellKindId);
+    void _setCellDataAtUnchecked(Chunk&                   aChunk,
+                                 hg::PZInteger            aX,
+                                 hg::PZInteger            aY,
+                                 const cell::FloorSprite* aFloorSprite);
+    void _setCellDataAtUnchecked(Chunk&                  aChunk,
+                                 hg::PZInteger           aX,
+                                 hg::PZInteger           aY,
+                                 const cell::WallSprite* aWallSprite);
     void _setCellDataAtUnchecked(Chunk&                   aChunk,
                                  hg::PZInteger            aX,
                                  hg::PZInteger            aY,
                                  const cell::SpatialInfo* aSpatialInfo);
+    void _setCellDataAtUnchecked(Chunk&                       aChunk,
+                                 hg::PZInteger                aX,
+                                 hg::PZInteger                aY,
+                                 const cell::RendererAuxData* aRendererAuxData);
+    void _setCellDataAtUnchecked(Chunk&                aChunk,
+                                 hg::PZInteger         aX,
+                                 hg::PZInteger         aY,
+                                 const cell::UserData* aUserData);
 
-    //! \param aChunk chunk where the `aX` and `aY` coordinates lie
-    //! \param aX absolute X coordinate of the cell (NOT relative to chunk top-left)
-    //! \param aY absolute Y coordinate of the cell (NOT relative to chunk top-left)
-    template <class T, typename std::enable_if_t<!std::is_same_v<T, cell::SpatialInfo>, bool> = true>
-    void _setCellDataAtUnchecked(Chunk& aChunk, hg::PZInteger aX, hg::PZInteger aY, const T* aPtr);
+    void _addEditedCell(hg::math::Vector2pz aCell, BuildingBlock aBb);
 };
 
 ///////////////////////////////////////////////////////////////////////////
@@ -579,6 +601,115 @@ inline cell::SpatialInfo World::getSpatialInfoAtUnchecked(const EditPermission& 
 }
 
 ///////////////////////////////////////////////////////////////////////////
+// CELL SETTERS                                                          //
+///////////////////////////////////////////////////////////////////////////
+
+inline void World::_setCellDataAtUnchecked(Chunk&                  aChunk,
+                                           hg::PZInteger           aX,
+                                           hg::PZInteger           aY,
+                                           const cell::CellKindId* aCellKindId) {
+    const auto cellRelativeX = aX % _config.cellsPerChunkX;
+    const auto cellRelativeY = aY % _config.cellsPerChunkY;
+
+    if (aChunk.setCellDataAtUnchecked(getChunkMemoryLayoutInfo(),
+                                      cellRelativeX,
+                                      cellRelativeY,
+                                      aCellKindId) > 0) {
+        if (_journalingEnabled) {
+            _addEditedCell({aX, aY}, BuildingBlock::CELL_KIND_ID);
+        }
+    }
+
+    if (_isInGeneratorMode) {
+        prune();
+    }
+}
+
+inline void World::_setCellDataAtUnchecked(Chunk&                   aChunk,
+                                           hg::PZInteger            aX,
+                                           hg::PZInteger            aY,
+                                           const cell::FloorSprite* aFloorSprite) {
+    const auto cellRelativeX = aX % _config.cellsPerChunkX;
+    const auto cellRelativeY = aY % _config.cellsPerChunkY;
+
+    if (aChunk.setCellDataAtUnchecked(getChunkMemoryLayoutInfo(),
+                                      cellRelativeX,
+                                      cellRelativeY,
+                                      aFloorSprite) > 0) {
+        if (_journalingEnabled) {
+            _addEditedCell({aX, aY}, BuildingBlock::FLOOR_SPRITE);
+        }
+    }
+
+    if (_isInGeneratorMode) {
+        prune();
+    }
+}
+
+inline void World::_setCellDataAtUnchecked(Chunk&                  aChunk,
+                                           hg::PZInteger           aX,
+                                           hg::PZInteger           aY,
+                                           const cell::WallSprite* aWallSprite) {
+    const auto cellRelativeX = aX % _config.cellsPerChunkX;
+    const auto cellRelativeY = aY % _config.cellsPerChunkY;
+
+    if (aChunk.setCellDataAtUnchecked(getChunkMemoryLayoutInfo(),
+                                      cellRelativeX,
+                                      cellRelativeY,
+                                      aWallSprite) > 0) {
+        if (_journalingEnabled) {
+            _addEditedCell({aX, aY}, BuildingBlock::WALL_SPRITE);
+        }
+    }
+
+    if (_isInGeneratorMode) {
+        prune();
+    }
+}
+
+inline void World::_setCellDataAtUnchecked(Chunk&                       aChunk,
+                                           hg::PZInteger                aX,
+                                           hg::PZInteger                aY,
+                                           const cell::RendererAuxData* aRendererAuxData) {
+    const auto cellRelativeX = aX % _config.cellsPerChunkX;
+    const auto cellRelativeY = aY % _config.cellsPerChunkY;
+
+    if (aChunk.setCellDataAtUnchecked(getChunkMemoryLayoutInfo(),
+                                      cellRelativeX,
+                                      cellRelativeY,
+                                      aRendererAuxData) > 0) {
+        if (_journalingEnabled) {
+            _addEditedCell({aX, aY}, BuildingBlock::RENDERER_AUX_DATA);
+        }
+    }
+
+    if (_isInGeneratorMode) {
+        prune();
+    }
+}
+
+inline void World::_setCellDataAtUnchecked(Chunk&                aChunk,
+                                           hg::PZInteger         aX,
+                                           hg::PZInteger         aY,
+                                           const cell::UserData* aUserData) {
+    const auto cellRelativeX = aX % _config.cellsPerChunkX;
+    const auto cellRelativeY = aY % _config.cellsPerChunkY;
+
+    if (aChunk.setCellDataAtUnchecked(getChunkMemoryLayoutInfo(),
+                                      cellRelativeX,
+                                      cellRelativeY,
+                                      aUserData) > 0) {
+        if (_journalingEnabled) {
+            _addEditedCell({aX, aY}, BuildingBlock::USER_DATA);
+        }
+    }
+
+    if (_isInGeneratorMode) {
+        prune();
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////
 // CELL UPDATES                                                          //
 ///////////////////////////////////////////////////////////////////////////
 
@@ -618,13 +749,6 @@ void World::Editor::setCellDataAtUnchecked(hg::math::Vector2pz aCell, taPtrs&&..
     static_assert(sizeof...(aPtrs) > 0);
 
     setCellDataAtUnchecked(aCell.x, aCell.y, std::forward<taPtrs>(aPtrs)...);
-}
-
-template <class T, typename std::enable_if_t<!std::is_same_v<T, cell::SpatialInfo>, bool>>
-void World::_setCellDataAtUnchecked(Chunk& aChunk, hg::PZInteger aX, hg::PZInteger aY, const T* aPtr) {
-    const auto cellRelativeX = aX % _config.cellsPerChunkX;
-    const auto cellRelativeY = aY % _config.cellsPerChunkY;
-    aChunk.setCellDataAtUnchecked(getChunkMemoryLayoutInfo(), cellRelativeX, cellRelativeY, aPtr);
 }
 
 inline BuildingBlockMask World::getBuildingBlocks() const {

@@ -101,7 +101,7 @@ TEST_F(WorldTest, AvailableChunkIterations) {
         TestBinder(std::function<void()> aReadyCallback)
             : _readyCallback{std::move(aReadyCallback)} {}
 
-        void onChunkReady(ChunkId) override {
+        void didPrepareChunk(ChunkId) override {
             _readyCallback();
         }
 

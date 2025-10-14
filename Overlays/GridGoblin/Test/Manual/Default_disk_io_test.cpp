@@ -204,13 +204,9 @@ private:
         static constexpr auto* SERIALIZATION_STRING = "<<< test serialized extension >>>";
     };
 
-    void onCellsEdited(const std::vector<CellEditInfo>& aCellEditInfos) override {
-        for (const auto& info : aCellEditInfos) {
-            HG_LOG_INFO(LOG_ID,
-                        "Cell at ({},{}) edited; what = {}",
-                        info.cellId.x,
-                        info.cellId.y,
-                        (int)info.what);
+    void didEditCells(const CellEditInfos& aCellEditInfos) override {
+        for (const auto& [id, info] : aCellEditInfos) {
+            HG_LOG_INFO(LOG_ID, "Cell at ({},{}) edited; what = {}", id.x, id.y, (int)info.bbMask);
         }
     }
 

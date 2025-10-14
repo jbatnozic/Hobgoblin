@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <GridGoblin/Model/Cell.hpp>
 #include <GridGoblin/Model/Chunk.hpp>
 #include <GridGoblin/Model/Chunk_extension.hpp>
 #include <GridGoblin/Model/Chunk_id.hpp>
@@ -12,12 +13,24 @@
 #include <Hobgoblin/Math/Vector.hpp>
 
 #include <memory>
-#include <vector>
+#include <unordered_map>
 
 namespace jbatnozic {
 namespace gridgoblin {
 
 namespace gh = ::jbatnozic::hobgoblin;
+
+//! Contains information about a cell that was edited.
+//! \note it does NOT contain the ID of the edited cell, but \see `CellEditInfos`.
+struct CellEditInfo {
+    //! Mask of all the building blocks that were edited in the indicated cell.
+    BuildingBlockMask bbMask;
+};
+
+//! A container used to inform a listener about changes to cells of a world.
+//! It maps IDs of edited cells (represented as `hg::math::Vector2pz` - providing absolute X and Y
+//! coordinates of cells in the world) to associated `CellEditInfo` objects.
+using CellEditInfos = std::unordered_map<hg::math::Vector2pz, CellEditInfo>;
 
 //! This class contains a number of callbacks which can be overriden to 'bind'
 //! a GridGoblin World to its enclosing application and help them interoperate better.
@@ -26,14 +39,18 @@ public:
     //! Virtual destructor.
     virtual ~Binder() = default;
 
-    //! Called when a previously requested chunk (either requested explicitly via an ActiveArea, or
+    //! Called when a previously requested chunk (either requested explicitly via an `ActiveArea`, or
     //! for on-demand loading via a getter) is ready to be integrated into the world. This means that
     //! on the next `World::update()` call, this chunk will become available.
     //!
+    //! \note in general the purpose of this callback is to let the controlling code know that it needs
+    //!       to call `World::update()` because there are chunks waiting to be integrated. The only
+    //!       other intended use for it is testing.
+    //!
     //! \warning this method can (and usually will be) called from a background thread, AT ANY TIME! Be
-    //!          very careful what you put in it. Definitely don't do anything in it that could try to
-    //!          edit the world.
-    virtual void onChunkReady(ChunkId aChunkId) {}
+    //!          very careful what you put in it - anything outside of the suggestions noted above is
+    //!          very much not recommended, and editing the world in any way doubly so!
+    virtual void didPrepareChunk(ChunkId aChunkId) {}
 
     //! Called when a new chunk is about to be integrated into the World. By 'new' we mean that access
     //! to this chunk was requested but it could not be found in the cache, so a new chunk was
@@ -152,25 +169,13 @@ public:
                                   Chunk&                       aChunk,
                                   const ChunkMemoryLayoutInfo& aChunkMemLayout) {}
 
-    struct CellEditInfo {
-        hg::math::Vector2pz cellId; //! Identifies a cell by its X and Y position in the World grid.
+    //! Called at the very end of a `World::edit(...)` call, just before it returns.
+    //! Provides a list of cells which were edited, and a mask for each cell indicating which
+    //! of its building block structs were edited.
+    virtual void didEditCells(const CellEditInfos& aCellEditInfos) {}
 
-        enum EditIdentifiers {
-            UNKNOWN = 0x00,
-            FLOOR   = 0x01,
-            WALL    = 0x02,
-        };
-
-        int what = UNKNOWN; //! Identifies what in the cell was edited.
-    };
-
-    //! Called after a `World::edit(...)` call returns. Elements in the provided vector indicate the
-    //! cells that were changed during the edit.
-    //! \note some cells may be represented multiple times in the vector, if they were edited multiple
-    //!       times during the same call to edit().
-    virtual void onCellsEdited(const std::vector<CellEditInfo>& aCellEditInfos) {}
-
-    //! TODO(description)
+    //! Called by the world instance during chunk creation when an extension is needed to
+    //! attach to a chunk.
     virtual std::unique_ptr<ChunkExtensionInterface> createChunkExtension() {
         return nullptr;
     }
