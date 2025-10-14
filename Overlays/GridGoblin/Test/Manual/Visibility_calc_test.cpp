@@ -24,9 +24,8 @@ namespace {
 
 #define LOG_ID "GridGoblin.ManualTest"
 
-namespace hg = jbatnozic::hobgoblin;
-
-#define vector_cast hg::math::VectorCast
+namespace hg   = jbatnozic::hobgoblin;
+namespace uwga = hg::uwga;
 
 #define CELL_COUNT_X     40
 #define CELL_COUNT_Y     40
@@ -96,11 +95,13 @@ SpriteId TopDown(SpriteId aSpriteId) {
 void RunVisibilityCalculatorTestImpl() {
     hg::log::SetMinimalLogSeverity(hg::log::Severity::Info);
 
+    auto uwgaSystem = uwga::CreateGraphicsSystem("SFML");
+
     const auto root = std::filesystem::path{HG_TEST_ASSET_DIR};
 
-    hg::uwga::SpriteLoader loader;
+    uwga::SpriteLoader spriteLoader{*uwgaSystem};
     // clang-format off
-    loader.startTexture(256, 256)
+    spriteLoader.startTexture(256, 256)
         ->addSprite(TopDown(SPR_FULL_SQUARE),             root / "full-square.png")
         ->addSprite(TopDown(SPR_LARGE_TRIANGLE),          root / "large-triangle.png")
         ->addSprite(TopDown(SPR_SMALL_TRIANGLE_HOR),      root / "small-triangle-hor.png")
@@ -151,19 +152,21 @@ void RunVisibilityCalculatorTestImpl() {
                         continue;
                     }
 
-                    SpriteId spriteId;
-                    Shape    shape;
-                    SelectRandom(spriteId, shape);
-                    aEditor.setWallAt({x, y}, CellModel::Wall{spriteId, 0, shape});
+                    cell::WallSprite  wallSprite;
+                    cell::SpatialInfo spatialInfo;
+                    SelectRandom(wallSprite.id, spatialInfo.wallShape);
+                    aEditor.setCellDataAt(x, y, &wallSprite, &spatialInfo);
                 }
             }
         });
     }
 
-    TopDownRenderer      renderer{world, loader};
-    VisibilityCalculator visCalc{world};
-    hg::uwga::Image      vcImage;
-    hg::uwga::Texture    vcTexture;
+    // TopDownRenderer      renderer{world, loader};
+    VisibilityCalculatorConfig visCalcConfig;
+    // visCalcConfig.minRingsBeforeRaycasting = 0;
+    VisibilityCalculator visCalc{world, visCalcConfig};
+    auto                 vcImage   = uwgaSystem->createImage();
+    auto                 vcTexture = uwgaSystem->createTexture();
 
     const auto generateLoS = [&](hg::math::Vector2d pos) {
         HG_LOG_INFO(LOG_ID, "===============================================");
@@ -184,77 +187,75 @@ void RunVisibilityCalculatorTestImpl() {
         HG_LOG_INFO(LOG_ID, "Generating image...");
         {
             HG_LOG_WITH_SCOPED_STOPWATCH_MS(INFO, LOG_ID, "Image generation took {}ms", elapsed_time_ms);
-            vcImage.create(hg::ToPz(CELL_COUNT_X * CELLRES), hg::ToPz(CELL_COUNT_Y * CELLRES));
+            vcImage->reset(hg::ToPz(CELL_COUNT_X * CELLRES), hg::ToPz(CELL_COUNT_Y * CELLRES));
             for (int y = 0; y < hg::ToPz(CELL_COUNT_X * CELLRES); y += 1) {
                 for (int x = 0; x < hg::ToPz(CELL_COUNT_Y * CELLRES); x += 1) {
                     const auto v = visCalc.testVisibilityAt({(double)x, (double)y});
                     if (!v.has_value() || *v == false) {
-                        vcImage.setPixel(x, y, hg::uwga::COLOR_BLACK.withAlpha(150));
+                        vcImage->setPixel(x, y, hg::uwga::COLOR_BLACK.withAlpha(150));
                     } else {
-                        vcImage.setPixel(x, y, hg::uwga::COLOR_TRANSPARENT);
+                        vcImage->setPixel(x, y, hg::uwga::COLOR_TRANSPARENT);
                     }
                 }
             }
         }
 
         HG_LOG_INFO(LOG_ID, "Loading texture...");
-        vcTexture.loadFromImage(vcImage);
+        vcTexture->reset(*vcImage);
+        HG_LOG_INFO(LOG_ID, "Done!");
     };
 
     generateLoS({CELL_COUNT_X * CELLRES * 0.5f, CELL_COUNT_Y * CELLRES * 0.5f});
 
-    hg::uwga::Sprite vcSprite;
-    vcSprite.setTexture(&vcTexture, true);
+    hg::uwga::Sprite vcSprite{*vcTexture};
 
-    hg::uwga::RenderWindow window{
-        hg::win::VideoMode{1280, 1280},
-        "GridWorld"
-    };
-    window.setFramerateLimit(120);
-    // window.setVerticalSyncEnabled(true);
-    window.getView().setSize({CELL_COUNT_X * CELLRES, CELL_COUNT_Y * CELLRES});
-    window.getView().setCenter({CELL_COUNT_X * CELLRES * 0.5f, CELL_COUNT_Y * CELLRES * 0.5f});
+    auto window = uwgaSystem->createRenderWindow(1280, 1280, uwga::WindowStyle::DEFAULT, "GridWorld");
+    window->setFramerateLimit(120);
+
+    auto view = uwgaSystem->createView();
+    view->setSize({CELL_COUNT_X * CELLRES, CELL_COUNT_Y * CELLRES});
+    view->setCenter({CELL_COUNT_X * CELLRES * 0.5f, CELL_COUNT_Y * CELLRES * 0.5f});
+    window->setView(*view);
 
     hg::util::Stopwatch swatch;
 
-    while (window.isOpen()) {
+    while (true) {
         const auto frameTime = swatch.restart<std::chrono::microseconds>();
 
-        bool                  mouseLClick = false;
-        bool                  mouseRClick = false;
         hg::uwga::WindowEvent ev;
-        while (window.pollEvent(ev)) {
+        while (window && window->pollEvent(ev)) {
             ev.visit(
                 [&](hg::uwga::WindowEvent::Closed&) {
-                    window.close();
+                    window.reset();
                 },
                 [&](hg::uwga::WindowEvent::MouseButtonPressed& aButton) {
                     if (aButton.button == hg::in::MB_LEFT) {
-                        const auto coords = window.mapPixelToCoords({aButton.x, aButton.y});
+                        const auto coords = window->mapPixelToCoords({aButton.x, aButton.y});
                         HG_LOG_INFO(LOG_ID, "Coords = {}, {}", coords.x, coords.y);
-                        generateLoS(vector_cast<double>(coords));
-                        mouseLClick = true;
+                        generateLoS(coords.cast<double>());
                     }
                 });
         } // end event processing
+        if (!window) {
+            break;
+        }
 
-        window.clear(hg::uwga::Color{155, 155, 155});
+        window->clear(hg::uwga::Color{155, 155, 200});
 
-        const Renderer::RenderParameters renderParams{
-            .viewCenter  = PositionInWorld{vector_cast<double>(window.getView(0).getCenter())},
-            .viewSize    = vector_cast<double>(window.getView(0).getSize()),
-            .pointOfView = {},
-            .xOffset     = 0.0,
-            .yOffset     = 0.0};
+        // const Renderer::RenderParameters renderParams{
+        //     .viewCenter  = PositionInWorld{vector_cast<double>(window.getView(0).getCenter())},
+        //     .viewSize    = vector_cast<double>(window.getView(0).getSize()),
+        //     .pointOfView = {},
+        //     .xOffset     = 0.0,
+        //     .yOffset     = 0.0};
 
-        renderer.startPrepareToRender(renderParams, 0, nullptr);
-        renderer.endPrepareToRender();
-        renderer.render(window);
+        // renderer.startPrepareToRender(renderParams, 0, nullptr);
+        // renderer.endPrepareToRender();
+        // renderer.render(window);
 
-        // DrawChunk(window, world, {0, 0}, loader);
-        window.draw(vcSprite);
-
-        window.display();
+        window->draw(vcSprite);
+        window->flush();
+        window->display();
     }
 }
 

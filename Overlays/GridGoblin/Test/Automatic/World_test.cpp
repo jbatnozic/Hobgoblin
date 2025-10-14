@@ -16,9 +16,18 @@
 namespace jbatnozic {
 namespace gridgoblin {
 
-class WorldTest : public ::testing::Test {
+class WorldTest
+    : public ::testing::Test
+    , private Binder {
 public:
     WorldTest() = default;
+
+    void willIntegrateNewChunk(ChunkId                      aId,
+                               Chunk&                       aChunk,
+                               const ChunkMemoryLayoutInfo& aChunkMemLayout) override {
+        (void)aId;
+        aChunk.zeroOut(aChunkMemLayout);
+    }
 
 protected:
     test::FakeDiskIoHandler _fakeDiskIoHandler;
@@ -26,6 +35,7 @@ protected:
 
     World& _createWorld(const WorldConfig& aConfig) {
         _world.emplace(aConfig, &_fakeDiskIoHandler);
+        _world->attachBinder(this);
         return *_world;
     }
 
@@ -86,12 +96,12 @@ TEST_F(WorldTest, AvailableChunkIterations) {
 
     auto& w = _createWorld(config);
 
-    class TestBinder : public Binder {
+    class TestBinder : public gridgoblin::Binder {
     public:
         TestBinder(std::function<void()> aReadyCallback)
             : _readyCallback{std::move(aReadyCallback)} {}
 
-        void onChunkReady(ChunkId) override {
+        void didPrepareChunk(ChunkId) override {
             _readyCallback();
         }
 

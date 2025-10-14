@@ -5,9 +5,9 @@
 #include <Hobgoblin/Logging.hpp>
 #include <Hobgoblin/Private/Manual_test_framework.hpp>
 
+#include <exception>
 #include <filesystem>
 #include <iostream>
-#include <stdexcept>
 
 #include "Test_list.hpp"
 
@@ -26,12 +26,12 @@ int main() try {
         std::filesystem::remove_all("GGManualTest_WorkDir");
     });
 
-    HG_ADD_MANUAL_TEST(testRunner, RunSpoolingTest);
-    HG_ADD_MANUAL_TEST(testRunner, RunStorageHandlerTest);
-    HG_ADD_MANUAL_TEST(testRunner, RunOpennessTest);
+    HG_ADD_MANUAL_TEST(testRunner, RunChunkHolderTest);
     HG_ADD_MANUAL_TEST(testRunner, RunDefaultDiskIoTest);
     // HG_ADD_MANUAL_TEST(testRunner, RunDimetricRenderingTest);
-    // HG_ADD_MANUAL_TEST(testRunner, RunVisibilityCalculatorTest);
+    HG_ADD_MANUAL_TEST(testRunner, RunOpennessTest);
+    HG_ADD_MANUAL_TEST(testRunner, RunSpoolingTest);
+    HG_ADD_MANUAL_TEST(testRunner, RunVisibilityCalculatorTest);
 
     testRunner.runTest();
 

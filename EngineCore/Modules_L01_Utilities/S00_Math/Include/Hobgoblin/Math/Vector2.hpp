@@ -30,9 +30,11 @@
 #define UHOBGOBLIN_MATH_VECTOR2_HPP
 
 #include <Hobgoblin/Common.hpp>
+#include <Hobgoblin/Math/Hash.hpp>
 
 #include <cassert>
 #include <cmath>
+#include <memory> // for std::hash
 #include <type_traits>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
@@ -359,6 +361,17 @@ constexpr bool operator!=(Vector2<T> aLhs, Vector2<T> aRhs) {
 
 } // namespace math
 HOBGOBLIN_NAMESPACE_END
+
+// MARK: Hash function
+
+template <class T>
+struct std::hash<jbatnozic::hobgoblin::math::Vector2<T>> {
+    std::size_t operator()(const jbatnozic::hobgoblin::math::Vector2<T>& aVec2) const noexcept {
+        std::size_t seed = 0;
+        jbatnozic::hobgoblin::math::HashCombine(seed, aVec2.x, aVec2.y);
+        return seed;
+    }
+};
 
 #include <Hobgoblin/Private/Pmacro_undef.hpp>
 #include <Hobgoblin/Private/Short_namespace.hpp>

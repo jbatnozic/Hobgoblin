@@ -42,12 +42,48 @@ protected:
 #endif
 };
 
-TEST_F(GridGoblinConversionsTest, EmptyCellConversionToJsonAndBack) {
-    CellModel cell;
+TEST_F(GridGoblinConversionsTest, Cell_CellKindIdConversion) {
+    cell::CellKindId cellKindId;
+    cellKindId.value = 5;
 
-    EXPECT_EQ(cell, JsonToCell(CellToJson(cell, _document)));
+    EXPECT_EQ(cellKindId, JsonToCellKindId(CellKindIdToJson(cellKindId, _document.GetAllocator())));
 }
 
+TEST_F(GridGoblinConversionsTest, Cell_FloorSpriteConversion) {
+    cell::FloorSprite floorSprite;
+    floorSprite.id = 7;
+
+    EXPECT_EQ(floorSprite, JsonToFloorSprite(FloorSpriteToJson(floorSprite, _document.GetAllocator())));
+}
+
+TEST_F(GridGoblinConversionsTest, Cell_WallSpriteConversion) {
+    cell::WallSprite wallSprite;
+    wallSprite.id         = 11;
+    wallSprite.id_reduced = 127;
+
+    EXPECT_EQ(wallSprite, JsonToWallSprite(WallSpriteToJson(wallSprite, _document.GetAllocator())));
+}
+
+TEST_F(GridGoblinConversionsTest, Cell_SpatialInfoConversion) {
+    cell::SpatialInfo spatialInfo;
+
+    EXPECT_EQ(spatialInfo, JsonToSpatialInfo(SpatialInfoToJson(spatialInfo, _document.GetAllocator())));
+}
+
+TEST_F(GridGoblinConversionsTest, Cell_RendererAuxDataConversion) {
+    cell::RendererAuxData rendererAuxData;
+
+    EXPECT_EQ(rendererAuxData,
+              JsonToRendererAuxData(RendererAuxDataToJson(rendererAuxData, _document.GetAllocator())));
+}
+
+TEST_F(GridGoblinConversionsTest, Cell_UserDataConversion) {
+    cell::UserData userData;
+
+    EXPECT_EQ(userData, JsonToUserData(UserDataToJson(userData, _document.GetAllocator())));
+}
+
+#if 0
 TEST_F(GridGoblinConversionsTest, EmptyCellConversionFromJson) {
     static constexpr auto EMPTY_CELL_JSON = R"_({ "flags": 0 })_";
 
@@ -65,42 +101,31 @@ TEST_F(GridGoblinConversionsTest, CellConversionFromInvalidJson) {
     EXPECT_THROW(JsonToCell(_jsonDocumentFromString(INVALID_CELL_JSON_1)), JsonParseError);
     EXPECT_THROW(JsonToCell(_jsonDocumentFromString(INVALID_CELL_JSON_2)), JsonParseError);
 }
-
-TEST_F(GridGoblinConversionsTest, CellWithFloorConversionToJsonAndBack) {
-    CellModel cell;
-    cell.setFloor({111});
-
-    EXPECT_EQ(cell, JsonToCell(CellToJson(cell, _document)));
-}
-
-TEST_F(GridGoblinConversionsTest, CellWithWallConversionToJsonAndBack) {
-    CellModel cell;
-    cell.setWall({111, 222, Shape::FULL_SQUARE});
-
-    EXPECT_EQ(cell, JsonToCell(CellToJson(cell, _document)));
-}
-
-TEST_F(GridGoblinConversionsTest, CellWithFloorAndWallConversionToJsonAndBack) {
-    CellModel cell;
-    cell.setFloor({111});
-    cell.setWall({111, 222, Shape::SMALL_TRIANGLE_HOR | Shape::HVFLIP});
-
-    EXPECT_EQ(cell, JsonToCell(CellToJson(cell, _document)));
-}
+#endif
 
 TEST_F(GridGoblinConversionsTest, ChunkConversionToJsonAndBack) {
-    CellModel cell;
-    cell.setFloor({111});
-    cell.setWall({111, 222, Shape::FULL_SQUARE});
+    FatCell cell;
+    cell.cellKindId = {62};
+    cell.wallSprite = {14, 17};
+    cell.userData   = {1337};
 
-    Chunk chunk{4, 4};
-    chunk.setAll(cell);
+    const auto bbs = BuildingBlock::CELL_KIND_ID | BuildingBlock::WALL_SPRITE | BuildingBlock::USER_DATA;
+    const auto memLayout = detail::CalcChunkMemoryLayoutInfo(4, 4, bbs);
 
-    chunk.getCellAtUnchecked(2, 0).setFloor({333});
-    chunk.getCellAtUnchecked(3, 1).resetWall();
-    chunk.getCellAtUnchecked(1, 2).resetFloor();
+    Chunk chunk{memLayout};
+    chunk.setAll(memLayout, cell);
 
-    EXPECT_TRUE(AreCellsEqual(chunk, JsonStringToChunk(ChunkToJsonString(chunk))));
+    cell.cellKindId = {97};
+    cell.wallSprite = {5, 0};
+    cell.userData   = {420};
+    chunk.setCellDataAtUnchecked(memLayout, 2, 0, &cell.cellKindId);
+    chunk.setCellDataAtUnchecked(memLayout, 3, 1, &cell.wallSprite);
+    chunk.setCellDataAtUnchecked(memLayout, 1, 2, &cell.userData);
+
+    EXPECT_TRUE(ChunksContainIdenticalCellData(
+        memLayout,
+        chunk,
+        JsonStringToChunk(ChunkToJsonString(chunk, bbs, memLayout), memLayout)));
 }
 
 } // namespace detail

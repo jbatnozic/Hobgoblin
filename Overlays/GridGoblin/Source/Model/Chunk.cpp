@@ -10,64 +10,24 @@
 namespace jbatnozic {
 namespace gridgoblin {
 
-Chunk::Chunk(hg::PZInteger aWidth, hg::PZInteger aHeight)
-    : _cells{aWidth, aHeight} {
-    if (!isEmpty()) {
-        _storeChunkExtensionPointer(nullptr);
-    }
+Chunk::Chunk(const ChunkMemoryLayoutInfo& aMemLayout) {
+    _impl.alloc(aMemLayout);
 }
 
-Chunk::~Chunk() {
-    makeEmpty();
+void Chunk::zeroOut(const ChunkMemoryLayoutInfo& aMemLayout) {
+    _impl.zeroOut(aMemLayout);
 }
 
-void Chunk::makeEmpty() {
-    if (_cells.getWidth() != 0 && _cells.getHeight() != 0) {
-        releaseExtension().reset();
-        _cells.reset();
-    }
+void Chunk::setAll(const ChunkMemoryLayoutInfo& aMemLayout, const FatCell& aCell) {
+    _impl.setAll(aMemLayout, aCell);
 }
-
-void Chunk::setAll(const CellModel& aCell) {
-    for (hg::PZInteger y = 0; y < getCellCountY(); y += 1) {
-        for (hg::PZInteger x = 0; x < getCellCountX(); x += 1) {
-            _cells[y][x] = detail::CellModelExt{aCell};
-        }
-    }
-}
-
-///////////////////////////////////////////////////////////////////////////
-// EXTENSIONS                                                            //
-///////////////////////////////////////////////////////////////////////////
 
 void Chunk::setExtension(std::unique_ptr<ChunkExtensionInterface> aChunkExtension) {
-    releaseExtension().reset();
-    _storeChunkExtensionPointer(aChunkExtension.release());
-}
-
-ChunkExtensionInterface* Chunk::getExtension() const {
-    return _loadChunkExtensionPointer();
+    _impl.setExtension(std::move(aChunkExtension));
 }
 
 std::unique_ptr<ChunkExtensionInterface> Chunk::releaseExtension() {
-    std::unique_ptr<ChunkExtensionInterface> result{_loadChunkExtensionPointer()};
-    _storeChunkExtensionPointer(nullptr);
-
-    return result;
-}
-
-///////////////////////////////////////////////////////////////////////////
-// PRIVATE                                                               //
-///////////////////////////////////////////////////////////////////////////
-
-void Chunk::_storeChunkExtensionPointer(ChunkExtensionInterface* aChunkExtensionPointer) {
-    HG_ASSERT(!isEmpty());
-    _cells.getExtensionCell().mutableExtensionData.setChunkExtensionPointer(aChunkExtensionPointer);
-}
-
-ChunkExtensionInterface* Chunk::_loadChunkExtensionPointer() const {
-    HG_ASSERT(!isEmpty());
-    return _cells.getExtensionCell().mutableExtensionData.getChunkExtensionPointer();
+    return _impl.releaseExtension();
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -75,18 +35,90 @@ ChunkExtensionInterface* Chunk::_loadChunkExtensionPointer() const {
 ///////////////////////////////////////////////////////////////////////////
 
 namespace detail {
-bool AreCellsEqual(const Chunk& aChunk1, const Chunk& aChunk2) {
-    if (aChunk1.getCellCountX() != aChunk2.getCellCountX() ||
-        aChunk1.getCellCountY() != aChunk2.getCellCountY()) {
-        return false;
+#define acc ChunkMemoryLayoutInfoAccessor
+bool ChunksContainIdenticalCellData(const ChunkMemoryLayoutInfo& aMemLayout,
+                                    const Chunk&                 aChunk1,
+                                    const Chunk&                 aChunk2) {
+    HG_VALIDATE_PRECONDITION(!aChunk1.isEmpty());
+    HG_VALIDATE_PRECONDITION(!aChunk2.isEmpty());
+
+    const auto width  = acc::getChunkWidth(aMemLayout);
+    const auto height = acc::getChunkHeight(aMemLayout);
+
+    if (auto offset = acc::getCellKindIdOffset(aMemLayout); offset != acc::INVALID_OFFSET) {
+        for (hg::PZInteger y = 0; y < height; ++y) {
+            for (hg::PZInteger x = 0; x < width; ++x) {
+                cell::CellKindId cellKindIds[2];
+                aChunk1.getCellDataAtUnchecked(aMemLayout, {x, y}, &cellKindIds[0]);
+                aChunk2.getCellDataAtUnchecked(aMemLayout, {x, y}, &cellKindIds[1]);
+                if (cellKindIds[0] != cellKindIds[1]) {
+                    return false;
+                }
+            }
+        }
     }
 
-    for (hg::PZInteger y = 0; y < aChunk1.getCellCountY(); y += 1) {
-        for (hg::PZInteger x = 0; x < aChunk2.getCellCountX(); x += 1) {
-            const auto& lhsCell = static_cast<const CellModel&>(aChunk1.getCellAtUnchecked(x, y));
-            const auto& rhsCell = static_cast<const CellModel&>(aChunk2.getCellAtUnchecked(x, y));
-            if (lhsCell != rhsCell) {
-                return false;
+    if (auto offset = acc::getFloorSpriteOffset(aMemLayout); offset != acc::INVALID_OFFSET) {
+        for (hg::PZInteger y = 0; y < height; ++y) {
+            for (hg::PZInteger x = 0; x < width; ++x) {
+                cell::FloorSprite floorSprites[2];
+                aChunk1.getCellDataAtUnchecked(aMemLayout, {x, y}, &floorSprites[0]);
+                aChunk2.getCellDataAtUnchecked(aMemLayout, {x, y}, &floorSprites[1]);
+                if (floorSprites[0] != floorSprites[1]) {
+                    return false;
+                }
+            }
+        }
+    }
+
+    if (auto offset = acc::getWallSpriteOffset(aMemLayout); offset != acc::INVALID_OFFSET) {
+        for (hg::PZInteger y = 0; y < height; ++y) {
+            for (hg::PZInteger x = 0; x < width; ++x) {
+                cell::WallSprite wallSprites[2];
+                aChunk1.getCellDataAtUnchecked(aMemLayout, {x, y}, &wallSprites[0]);
+                aChunk2.getCellDataAtUnchecked(aMemLayout, {x, y}, &wallSprites[1]);
+                if (wallSprites[0] != wallSprites[1]) {
+                    return false;
+                }
+            }
+        }
+    }
+
+    if (auto offset = acc::getSpatialInfoOffset(aMemLayout); offset != acc::INVALID_OFFSET) {
+        for (hg::PZInteger y = 0; y < height; ++y) {
+            for (hg::PZInteger x = 0; x < width; ++x) {
+                cell::SpatialInfo spatialInfos[2];
+                aChunk1.getCellDataAtUnchecked(aMemLayout, {x, y}, &spatialInfos[0]);
+                aChunk2.getCellDataAtUnchecked(aMemLayout, {x, y}, &spatialInfos[1]);
+                if (spatialInfos[0] != spatialInfos[1]) {
+                    return false;
+                }
+            }
+        }
+    }
+
+    if (auto offset = acc::getRendererAuxDataOffset(aMemLayout); offset != acc::INVALID_OFFSET) {
+        for (hg::PZInteger y = 0; y < height; ++y) {
+            for (hg::PZInteger x = 0; x < width; ++x) {
+                cell::RendererAuxData rendererAuxData[2];
+                aChunk1.getCellDataAtUnchecked(aMemLayout, {x, y}, &rendererAuxData[0]);
+                aChunk2.getCellDataAtUnchecked(aMemLayout, {x, y}, &rendererAuxData[1]);
+                if (rendererAuxData[0] != rendererAuxData[1]) {
+                    return false;
+                }
+            }
+        }
+    }
+
+    if (auto offset = acc::getUserDataOffset(aMemLayout); offset != acc::INVALID_OFFSET) {
+        for (hg::PZInteger y = 0; y < height; ++y) {
+            for (hg::PZInteger x = 0; x < width; ++x) {
+                cell::UserData userData[2];
+                aChunk1.getCellDataAtUnchecked(aMemLayout, {x, y}, &userData[0]);
+                aChunk2.getCellDataAtUnchecked(aMemLayout, {x, y}, &userData[1]);
+                if (userData[0] != userData[1]) {
+                    return false;
+                }
             }
         }
     }

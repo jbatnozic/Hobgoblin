@@ -6,8 +6,6 @@
 #include <Hobgoblin/UWGA.hpp>
 #include <Hobgoblin/Utility/Time_utils.hpp>
 
-#include "../../Source/Detail_access.hpp"
-#include "Fake_disk_io_handler.hpp"
 #include <GridGoblin/Private/Chunk_spooler_default.hpp>
 #include <GridGoblin/World/World.hpp>
 
@@ -54,18 +52,18 @@ public:
         switch (aButton) {
         case hg::in::MB_LEFT:
             {
-                const auto  cellXY = _world.posToCell(aPos.x, aPos.y);
-                const auto* cell   = _world.getCellAtUnchecked(cellXY);
-                if (cell) {
-                    if (!cell->isWallInitialized()) {
-                        _world.edit(*perm, [cellXY](World::Editor& aEditor) {
-                            aEditor.setWallAtUnchecked(cellXY, CellModel::Wall{});
-                        });
+                const auto        cellXY = _world.posToCell(aPos.x, aPos.y);
+                cell::SpatialInfo spatialInfo;
+                const auto        cellIsLoaded = _world.getCellDataAt(cellXY, &spatialInfo);
+                if (cellIsLoaded) {
+                    if (!spatialInfo.hasNonEmptyWallShape()) {
+                        spatialInfo.wallShape = Shape::FULL_SQUARE;
                     } else {
-                        _world.edit(*perm, [cellXY](World::Editor& aEditor) {
-                            aEditor.setWallAt(cellXY, std::nullopt);
-                        });
+                        spatialInfo.wallShape = Shape::EMPTY;
                     }
+                    _world.edit(*perm, [cellXY, &spatialInfo](World::Editor& aEditor) {
+                        aEditor.setCellDataAtUnchecked(cellXY, &spatialInfo);
+                    });
                 }
             }
             break;
@@ -118,6 +116,7 @@ private:
                 .chunkCountY                 = 4,
                 .cellsPerChunkX              = 8,
                 .cellsPerChunkY              = 8,
+                .buildingBlocks              = BuildingBlockMask::ALL,
                 .cellResolution              = 32.0,
                 .maxCellOpenness             = 5,
                 .maxLoadedNonessentialChunks = 0,
@@ -128,8 +127,8 @@ private:
         const auto& uwgaSystem = aCanvas.getSystem();
 
         const auto         cellRes = (float)_world.getCellResolution();
-        hg::math::Vector2f start{aChunkId.x * aChunk.getCellCountX() * cellRes,
-                                 aChunkId.y * aChunk.getCellCountY() * cellRes};
+        hg::math::Vector2f start{aChunkId.x * _world.getCellsPerChunkX() * cellRes,
+                                 aChunkId.y * _world.getCellsPerChunkY() * cellRes};
 
         hg::uwga::RectangleShape rect{
             uwgaSystem,
@@ -144,18 +143,21 @@ private:
 
         const float textOffset = 4.f;
 
-        for (hg::PZInteger y = 0; y < aChunk.getCellCountY(); y += 1) {
-            for (hg::PZInteger x = 0; x < aChunk.getCellCountX(); x += 1) {
+        const auto& memLayout = _world.getChunkMemoryLayoutInfo();
+
+        for (hg::PZInteger y = 0; y < _world.getCellsPerChunkY(); y += 1) {
+            for (hg::PZInteger x = 0; x < _world.getCellsPerChunkX(); x += 1) {
                 rect.setPosition(start.x + x * cellRes, start.y + y * cellRes);
-                const auto& cell = aChunk.getCellAtUnchecked(x, y);
-                if (cell.isWallInitialized()) {
+                cell::SpatialInfo spatialInfo;
+                aChunk.getCellDataAtUnchecked(memLayout, x, y, &spatialInfo);
+                if (spatialInfo.hasNonEmptyWallShape()) {
                     rect.setFillColor(hg::uwga::COLOR_BLACK);
                 } else {
                     rect.setFillColor(hg::uwga::COLOR_TRANSPARENT);
                 }
                 aCanvas.draw(rect);
 
-                text->setString(std::to_string((int)cell.getOpenness()));
+                text->setString(std::to_string((int)spatialInfo.openness));
                 text->setPosition(start.x + x * cellRes + textOffset,
                                   start.y + y * cellRes + textOffset);
                 text->setScale({0.75f, 0.75f});
@@ -202,13 +204,9 @@ private:
         static constexpr auto* SERIALIZATION_STRING = "<<< test serialized extension >>>";
     };
 
-    void onCellsEdited(const std::vector<CellEditInfo>& aCellEditInfos) override {
-        for (const auto& info : aCellEditInfos) {
-            HG_LOG_INFO(LOG_ID,
-                        "Cell at ({},{}) edited; what = {}",
-                        info.cellId.x,
-                        info.cellId.y,
-                        (int)info.what);
+    void didEditCells(const CellEditInfos& aCellEditInfos) override {
+        for (const auto& [id, info] : aCellEditInfos) {
+            HG_LOG_INFO(LOG_ID, "Cell at ({},{}) edited; what = {}", id.x, id.y, (int)info.bbMask);
         }
     }
 

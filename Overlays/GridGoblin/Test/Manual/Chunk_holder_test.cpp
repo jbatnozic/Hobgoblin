@@ -1,8 +1,8 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
+#include <GridGoblin/Private/Chunk_holder.hpp>
 #include <GridGoblin/Private/Chunk_spooler_default.hpp>
-#include <GridGoblin/Private/Chunk_storage_handler.hpp>
 
 #include <Hobgoblin/Logging.hpp>
 #include <Hobgoblin/UWGA.hpp>
@@ -14,10 +14,12 @@ namespace hg = jbatnozic::hobgoblin;
 
 using jbatnozic::gridgoblin::ActiveArea;
 using jbatnozic::gridgoblin::Binder;
+using jbatnozic::gridgoblin::BuildingBlockMask;
 using jbatnozic::gridgoblin::ChunkId;
+using jbatnozic::gridgoblin::ChunkMemoryLayoutInfo;
 using jbatnozic::gridgoblin::WorldConfig;
+using jbatnozic::gridgoblin::detail::ChunkHolder;
 using jbatnozic::gridgoblin::detail::ChunkSpoolerInterface;
-using jbatnozic::gridgoblin::detail::ChunkStorageHandler;
 
 #define CHUNK_COUNT_X 32
 #define CHUNK_COUNT_Y 32
@@ -41,12 +43,13 @@ class FakeWorld
 public:
     FakeWorld(hg::PZInteger          aWorldWidth,
               hg::PZInteger          aWorldHeight,
-              ChunkSpoolerInterface& aChunkSpooler)
-        : _chunkStorageHandler{_makeWorldConfig()}
-        , _activeArea{_chunkStorageHandler.createNewActiveArea()} //
+              ChunkSpoolerInterface& aChunkSpooler,
+              const WorldConfig&     aConfig)
+        : _chunkHolder{aConfig}
+        , _activeArea{_chunkHolder.createNewActiveArea()} //
     {
-        _chunkStorageHandler.setChunkSpooler(&aChunkSpooler);
-        _chunkStorageHandler.setBinder(this);
+        _chunkHolder.setChunkSpooler(&aChunkSpooler);
+        _chunkHolder.setBinder(this);
     }
 
     void update(hg::math::Vector2pz aPosition) {
@@ -56,8 +59,8 @@ public:
             _activeArea.setToChunkRingDiamond(id, 2);
         }
 
-        _chunkStorageHandler.update();
-        _chunkStorageHandler.prune();
+        _chunkHolder.update();
+        _chunkHolder.prune();
     }
 
     void drawOnto(
@@ -84,7 +87,7 @@ public:
 
         for (hg::PZInteger y = 0; y < CHUNK_COUNT_Y; y += 1) {
             for (hg::PZInteger x = 0; x < CHUNK_COUNT_X; x += 1) {
-                if (_chunkStorageHandler.getCellAtUnchecked(x, y) == nullptr) {
+                if (_chunkHolder.getChunkAtIdUnchecked({x, y}) == nullptr) {
                     emptyRect.setPosition({x * resolution, y * resolution});
                     aCanvas.draw(emptyRect);
                 } else {
@@ -108,35 +111,41 @@ public:
     }
 
 private:
-    ChunkStorageHandler _chunkStorageHandler;
+    ChunkHolder         _chunkHolder;
     hg::math::Vector2pz _playerPosition;
     ActiveArea          _activeArea;
+};
 
+class Fixture {
+public:
+    ChunkMemoryLayoutInfo _chunkMemoryLayoutInfoImpl =
+        jbatnozic::gridgoblin::detail::CalcChunkMemoryLayoutInfo(1, 1, BuildingBlockMask::ALL);
+
+    jbatnozic::gridgoblin::test::FakeDiskIoHandler     _fakeDiskIoHandler;
+    jbatnozic::gridgoblin::detail::DefaultChunkSpooler _chunkSpooler{BuildingBlockMask::ALL,
+                                                                     _chunkMemoryLayoutInfoImpl};
+    FakeWorld _fakeWorld{32, 32, _chunkSpooler, _makeWorldConfig()};
+
+    Fixture() {
+        _chunkSpooler.setDiskIoHandler(&_fakeDiskIoHandler);
+    }
+
+private:
     static WorldConfig _makeWorldConfig() {
         return {.chunkCountX                 = CHUNK_COUNT_X,
                 .chunkCountY                 = CHUNK_COUNT_Y,
                 .cellsPerChunkX              = 1,
                 .cellsPerChunkY              = 1,
+                .buildingBlocks              = BuildingBlockMask::ALL,
                 .cellResolution              = 32.f,
                 .maxCellOpenness             = 4,
                 .maxLoadedNonessentialChunks = 32,
                 .chunkDirectoryPath          = "GGManualTest_WorkDir"};
     }
 };
-
-class Fixture {
-public:
-    jbatnozic::gridgoblin::test::FakeDiskIoHandler     _fakeDiskIoHandler;
-    jbatnozic::gridgoblin::detail::DefaultChunkSpooler _chunkSpooler;
-    FakeWorld                                          _fakeWorld{32, 32, _chunkSpooler};
-
-    Fixture() {
-        _chunkSpooler.setDiskIoHandler(&_fakeDiskIoHandler);
-    }
-};
 } // namespace
 
-void RunStorageHandlerTest(int, const char**) {
+void RunChunkHolderTest(int, const char**) {
     Fixture fixture;
 
     auto system = hg::uwga::CreateGraphicsSystem("SFML");

@@ -37,16 +37,27 @@ void DefaultChunkDiskIoHandler::setBinder(Binder* aBinder) {
     _binder = aBinder;
 }
 
-std::optional<Chunk> DefaultChunkDiskIoHandler::loadChunkFromRuntimeCache(ChunkId aChunkId) {
+std::optional<Chunk> DefaultChunkDiskIoHandler::loadChunkFromRuntimeCache(
+    ChunkId                      aChunkId,
+    const ChunkMemoryLayoutInfo& aChunkMemoryLayout) //
+{
     // TODO: make runtime cache a separate thing
-    return loadChunkFromPersistentCache(aChunkId);
+    return loadChunkFromPersistentCache(aChunkId, aChunkMemoryLayout);
 }
 
-void DefaultChunkDiskIoHandler::storeChunkInRuntimeCache(const Chunk& aChunk, ChunkId aChunkId) {
-    storeChunkInPersistentCache(aChunk, aChunkId);
+void DefaultChunkDiskIoHandler::storeChunkInRuntimeCache(
+    const Chunk&                 aChunk,
+    ChunkId                      aChunkId,
+    BuildingBlockMask            aBuildingBlocks,
+    const ChunkMemoryLayoutInfo& aChunkMemoryLayout) //
+{
+    storeChunkInPersistentCache(aChunk, aChunkId, aBuildingBlocks, aChunkMemoryLayout);
 }
 
-std::optional<Chunk> DefaultChunkDiskIoHandler::loadChunkFromPersistentCache(ChunkId aChunkId) {
+std::optional<Chunk> DefaultChunkDiskIoHandler::loadChunkFromPersistentCache(
+    ChunkId                      aChunkId,
+    const ChunkMemoryLayoutInfo& aChunkMemoryLayout) //
+{
     const auto path = _buildPathToChunk(aChunkId);
     if (!std::filesystem::exists(path)) {
         return std::nullopt;
@@ -63,13 +74,22 @@ std::optional<Chunk> DefaultChunkDiskIoHandler::loadChunkFromPersistentCache(Chu
         return extension;
     };
 
-    return JsonStringToChunk(std::move(bytes), chunkExtensionFactory, _reusableConversionBuffers);
+    return JsonStringToChunk(std::move(bytes),
+                             aChunkMemoryLayout,
+                             chunkExtensionFactory,
+                             _reusableConversionBuffers);
 }
 
-void DefaultChunkDiskIoHandler::storeChunkInPersistentCache(const Chunk& aChunk, ChunkId aChunkId) {
+void DefaultChunkDiskIoHandler::storeChunkInPersistentCache(
+    const Chunk&                 aChunk,
+    ChunkId                      aChunkId,
+    BuildingBlockMask            aBuildingBlocks,
+    const ChunkMemoryLayoutInfo& aChunkMemoryLayout) //
+{
     const auto path = _buildPathToChunk(aChunkId);
 
-    auto str = ChunkToJsonString(aChunk, _reusableConversionBuffers);
+    auto str =
+        ChunkToJsonString(aChunk, aBuildingBlocks, aChunkMemoryLayout, _reusableConversionBuffers);
 
     std::ofstream file{path, std::ios::out | std::ios::binary | std::ios::trunc};
     HG_HARD_ASSERT(file.is_open() && file.good());

@@ -3,7 +3,8 @@
 
 #pragma once
 
-#include <GridGoblin/Model/Cell_model.hpp>
+#include <GridGoblin/Model/Building_block.hpp>
+#include <GridGoblin/Model/Cell.hpp>
 #include <GridGoblin/Model/Chunk.hpp>
 #include <GridGoblin/Model/Chunk_extension.hpp>
 #include <GridGoblin/Model/Chunk_id.hpp>

@@ -9,7 +9,7 @@ find_package(RapidJSON CONFIG REQUIRED)
 add_library(${PROJECT_NAME}
     # Model
     "Source/Model/Chunk.cpp"
-    "Source/Model/Shape_visibility_vertices.cpp"
+    "Source/Model/Shape_vertices.cpp"
     "Source/Model/Shape.cpp"
 
     # Positional
@@ -17,10 +17,11 @@ add_library(${PROJECT_NAME}
     "Source/Positional/Position_conversions.cpp"
 
     # Private
-    "Source/Private/Cell_model_ext.cpp"
     "Source/Private/Chunk_disk_io_handler_default.cpp"
-    "Source/Private/Chunk_spooler_default.cpp"
-    "Source/Private/Chunk_storage_handler.cpp"
+    "Source/Private/Chunk_holder.cpp"
+    "Source/Private/Chunk_impl.cpp"
+    "Source/Private/Chunk_memory_layout_info.cpp"
+    "Source/Private/Chunk_spooler_default.cpp"  
     "Source/Private/Model_conversions.cpp"
 
     # Rendering
@@ -34,9 +35,6 @@ add_library(${PROJECT_NAME}
     # World
     "Source/World/Active_area.cpp"
     "Source/World/World.cpp"
-
-    # Other
-    "Source/Detail_access.hpp"
 )
 
 target_compile_options(${PROJECT_NAME} PRIVATE -Wconversion)

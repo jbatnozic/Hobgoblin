@@ -10,13 +10,12 @@
 
 #include <array>
 #include <cmath>
-#include <type_traits>
 
 namespace jbatnozic {
 namespace gridgoblin {
 
 namespace {
-using CellFlags = std::underlying_type_t<CellModel::Flags>;
+using CellFlags = std::uint8_t;
 
 using hg::math::AngleD;
 using hg::math::Clamp;
@@ -25,7 +24,7 @@ using hg::math::Sqr;
 using hg::math::Vector2d;
 using hg::math::Vector2pz;
 
-std::size_t GetUnobstructedVertices(const CellModel&         aCell,
+std::size_t GetUnobstructedVertices(cell::SpatialInfo        aCellSpatialInfo,
                                     Vector2pz                aCellCoords,
                                     CellFlags                aEdgesOfInterest,
                                     bool                     aAllEdgesOverride,
@@ -36,7 +35,7 @@ std::size_t GetUnobstructedVertices(const CellModel&         aCell,
     const double offset = 0.25 / aCellResolution;
 
     const auto cnt =
-        GetVisibilityVertices(aCell, aEdgesOfInterest, aAllEdgesOverride, offset, aVertices);
+        GetVisibilityVertices(aCellSpatialInfo, aEdgesOfInterest, aAllEdgesOverride, offset, aVertices);
 
     const auto tlCorner =
         hg::math::Vector2d{aCellCoords.x * aCellResolution, aCellCoords.y * aCellResolution};
@@ -57,8 +56,6 @@ void ProjectRay(/*  in */ Vector2d  aOrigin,
     aRayAngle = AngleD::fromVector(aPassesThrough.x, aPassesThrough.y);
     aRayEnd   = aOrigin + aRayAngle.asNormalizedVector() * aLength;
 }
-
-constexpr std::uint16_t DETERMINE_FLAGS_LAZILY = 0xFFFF;
 } // namespace
 
 VisibilityCalculator::VisibilityCalculator(const World&                      aWorld,
@@ -77,7 +74,7 @@ VisibilityCalculator::VisibilityCalculator(const World&                      aWo
 
 std::optional<bool> VisibilityCalculator::testVisibilityAt(PositionInWorld aPos) const {
     if (_viewBbox.overlaps(*aPos)) {
-        return _isPointVisible(aPos, DETERMINE_FLAGS_LAZILY);
+        return _isPointVisible(aPos, 0, true);
     }
     return std::nullopt;
 }
@@ -167,27 +164,27 @@ void VisibilityCalculator::_setInitialCalculationContext(PositionInWorld    aVie
     _rayCheckingEnabled = false;
 }
 
-std::uint16_t VisibilityCalculator::_calcEdgesOfInterest(Vector2pz aCell) const {
+std::uint8_t VisibilityCalculator::_calcEdgesOfInterest(Vector2pz aCell) const {
     static constexpr CellFlags ALL_EDGES =
-        CellModel::OBSTRUCTED_FULLY_BY_NORTH_NEIGHBOR | CellModel::OBSTRUCTED_FULLY_BY_WEST_NEIGHBOR |
-        CellModel::OBSTRUCTED_FULLY_BY_EAST_NEIGHBOR | CellModel::OBSTRUCTED_FULLY_BY_SOUTH_NEIGHBOR;
+        cell::OBSTRUCTED_FULLY_BY_NORTH_NEIGHBOR | cell::OBSTRUCTED_FULLY_BY_WEST_NEIGHBOR |
+        cell::OBSTRUCTED_FULLY_BY_EAST_NEIGHBOR | cell::OBSTRUCTED_FULLY_BY_SOUTH_NEIGHBOR;
 
     CellFlags edgesOfInterest = ALL_EDGES;
 
     switch (Sign(aCell.x - _lineOfSightOriginCell.x)) {
     case -1:
-        edgesOfInterest ^= CellModel::OBSTRUCTED_FULLY_BY_EAST_NEIGHBOR;
+        edgesOfInterest ^= cell::OBSTRUCTED_FULLY_BY_EAST_NEIGHBOR;
         break;
     case +1:
-        edgesOfInterest ^= CellModel::OBSTRUCTED_FULLY_BY_WEST_NEIGHBOR;
+        edgesOfInterest ^= cell::OBSTRUCTED_FULLY_BY_WEST_NEIGHBOR;
         break;
     }
     switch (Sign(aCell.y - _lineOfSightOriginCell.y)) {
     case -1:
-        edgesOfInterest ^= CellModel::OBSTRUCTED_FULLY_BY_SOUTH_NEIGHBOR;
+        edgesOfInterest ^= cell::OBSTRUCTED_FULLY_BY_SOUTH_NEIGHBOR;
         break;
     case 1:
-        edgesOfInterest ^= CellModel::OBSTRUCTED_FULLY_BY_NORTH_NEIGHBOR;
+        edgesOfInterest ^= cell::OBSTRUCTED_FULLY_BY_NORTH_NEIGHBOR;
         break;
     }
 
@@ -196,13 +193,13 @@ std::uint16_t VisibilityCalculator::_calcEdgesOfInterest(Vector2pz aCell) const 
 
 bool VisibilityCalculator::_areAnyVerticesVisible(const std::array<Vector2d, 8>& aVertices,
                                                   std::size_t                    aVertCount,
-                                                  std::uint16_t aEdgesOfInterest) const //
+                                                  std::uint8_t aEdgesOfInterest) const //
 {
     for (std::size_t i = 0; i < aVertCount; i += 1) {
         if (i > 0 && aVertices[i] == aVertices[i - 1]) {
             continue;
         }
-        if (_isPointVisible(PositionInWorld{aVertices[i]}, aEdgesOfInterest)) {
+        if (_isPointVisible(PositionInWorld{aVertices[i]}, aEdgesOfInterest, false)) {
             return true;
         }
         if (i % 2 == 1 && _isLineVisible(PositionInWorld{aVertices[i]},
@@ -279,13 +276,13 @@ void VisibilityCalculator::_processRing(hg::PZInteger aRingIndex) {
 }
 
 void VisibilityCalculator::_processCell(Vector2pz aCell, hg::PZInteger aRingIndex) {
-    const auto* cell = _world.getCellAtUnchecked(aCell);
-    if (HG_UNLIKELY_CONDITION(cell == nullptr)) {
+    const auto spatialInfo = _world.getSpatialInfoAtUnchecked(aCell);
+    if (HG_UNLIKELY_CONDITION(!spatialInfo.has_value())) {
         HG_UNLIKELY_BRANCH;
         return;
     }
 
-    if (!cell->isWallInitialized()) {
+    if (!spatialInfo->hasNonEmptyWallShape()) {
         return;
     }
 
@@ -294,7 +291,7 @@ void VisibilityCalculator::_processCell(Vector2pz aCell, hg::PZInteger aRingInde
 
     std::array<Vector2d, 8> vertices;
     const auto              vertCnt =
-        GetUnobstructedVertices(*cell, aCell, edgesOfInterest, allEdgesOverride, _cr, vertices);
+        GetUnobstructedVertices(*spatialInfo, aCell, edgesOfInterest, allEdgesOverride, _cr, vertices);
 
     if (vertCnt == 0) {
         return;
@@ -374,38 +371,44 @@ void VisibilityCalculator::_castRay(hg::PZInteger aRayIndex) {
             break;
         }
 
-        const auto  coords = _world.posToCellUnchecked(point);
-        const auto* cell   = _world.getCellAtUnchecked(coords);
+        const auto coords      = _world.posToCellUnchecked(point);
+        const auto spatialInfo = _world.getSpatialInfoAtUnchecked(coords);
 
-        if (HG_UNLIKELY_CONDITION(cell == nullptr)) {
+        if (HG_UNLIKELY_CONDITION(!spatialInfo.has_value())) {
             HG_UNLIKELY_BRANCH;
             _rays[hg::pztos(aRayIndex)] = _rayRadius + (t + 1) * incrementDistance;
             break;
         }
 
-        const auto openness = cell->getOpenness();
+        const auto openness = spatialInfo->openness;
 
         if (openness < 3 && prevOpenness < 3 && coords.x != prevCoords.x && coords.y != prevCoords.y) {
-            const auto* diagonalNeighbour1 = _world.getCellAtUnchecked(coords.x, prevCoords.y);
-            const auto* diagonalNeighbour2 = _world.getCellAtUnchecked(prevCoords.x, coords.y);
+            const auto diagonalNeighbour1SpatialInfo =
+                _world.getSpatialInfoAtUnchecked({coords.x, prevCoords.y});
+            const auto diagonalNeighbour2SpatialInfo =
+                _world.getSpatialInfoAtUnchecked({prevCoords.x, coords.y});
 
-            if ((!diagonalNeighbour1 || diagonalNeighbour1->isWallInitialized()) &&
-                (!diagonalNeighbour2 || diagonalNeighbour2->isWallInitialized())) {
+            // clang-format off
+            if ((!diagonalNeighbour1SpatialInfo || diagonalNeighbour1SpatialInfo->hasNonEmptyWallShape()) &&
+                (!diagonalNeighbour2SpatialInfo || diagonalNeighbour2SpatialInfo->hasNonEmptyWallShape())) {
                 _rays[hg::pztos(aRayIndex)] = _rayRadius + t * incrementDistance;
                 return;
             }
+            // clang-format on
         }
         prevCoords   = coords;
         prevOpenness = openness;
 
-        if (cell->isWallInitialized()) {
+        if (spatialInfo->hasNonEmptyWallShape()) {
             _rays[hg::pztos(aRayIndex)] = _rayRadius + (t + 1) * incrementDistance;
             return;
         }
     }
 }
 
-bool VisibilityCalculator::_isPointVisible(PositionInWorld aPosInWorld, std::uint16_t aFlags) const {
+bool VisibilityCalculator::_isPointVisible(PositionInWorld aPosInWorld,
+                                           std::uint8_t    aFlags,
+                                           bool            aLazy) const {
     if (_rayCheckingEnabled && !_processedRingsBbox.overlaps(*aPosInWorld)) {
         const double   dist  = hg::math::EuclideanDist(*aPosInWorld, _lineOfSightOrigin);
         const Vector2d diff  = {aPosInWorld->x - _lineOfSightOrigin.x,
@@ -418,7 +421,7 @@ bool VisibilityCalculator::_isPointVisible(PositionInWorld aPosInWorld, std::uin
         }
     }
 
-    if (aFlags == DETERMINE_FLAGS_LAZILY) {
+    if (aLazy) {
         const hg::math::Vector2i cell = {static_cast<int>(aPosInWorld->x / _cr),
                                          static_cast<int>(aPosInWorld->y / _cr)};
         aFlags                        = _calcEdgesOfInterest(cell);
@@ -463,7 +466,7 @@ bool VisibilityCalculator::_isPointVisible(PositionInWorld aPosInWorld, std::uin
 
 bool VisibilityCalculator::_isLineVisible(PositionInWorld aP1,
                                           PositionInWorld aP2,
-                                          std::uint16_t   aFlags,
+                                          std::uint8_t    aFlags,
                                           hg::PZInteger   aLevels) const {
     if (aLevels <= 0) {
         return false;
@@ -471,7 +474,7 @@ bool VisibilityCalculator::_isLineVisible(PositionInWorld aP1,
 
     const auto p = (*aP1 + *aP2) / 2.0;
 
-    if (_isPointVisible(PositionInWorld{p}, aFlags)) {
+    if (_isPointVisible(PositionInWorld{p}, aFlags, false)) {
         return true;
     }
 

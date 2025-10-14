@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <GridGoblin/Model/Building_block.hpp>
 #include <GridGoblin/Model/Chunk.hpp>
 #include <GridGoblin/Model/Chunk_id.hpp>
 
@@ -22,13 +23,23 @@ public:
 
     virtual void setBinder(Binder* aBinder) = 0;
 
-    virtual std::optional<Chunk> loadChunkFromRuntimeCache(ChunkId aChunkId) = 0;
+    virtual std::optional<Chunk> loadChunkFromRuntimeCache(
+        ChunkId                      aChunkId,
+        const ChunkMemoryLayoutInfo& aChunkMemoryLayout) = 0;
 
-    virtual void storeChunkInRuntimeCache(const Chunk& aChunk, ChunkId aChunkId) = 0;
+    virtual void storeChunkInRuntimeCache(const Chunk&                 aChunk,
+                                          ChunkId                      aChunkId,
+                                          BuildingBlockMask            aBuildingBlocks,
+                                          const ChunkMemoryLayoutInfo& aChunkMemoryLayout) = 0;
 
-    virtual std::optional<Chunk> loadChunkFromPersistentCache(ChunkId aChunkId) = 0;
+    virtual std::optional<Chunk> loadChunkFromPersistentCache(
+        ChunkId                      aChunkId,
+        const ChunkMemoryLayoutInfo& aChunkMemoryLayout) = 0;
 
-    virtual void storeChunkInPersistentCache(const Chunk& aChunk, ChunkId aChunkId) = 0;
+    virtual void storeChunkInPersistentCache(const Chunk&                 aChunk,
+                                             ChunkId                      aChunkId,
+                                             BuildingBlockMask            aBuildingBlocks,
+                                             const ChunkMemoryLayoutInfo& aChunkMemoryLayout) = 0;
 
     virtual void dumpRuntimeCache() = 0;
 };

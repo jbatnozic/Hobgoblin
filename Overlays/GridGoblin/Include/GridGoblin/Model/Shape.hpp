@@ -27,22 +27,24 @@ enum class Shape : std::uint8_t {
     VFLIP  = 0x02, //!< Vertical flip (through the X axis)
     HVFLIP = HFLIP | VFLIP,
 
-    FULL_SQUARE             = 0x00 << 2,
-    LARGE_TRIANGLE          = 0x01 << 2,
-    SMALL_TRIANGLE_HOR      = 0x02 << 2,
-    TALL_SMALL_TRIANGLE_HOR = 0x03 << 2,
-    HALF_SQUARE_HOR         = 0x04 << 2,
-    SMALL_TRIANGLE_VER      = 0x05 << 2,
-    TALL_SMALL_TRIANGLE_VER = 0x06 << 2,
-    HALF_SQUARE_VER         = 0x07 << 2,
-    UNUSED_8                = 0x08 << 2,
-    UNUSED_9                = 0x09 << 2,
-    UNUSED_A                = 0x0A << 2,
-    UNUSED_B                = 0x0B << 2,
-    UNUSED_C                = 0x0C << 2,
-    UNUSED_D                = 0x0D << 2,
-    UNUSED_E                = 0x0E << 2,
-    UNUSED_F                = 0x0F << 2,
+    EMPTY                   = 0x00 << 2,
+    FULL_SQUARE             = 0x01 << 2,
+    LARGE_TRIANGLE          = 0x02 << 2,
+    SMALL_TRIANGLE_HOR      = 0x03 << 2,
+    TALL_SMALL_TRIANGLE_HOR = 0x04 << 2,
+    HALF_SQUARE_HOR         = 0x05 << 2,
+    SMALL_TRIANGLE_VER      = 0x06 << 2,
+    TALL_SMALL_TRIANGLE_VER = 0x07 << 2,
+    HALF_SQUARE_VER         = 0x08 << 2,
+    UNUSED_8                = 0x09 << 2,
+    UNUSED_9                = 0x0A << 2,
+    UNUSED_A                = 0x0B << 2,
+    UNUSED_B                = 0x0C << 2,
+    UNUSED_C                = 0x0D << 2,
+    UNUSED_D                = 0x0E << 2,
+    UNUSED_E                = 0x0F << 2,
+
+    BASE_SHAPE_MASK = 0x0F << 2,
 
     BIT_6 = 0x40, //!< Reserved for future use
     BIT_7 = 0x80  //!< Reserved for future use
@@ -85,17 +87,23 @@ enum ObstructionFlagsEnum : ObstructionFlags {
     OBSTRUCTS_SOUTH_FULLY = (1 << 4),
 
     OBSTRUCTS_ALL       = OBSTRUCTS_NORTH | OBSTRUCTS_WEST | OBSTRUCTS_EAST | OBSTRUCTS_SOUTH,
-    OBSTRUCTS_ALL_FULLY = 0xFF
+    OBSTRUCTS_ALL_FULLY = 0xFF,
+    OBSTRUCTS_NONE      = 0,
 } GRIDGOBLIN_FLAG_ENUM;
 
 #undef GRIDGOBLIN_FLAG_ENUM
 
-inline constexpr std::array<ObstructionFlags, 8 * 4> GetObstructionFlagsForAllShapes() {
-    std::array<ObstructionFlags, 8 * 4> arr;
+inline constexpr std::array<ObstructionFlags, 9 * 4> GetObstructionFlagsForAllShapes() {
+    std::array<ObstructionFlags, 9 * 4> arr;
 
     using hobgoblin::ToSz;
 
     // clang-format off
+    arr[ToSz(Shape::EMPTY)]                 = OBSTRUCTS_NONE;
+    arr[ToSz(Shape::EMPTY | Shape::HFLIP)]  = OBSTRUCTS_NONE;
+    arr[ToSz(Shape::EMPTY | Shape::VFLIP)]  = OBSTRUCTS_NONE;
+    arr[ToSz(Shape::EMPTY | Shape::HVFLIP)] = OBSTRUCTS_NONE;
+
     arr[ToSz(Shape::FULL_SQUARE)]                 = OBSTRUCTS_ALL_FULLY;
     arr[ToSz(Shape::FULL_SQUARE | Shape::HFLIP)]  = OBSTRUCTS_ALL_FULLY;
     arr[ToSz(Shape::FULL_SQUARE | Shape::VFLIP)]  = OBSTRUCTS_ALL_FULLY;

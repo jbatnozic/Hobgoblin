@@ -26,7 +26,7 @@ class RequestHandleImpl;
 class DefaultChunkSpooler final : public ChunkSpoolerInterface {
 public:
     //! Default constructor. The spooler starts unpaused.
-    DefaultChunkSpooler();
+    DefaultChunkSpooler(BuildingBlockMask aBuildingBlocks, const ChunkMemoryLayoutInfo& aChunkMemLayout);
     ~DefaultChunkSpooler() override;
 
     void setDiskIoHandler(ChunkDiskIoHandlerInterface* aDiskIoHandler) override;
@@ -46,6 +46,9 @@ private:
     friend class RequestHandleImpl;
 
     ChunkDiskIoHandlerInterface* _diskIoHandler;
+
+    BuildingBlockMask            _buildingBlocks;
+    const ChunkMemoryLayoutInfo& _chunkMemLayout;
 
     using Mutex = std::mutex;
     mutable Mutex _mutex;
