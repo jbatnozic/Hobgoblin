@@ -107,6 +107,14 @@ std::optional<cell::SpatialInfo> World::_getSpatialInfoOfCellAtUnchecked(hg::PZI
     return spatialInfo;
 }
 
+template std::optional<cell::SpatialInfo> World::_getSpatialInfoOfCellAtUnchecked<true>(
+    hg::PZInteger aX,
+    hg::PZInteger aY) const;
+
+template std::optional<cell::SpatialInfo> World::_getSpatialInfoOfCellAtUnchecked<false>(
+    hg::PZInteger aX,
+    hg::PZInteger aY) const;
+
 template <bool taAllowedToLoadAdjacent>
 World::RingAssessment World::_assessRing(hg::PZInteger aX, hg::PZInteger aY, hg::PZInteger aRing) {
     RingAssessment result;
@@ -524,9 +532,13 @@ void World::didPrepareChunk(ChunkId aChunkId) {
 void World::willIntegrateNewChunk(ChunkId                      aId,
                                   Chunk&                       aChunk,
                                   const ChunkMemoryLayoutInfo& aChunkMemLayout) {
-    for (const auto& [binder, priority] : _binders) {
-        (void)priority;
-        binder->willIntegrateNewChunk(aId, aChunk, aChunkMemLayout);
+    if (!_binders.empty()) {
+        for (const auto& [binder, priority] : _binders) {
+            (void)priority;
+            binder->willIntegrateNewChunk(aId, aChunk, aChunkMemLayout);
+        }
+    } else {
+        Binder::willIntegrateNewChunk(aId, aChunk, aChunkMemLayout);
     }
 }
 
