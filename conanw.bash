@@ -22,16 +22,6 @@ then
     exit 0
 fi
 
-if [[ "$2" == "gcc" ]];
-then
-    CXX=/usr/bin/gcc
-fi
-
-if [[ "$2" == "clang" ]];
-then
-    CXX=/usr/bin/g++
-fi
-
 if [[ "$1" == "install" ]];
 then
     # 2nd argument: compiler (gcc|clang)
