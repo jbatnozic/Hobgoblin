@@ -20,9 +20,9 @@
 
 #include <GridGoblin/Private/Chunk_holder.hpp>
 
+#include <cstdlib>
 #include <memory>
 #include <optional>
-#include <type_traits>
 #include <vector>
 
 namespace jbatnozic {
@@ -511,13 +511,13 @@ template <class... taPtrs>
                                                  taPtrs&&... aPtrs) const {
     static_assert(sizeof...(aPtrs) > 0);
 
-    const auto chunkX = aX / _config.cellsPerChunkX;
-    const auto chunkY = aY / _config.cellsPerChunkY;
+    const auto xx = std::div(aX, _config.cellsPerChunkX);
+    const auto yy = std::div(aY, _config.cellsPerChunkY);
 
-    if (auto* chunk = _chunkHolder.getChunkAtIdUnchecked({chunkX, chunkY}); chunk) {
+    if (auto* chunk = _chunkHolder.getChunkAtIdUnchecked({xx.quot, yy.quot}); chunk) {
         chunk->getCellDataAtUnchecked(getChunkMemoryLayoutInfo(),
-                                      aX % _config.cellsPerChunkX,
-                                      aY % _config.cellsPerChunkY,
+                                      xx.rem,
+                                      yy.rem,
                                       std::forward<taPtrs>(aPtrs)...);
         return true;
     }
@@ -570,13 +570,13 @@ void World::getCellDataAtUnchecked(const EditPermission& aPerm,
                                    taPtrs&&... aPtrs) const {
     static_assert(sizeof...(aPtrs) > 0);
 
-    const auto chunkX = aX / _config.cellsPerChunkX;
-    const auto chunkY = aY / _config.cellsPerChunkY;
+    const auto xx = std::div(aX, _config.cellsPerChunkX);
+    const auto yy = std::div(aY, _config.cellsPerChunkY);
 
-    const auto& chunk = _chunkHolder.getChunkAtIdUnchecked({chunkX, chunkY}, detail::LOAD_IF_MISSING);
+    const auto& chunk = _chunkHolder.getChunkAtIdUnchecked({xx.quot, yy.quot}, detail::LOAD_IF_MISSING);
     chunk.getCellDataAtUnchecked(getChunkMemoryLayoutInfo(),
-                                 aX % _config.cellsPerChunkX,
-                                 aY % _config.cellsPerChunkY,
+                                 xx.rem,
+                                 yy.rem,
                                  std::forward<taPtrs>(aPtrs)...);
 }
 
@@ -591,13 +591,11 @@ void World::getCellDataAtUnchecked(const EditPermission& aPerm,
 
 inline cell::SpatialInfo World::getSpatialInfoAtUnchecked(const EditPermission& aPerm,
                                                           hg::math::Vector2pz   aCell) const {
-    const auto chunkX = aCell.x / _config.cellsPerChunkX;
-    const auto chunkY = aCell.y / _config.cellsPerChunkY;
+    const auto xx = std::div(aCell.x, _config.cellsPerChunkX);
+    const auto yy = std::div(aCell.y, _config.cellsPerChunkY);
 
-    const auto& chunk = _chunkHolder.getChunkAtIdUnchecked({chunkX, chunkY}, detail::LOAD_IF_MISSING);
-    return chunk.getSpatialInfoAtUnchecked(
-        getChunkMemoryLayoutInfo(),
-        {aCell.x % _config.cellsPerChunkX, aCell.y % _config.cellsPerChunkY});
+    const auto& chunk = _chunkHolder.getChunkAtIdUnchecked({xx.quot, yy.quot}, detail::LOAD_IF_MISSING);
+    return chunk.getSpatialInfoAtUnchecked(getChunkMemoryLayoutInfo(), {xx.rem, yy.rem});
 }
 
 ///////////////////////////////////////////////////////////////////////////
