@@ -197,6 +197,6 @@ void OpennessTestImpl() {
 } // namespace gridgoblin
 } // namespace jbatnozic
 
-void RunOpennessTest(int, const char**) {
+void RunOpennessTest(const std::vector<const char*>& /*aArgs*/) {
     jbatnozic::gridgoblin::OpennessTestImpl();
 }

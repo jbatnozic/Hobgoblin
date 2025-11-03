@@ -234,6 +234,6 @@ void RunDimetricRenderingTestImpl() {
 } // namespace gridgoblin
 } // namespace jbatnozic
 
-void RunDimetricRenderingTest(int, const char**) {
+void RunDimetricRenderingTest(const std::vector<const char*>& /*aArgs*/) {
     jbatnozic::gridgoblin::RunDimetricRenderingTestImpl();
 }

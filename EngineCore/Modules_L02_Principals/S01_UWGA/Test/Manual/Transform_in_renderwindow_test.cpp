@@ -146,6 +146,6 @@ void RunTransformInRenderWindowTest() {
 } // namespace hobgoblin
 } // namespace jbatnozic
 
-void RunTransformInRenderWindowTest(int, const char**) {
+void RunTransformInRenderWindowTest(const std::vector<const char*>& /*aArgs*/) {
     jbatnozic::hobgoblin::uwga::RunTransformInRenderWindowTest();
 }

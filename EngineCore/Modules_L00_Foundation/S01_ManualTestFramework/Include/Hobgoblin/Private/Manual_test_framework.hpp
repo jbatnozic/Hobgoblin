@@ -17,14 +17,17 @@ namespace {
 
 class ManualTestRunner {
 public:
-    ManualTestRunner(int aArgc, const char** aArgv)
-        : _argc{aArgc}
-        , _argv{aArgv} {}
+    ManualTestRunner(int aArgc, const char** aArgv) {
+        _args.resize(static_cast<std::size_t>(aArgc));
+        for (int i = 0; i < aArgc; ++i) {
+            _args[static_cast<std::size_t>(i)] = aArgv[i];
+        }
+    }
 
     ManualTestRunner()
         : ManualTestRunner{0, nullptr} {};
 
-    using TestFunction = void (*)(int aArgc, const char** aArgv);
+    using TestFunction = void (*)(const std::vector<const char*>& aArgs);
 
     void addTestCase(std::string aCaseName, TestFunction aTestFunction) {
         _testCases.push_back({std::move(aCaseName), aTestFunction});
@@ -62,7 +65,7 @@ public:
                 if (_preamble) {
                     _preamble();
                 }
-                _testCases[static_cast<std::size_t>(index)].func(_argc, _argv);
+                _testCases[static_cast<std::size_t>(index)].func(_args);
                 if (_cleanup) {
                     _cleanup();
                 }
@@ -73,8 +76,7 @@ public:
     }
 
 private:
-    int          _argc;
-    const char** _argv;
+    std::vector<const char*> _args;
 
     std::function<void()> _preamble;
     std::function<void()> _cleanup;

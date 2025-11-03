@@ -63,6 +63,6 @@ void RunCircleShapeInRenderWindowTest() {
 } // namespace hobgoblin
 } // namespace jbatnozic
 
-void RunCircleShapeInRenderWindowTest(int, const char**) {
+void RunCircleShapeInRenderWindowTest(const std::vector<const char*>& /*aArgs*/) {
     jbatnozic::hobgoblin::uwga::RunCircleShapeInRenderWindowTest();
 }

@@ -165,7 +165,7 @@ void RunVisibilityCalculatorTestImpl() {
         });
     }
 
-    TopDownRenderer      renderer{world, spriteLoader};
+    TopDownRenderer            renderer{world, spriteLoader};
     VisibilityCalculatorConfig visCalcConfig;
     visCalcConfig.minRingsBeforeRaycasting = 0;
     VisibilityCalculator visCalc{world, visCalcConfig};
@@ -266,6 +266,6 @@ void RunVisibilityCalculatorTestImpl() {
 } // namespace gridgoblin
 } // namespace jbatnozic
 
-void RunVisibilityCalculatorTest(int, const char**) {
+void RunVisibilityCalculatorTest(const std::vector<const char*>& /*aArgs*/) {
     jbatnozic::gridgoblin::RunVisibilityCalculatorTestImpl();
 }

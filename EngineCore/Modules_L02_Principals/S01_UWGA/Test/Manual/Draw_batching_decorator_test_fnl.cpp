@@ -97,6 +97,6 @@ void RunFastNLooseDrawBatchingDecoratorTest() {
 } // namespace hobgoblin
 } // namespace jbatnozic
 
-void RunFastNLooseDrawBatchingDecoratorTest(int, const char**) {
+void RunFastNLooseDrawBatchingDecoratorTest(const std::vector<const char*>& /*aArgs*/) {
     jbatnozic::hobgoblin::uwga::RunFastNLooseDrawBatchingDecoratorTest();
 }

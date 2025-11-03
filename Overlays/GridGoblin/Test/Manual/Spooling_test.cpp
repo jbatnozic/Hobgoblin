@@ -207,7 +207,7 @@ public:
 };
 } // namespace
 
-void RunSpoolingTest(int, const char**) {
+void RunSpoolingTest(const std::vector<const char*>& /*aArgs*/) {
     Fixture fixture;
 
     auto system = hg::uwga::CreateGraphicsSystem("SFML");

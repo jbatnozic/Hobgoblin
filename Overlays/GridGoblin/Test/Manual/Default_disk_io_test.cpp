@@ -255,6 +255,6 @@ void RunDefaultDiskIoTest() {
 } // namespace gridgoblin
 } // namespace jbatnozic
 
-void RunDefaultDiskIoTest(int, const char**) {
+void RunDefaultDiskIoTest(const std::vector<const char*>& /*aArgs*/) {
     jbatnozic::gridgoblin::RunDefaultDiskIoTest();
 }

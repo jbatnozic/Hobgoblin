@@ -124,7 +124,7 @@ std::chrono::microseconds FuncUWGA(int aIterCount, int aBatchingChoice) {
 } // namespace
 HOBGOBLIN_NAMESPACE_END
 
-void RunSpriteDrawingPerfTest(int, const char**) {
+void RunSpriteDrawingPerfTest(const std::vector<const char*>& /*aArgs*/) {
     const int iterCount = 1800;
 
     {

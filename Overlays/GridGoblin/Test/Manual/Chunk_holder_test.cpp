@@ -145,7 +145,7 @@ private:
 };
 } // namespace
 
-void RunChunkHolderTest(int, const char**) {
+void RunChunkHolderTest(const std::vector<const char*>& /*aArgs*/) {
     Fixture fixture;
 
     auto system = hg::uwga::CreateGraphicsSystem("SFML");

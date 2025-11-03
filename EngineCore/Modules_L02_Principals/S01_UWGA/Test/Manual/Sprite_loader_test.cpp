@@ -53,6 +53,6 @@ void RunSpriteLoaderTest() {
 } // namespace hobgoblin
 } // namespace jbatnozic
 
-void RunSpriteLoaderTest(int, const char**) {
+void RunSpriteLoaderTest(const std::vector<const char*>& /*aArgs*/) {
     jbatnozic::hobgoblin::uwga::RunSpriteLoaderTest();
 }

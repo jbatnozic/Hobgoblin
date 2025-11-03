@@ -3,4 +3,6 @@
 
 #pragma once
 
-void RunSpriteDrawingPerfTest(int, const char**);
+#include <vector>
+
+void RunSpriteDrawingPerfTest(const std::vector<const char*>& /*aArgs*/);

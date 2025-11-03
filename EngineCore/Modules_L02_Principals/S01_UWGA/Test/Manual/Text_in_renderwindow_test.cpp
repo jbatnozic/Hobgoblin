@@ -95,6 +95,6 @@ void RunTextInRenderWindowTest() {
 } // namespace hobgoblin
 } // namespace jbatnozic
 
-void RunTextInRenderWindowTest(int, const char**) {
+void RunTextInRenderWindowTest(const std::vector<const char*>& /*aArgs*/) {
     jbatnozic::hobgoblin::uwga::RunTextInRenderWindowTest();
 }

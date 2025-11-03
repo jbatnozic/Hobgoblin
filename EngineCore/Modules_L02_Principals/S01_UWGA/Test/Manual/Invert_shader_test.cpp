@@ -53,6 +53,6 @@ void RunInvertShaderTest() {
 } // namespace hobgoblin
 } // namespace jbatnozic
 
-void RunInvertShaderTest(int, const char**) {
+void RunInvertShaderTest(const std::vector<const char*>& /*aArgs*/) {
     jbatnozic::hobgoblin::uwga::RunInvertShaderTest();
 }

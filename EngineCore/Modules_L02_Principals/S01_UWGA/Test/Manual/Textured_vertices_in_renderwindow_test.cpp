@@ -85,6 +85,6 @@ void RunTexturedVerticesInRenderWindowTest() {
 } // namespace hobgoblin
 } // namespace jbatnozic
 
-void RunTexturedVerticesInRenderWindowTest(int, const char**) {
+void RunTexturedVerticesInRenderWindowTest(const std::vector<const char*>& /*aArgs*/) {
     jbatnozic::hobgoblin::uwga::RunTexturedVerticesInRenderWindowTest();
 }

@@ -76,6 +76,6 @@ void RunDefaultShaderTest() {
 } // namespace hobgoblin
 } // namespace jbatnozic
 
-void RunDefaultShaderTest(int, const char**) {
+void RunDefaultShaderTest(const std::vector<const char*>& /*aArgs*/) {
     jbatnozic::hobgoblin::uwga::RunDefaultShaderTest();
 }

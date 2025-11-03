@@ -112,6 +112,6 @@ void RunRenderTextureInRenderWindowTest() {
 } // namespace hobgoblin
 } // namespace jbatnozic
 
-void RunRenderTextureInRenderWindowTest(int, const char**) {
+void RunRenderTextureInRenderWindowTest(const std::vector<const char*>& /*aArgs*/) {
     jbatnozic::hobgoblin::uwga::RunRenderTextureInRenderWindowTest();
 }

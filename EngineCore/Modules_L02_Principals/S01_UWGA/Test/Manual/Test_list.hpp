@@ -3,15 +3,17 @@
 
 #pragma once
 
-void RunEmptyRenderWindowTest(int, const char**);
-void RunSquareInRenderWindowTest(int, const char**);
-void RunCircleShapeInRenderWindowTest(int, const char**);
-void RunTransformInRenderWindowTest(int, const char**);
-void RunTexturedVerticesInRenderWindowTest(int, const char**);
-void RunRenderTextureInRenderWindowTest(int, const char**);
-void RunSpriteLoaderTest(int, const char**);
-void RunRectangleShapeInRenderWindowTest(int, const char**);
-void RunTextInRenderWindowTest(int, const char**);
-void RunDefaultShaderTest(int, const char**);
-void RunInvertShaderTest(int, const char**);
-void RunFastNLooseDrawBatchingDecoratorTest(int, const char**);
+#include <vector>
+
+void RunEmptyRenderWindowTest(const std::vector<const char*>& /*aArgs*/);
+void RunSquareInRenderWindowTest(const std::vector<const char*>& /*aArgs*/);
+void RunCircleShapeInRenderWindowTest(const std::vector<const char*>& /*aArgs*/);
+void RunTransformInRenderWindowTest(const std::vector<const char*>& /*aArgs*/);
+void RunTexturedVerticesInRenderWindowTest(const std::vector<const char*>& /*aArgs*/);
+void RunRenderTextureInRenderWindowTest(const std::vector<const char*>& /*aArgs*/);
+void RunSpriteLoaderTest(const std::vector<const char*>& /*aArgs*/);
+void RunRectangleShapeInRenderWindowTest(const std::vector<const char*>& /*aArgs*/);
+void RunTextInRenderWindowTest(const std::vector<const char*>& /*aArgs*/);
+void RunDefaultShaderTest(const std::vector<const char*>& /*aArgs*/);
+void RunInvertShaderTest(const std::vector<const char*>& /*aArgs*/);
+void RunFastNLooseDrawBatchingDecoratorTest(const std::vector<const char*>& /*aArgs*/);

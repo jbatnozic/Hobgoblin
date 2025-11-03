@@ -36,6 +36,6 @@ void RunEmptyRenderWindowTest() {
 } // namespace hobgoblin
 } // namespace jbatnozic
 
-void RunEmptyRenderWindowTest(int, const char**) {
+void RunEmptyRenderWindowTest(const std::vector<const char*>& /*aArgs*/) {
     jbatnozic::hobgoblin::uwga::RunEmptyRenderWindowTest();
 }

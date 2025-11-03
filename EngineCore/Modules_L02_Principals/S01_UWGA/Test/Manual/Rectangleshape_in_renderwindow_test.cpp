@@ -66,6 +66,6 @@ void RunRectangleShapeInRenderWindowTest() {
 } // namespace hobgoblin
 } // namespace jbatnozic
 
-void RunRectangleShapeInRenderWindowTest(int, const char**) {
+void RunRectangleShapeInRenderWindowTest(const std::vector<const char*>& /*aArgs*/) {
     jbatnozic::hobgoblin::uwga::RunRectangleShapeInRenderWindowTest();
 }
