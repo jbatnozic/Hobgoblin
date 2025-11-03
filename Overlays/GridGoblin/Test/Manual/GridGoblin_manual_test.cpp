@@ -13,10 +13,10 @@
 
 namespace hg = jbatnozic::hobgoblin;
 
-int main() try {
+int main(int argc, const char* argv[]) try {
     hg::log::SetMinimalLogSeverity(hg::log::Severity::Debug);
 
-    hg::ManualTestRunner testRunner;
+    hg::ManualTestRunner testRunner{argc, argv};
 
     testRunner.setTestPreamble([]() {
         std::filesystem::remove_all("GGManualTest_WorkDir");

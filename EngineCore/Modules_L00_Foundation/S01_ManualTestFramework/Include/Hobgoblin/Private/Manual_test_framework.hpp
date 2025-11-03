@@ -4,6 +4,7 @@
 #ifndef UHOBGOBLIN_MANUAL_TEST_FRAMEWORK
 #define UHOBGOBLIN_MANUAL_TEST_FRAMEWORK
 
+#include <cstring>
 #include <functional>
 #include <iostream>
 #include <regex>
@@ -18,10 +19,7 @@ namespace {
 class ManualTestRunner {
 public:
     ManualTestRunner(int aArgc, const char** aArgv) {
-        _args.resize(static_cast<std::size_t>(aArgc));
-        for (int i = 0; i < aArgc; ++i) {
-            _args[static_cast<std::size_t>(i)] = aArgv[i];
-        }
+        _parseCommandLineArguments(aArgc, aArgv);
     }
 
     ManualTestRunner()
@@ -45,31 +43,41 @@ public:
         const std::regex inputRegex{R"_(^\s*([0-9]+)\s*$)_"};
 
         for (;;) {
-            std::cerr
-                << "================================================================================\n"
-                << "* Select test case:\n";
+            std::string input;
+            std::smatch smatch;
 
-            for (std::size_t i = 0; i < _testCases.size(); i += 1) {
-                std::cerr << "  " << (i + 1) << ". " << _testCases[i].name << '\n';
+            if (!_specialParams.specificCase) {
+                std::cerr << "=========================================================================="
+                             "======\n"
+                          << "* Select test case:\n";
+
+                for (std::size_t i = 0; i < _testCases.size(); i += 1) {
+                    std::cerr << "  " << (i + 1) << ". " << _testCases[i].name << '\n';
+                }
+
+                std::getline(std::cin, input);
             }
 
-            std::string input;
-            std::getline(std::cin, input);
-
-            std::smatch smatch;
-            if (std::regex_match(input, smatch, inputRegex)) {
-                const auto index = std::stoul(smatch[1]) - 1ul;
-                if (index >= _testCases.size()) {
-                    continue;
-                }
-                if (_preamble) {
-                    _preamble();
-                }
-                _testCases[static_cast<std::size_t>(index)].func(_args);
-                if (_cleanup) {
-                    _cleanup();
+            if (_specialParams.specificCase || std::regex_match(input, smatch, inputRegex)) {
+                const auto index = _specialParams.specificCase ? _specialParams.specificCaseIndex
+                                                               : (std::stoul(smatch[1]) - 1ul);
+                if (index < _testCases.size()) {
+                    auto tries = _specialParams.repeat ? _specialParams.repeatCount : 1;
+                    for (; tries > 0; --tries) {
+                        if (_preamble) {
+                            _preamble();
+                        }
+                        _testCases[static_cast<std::size_t>(index)].func(_args);
+                        if (_cleanup) {
+                            _cleanup();
+                        }
+                    }
                 }
             } else {
+                break;
+            }
+
+            if (_specialParams.specificCase) {
                 break;
             }
         }
@@ -77,6 +85,13 @@ public:
 
 private:
     std::vector<const char*> _args;
+
+    struct SpecialParams {
+        bool          specificCase      = false;
+        unsigned long specificCaseIndex = 0;
+        bool          repeat            = false;
+        unsigned long repeatCount       = 0;
+    } _specialParams;
 
     std::function<void()> _preamble;
     std::function<void()> _cleanup;
@@ -87,6 +102,53 @@ private:
     };
 
     std::vector<TestCase> _testCases;
+
+    void _parseCommandLineArguments(int aArgc, const char** aArgv) {
+        const auto argCount = static_cast<std::size_t>(aArgc);
+
+        if (argCount == 0u) {
+            return;
+        }
+
+        if (argCount == 1u) {
+            _args.push_back(aArgv[0]);
+            return;
+        }
+
+        const auto begin                 = aArgv + 1;
+        const auto end                   = aArgv + argCount;
+        const auto testArgsSeparatorIter = std::find_if(begin, end, [](const char* aArg) -> bool {
+            return (std::strcmp(aArg, "--") == 0);
+        });
+
+        if (testArgsSeparatorIter == end) {
+            _args.resize(argCount);
+            std::memcpy(_args.data(), aArgv, sizeof(aArgv[0]) * argCount);
+            return;
+        }
+
+        _args.resize(static_cast<std::size_t>(end - testArgsSeparatorIter));
+        _args[0] = aArgv[0];
+        std::memcpy(&_args[1], testArgsSeparatorIter + 1, sizeof(aArgv[0]) * (_args.size() - 1));
+
+        auto         remainingSpecialParams = testArgsSeparatorIter - begin;
+        const char** arg                    = begin;
+        for (; remainingSpecialParams > 0; --remainingSpecialParams, ++arg) {
+            if (std::strcmp(*arg, "--case") == 0 && remainingSpecialParams > 0) {
+                _specialParams.specificCase      = true;
+                _specialParams.specificCaseIndex = std::stoul(*(arg + 1)) - 1;
+                --remainingSpecialParams, ++arg;
+                continue;
+            }
+
+            if (std::strcmp(*arg, "--repeat") == 0 && remainingSpecialParams > 0) {
+                _specialParams.repeat      = true;
+                _specialParams.repeatCount = std::stoul(*(arg + 1));
+                --remainingSpecialParams, ++arg;
+                continue;
+            }
+        }
+    }
 };
 
 #define HG_ADD_MANUAL_TEST(_runner_, _test_function_) \

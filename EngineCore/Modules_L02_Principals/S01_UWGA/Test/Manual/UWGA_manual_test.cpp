@@ -12,10 +12,10 @@
 
 namespace hg = jbatnozic::hobgoblin;
 
-int main() try {
+int main(int argc, const char* argv[]) try {
     hg::log::SetMinimalLogSeverity(hg::log::Severity::Debug);
 
-    hg::ManualTestRunner testRunner;
+    hg::ManualTestRunner testRunner{argc, argv};
     HG_ADD_MANUAL_TEST(testRunner, RunEmptyRenderWindowTest);
     HG_ADD_MANUAL_TEST(testRunner, RunSquareInRenderWindowTest);
     HG_ADD_MANUAL_TEST(testRunner, RunCircleShapeInRenderWindowTest);
