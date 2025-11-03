@@ -195,6 +195,12 @@ bool VisibilityCalculator::_areAnyVerticesVisible(const std::array<Vector2d, 8>&
                                                   std::size_t                    aVertCount,
                                                   std::uint8_t aEdgesOfInterest) const //
 {
+    constexpr hg::PZInteger LINE_BISECTION_LEVELS = 2; // TODO: 2 = magic constant -- make configurable
+
+    if (LINE_BISECTION_LEVELS <= 0) {
+        return true;
+    }
+
     for (std::size_t i = 0; i < aVertCount; i += 1) {
         if (i > 0 && aVertices[i] == aVertices[i - 1]) {
             continue;
@@ -205,7 +211,7 @@ bool VisibilityCalculator::_areAnyVerticesVisible(const std::array<Vector2d, 8>&
         if (i % 2 == 1 && _isLineVisible(PositionInWorld{aVertices[i]},
                                          PositionInWorld{aVertices[i - 1]},
                                          aEdgesOfInterest,
-                                         2)) { // TODO: 2 = magic constant
+                                         LINE_BISECTION_LEVELS)) {
             return true;
         }
     }

@@ -42,6 +42,15 @@
 HOBGOBLIN_NAMESPACE_BEGIN
 namespace math {
 
+//! Concept that checks whether types `taFrom` and `taTo` are arithmetic, of compatible representations
+//! (either both floating point or both integral), and convertible `taFrom`->`taTo` without loss of data
+//! (without narrowing).
+template <typename taFrom, typename taTo>
+concept is_losslessly_convertible =
+    (std::is_arithmetic_v<taFrom> && std::is_arithmetic_v<taTo>) &&
+    (std::is_floating_point_v<taFrom> == std::is_floating_point_v<taTo>) &&
+    requires(taFrom aFrom) { taTo{aFrom}; };
+
 // MARK: Vector2
 
 template <class T>
@@ -56,8 +65,10 @@ public:
     //! \param y Y coordinate
     constexpr Vector2(T aX, T aY);
 
-    //! Converts the vector to another type of vector provided that T is implicitly convertible to U.
-    template <class U, T_ENABLE_IF(std::is_convertible_v<T, U>)>
+    //! Converts the vector to another type of vector provided that T is implicitly and losslessly
+    //! convertible to U.
+    template <class U>
+        requires is_losslessly_convertible<T, U>
     constexpr operator Vector2<U>() const;
 
     //! Cast the vector into a different type into which it isn't implicitly convertible.
@@ -210,7 +221,8 @@ constexpr Vector2<T>::Vector2(T x, T y)
     , y(y) {}
 
 template <class T>
-template <class U, T_ENABLE_IF_OOC(std::is_convertible_v<T, U>)>
+template <class U>
+    requires is_losslessly_convertible<T, U>
 constexpr Vector2<T>::operator Vector2<U>() const {
     return Vector2<U>(static_cast<U>(x), static_cast<U>(y));
 }

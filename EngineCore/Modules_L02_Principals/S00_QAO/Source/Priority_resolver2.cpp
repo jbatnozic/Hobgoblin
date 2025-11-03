@@ -1,9 +1,6 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-// clang-format off
-
-
 #include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/QAO/Priority_resolver2.hpp>
 
@@ -16,15 +13,11 @@ namespace qao {
 
 QAO_PriorityResolver2::QAO_PriorityResolver2()
     : _initialPriority{0}
-    , _priorityStep{1}
-{
-}
+    , _priorityStep{1} {}
 
 QAO_PriorityResolver2::QAO_PriorityResolver2(int initialPriority, int priorityStep)
     : _initialPriority{initialPriority}
-    , _priorityStep{priorityStep}
-{
-}
+    , _priorityStep{priorityStep} {}
 
 void QAO_PriorityResolver2::CategoryDefinition::reset() {
     // dependencyCounter = 0;
@@ -49,7 +42,7 @@ void QAO_PriorityResolver2::resolveAll() {
 
     // Reset all definitions:
     for (auto& definition : _definitions) {
-        definition.second.reset();
+        definition.second->reset();
     }
 
     // Try to resolve all:
@@ -57,8 +50,7 @@ void QAO_PriorityResolver2::resolveAll() {
         // Find definition with all dependencies satisfied:
         DefinitionMap::iterator curr;
         for (curr = _definitions.begin(); curr != _definitions.end(); curr = std::next(curr)) {
-            if ((*curr).second.priorityAssigned() == false &&
-                (*curr).second.dependenciesSatisfied()) {
+            if ((*curr).second->priorityAssigned() == false && (*curr).second->dependenciesSatisfied()) {
                 break;
             }
         }
@@ -66,33 +58,42 @@ void QAO_PriorityResolver2::resolveAll() {
             break;
         }
 
-        for (auto& dependeeIter : (*curr).second.dependees) {
-            (*dependeeIter).second.dependencyFulfilledCounter += 1;
+        for (auto& dependeeIter : (*curr).second->dependees) {
+            (*dependeeIter).second->dependencyFulfilledCounter += 1;
         }
 
-        (*curr).second.priority = _priorityCounter;
+        (*curr).second->priority = _priorityCounter;
         _priorityCounter -= _priorityStep;
     }
 
     // Verify & populate output:
     for (auto& definitionIter : _definitions) {
-        if (!definitionIter.second.priorityAssigned()) {
-            HG_THROW_TRACED(TracedLogicError, 0, "Cannot resolve priorities - impossible situation requested.");
+        if (!definitionIter.second->priorityAssigned()) {
+            HG_THROW_TRACED(TracedLogicError,
+                            0,
+                            "Cannot resolve priorities - impossible situation requested.");
         }
 
         int* categoryPriorityPtr = definitionIter.first;
-        *categoryPriorityPtr = *(definitionIter.second.priority);
+        *categoryPriorityPtr     = *(definitionIter.second->priority);
     }
 }
 
 void QAO_PriorityResolver2::categoryDependsOn(int* category, int* dependency) {
     auto dependeeIter = _definitions.find(category);
     if (dependeeIter == _definitions.end()) {
-        dependeeIter = _definitions.emplace(std::make_pair(category, CategoryDefinition{})).first;
+        dependeeIter =
+            _definitions.insert(std::make_pair(category, std::make_unique<CategoryDefinition>())).first;
     }
-    (*dependeeIter).second.dependencyCounter += 1;
+    (*dependeeIter).second->dependencyCounter += 1;
 
-    _definitions[dependency].dependees.push_back(dependeeIter);
+    auto dependencyIter = _definitions.find(dependency);
+    if (dependencyIter == _definitions.end()) {
+        dependencyIter =
+            _definitions.insert(std::make_pair(dependency, std::make_unique<CategoryDefinition>()))
+                .first;
+    }
+    (*dependencyIter).second->dependees.push_back(dependeeIter);
 }
 
 void QAO_PriorityResolver2::categoryPrecedes(int* category, int* dependee) {
@@ -103,5 +104,3 @@ void QAO_PriorityResolver2::categoryPrecedes(int* category, int* dependee) {
 HOBGOBLIN_NAMESPACE_END
 
 #include <Hobgoblin/Private/Pmacro_undef.hpp>
-
-// clang-format on

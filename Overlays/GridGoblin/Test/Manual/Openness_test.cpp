@@ -34,9 +34,9 @@ public:
         _world.prune();
     }
 
-    void onMouseButtonPressed(hg::in::MouseButton aButton, hg::math::Vector2f aPos) {
-        if (aPos.x < 0.f || aPos.x >= _world.getCellCountX() * _world.getCellResolution() ||
-            aPos.y < 0.f || aPos.y >= _world.getCellCountY() * _world.getCellResolution()) {
+    void onMouseButtonPressed(hg::in::MouseButton aButton, hg::math::Vector2d aPos) {
+        if (aPos.x < 0.0 || aPos.x >= _world.getCellCountX() * _world.getCellResolution() ||
+            aPos.y < 0.0 || aPos.y >= _world.getCellCountY() * _world.getCellResolution()) {
             return;
         }
 

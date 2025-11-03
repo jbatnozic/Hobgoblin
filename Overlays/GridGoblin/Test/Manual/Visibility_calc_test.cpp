@@ -30,7 +30,7 @@ namespace uwga = hg::uwga;
 #define CELL_COUNT_X     40
 #define CELL_COUNT_Y     40
 #define CELLRES          32.f
-#define CELL_PROBABILITY 15
+#define CELL_PROBABILITY 40
 
 enum Sprites {
     SPR_FULL_SQUARE,
@@ -145,25 +145,29 @@ void RunVisibilityCalculatorTestImpl() {
         world.edit(*perm, [&world](World::Editor& aEditor) {
             for (int y = 0; y < world.getCellCountY(); y += 1) {
                 for (int x = 0; x < world.getCellCountX(); x += 1) {
+                    cell::FloorSprite floorSprite{.id = SPRITEID_NONE};
+                    cell::WallSprite  wallSprite{.id = SPRITEID_NONE, .id_reduced = SPRITEID_NONE};
+                    cell::SpatialInfo spatialInfo{.wallShape = Shape::EMPTY};
+
                     if (x == CELL_COUNT_X / 2 - 1 || x == CELL_COUNT_X / 2) {
+                        aEditor.setCellDataAt(x, y, &floorSprite, &wallSprite, &spatialInfo);
                         continue;
                     }
                     if (hg::util::GetRandomNumber(0, 99) >= CELL_PROBABILITY) {
+                        aEditor.setCellDataAt(x, y, &floorSprite, &wallSprite, &spatialInfo);
                         continue;
                     }
 
-                    cell::WallSprite  wallSprite;
-                    cell::SpatialInfo spatialInfo;
                     SelectRandom(wallSprite.id, spatialInfo.wallShape);
-                    aEditor.setCellDataAt(x, y, &wallSprite, &spatialInfo);
+                    aEditor.setCellDataAt(x, y, &floorSprite, &wallSprite, &spatialInfo);
                 }
             }
         });
     }
 
-    // TopDownRenderer      renderer{world, loader};
+    TopDownRenderer      renderer{world, spriteLoader};
     VisibilityCalculatorConfig visCalcConfig;
-    // visCalcConfig.minRingsBeforeRaycasting = 0;
+    visCalcConfig.minRingsBeforeRaycasting = 0;
     VisibilityCalculator visCalc{world, visCalcConfig};
     auto                 vcImage   = uwgaSystem->createImage();
     auto                 vcTexture = uwgaSystem->createTexture();
@@ -242,16 +246,15 @@ void RunVisibilityCalculatorTestImpl() {
 
         window->clear(hg::uwga::Color{155, 155, 200});
 
-        // const Renderer::RenderParameters renderParams{
-        //     .viewCenter  = PositionInWorld{vector_cast<double>(window.getView(0).getCenter())},
-        //     .viewSize    = vector_cast<double>(window.getView(0).getSize()),
-        //     .pointOfView = {},
-        //     .xOffset     = 0.0,
-        //     .yOffset     = 0.0};
+        const Renderer::RenderParameters renderParams{
+            .viewCenter  = PositionInWorld{view->getAnchor() + view->getCenter().cast<double>()},
+            .viewSize    = view->getSize(),
+            .pointOfView = {},
+            .flags       = 0};
 
-        // renderer.startPrepareToRender(renderParams, 0, nullptr);
-        // renderer.endPrepareToRender();
-        // renderer.render(window);
+        renderer.startPrepareToRender(renderParams);
+        renderer.endPrepareToRender();
+        renderer.render(*window);
 
         window->draw(vcSprite);
         window->flush();

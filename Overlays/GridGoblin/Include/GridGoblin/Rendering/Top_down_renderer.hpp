@@ -32,14 +32,14 @@ public:
                     const TopDownRendererConfig&  aConfig = {});
 
     void startPrepareToRender(const RenderParameters&   aRenderParams,
-                              std::int32_t              aRenderFlags,
-                              const VisibilityProvider* aVisProv) override;
+                              const VisibilityProvider* aVisProv = nullptr) override;
 
     void addObject(const RenderedObject& aObject) override;
 
     void endPrepareToRender() override;
 
-    void render(hg::uwga::Canvas& aCanvas) override;
+    void render(hg::uwga::Canvas&             aCanvas,
+                const hg::uwga::RenderStates& aRenderStates = hg::uwga::RENDER_STATES_DEFAULT) override;
 
 private:
     // ===== Dependencies =====
@@ -56,14 +56,21 @@ private:
     class CellToRenderedObjectAdapter : public RenderedObject {
     public:
         CellToRenderedObjectAdapter(TopDownRenderer&  aRenderer,
-                                    const CellModel&  aCell,
-                                    const BoundsInfo& aBoundsInfo);
+                                    const BoundsInfo& aBoundsInfo,
+                                    cell::FloorSprite aFloorSprite);
+
+        CellToRenderedObjectAdapter(TopDownRenderer&  aRenderer,
+                                    const BoundsInfo& aBoundsInfo,
+                                    cell::WallSprite  aWallSprite);
 
         void render(hg::uwga::Canvas& aCanvas, PositionInView aPosInView) const override;
 
     private:
         TopDownRenderer& _renderer;
-        const CellModel& _cell;
+        union {
+            cell::FloorSprite _floorSprite;
+            cell::WallSprite  _wallSprite;
+        };
     };
 
     friend class CellToRenderedObjectAdapter;
@@ -82,7 +89,7 @@ private:
 
     hg::uwga::Sprite& _getSprite(SpriteId aSpriteId) const;
 
-    void _prepareCells(std::int32_t aRenderFlags, const VisibilityProvider* aVisProv);
+    void _prepareCells(const VisibilityProvider* aVisProv);
 };
 
 } // namespace gridgoblin

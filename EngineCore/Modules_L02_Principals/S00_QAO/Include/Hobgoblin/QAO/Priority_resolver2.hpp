@@ -1,12 +1,11 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-// clang-format off
-
 #ifndef UHOBGOBLIN_QAO_PRIORITY_RESOLVER2_HPP
 #define UHOBGOBLIN_QAO_PRIORITY_RESOLVER2_HPP
 
 #include <cassert>
+#include <memory>
 #include <optional>
 #include <type_traits>
 #include <unordered_map>
@@ -24,25 +23,23 @@ public:
     public:
         DependencyInserter(QAO_PriorityResolver2& resolver, int* category)
             : _resolver{resolver}
-            , _category{category}
-        {
-        }
+            , _category{category} {}
 
-        template <class ...NoArgs>
+        template <class... NoArgs>
         std::enable_if_t<sizeof...(NoArgs) == 0, void> dependsOn();
 
-        template <class ...ArgsRest>
+        template <class... ArgsRest>
         DependencyInserter& dependsOn(int* argsHead, ArgsRest&&... argsRest);
 
-        template <class ...NoArgs>
+        template <class... NoArgs>
         std::enable_if_t<sizeof...(NoArgs) == 0, void> precedes();
 
-        template <class ...ArgsRest>
+        template <class... ArgsRest>
         DependencyInserter& precedes(int* argsHead, ArgsRest&&... argsRest);
 
     private:
         QAO_PriorityResolver2& _resolver;
-        int* _category;
+        int*                   _category;
     };
 
     QAO_PriorityResolver2();
@@ -55,58 +52,55 @@ public:
 private:
     friend class DependencyInserter;
 
-    class DefinitionMapIterator;
+    struct CategoryDefinition;
+    using DefinitionMap         = std::unordered_map<int*, std::unique_ptr<CategoryDefinition>>;
+    using DefinitionMapIterator = DefinitionMap::iterator;
 
     struct CategoryDefinition {
         std::vector<DefinitionMapIterator> dependees;
-        int dependencyCounter = 0;
-        int dependencyFulfilledCounter = 0;
-        std::optional<int> priority;
+        int                                dependencyCounter          = 0;
+        int                                dependencyFulfilledCounter = 0;
+        std::optional<int>                 priority;
 
         void reset();
         bool priorityAssigned() const;
         bool dependenciesSatisfied() const;
     };
 
-    using DefinitionMap = std::unordered_map<int*, CategoryDefinition>;
-    class DefinitionMapIterator : public DefinitionMap::iterator {
-        // This doesn't seem like a very well thought out class but whatever, it works.
-    public:
-        DefinitionMapIterator(const DefinitionMap::iterator& aOther) 
-            : DefinitionMap::iterator(aOther) {}
-    };
-
     DefinitionMap _definitions;
-    int _initialPriority;
-    int _priorityStep;
-    int _priorityCounter;
+    int           _initialPriority;
+    int           _priorityStep;
+    int           _priorityCounter;
 
-    void categoryDependsOn(int* category, int* dependency);
-    void categoryPrecedes(int* category, int* dependee);
+    void                                      categoryDependsOn(int* category, int* dependency);
+    void                                      categoryPrecedes(int* category, int* dependee);
     std::vector<CategoryDefinition>::iterator findDefinition(int categoryId);
 };
 
-template <class ...NoArgs>
+template <class... NoArgs>
 std::enable_if_t<sizeof...(NoArgs) == 0, void> QAO_PriorityResolver2::DependencyInserter::dependsOn() {
     // Do nothing
 }
 
-template <class ...ArgsRest>
-QAO_PriorityResolver2::DependencyInserter& 
-QAO_PriorityResolver2::DependencyInserter::dependsOn(int* argsHead, ArgsRest&&... argsRest) {
+template <class... ArgsRest>
+QAO_PriorityResolver2::DependencyInserter& QAO_PriorityResolver2::DependencyInserter::dependsOn(
+    int* argsHead,
+    ArgsRest&&... argsRest) {
     _resolver.categoryDependsOn(_category, argsHead);
     dependsOn(std::forward<ArgsRest>(argsRest)...);
     return SELF;
 }
 
-template <class ...NoArgs>
+template <class... NoArgs>
 std::enable_if_t<sizeof...(NoArgs) == 0, void> QAO_PriorityResolver2::DependencyInserter::precedes() {
     // Do nothing
 }
 
-template <class ...ArgsRest>
-QAO_PriorityResolver2::DependencyInserter&
-QAO_PriorityResolver2::DependencyInserter::precedes(int* argsHead, ArgsRest&&... argsRest) {
+template <class... ArgsRest>
+QAO_PriorityResolver2::DependencyInserter& QAO_PriorityResolver2::DependencyInserter::precedes(
+    int* argsHead,
+    ArgsRest&&... argsRest) //
+{
     _resolver.categoryPrecedes(_category, argsHead);
     precedes(std::forward<ArgsRest>(argsRest)...);
     return SELF;
@@ -119,5 +113,3 @@ HOBGOBLIN_NAMESPACE_END
 #include <Hobgoblin/Private/Short_namespace.hpp>
 
 #endif // !UHOBGOBLIN_QAO_PRIORITY_RESOLVER2_HPP
-
-// clang-format on

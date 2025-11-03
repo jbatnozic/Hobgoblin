@@ -5,8 +5,6 @@
 #include <GridGoblin/Rendering/Drawing_order.hpp>
 #include <GridGoblin/Rendering/Top_down_renderer.hpp>
 
-#include "../Detail_access.hpp"
-
 #include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/Math/Core.hpp>
 
@@ -24,14 +22,13 @@ TopDownRenderer::TopDownRenderer(const World&                  aWorld,
     , _spriteLoader{aSpriteLoader} {}
 
 void TopDownRenderer::startPrepareToRender(const RenderParameters&   aRenderParams,
-                                           std::int32_t              aRenderFlags,
                                            const VisibilityProvider* aVisProv) {
     _renderParams = aRenderParams;
 
     _objectsToRender.clear();
     _cellAdapters.clear();
 
-    _prepareCells(aRenderFlags, aVisProv);
+    _prepareCells(aVisProv);
 }
 
 void TopDownRenderer::addObject(const RenderedObject& aObject) {
@@ -66,12 +63,10 @@ void TopDownRenderer::endPrepareToRender() {
               });
 }
 
-void TopDownRenderer::render(hg::uwga::Canvas& aCanvas) {
+void TopDownRenderer::render(hg::uwga::Canvas& aCanvas, const hg::uwga::RenderStates& aRenderStates) {
     for (const auto& object : _objectsToRender) {
         const auto& boundsInfo = object->getBoundsInfo();
-        auto        posInView  = topdown::ToPositionInView(boundsInfo.getCenter());
-        posInView->x += _renderParams.xOffset;
-        posInView->y += _renderParams.yOffset;
+        const auto  posInView  = topdown::ToPositionInView(boundsInfo.getCenter());
         object->render(aCanvas, posInView);
     }
 }
@@ -91,7 +86,7 @@ hg::uwga::Sprite& TopDownRenderer::_getSprite(SpriteId aSpriteId) const {
     return newIter.first->second;
 }
 
-void TopDownRenderer::_prepareCells(std::int32_t aRenderFlags, const VisibilityProvider* /*aVisProv*/) {
+void TopDownRenderer::_prepareCells(const VisibilityProvider* /*aVisProv*/) {
     const auto cr = _world.getCellResolution();
 
     const auto topLeft = topdown::ToPositionInWorld(
@@ -108,30 +103,26 @@ void TopDownRenderer::_prepareCells(std::int32_t aRenderFlags, const VisibilityP
     const int endX = std::min(_world.getCellCountX() - 1, static_cast<int>(bottomRight->x / cr));
     const int endY = std::min(_world.getCellCountY() - 1, static_cast<int>(bottomRight->y / cr));
 
+    cell::FloorSprite floorSprite;
+    cell::WallSprite  wallSprite;
     for (int y = startY; y <= endY; y += 1) {
         for (int x = startX; x <= endX; x += 1) {
-            const auto* cell = _world.getCellAt(x, y);
-            if (cell == nullptr) {
+            const auto cellIsLoaded = _world.getCellDataAtUnchecked(x, y, &floorSprite, &wallSprite);
+            if (!cellIsLoaded) {
                 continue;
             }
 
-            const auto flags = cell->getFlags();
-
-            bool skipFloor = false;
-            if (flags & CellModel::WALL_INITIALIZED) {
+            if (floorSprite.id != SPRITEID_NONE) {
                 _cellAdapters.emplace_back(
                     *this,
-                    *cell,
-                    BoundsInfo::fromTopLeftAndSize({x * cr, y * cr}, {cr, cr}, Layer::WALL));
-                if (cell->getWall().shape == Shape::FULL_SQUARE) {
-                    skipFloor = true; // Don't draw the floor if wall would fully cover it
-                }
+                    BoundsInfo::fromTopLeftAndSize({x * cr, y * cr}, {cr, cr}, Layer::FLOOR),
+                    cell::FloorSprite{.id = floorSprite.id});
             }
-            if (!skipFloor && (flags & CellModel::FLOOR_INITIALIZED)) {
+            if (wallSprite.id != SPRITEID_NONE) {
                 _cellAdapters.emplace_back(
                     *this,
-                    *cell,
-                    BoundsInfo::fromTopLeftAndSize({x * cr, y * cr}, {cr, cr}, Layer::FLOOR));
+                    BoundsInfo::fromTopLeftAndSize({x * cr, y * cr}, {cr, cr}, Layer::WALL),
+                    cell::WallSprite{.id = wallSprite.id, .id_reduced = SPRITEID_NONE});
             }
         }
     }
@@ -144,11 +135,18 @@ void TopDownRenderer::_prepareCells(std::int32_t aRenderFlags, const VisibilityP
 // MARK: Cell adapter impl
 
 TopDownRenderer::CellToRenderedObjectAdapter::CellToRenderedObjectAdapter(TopDownRenderer&  aRenderer,
-                                                                          const CellModel&  aCell,
-                                                                          const BoundsInfo& aBoundsInfo)
+                                                                          const BoundsInfo& aBoundsInfo,
+                                                                          cell::FloorSprite aFloorSprite)
     : RenderedObject{aBoundsInfo}
     , _renderer{aRenderer}
-    , _cell{aCell} {}
+    , _floorSprite{aFloorSprite} {}
+
+TopDownRenderer::CellToRenderedObjectAdapter::CellToRenderedObjectAdapter(TopDownRenderer&  aRenderer,
+                                                                          const BoundsInfo& aBoundsInfo,
+                                                                          cell::WallSprite  aWallSprite)
+    : RenderedObject{aBoundsInfo}
+    , _renderer{aRenderer}
+    , _wallSprite{aWallSprite} {}
 
 void TopDownRenderer::CellToRenderedObjectAdapter::render(hg::uwga::Canvas& aCanvas,
                                                           PositionInView    aScreenPosition) const {
@@ -156,10 +154,10 @@ void TopDownRenderer::CellToRenderedObjectAdapter::render(hg::uwga::Canvas& aCan
     SpriteId spriteId;
     switch (_boundsInfo.getLayer()) {
     case Layer::FLOOR:
-        spriteId = _cell.getFloor().spriteId;
+        spriteId = _floorSprite.id;
         break;
     case Layer::WALL:
-        spriteId = _cell.getWall().spriteId;
+        spriteId = _wallSprite.id;
         break;
 
     default:
@@ -171,7 +169,7 @@ void TopDownRenderer::CellToRenderedObjectAdapter::render(hg::uwga::Canvas& aCan
     auto& sprite = _renderer._getSprite(spriteId);
 
     sprite.setColor(hg::uwga::COLOR_WHITE);
-    sprite.setPosition(hg::math::VectorCast<float>(*aScreenPosition));
+    sprite.setAnchor(*aScreenPosition);
 
     {
         float xscale = 1.f;

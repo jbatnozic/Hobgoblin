@@ -10,6 +10,7 @@
 #include <GridGoblin/World/World.hpp>
 
 #include <Hobgoblin/UWGA/Canvas.hpp>
+#include <Hobgoblin/UWGA/View.hpp>
 
 namespace jbatnozic {
 namespace gridgoblin {
@@ -17,6 +18,11 @@ namespace gridgoblin {
 class Renderer {
 public:
     virtual ~Renderer() = default;
+
+    enum RenderFlags : std::int32_t {
+        REDUCE_WALLS_BASED_ON_POSITION   = 0x01,
+        REDUCE_WALLS_BASED_ON_VISIBILITY = 0x02,
+    };
 
     struct RenderParameters {
         //! Position in the world corresponding to the center of the view.
@@ -31,31 +37,20 @@ public:
         //! make transparent some walls so the player can see what's behind them.
         PositionInWorld pointOfView;
 
-        //! Most graphics libraries, including the Hobgoblin Graphics library, internally use
-        //! 32-bit floats, whose precision starts to be unsatisfactory for rendering with values
-        //! around 100,000 and above. GridGoblin is made to support very large worlds, potentially
-        //! millions of cells wide and tall, and the rendering quality could suffer a lot when the
-        //! view is far away from the origin.
-        //! Thse offsets can be used to shift what's being rendered rather than the view itself,
-        //! thus bringing it into ranges of values that are acceptable for the graphics library.
-        double xOffset = 0.0;
-        double yOffset = 0.0;
-    };
-
-    enum RenderFlags : std::int32_t {
-        REDUCE_WALLS_BASED_ON_POSITION   = 0x01,
-        REDUCE_WALLS_BASED_ON_VISIBILITY = 0x02,
+        //! TODO
+        std::int32_t flags = 0;
     };
 
     virtual void startPrepareToRender(const RenderParameters&   aRenderParams,
-                                      std::int32_t              aRenderFlags,
-                                      const VisibilityProvider* aVisProv) = 0;
+                                      const VisibilityProvider* aVisProv = nullptr) = 0;
 
     virtual void addObject(const RenderedObject& aObject) = 0;
 
     virtual void endPrepareToRender() = 0;
 
-    virtual void render(hg::uwga::Canvas& aCanvas) = 0;
+    virtual void render(
+        hg::uwga::Canvas&             aCanvas,
+        const hg::uwga::RenderStates& aRenderStates = hg::uwga::RENDER_STATES_DEFAULT) = 0;
 };
 
 } // namespace gridgoblin

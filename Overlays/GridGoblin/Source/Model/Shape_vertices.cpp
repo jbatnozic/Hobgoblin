@@ -250,7 +250,7 @@ std::size_t GetVisibilityVertices<Shape::SMALL_TRIANGLE_HOR>(
 
     const auto flags = aCellSpatialInfo.obFlags | aEdgesOfInterest;
 
-    if (aAllEdgesOverride || GG_EAST(flags) || GG_SOUTH(flags)) {
+    if (aAllEdgesOverride || GG_EAST(flags) || GG_WEST(flags) || GG_SOUTH(flags)) {
         aVertices[cnt + 0] = {0.0 - aPaddingOffset, 0.5 + aPaddingOffset};
         aVertices[cnt + 1] = {1.0 + aPaddingOffset, 0.0 - aPaddingOffset};
         cnt += 2;
@@ -291,7 +291,7 @@ std::size_t GetVisibilityVertices<Shape::SMALL_TRIANGLE_HOR | Shape::HFLIP>(
         aVertices[cnt + 1] = {0.0 - aPaddingOffset, 0.0};
         cnt += 2;
     }
-    if (aAllEdgesOverride || GG_WEST(flags) || GG_SOUTH(flags)) {
+    if (aAllEdgesOverride || GG_EAST(flags) || GG_WEST(flags) || GG_SOUTH(flags)) {
         aVertices[cnt + 0] = {0.0 - aPaddingOffset, 0.0 - aPaddingOffset};
         aVertices[cnt + 1] = {1.0 + aPaddingOffset, 0.5 + aPaddingOffset};
         cnt += 2;
@@ -312,7 +312,7 @@ std::size_t GetVisibilityVertices<Shape::SMALL_TRIANGLE_HOR | Shape::VFLIP>(
 
     const auto flags = aCellSpatialInfo.obFlags | aEdgesOfInterest;
 
-    if (aAllEdgesOverride || GG_EAST(flags) || GG_NORTH(flags)) {
+    if (aAllEdgesOverride || GG_EAST(flags) || GG_WEST(flags) || GG_NORTH(flags)) {
         aVertices[cnt + 0] = {1.0 + aPaddingOffset, 1.0 + aPaddingOffset};
         aVertices[cnt + 1] = {0.0 - aPaddingOffset, 0.5 - aPaddingOffset};
         cnt += 2;
@@ -348,7 +348,7 @@ std::size_t GetVisibilityVertices<Shape::SMALL_TRIANGLE_HOR | Shape::HVFLIP>(
         aVertices[cnt + 1] = {1.0, 0.5 - aPaddingOffset};
         cnt += 2;
     }
-    if (aAllEdgesOverride || GG_NORTH(flags) || GG_WEST(flags)) {
+    if (aAllEdgesOverride || GG_NORTH(flags) || GG_EAST(flags) || GG_WEST(flags)) {
         aVertices[cnt + 0] = {1.0 + aPaddingOffset, 0.5 - aPaddingOffset};
         aVertices[cnt + 1] = {0.0 - aPaddingOffset, 1.0 + aPaddingOffset};
         cnt += 2;
@@ -535,12 +535,11 @@ std::size_t GetVisibilityVertices<Shape::HALF_SQUARE_HOR>(cell::SpatialInfo aCel
         aVertices[cnt + 1] = {0.0, 0.5 + aPaddingOffset};
         cnt += 2;
     }
-    // TODO: optimize handling of these middle lines for all HALF_SQUARE_* variants.
-    // if (aAllEdgesOverride || GG_SOUTH(flags)) {
-    aVertices[cnt + 0] = {0.0 - aPaddingOffset, 0.5};
-    aVertices[cnt + 1] = {1.0 + aPaddingOffset, 0.5};
-    cnt += 2;
-    // }
+    if (aAllEdgesOverride || GG_EAST(flags) || GG_WEST(flags) || GG_SOUTH(flags)) {
+        aVertices[cnt + 0] = {0.0 - aPaddingOffset, 0.5};
+        aVertices[cnt + 1] = {1.0 + aPaddingOffset, 0.5};
+        cnt += 2;
+    }
 
     return cnt;
 }
@@ -577,11 +576,11 @@ std::size_t GetVisibilityVertices<Shape::HALF_SQUARE_HOR | Shape::VFLIP>(
         aVertices[cnt + 1] = {1.0, 0.5 - aPaddingOffset};
         cnt += 2;
     }
-    // if (aAllEdgesOverride || GG_NORTH(flags)) {
-    aVertices[cnt + 0] = {1.0 + aPaddingOffset, 0.5};
-    aVertices[cnt + 1] = {0.0 - aPaddingOffset, 0.5};
-    cnt += 2;
-    // }
+    if (aAllEdgesOverride || GG_EAST(flags) || GG_WEST(flags) || GG_NORTH(flags)) {
+        aVertices[cnt + 0] = {1.0 + aPaddingOffset, 0.5};
+        aVertices[cnt + 1] = {0.0 - aPaddingOffset, 0.5};
+        cnt += 2;
+    }
     if (aAllEdgesOverride || GG_WEST(flags)) {
         aVertices[cnt + 0] = {0.0, 0.5 - aPaddingOffset};
         aVertices[cnt + 1] = {0.0, 1.0 + aPaddingOffset};
@@ -604,9 +603,11 @@ std::size_t GetVisibilityVertices<Shape::HALF_SQUARE_HOR | Shape::HVFLIP>(
     double                             aPaddingOffset,
     std::array<hg::math::Vector2d, 8>& aVertices) //
 {
-    return GetVisibilityVertices < Shape::HALF_SQUARE_HOR |
-           Shape::VFLIP >
-               (aCellSpatialInfo, aEdgesOfInterest, aAllEdgesOverride, aPaddingOffset, aVertices);
+    return GetVisibilityVertices< Shape::HALF_SQUARE_HOR | Shape::VFLIP >(aCellSpatialInfo,
+                                                                          aEdgesOfInterest,
+                                                                          aAllEdgesOverride,
+                                                                          aPaddingOffset,
+                                                                          aVertices);
 }
 
 // MARK: SMALL_TRIANGLE_VER
@@ -623,7 +624,7 @@ std::size_t GetVisibilityVertices<Shape::SMALL_TRIANGLE_VER>(
 
     const auto flags = aCellSpatialInfo.obFlags | aEdgesOfInterest;
 
-    if (aAllEdgesOverride || GG_EAST(flags) || GG_SOUTH(flags)) {
+    if (aAllEdgesOverride || GG_EAST(flags) || GG_NORTH(flags) || GG_SOUTH(flags)) {
         aVertices[cnt + 0] = {0.0 - aPaddingOffset, 1.0 + aPaddingOffset};
         aVertices[cnt + 1] = {0.5 + aPaddingOffset, 0.0 - aPaddingOffset};
         cnt += 2;
@@ -664,7 +665,7 @@ std::size_t GetVisibilityVertices<Shape::SMALL_TRIANGLE_VER | Shape::HFLIP>(
         aVertices[cnt + 1] = {0.5 - aPaddingOffset, 0.0};
         cnt += 2;
     }
-    if (aAllEdgesOverride || GG_WEST(flags) || GG_SOUTH(flags)) {
+    if (aAllEdgesOverride || GG_WEST(flags) || GG_NORTH(flags) || GG_SOUTH(flags)) {
         aVertices[cnt + 0] = {0.5 - aPaddingOffset, 0.0 - aPaddingOffset};
         aVertices[cnt + 1] = {1.0 + aPaddingOffset, 1.0 + aPaddingOffset};
         cnt += 2;
@@ -685,7 +686,7 @@ std::size_t GetVisibilityVertices<Shape::SMALL_TRIANGLE_VER | Shape::VFLIP>(
 
     const auto flags = aCellSpatialInfo.obFlags | aEdgesOfInterest;
 
-    if (aAllEdgesOverride || GG_EAST(flags) || GG_NORTH(flags)) {
+    if (aAllEdgesOverride || GG_EAST(flags) || GG_NORTH(flags) || GG_SOUTH(flags)) {
         aVertices[cnt + 0] = {0.5 + aPaddingOffset, 1.0 + aPaddingOffset};
         aVertices[cnt + 1] = {0.0 - aPaddingOffset, 0.0 - aPaddingOffset};
         cnt += 2;
@@ -721,7 +722,7 @@ std::size_t GetVisibilityVertices<Shape::SMALL_TRIANGLE_VER | Shape::HVFLIP>(
         aVertices[cnt + 1] = {1.0, 0.0 - aPaddingOffset};
         cnt += 2;
     }
-    if (aAllEdgesOverride || GG_NORTH(flags) || GG_WEST(flags)) {
+    if (aAllEdgesOverride || GG_NORTH(flags) || GG_SOUTH(flags) || GG_WEST(flags)) {
         aVertices[cnt + 0] = {1.0 + aPaddingOffset, 0.0 - aPaddingOffset};
         aVertices[cnt + 1] = {0.5 - aPaddingOffset, 1.0 + aPaddingOffset};
         cnt += 2;
@@ -895,11 +896,11 @@ std::size_t GetVisibilityVertices<Shape::HALF_SQUARE_VER>(
 
     const auto flags = aCellSpatialInfo.obFlags | aEdgesOfInterest;
 
-    // if (aAllEdgesOverride || GG_EAST(flags)) {
-    aVertices[cnt + 0] = {0.5, 1.0 + aPaddingOffset};
-    aVertices[cnt + 1] = {0.5, 0.0 - aPaddingOffset};
-    cnt += 2;
-    // }
+    if (aAllEdgesOverride || GG_NORTH(flags) || GG_SOUTH(flags) || GG_EAST(flags)) {
+        aVertices[cnt + 0] = {0.5, 1.0 + aPaddingOffset};
+        aVertices[cnt + 1] = {0.5, 0.0 - aPaddingOffset};
+        cnt += 2;
+    }
     if (aAllEdgesOverride || GG_NORTH(flags)) {
         aVertices[cnt + 0] = {0.5 + aPaddingOffset, 0.0};
         aVertices[cnt + 1] = {0.0 - aPaddingOffset, 0.0};
@@ -941,11 +942,11 @@ std::size_t GetVisibilityVertices<Shape::HALF_SQUARE_VER | Shape::HFLIP>(
         aVertices[cnt + 1] = {0.5 - aPaddingOffset, 0.0};
         cnt += 2;
     }
-    // if (aAllEdgesOverride || GG_WEST(flags)) {
-    aVertices[cnt + 0] = {0.5, 0.0 - aPaddingOffset};
-    aVertices[cnt + 1] = {0.5, 1.0 + aPaddingOffset};
-    cnt += 2;
-    // }
+    if (aAllEdgesOverride || GG_NORTH(flags) || GG_SOUTH(flags) || GG_WEST(flags)) {
+        aVertices[cnt + 0] = {0.5, 0.0 - aPaddingOffset};
+        aVertices[cnt + 1] = {0.5, 1.0 + aPaddingOffset};
+        cnt += 2;
+    }
     if (aAllEdgesOverride || GG_SOUTH(flags)) {
         aVertices[cnt + 0] = {0.5 - aPaddingOffset, 1.0};
         aVertices[cnt + 1] = {1.0 + aPaddingOffset, 1.0};
@@ -978,9 +979,11 @@ std::size_t GetVisibilityVertices<Shape::HALF_SQUARE_VER | Shape::HVFLIP>(
     double                             aPaddingOffset,
     std::array<hg::math::Vector2d, 8>& aVertices) //
 {
-    return GetVisibilityVertices < Shape::HALF_SQUARE_VER |
-           Shape::HFLIP >
-               (aCellSpatialInfo, aEdgesOfInterest, aAllEdgesOverride, aPaddingOffset, aVertices);
+    return GetVisibilityVertices< Shape::HALF_SQUARE_VER | Shape::HFLIP >(aCellSpatialInfo,
+                                                                          aEdgesOfInterest,
+                                                                          aAllEdgesOverride,
+                                                                          aPaddingOffset,
+                                                                          aVertices);
 }
 
 // MARK: TABLE

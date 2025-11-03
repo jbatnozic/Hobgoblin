@@ -220,14 +220,15 @@ HG_NODISCARD UnicodeString UCoalesce(taType&& aValue) {
 }
 
 //! This macro expands into a UTF-16 encoded string literal which can be used as the format
-//! string of `hg::UFormat()`. A compile-time check will be performed to verify that the format
-//! string is well-formed.
+//! string of `hg::UFormat()`.
+//! A compile-time check MAY BE performed to verify that the format string is well-formed, 
+//! IF THIS OPERATION IS SUPPORTED.
 //! 
 //! \param _c_string_literal_ a plain C string literal without any prefixes.
 //! 
 //! \note make sure that the source files containing this macro invocation are saved with
 //!       proper encoding that supports unicode.
-#define HG_UNIFMT(_c_string_literal_) FMT_STRING(HG_UNILIT(_c_string_literal_))
+#define HG_UNIFMT(_c_string_literal_) /*FMT_STRING*/(HG_UNILIT(_c_string_literal_))
 
 HOBGOBLIN_NAMESPACE_END
 
