@@ -33,17 +33,18 @@ protected:
     test::FakeDiskIoHandler _fakeDiskIoHandler;
     std::optional<World>    _world;
 
-    World& _createWorld(const WorldConfig& aConfig) {
+    World& _createWorld(const ContentsConfig& aConfig) {
         _world.emplace(aConfig, &_fakeDiskIoHandler);
         _world->attachBinder(this);
         return *_world;
     }
 
-    static WorldConfig _makeDefaultConfig() {
+    static ContentsConfig _makeDefaultContentsConfig() {
         return {.chunkCountX                 = 8,
                 .chunkCountY                 = 8,
                 .cellsPerChunkX              = 8,
                 .cellsPerChunkY              = 8,
+                .buildingBlocks              = BuildingBlock::ALL,
                 .cellResolution              = 32.f,
                 .maxCellOpenness             = 5,
                 .maxLoadedNonessentialChunks = 1};
@@ -51,7 +52,7 @@ protected:
 };
 
 TEST_F(WorldTest, ChunkGetters) {
-    auto& w = _createWorld(_makeDefaultConfig());
+    auto& w = _createWorld(_makeDefaultContentsConfig());
 
     const hg::math::Vector2pz pos = {9, 9};
     const ChunkId             id  = w.cellToChunkId(pos);
@@ -86,13 +87,14 @@ TEST_F(WorldTest, AvailableChunkIterations) {
     _fakeDiskIoHandler.setRuntimeCacheDelay(std::chrono::milliseconds{5});
     _fakeDiskIoHandler.setPersistentCacheDelay(std::chrono::milliseconds{5});
 
-    const auto config = WorldConfig{.chunkCountX                 = 8,
-                                    .chunkCountY                 = 8,
-                                    .cellsPerChunkX              = 8,
-                                    .cellsPerChunkY              = 8,
-                                    .cellResolution              = 32.f,
-                                    .maxCellOpenness             = 5,
-                                    .maxLoadedNonessentialChunks = 2};
+    const auto config = ContentsConfig{.chunkCountX                 = 8,
+                                       .chunkCountY                 = 8,
+                                       .cellsPerChunkX              = 8,
+                                       .cellsPerChunkY              = 8,
+                                       .buildingBlocks              = BuildingBlock::ALL,
+                                       .cellResolution              = 32.f,
+                                       .maxCellOpenness             = 5,
+                                       .maxLoadedNonessentialChunks = 2};
 
     auto& w = _createWorld(config);
 

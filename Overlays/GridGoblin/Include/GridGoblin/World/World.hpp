@@ -45,14 +45,21 @@ class ChunkSpoolerInterface;
  */
 class World : private Binder {
 public:
-    //! Main constructor.
-    World(const WorldConfig& aConfig);
+    //! Initialize the World instance with disk storage and persistence enabled.
+    //! This is the recommended way to use a GridGoblin World.
+    World(const ContentsConfig& aContentsConfig, const StorageConfig& aStorageConfig);
+
+    //! Initialize the World instance with disk storage and persistence DISABLED.
+    //! \warning with this setup, all chunks (once created) will be kept in RAM at all times, with no
+    //!          way to unload them if memory capacity is a concern, or persist them between program
+    //!          runs.
+    World(const ContentsConfig& aContentsConfig);
 
     //! Test constructor.
     //!
     //! \warning This constructor is meant to be used for testing. Do not use it if you are not a
     //!          library maintainer!
-    World(const WorldConfig&                                  aConfig,
+    World(const ContentsConfig&                               aContentsConfig,
           hg::NeverNull<detail::ChunkDiskIoHandlerInterface*> aChunkDiskIoHandler);
 
 #ifdef FUTURE
@@ -367,12 +374,12 @@ private:
 
     // ===== Config =====
 
-    struct WorldConfigExt : WorldConfig {
+    struct WorldConfigExt : ContentsConfig {
         hg::PZInteger cellCountX;
         hg::PZInteger cellCountY;
 
-        WorldConfigExt(const WorldConfig& aConfig)
-            : WorldConfig{aConfig}
+        WorldConfigExt(const ContentsConfig& aConfig)
+            : ContentsConfig{aConfig}
             , cellCountX{chunkCountX * cellsPerChunkX}
             , cellCountY{chunkCountY * cellsPerChunkY} {}
     };

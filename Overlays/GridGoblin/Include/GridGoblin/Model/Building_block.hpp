@@ -6,6 +6,8 @@
 #include <Hobgoblin/Common/Enum_op.hpp>
 
 #include <cstdint>
+#include <string>
+#include <string_view>
 
 namespace jbatnozic {
 namespace gridgoblin {
@@ -34,6 +36,14 @@ using BuildingBlockMask = BuildingBlock;
 
 [[nodiscard]] inline HG_ENUM_DEFINE_ARITHMETIC_OP(BuildingBlock, &);
 [[nodiscard]] inline HG_ENUM_DEFINE_ARITHMETIC_OP(BuildingBlock, |);
+
+//! Construct a string from a building block mask.
+//! Result examples: "NONE", "SPATIAL_INFO", "FLOOR_SPRITE|USER_DATA".
+std::string BuildingBlockMaskToString(BuildingBlockMask aBbMask);
+
+//! Reconstruct a building block mask from its string representation.
+//! \see BuildingBlockMaskToString
+BuildingBlockMask StringToBuildingBlockMask(const std::string_view& aString);
 
 } // namespace gridgoblin
 } // namespace jbatnozic

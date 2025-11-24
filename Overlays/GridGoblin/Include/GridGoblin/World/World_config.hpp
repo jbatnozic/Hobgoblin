@@ -7,9 +7,7 @@
 #include <GridGoblin/Model/Chunk_extension.hpp>
 
 #include <Hobgoblin/Common.hpp>
-#include <Hobgoblin/HGExcept.hpp>
 
-#include <algorithm>
 #include <filesystem>
 
 namespace jbatnozic {
@@ -17,7 +15,8 @@ namespace gridgoblin {
 
 namespace hg = ::jbatnozic::hobgoblin;
 
-struct WorldConfig {
+//! Configuration parameters pertaining to the contents of a World instance.
+struct ContentsConfig {
     //! Total count of chunks in the horizontal (X) direction.
     //! Must be between 1 and 4096.
     hg::PZInteger chunkCountX;
@@ -90,38 +89,88 @@ struct WorldConfig {
     //! \see World, ActiveArea
     hg::PZInteger maxLoadedNonessentialChunks = 0;
 
-    //! Directory from which to load chuks and to which to save them.
-    std::filesystem::path chunkDirectoryPath = "";
+    //! Method to check if a configuration object is valid.
+    //! \throws hg::InvalidArgumentError if the object is not valid.
+    //! \returns the same configuration object that was passed in.
+    static ContentsConfig& validate(ContentsConfig& aConfig);
 
     //! Method to check if a configuration object is valid.
     //! \throws hg::InvalidArgumentError if the object is not valid.
     //! \returns the same configuration object that was passed in.
-    static WorldConfig& validate(WorldConfig& aConfig) {
-        HG_VALIDATE_ARGUMENT(aConfig.chunkCountX >= 1 && aConfig.chunkCountX <= 4096);
+    static const ContentsConfig& validate(const ContentsConfig& aConfig);
 
-        HG_VALIDATE_ARGUMENT(aConfig.chunkCountY >= 1 && aConfig.chunkCountY <= 4096);
+    //! Save the config object in a file.
+    static void saveToFile(const ContentsConfig& aConfig, const std::filesystem::path& aFilePath);
 
-        HG_VALIDATE_ARGUMENT(aConfig.cellsPerChunkX >= 1 && aConfig.cellsPerChunkX <= 1024);
+    //! When initializing a GridGoblin World, it will expect to find a contents config file (with the
+    //! same name as is stored in the constant `CONTENTS_CONFIG_FILE_NAME`) in its storage directory,
+    //! and this is a helper function to save the config file in this directory without having to
+    //! provide the file name explicitly.
+    static void saveToStorageDirectory(const ContentsConfig&        aConfig,
+                                       const std::filesystem::path& aStorageDirectory);
 
-        HG_VALIDATE_ARGUMENT(aConfig.cellsPerChunkY >= 1 && aConfig.cellsPerChunkY <= 1024);
+    //! Load the config object from a file.
+    static ContentsConfig loadFromFile(const std::filesystem::path& aFilePath);
 
-        HG_VALIDATE_ARGUMENT(aConfig.cellResolution > 0.f);
-
-        HG_VALIDATE_ARGUMENT(aConfig.maxCellOpenness == 0 || (aConfig.maxCellOpenness % 2 == 1));
-
-        HG_VALIDATE_ARGUMENT(aConfig.maxCellOpenness <=
-                             std::min(15, std::min(aConfig.cellsPerChunkX, aConfig.cellsPerChunkY)));
-
-        return aConfig;
-    }
-
-    //! Method to check if a configuration object is valid.
-    //! \throws hg::InvalidArgumentError if the object is not valid.
-    //! \returns the same configuration object that was passed in.
-    static const WorldConfig& validate(const WorldConfig& aConfig) {
-        return validate(const_cast<WorldConfig&>(aConfig));
-    }
+    //! \see saveToStorageDirectory
+    static ContentsConfig loadFromStorageDirectory(const std::filesystem::path& aStorageDirectory);
 };
+
+//! Name of the file storing the contents config inside of a World Storage Directory.
+constexpr const char* CONTENTS_CONFIG_FILE_NAME = "contents_config.txt";
+
+//! Configuration parameters pertaining to persisting the World data on disk, and to loading it.
+struct StorageConfig {
+    //! Directory where the World's data is to be saved.
+    //! \note multiple files and subfolders may be created at this location.
+    std::filesystem::path storageDirectory = "";
+
+    //! This flag controls the behaviour of the World constructor in the case when `storageDirectory`
+    //! points to a directory that is empty and/or missing the crucial files that represent a World:
+    //! - when `true`, the constructor will be allowed to initialize new (empty) World storage in this
+    //!   directory.
+    //! - when `false`, the constructor will throw an exception.
+    bool allowCreateNew = true;
+
+    //! This flag controls the behaviour of the World constructor in the case when `storageDirectory`
+    //! points to a directory that already contains the crucial files that represent a World:
+    //! - when `false`, the constructor will throw an exception unless the stored `ContentsConfig` is
+    //!   exactly the same as the one passed to the World constructor.
+    //! - when `true`, the stored `ContentsConfig` will be overwritten with the one passed to the
+    //!   world constructor.
+    //!
+    //! \warning there are a few very important considerations when setting this to `true`:
+    //!          - it's recommended to use `ContentsConfig::loadFromStorageDirectory` to load the config
+    //!            manually and compare it to the one you want to use - and check for incompatibilities -
+    //!            if you intend to overwrite.
+    //!          - changing certain fields is not supported after a world is created, and you'll likely
+    //!            encounter unrecoverable errors if you try to do so:
+    //!             - `chunkCountX/chunkCountY`       - OK TO CHANGE*
+    //!             - `cellsPerChunkX/cellsPerChunkX` - NOT SUPPORTED
+    //!             - `buildingBlocks`                - NOT SUPPORTED
+    //!             - `cellResolution`                - OK TO CHANGE
+    //!             - `wallHeight`                    - OK TO CHANGE
+    //!             - `maxCellOpenness`               - NOT SUPPORTED
+    //!             - `maxLoadedNonessentialChunks`   - OK TO CHANGE
+    //!
+    //!            *- if you reduce the number of chunks in the world, the on-disk cache will not be
+    //!               automatically cleaned up to remove the chunks which technically no longer belong.
+    bool allowOverwriteConfig = false;
+};
+
+inline void ContentsConfig::saveToStorageDirectory(const ContentsConfig&        aConfig,
+                                                   const std::filesystem::path& aStorageDirectory) {
+    saveToFile(aConfig, aStorageDirectory / CONTENTS_CONFIG_FILE_NAME);
+}
+
+inline ContentsConfig ContentsConfig::loadFromStorageDirectory(
+    const std::filesystem::path& aStorageDirectory) {
+    return loadFromFile(aStorageDirectory / CONTENTS_CONFIG_FILE_NAME);
+}
+
+inline const ContentsConfig& ContentsConfig::validate(const ContentsConfig& aConfig) {
+    return validate(const_cast<ContentsConfig&>(aConfig));
+}
 
 } // namespace gridgoblin
 } // namespace jbatnozic

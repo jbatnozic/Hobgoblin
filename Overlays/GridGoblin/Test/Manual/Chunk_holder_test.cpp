@@ -17,7 +17,7 @@ using jbatnozic::gridgoblin::Binder;
 using jbatnozic::gridgoblin::BuildingBlockMask;
 using jbatnozic::gridgoblin::ChunkId;
 using jbatnozic::gridgoblin::ChunkMemoryLayoutInfo;
-using jbatnozic::gridgoblin::WorldConfig;
+using jbatnozic::gridgoblin::ContentsConfig;
 using jbatnozic::gridgoblin::detail::ChunkHolder;
 using jbatnozic::gridgoblin::detail::ChunkSpoolerInterface;
 
@@ -44,8 +44,8 @@ public:
     FakeWorld(hg::PZInteger          aWorldWidth,
               hg::PZInteger          aWorldHeight,
               ChunkSpoolerInterface& aChunkSpooler,
-              const WorldConfig&     aConfig)
-        : _chunkHolder{aConfig}
+              const ContentsConfig&  aContentsConfig)
+        : _chunkHolder{aContentsConfig}
         , _activeArea{_chunkHolder.createNewActiveArea()} //
     {
         _chunkHolder.setChunkSpooler(&aChunkSpooler);
@@ -124,14 +124,14 @@ public:
     jbatnozic::gridgoblin::test::FakeDiskIoHandler     _fakeDiskIoHandler;
     jbatnozic::gridgoblin::detail::DefaultChunkSpooler _chunkSpooler{BuildingBlockMask::ALL,
                                                                      _chunkMemoryLayoutInfoImpl};
-    FakeWorld _fakeWorld{32, 32, _chunkSpooler, _makeWorldConfig()};
+    FakeWorld _fakeWorld{32, 32, _chunkSpooler, _makeContentsConfig()};
 
     Fixture() {
         _chunkSpooler.setDiskIoHandler(&_fakeDiskIoHandler);
     }
 
 private:
-    static WorldConfig _makeWorldConfig() {
+    static ContentsConfig _makeContentsConfig() {
         return {.chunkCountX                 = CHUNK_COUNT_X,
                 .chunkCountY                 = CHUNK_COUNT_Y,
                 .cellsPerChunkX              = 1,
@@ -139,8 +139,7 @@ private:
                 .buildingBlocks              = BuildingBlockMask::ALL,
                 .cellResolution              = 32.f,
                 .maxCellOpenness             = 4,
-                .maxLoadedNonessentialChunks = 32,
-                .chunkDirectoryPath          = "GGManualTest_WorkDir"};
+                .maxLoadedNonessentialChunks = 32};
     }
 };
 } // namespace

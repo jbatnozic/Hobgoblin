@@ -24,7 +24,7 @@ namespace detail {
 //! Default disk I/O handles for chunks which stores each chunk as a single textual file.
 class DefaultChunkDiskIoHandler : public ChunkDiskIoHandlerInterface {
 public:
-    DefaultChunkDiskIoHandler(const WorldConfig& aConfig);
+    DefaultChunkDiskIoHandler(const StorageConfig& aConfig);
 
     ~DefaultChunkDiskIoHandler() override;
 

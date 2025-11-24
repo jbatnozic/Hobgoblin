@@ -17,17 +17,62 @@ namespace detail {
 static constexpr auto LOG_ID = "GridGoblin";
 
 namespace {
-auto ChunkMemoryLayoutInfoFromWorldConfig(const WorldConfig& aConfig) {
+auto ChunkMemoryLayoutInfoFromWorldConfig(const ContentsConfig& aConfig) {
     return CalcChunkMemoryLayoutInfo(aConfig.cellsPerChunkX,
                                      aConfig.cellsPerChunkY,
                                      aConfig.buildingBlocks);
+}
+
+class DummyRequestHandleInterface : public ChunkSpoolerInterface::RequestHandleInterface {
+public:
+    DummyRequestHandleInterface(ChunkId aChunkId)
+        : _chunkId{aChunkId} {}
+
+    ~DummyRequestHandleInterface() override = default;
+
+    std::optional<hg::PZInteger> trySwapPriority(hg::PZInteger aNewPriority) override {
+        return std::nullopt;
+    }
+
+    std::optional<hg::PZInteger> tryBoostPriority(hg::PZInteger aNewPriority) override {
+        return std::nullopt;
+    }
+
+    void cancel() override {}
+
+    ChunkId getChunkId() const override {
+        return _chunkId;
+    }
+
+    bool isFinished() const override {
+        return true;
+    }
+
+    std::optional<Chunk> takeChunk() override {
+        return std::nullopt;
+    }
+
+private:
+    ChunkId _chunkId;
+};
+
+auto ServeLoadRequestsWithoutIO(const std::vector<ChunkSpoolerInterface::LoadRequest>& aLoadRequests) {
+    std::vector<std::shared_ptr<ChunkSpoolerInterface::RequestHandleInterface>> handles;
+    handles.reserve(aLoadRequests.size());
+
+    for (const auto& request : aLoadRequests) {
+        handles.push_back(std::make_shared<DummyRequestHandleInterface>(request.chunkId));
+        request.readyCallback(request.chunkId);
+    }
+
+    return handles;
 }
 } // namespace
 
 #define CHUNK_AT_ID(_id_) \
     (_chunks[static_cast<hg::PZInteger>((_id_).y)][static_cast<hg::PZInteger>((_id_).x)])
 
-ChunkHolder::ChunkHolder(const WorldConfig& aConfig)
+ChunkHolder::ChunkHolder(const ContentsConfig& aConfig)
     : _chunkMemoryLayoutInfo{ChunkMemoryLayoutInfoFromWorldConfig(aConfig)}
     , _chunks{aConfig.chunkCountX, aConfig.chunkCountY}
     , _chunkWidth{aConfig.cellsPerChunkX}
@@ -76,7 +121,10 @@ void ChunkHolder::update() {
 }
 
 void ChunkHolder::prune() {
-    HG_ASSERT(_chunkSpooler != nullptr);
+    if (_chunkSpooler == nullptr) {
+        // With disk I/O disabled, all chunks must be kept in memory at all times
+        return;
+    }
 
     if (_freeChunks.size() <= hg::pztos(_freeChunkLimit)) {
         return;
@@ -114,13 +162,16 @@ void ChunkHolder::prune() {
  *       from an SSD (rough numbers but the orders of magnitude should be correct).
  */
 void ChunkHolder::_loadChunkImmediately(ChunkId aChunkId) {
-    const auto id = aChunkId;
+    const auto id         = aChunkId;
+    const bool hasSpooler = (_chunkSpooler != nullptr);
 
-    HG_LOG_WARN(LOG_ID,
-                "Requesting immediate load of chunk {}. "
-                "Seeing this message too often likely means that the program is not well calibrated "
-                "and that performance is suffering as a consequence.",
-                id);
+    if (hasSpooler) {
+        HG_LOG_WARN(LOG_ID,
+                    "Requesting immediate load of chunk {}. "
+                    "Seeing this message too often likely means that the program is not well calibrated "
+                    "and that performance is suffering as a consequence.",
+                    id);
+    }
 
     std::shared_ptr<ChunkSpoolerInterface::RequestHandleInterface> requestHandle;
 
@@ -130,8 +181,7 @@ void ChunkHolder::_loadChunkImmediately(ChunkId aChunkId) {
     if (iter != _chunkControlBlocks.end()) {
         requestHandle = iter->second.requestHandle;
         (void)requestHandle->trySwapPriority(MOST_URGENT_PRIORITY);
-    } else {
-        HG_ASSERT(_chunkSpooler != nullptr);
+    } else if (hasSpooler) {
         auto handles  = _chunkSpooler->loadChunks({
             ChunkSpoolerInterface::LoadRequest{id, MOST_URGENT_PRIORITY}
         });
@@ -140,16 +190,16 @@ void ChunkHolder::_loadChunkImmediately(ChunkId aChunkId) {
 
     hg::util::Stopwatch stopwatch;
     int                 i = 0;
-    while (!requestHandle->isFinished()) {
+    while (requestHandle && !requestHandle->isFinished()) {
         if (stopwatch.getElapsedTime() >= std::chrono::milliseconds{10}) {
             stopwatch.restart();
-            i += 1;
-            HG_LOG_DEBUG(LOG_ID, "Blocking until chunk {} is loaded ({}ms elapsed so far).", id, i * 10);
+            i += 10;
+            HG_LOG_DEBUG(LOG_ID, "Blocking until chunk {} is loaded ({}ms elapsed so far).", id, i);
         }
         std::this_thread::yield();
     }
 
-    auto chunk = requestHandle->takeChunk();
+    std::optional<Chunk> chunk = (requestHandle) ? requestHandle->takeChunk() : std::nullopt;
     if (chunk.has_value()) {
         _onChunkLoaded(id, std::move(*chunk));
     } else {
@@ -291,8 +341,8 @@ void ChunkHolder::_updateChunkUsage(const std::vector<detail::ChunkUsageChange>&
 
     HG_HARD_ASSERT(cbs.size() == requests.size());
     if (!requests.empty()) {
-        HG_ASSERT(_chunkSpooler != nullptr);
-        auto handles = _chunkSpooler->loadChunks(requests);
+        auto handles =
+            (_chunkSpooler) ? _chunkSpooler->loadChunks(requests) : ServeLoadRequestsWithoutIO(requests);
         HG_ASSERT(handles.size() == cbs.size());
         for (std::size_t i = 0; i < handles.size(); i += 1) {
             cbs[i]->requestHandle = std::move(handles[i]);

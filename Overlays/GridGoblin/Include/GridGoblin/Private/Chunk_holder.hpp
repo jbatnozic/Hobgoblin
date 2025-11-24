@@ -38,7 +38,7 @@ private:
     using Self = ChunkHolder;
 
 public:
-    ChunkHolder(const WorldConfig& aConfig);
+    ChunkHolder(const ContentsConfig& aConfig);
 
     ///////////////////////////////////////////////////////////////////////////
     // MARK: DEPENDENCIES                                                    //

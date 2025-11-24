@@ -8,6 +8,7 @@ find_package(RapidJSON CONFIG REQUIRED)
 
 add_library(${PROJECT_NAME}
     # Model
+    "Source/Model/Building_block.cpp"
     "Source/Model/Chunk.cpp"
     "Source/Model/Shape_vertices.cpp"
     "Source/Model/Shape.cpp"
@@ -34,6 +35,7 @@ add_library(${PROJECT_NAME}
 
     # World
     "Source/World/Active_area.cpp"
+    "Source/World/World_config.cpp"
     "Source/World/World.cpp"
 )
 

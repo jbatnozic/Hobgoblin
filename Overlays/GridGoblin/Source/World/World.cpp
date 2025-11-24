@@ -16,36 +16,49 @@ namespace jbatnozic {
 namespace gridgoblin {
 
 namespace {
-std::unique_ptr<detail::ChunkDiskIoHandlerInterface> CreateDiskIoHandler(const WorldConfig& aConfig) {
-    return std::make_unique<detail::DefaultChunkDiskIoHandler>(aConfig);
+std::unique_ptr<detail::ChunkDiskIoHandlerInterface> CreateDiskIoHandler(
+    const StorageConfig& aStorageConfig) {
+    return std::make_unique<detail::DefaultChunkDiskIoHandler>(aStorageConfig);
 }
 
 std::unique_ptr<detail::ChunkSpoolerInterface> CreateChunkSpooler(
-    const WorldConfig&           aConfig,
+    const ContentsConfig&        aContentsConfig,
     const ChunkMemoryLayoutInfo& aChunkMemLayout) //
 {
-    return std::make_unique<detail::DefaultChunkSpooler>(aConfig.buildingBlocks, aChunkMemLayout);
+    return std::make_unique<detail::DefaultChunkSpooler>(aContentsConfig.buildingBlocks,
+                                                         aChunkMemLayout);
 }
 } // namespace
 
-World::World(const WorldConfig& aConfig)
-    : _config{WorldConfig::validate(aConfig)}
-    , _chunkHolder{aConfig}
-    , _internalChunkDiskIoHandler{CreateDiskIoHandler(aConfig)}
+World::World(const ContentsConfig& aContentsConfig, const StorageConfig& aStorageConfig)
+    : _config{ContentsConfig::validate(aContentsConfig)}
+    , _chunkHolder{aContentsConfig}
+    , _internalChunkDiskIoHandler{CreateDiskIoHandler(aStorageConfig)}
     , _chunkDiskIoHandler{_internalChunkDiskIoHandler.get()}
-    , _internalChunkSpooler{CreateChunkSpooler(aConfig, getChunkMemoryLayoutInfo())}
+    , _internalChunkSpooler{CreateChunkSpooler(aContentsConfig, getChunkMemoryLayoutInfo())}
     , _chunkSpooler{_internalChunkSpooler.get()} //
 {
     _connectSubcomponents();
 }
 
-World::World(const WorldConfig&                                  aConfig,
+World::World(const ContentsConfig& aContentsConfig)
+    : _config{ContentsConfig::validate(aContentsConfig)}
+    , _chunkHolder{aContentsConfig}
+    , _internalChunkDiskIoHandler{nullptr}
+    , _chunkDiskIoHandler{nullptr}
+    , _internalChunkSpooler{CreateChunkSpooler(aContentsConfig, getChunkMemoryLayoutInfo())}
+    , _chunkSpooler{_internalChunkSpooler.get()} //
+{
+    _connectSubcomponents();
+}
+
+World::World(const ContentsConfig&                               aContentsConfig,
              hg::NeverNull<detail::ChunkDiskIoHandlerInterface*> aChunkDiskIoHandler)
-    : _config{WorldConfig::validate(aConfig)}
-    , _chunkHolder{aConfig}
+    : _config{ContentsConfig::validate(aContentsConfig)}
+    , _chunkHolder{aContentsConfig}
     , _internalChunkDiskIoHandler{nullptr}
     , _chunkDiskIoHandler{aChunkDiskIoHandler}
-    , _internalChunkSpooler{CreateChunkSpooler(aConfig, getChunkMemoryLayoutInfo())}
+    , _internalChunkSpooler{CreateChunkSpooler(aContentsConfig, getChunkMemoryLayoutInfo())}
     , _chunkSpooler{_internalChunkSpooler.get()} //
 {
     _connectSubcomponents();
@@ -488,15 +501,21 @@ void World::_attachBinder(hg::NeverNull<Binder*> aBinder, std::int32_t aPriority
 
 void World::_connectSubcomponents() {
     _chunkHolder.setBinder(this);
-    _chunkHolder.setChunkSpooler(_chunkSpooler);
-    _chunkDiskIoHandler->setBinder(this);
-    _chunkSpooler->setDiskIoHandler(_chunkDiskIoHandler);
+
+    if (_chunkDiskIoHandler) {
+        _chunkHolder.setChunkSpooler(_chunkSpooler);
+        _chunkDiskIoHandler->setBinder(this);
+        _chunkSpooler->setDiskIoHandler(_chunkDiskIoHandler);
+    }
 }
 
 void World::_disconnectSubcomponents() {
-    _chunkSpooler->setDiskIoHandler(nullptr);
-    _chunkDiskIoHandler->setBinder(nullptr);
-    _chunkHolder.setChunkSpooler(nullptr);
+    if (_chunkDiskIoHandler) {
+        _chunkSpooler->setDiskIoHandler(nullptr);
+        _chunkDiskIoHandler->setBinder(nullptr);
+        _chunkHolder.setChunkSpooler(nullptr);
+    }
+
     _chunkHolder.setBinder(nullptr);
 }
 

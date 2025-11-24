@@ -113,16 +113,16 @@ void RunVisibilityCalculatorTestImpl() {
         ->finalize(hg::uwga::TexturePackingHeuristic::BEST_AREA_FIT);
     // clang-format on
 
-    WorldConfig config{.chunkCountX                 = 1,
-                       .chunkCountY                 = 1,
-                       .cellsPerChunkX              = CELL_COUNT_X,
-                       .cellsPerChunkY              = CELL_COUNT_Y,
-                       .cellResolution              = CELLRES,
-                       .maxCellOpenness             = 3,
-                       .maxLoadedNonessentialChunks = 1,
-                       .chunkDirectoryPath          = "GGManualTest_WorkDir"};
+    ContentsConfig cc{.chunkCountX                 = 1,
+                      .chunkCountY                 = 1,
+                      .cellsPerChunkX              = CELL_COUNT_X,
+                      .cellsPerChunkY              = CELL_COUNT_Y,
+                      .buildingBlocks              = BuildingBlockMask::ALL,
+                      .cellResolution              = CELLRES,
+                      .maxCellOpenness             = 3,
+                      .maxLoadedNonessentialChunks = 1};
 
-    World world{config};
+    World world{cc};
 
     // Generate world:
     {

@@ -26,7 +26,7 @@ class Fixture
     , public hg::uwga::Drawable {
 public:
     Fixture()
-        : _world{_makeWorldConfig()}
+        : _world{_makeContentsConfig(), _makeStorageConfig()}
         , _activeArea{_world.createActiveArea()} //
     {
         _world.attachBinder(this);
@@ -111,7 +111,7 @@ private:
 
     std::vector<ChunkId> _activeChunks;
 
-    static WorldConfig _makeWorldConfig() {
+    static ContentsConfig _makeContentsConfig() {
         return {.chunkCountX                 = 4,
                 .chunkCountY                 = 4,
                 .cellsPerChunkX              = 8,
@@ -119,8 +119,13 @@ private:
                 .buildingBlocks              = BuildingBlockMask::ALL,
                 .cellResolution              = 32.0,
                 .maxCellOpenness             = 5,
-                .maxLoadedNonessentialChunks = 0,
-                .chunkDirectoryPath          = "GGManualTest_WorkDir"};
+                .maxLoadedNonessentialChunks = 0};
+    }
+
+    static StorageConfig _makeStorageConfig() {
+        return {.storageDirectory     = "GGManualTest_WorkDir",
+                .allowCreateNew       = true,
+                .allowOverwriteConfig = false};
     }
 
     void _drawChunk(hg::uwga::Canvas& aCanvas, const Chunk& aChunk, ChunkId aChunkId) const {

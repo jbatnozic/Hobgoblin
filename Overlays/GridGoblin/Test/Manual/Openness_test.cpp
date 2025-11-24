@@ -26,7 +26,7 @@ class Fixture : public hg::uwga::Drawable {
 public:
     Fixture()
         : _fakeDiskIoHandler{}
-        , _world{_makeWorldConfig(), &_fakeDiskIoHandler}
+        , _world{_makeContentsConfig(), &_fakeDiskIoHandler}
         , _activeArea{_world.createActiveArea()} {}
 
     void update() {
@@ -100,15 +100,15 @@ private:
 
     std::vector<ChunkId> _activeChunks;
 
-    static WorldConfig _makeWorldConfig() {
+    static ContentsConfig _makeContentsConfig() {
         return {.chunkCountX                 = 4,
                 .chunkCountY                 = 4,
                 .cellsPerChunkX              = 8,
                 .cellsPerChunkY              = 8,
+                .buildingBlocks              = BuildingBlockMask::ALL,
                 .cellResolution              = 32.f,
                 .maxCellOpenness             = 5,
-                .maxLoadedNonessentialChunks = 0,
-                .chunkDirectoryPath          = "GGManualTest_WorkDir"};
+                .maxLoadedNonessentialChunks = 0};
     }
 
     void _drawChunk(hg::uwga::Canvas& aCanvas, ChunkId aChunkId) const {
