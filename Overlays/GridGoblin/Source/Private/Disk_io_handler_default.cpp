@@ -106,9 +106,9 @@ void DefaultDiskIoHandler::checkOrInitWorldFiles(const ContentsConfig& aContents
         const auto chunksDir           = storageDir / CHUNKS_DIR;
         const auto runtimeCachePath    = chunksDir / RUNTIME_CACHE_SUBDIR;
         const auto persistentCachePath = chunksDir / PERSISTENT_CACHE_SUBDIR;
-        const decltype(chunksDir)* paths[] = {
-            &chunksDir, &runtimeCachePath, &persistentCachePath
-        };
+
+        const decltype(chunksDir)* paths[] = {&chunksDir, &runtimeCachePath, &persistentCachePath};
+
         for (const auto p : paths) {
             if (!fs::exists(*p)) {
                 fs::create_directory(*p);
