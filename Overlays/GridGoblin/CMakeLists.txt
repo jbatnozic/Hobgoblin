@@ -18,7 +18,7 @@ add_library(${PROJECT_NAME}
     "Source/Positional/Position_conversions.cpp"
 
     # Private
-    "Source/Private/Chunk_disk_io_handler_default.cpp"
+    "Source/Private/Disk_io_handler_default.cpp"
     "Source/Private/Chunk_holder.cpp"
     "Source/Private/Chunk_impl.cpp"
     "Source/Private/Chunk_memory_layout_info.cpp"

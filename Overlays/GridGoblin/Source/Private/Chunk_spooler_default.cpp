@@ -20,7 +20,7 @@ constexpr auto LOG_ID = "GridGoblin";
 
 std::optional<Chunk> LoadChunk(ChunkId                      aChunkId,
                                const ChunkMemoryLayoutInfo& aChunkMemLayout,
-                               ChunkDiskIoHandlerInterface& aDiskIoHandler) {
+                               DiskIoHandlerInterface&      aDiskIoHandler) {
     HG_LOG_WITH_SCOPED_STOPWATCH_MS(INFO, LOG_ID, "Chunk {} loaded in {}ms.", aChunkId, elapsed_time_ms);
 
     auto rtChunk = aDiskIoHandler.loadChunkFromRuntimeCache(aChunkId, aChunkMemLayout);
@@ -36,7 +36,7 @@ void UnloadChunk(const Chunk&                 aChunk,
                  ChunkId                      aChunkId,
                  BuildingBlockMask            aBuildingBlocks,
                  const ChunkMemoryLayoutInfo& aChunkMemLayout,
-                 ChunkDiskIoHandlerInterface& aDiskIoHandler) {
+                 DiskIoHandlerInterface&      aDiskIoHandler) {
     aDiskIoHandler.storeChunkInRuntimeCache(aChunk, aChunkId, aBuildingBlocks, aChunkMemLayout);
 }
 } // namespace
@@ -152,7 +152,7 @@ DefaultChunkSpooler::DefaultChunkSpooler(BuildingBlockMask            aBuildingB
     HG_LOG_INFO(LOG_ID, "Spooler started.");
 }
 
-void DefaultChunkSpooler::setDiskIoHandler(ChunkDiskIoHandlerInterface* aDiskIoHandler) {
+void DefaultChunkSpooler::setDiskIoHandler(DiskIoHandlerInterface* aDiskIoHandler) {
     _diskIoHandler = aDiskIoHandler;
 }
 

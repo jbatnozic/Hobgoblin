@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "Chunk_disk_io_handler_interface.hpp"
+#include "Disk_io_handler_interface.hpp"
 
 #include <GridGoblin/Private/Chunk_spooler_interface.hpp>
 
@@ -29,7 +29,7 @@ public:
     DefaultChunkSpooler(BuildingBlockMask aBuildingBlocks, const ChunkMemoryLayoutInfo& aChunkMemLayout);
     ~DefaultChunkSpooler() override;
 
-    void setDiskIoHandler(ChunkDiskIoHandlerInterface* aDiskIoHandler) override;
+    void setDiskIoHandler(DiskIoHandlerInterface* aDiskIoHandler) override;
 
     void pause() override;
     void unpause() override;
@@ -45,7 +45,7 @@ public:
 private:
     friend class RequestHandleImpl;
 
-    ChunkDiskIoHandlerInterface* _diskIoHandler;
+    DiskIoHandlerInterface* _diskIoHandler;
 
     BuildingBlockMask            _buildingBlocks;
     const ChunkMemoryLayoutInfo& _chunkMemLayout;

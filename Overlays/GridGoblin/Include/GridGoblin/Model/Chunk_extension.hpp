@@ -9,7 +9,6 @@
 #include <Hobgoblin/Utility/Stream.hpp>
 
 #include <cstdint>
-#include <typeinfo>
 
 namespace jbatnozic {
 namespace gridgoblin {
@@ -75,11 +74,6 @@ public:
     //!       library, so you can have it return whatever you want (for example, if you're not going
     //!       to use this you can have them all return 0).
     virtual std::int64_t getUniqueIdentifier() const = 0;
-
-    //! Returns the type info of the actual derived type of the extension instance.
-    //! \note this method is provided purely for user convenience and will never be
-    //!       called by the library.
-    virtual const std::type_info& getTypeInfo() const = 0;
 };
 
 } // namespace gridgoblin

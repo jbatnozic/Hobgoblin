@@ -59,17 +59,6 @@ cell::SpatialInfo     JsonToSpatialInfo(const json::Value& aJsonValue);
 cell::RendererAuxData JsonToRendererAuxData(const json::Value& aJsonValue);
 cell::UserData        JsonToUserData(const json::Value& aJsonValue);
 
-// //! Creates a JSON Value from the passed CellModel instance using the allocator
-// //! of the passed document (does not attach the Value anywhere).
-// //!
-// //! \note Any data the cell might be extended with will NOT be included.
-// json::Value CellToJson(const CellModel& aCell, json::Document& aJsonDocument);
-
-// //! Creates a CellModel instance from the passed JSON Value.
-// //!
-// //! \throws JsonParseError is the JSON data does not correspond to the expected format.
-// CellModel JsonToCell(const json::Value& aJsonValue);
-
 // MARK: Chunk
 
 //! Creates a JSON Document from the passed Chunk.

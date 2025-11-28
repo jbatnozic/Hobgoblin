@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <GridGoblin/Private/Chunk_disk_io_handler_interface.hpp>
+#include <GridGoblin/Private/Disk_io_handler_interface.hpp>
 
 #include <GridGoblin/Model/Chunk.hpp>
 #include <GridGoblin/Private/Model_conversions.hpp>
@@ -17,7 +17,7 @@ namespace jbatnozic {
 namespace gridgoblin {
 namespace test {
 
-class FakeDiskIoHandler : public detail::ChunkDiskIoHandlerInterface {
+class FakeDiskIoHandler : public detail::DiskIoHandlerInterface {
 public:
     void setRuntimeCacheDelay(std::chrono::milliseconds aDelay) {
         _runtimeCacheDelay = aDelay;
@@ -28,6 +28,9 @@ public:
     }
 
     void setBinder(Binder*) override {}
+
+    void checkOrInitWorldFiles(const ContentsConfig& aContentsConfig,
+                               const StorageConfig*  aStorageConfig) override {}
 
     std::optional<Chunk> loadChunkFromRuntimeCache(
         ChunkId                      aChunkId,

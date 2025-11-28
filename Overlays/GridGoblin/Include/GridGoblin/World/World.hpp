@@ -33,8 +33,8 @@ namespace hg = jbatnozic::hobgoblin;
 class IsometricRenderer;
 
 namespace detail {
-class ChunkDiskIoHandlerInterface;
 class ChunkSpoolerInterface;
+class DiskIoHandlerInterface;
 } // namespace detail
 
 /**
@@ -59,8 +59,8 @@ public:
     //!
     //! \warning This constructor is meant to be used for testing. Do not use it if you are not a
     //!          library maintainer!
-    World(const ContentsConfig&                               aContentsConfig,
-          hg::NeverNull<detail::ChunkDiskIoHandlerInterface*> aChunkDiskIoHandler);
+    World(const ContentsConfig&                          aContentsConfig,
+          hg::NeverNull<detail::DiskIoHandlerInterface*> aDiskIoHandler);
 
 #ifdef FUTURE
     World(const WorldConfig& aConfig, hg::NeverNull<detail::ChunkSpoolerInterface*> aChunkSpooler);
@@ -390,8 +390,8 @@ private:
 
     detail::ChunkHolder _chunkHolder;
 
-    std::unique_ptr<detail::ChunkDiskIoHandlerInterface> _internalChunkDiskIoHandler;
-    detail::ChunkDiskIoHandlerInterface*                 _chunkDiskIoHandler;
+    std::unique_ptr<detail::DiskIoHandlerInterface> _internalDiskIoHandler;
+    detail::DiskIoHandlerInterface*                 _diskIoHandler;
 
     std::unique_ptr<detail::ChunkSpoolerInterface> _internalChunkSpooler;
     hg::NeverNull<detail::ChunkSpoolerInterface*>  _chunkSpooler;

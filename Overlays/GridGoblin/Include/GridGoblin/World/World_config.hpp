@@ -89,6 +89,12 @@ struct ContentsConfig {
     //! \see World, ActiveArea
     hg::PZInteger maxLoadedNonessentialChunks = 0;
 
+    //! Equality operator.
+    bool operator==(const ContentsConfig& aOther) const;
+
+    //! Inequality operator.
+    bool operator!=(const ContentsConfig& aOther) const;
+
     //! Method to check if a configuration object is valid.
     //! \throws hg::InvalidArgumentError if the object is not valid.
     //! \returns the same configuration object that was passed in.

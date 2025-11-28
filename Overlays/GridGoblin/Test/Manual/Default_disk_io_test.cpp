@@ -201,10 +201,6 @@ private:
             return 0;
         }
 
-        const std::type_info& getTypeInfo() const override {
-            return typeid(DummyChunkExtension);
-        }
-
     private:
         static constexpr auto* SERIALIZATION_STRING = "<<< test serialized extension >>>";
     };

@@ -112,8 +112,8 @@ ExtensionKind StringToExtensionKind(const std::string& aString) {
 void Base64Encode(
     /*  in */ const ChunkExtensionInterface&               aChunkExtension,
     /*  in */ ChunkExtensionInterface::SerializationMethod aPreferredSerializationMethod,
-    /* out */ std::string&                                 aBase64EncodeBuffer,
-    /*  in */ hg::util::BufferStream&                      aReusableBufStream)
+    /*  in */ hg::util::BufferStream&                      aReusableBufStream,
+    /* out */ std::string&                                 aBase64EncodeBuffer)
 //
 {
     aReusableBufStream.clear();
@@ -408,15 +408,15 @@ json::Document ChunkToJson(const Chunk&                 aChunk,
             if (aReusableConversionBuffers != nullptr) {
                 Base64Encode(*extension,
                              method,
-                             aReusableConversionBuffers->string,
-                             aReusableConversionBuffers->stream);
+                             aReusableConversionBuffers->stream,
+                             aReusableConversionBuffers->string);
 
                 doc.AddMember("extension_data",
                               json::Value{aReusableConversionBuffers->string, allocator},
                               allocator);
             } else {
                 ReusableConversionBuffers defaultBuffers;
-                Base64Encode(*extension, method, defaultBuffers.string, defaultBuffers.stream);
+                Base64Encode(*extension, method, defaultBuffers.stream, defaultBuffers.string);
 
                 doc.AddMember("extension_data",
                               json::Value{defaultBuffers.string, allocator},

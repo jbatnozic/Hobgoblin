@@ -6,6 +6,7 @@
 #include <GridGoblin/Model/Building_block.hpp>
 #include <GridGoblin/Model/Chunk.hpp>
 #include <GridGoblin/Model/Chunk_id.hpp>
+#include <GridGoblin/World/World_config.hpp>
 
 #include <optional>
 
@@ -17,11 +18,14 @@ class Binder;
 
 namespace detail {
 
-class ChunkDiskIoHandlerInterface {
+class DiskIoHandlerInterface {
 public:
-    virtual ~ChunkDiskIoHandlerInterface() = default;
+    virtual ~DiskIoHandlerInterface() = default;
 
     virtual void setBinder(Binder* aBinder) = 0;
+
+    virtual void checkOrInitWorldFiles(const ContentsConfig& aContentsConfig,
+                                       const StorageConfig*  aStorageConfig) = 0;
 
     virtual std::optional<Chunk> loadChunkFromRuntimeCache(
         ChunkId                      aChunkId,

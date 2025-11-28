@@ -29,7 +29,8 @@ enum class BuildingBlock : std::uint32_t {
     RENDERER_AUX_DATA = 0x40, //!< [Optional]
     USER_DATA         = 0x80, //!< [Optional]
 
-    ALL = 0xFFFFFFFF,
+    SIGNIFICANT_BITS = 0xEB,
+    ALL              = SIGNIFICANT_BITS,
 };
 
 using BuildingBlockMask = BuildingBlock;

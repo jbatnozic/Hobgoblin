@@ -15,7 +15,7 @@ namespace gridgoblin {
 namespace detail {
 
 // Forward declare
-class ChunkDiskIoHandlerInterface;
+class DiskIoHandlerInterface;
 
 //! Interface for a class handling loading an unloading of chunks asynchronously.
 class ChunkSpoolerInterface {
@@ -23,7 +23,7 @@ public:
     //! Virtual destructor.
     virtual ~ChunkSpoolerInterface() = default;
 
-    virtual void setDiskIoHandler(ChunkDiskIoHandlerInterface* aDiskIoHandler) = 0;
+    virtual void setDiskIoHandler(DiskIoHandlerInterface* aDiskIoHandler) = 0;
 
     //! Pauses the spooler's async operations. If there is any currently ongoing, this call blocks
     //! until the operation is finished.

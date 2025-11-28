@@ -13,6 +13,7 @@
 #include <rapidjson/stringbuffer.h>
 
 #include <fstream>
+#include <tuple>
 
 namespace jbatnozic {
 namespace gridgoblin {
@@ -97,6 +98,33 @@ ContentsConfig JsonToConfig(const json::Value& aJson) {
                 GetIntMember<hg::PZInteger>(aJson, "maxLoadedNonessentialChunks")};
 }
 } // namespace
+
+bool ContentsConfig::operator==(const ContentsConfig& aOther) const {
+    // clang-format off
+    return ((buildingBlocks & BuildingBlockMask::SIGNIFICANT_BITS) ==
+            (aOther.buildingBlocks & BuildingBlockMask::SIGNIFICANT_BITS))
+        && (std::tie(chunkCountX,
+                     chunkCountY,
+                     cellsPerChunkX,
+                     cellsPerChunkY,
+                     cellResolution,
+                     wallHeight,
+                     maxCellOpenness,
+                     maxLoadedNonessentialChunks) == 
+            std::tie(aOther.chunkCountX,
+                     aOther.chunkCountY,
+                     aOther.cellsPerChunkX,
+                     aOther.cellsPerChunkY,
+                     aOther.cellResolution,
+                     aOther.wallHeight,
+                     aOther.maxCellOpenness,
+                     aOther.maxLoadedNonessentialChunks));
+    // clang-format on
+}
+
+bool ContentsConfig::operator!=(const ContentsConfig& aOther) const {
+    return !(*this == aOther);
+}
 
 ContentsConfig& ContentsConfig::validate(ContentsConfig& aConfig) {
     HG_VALIDATE_ARGUMENT(aConfig.chunkCountX >= 1 && aConfig.chunkCountX <= 4096);

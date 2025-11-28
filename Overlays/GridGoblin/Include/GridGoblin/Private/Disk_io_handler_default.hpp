@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <GridGoblin/Private/Chunk_disk_io_handler_interface.hpp>
+#include <GridGoblin/Private/Disk_io_handler_interface.hpp>
 
 #include <GridGoblin/Model/Chunk.hpp>
 #include <GridGoblin/Model/Chunk_id.hpp>
@@ -22,13 +22,16 @@ class Binder;
 namespace detail {
 
 //! Default disk I/O handles for chunks which stores each chunk as a single textual file.
-class DefaultChunkDiskIoHandler : public ChunkDiskIoHandlerInterface {
+class DefaultDiskIoHandler : public DiskIoHandlerInterface {
 public:
-    DefaultChunkDiskIoHandler(const StorageConfig& aConfig);
+    DefaultDiskIoHandler(const StorageConfig& aConfig);
 
-    ~DefaultChunkDiskIoHandler() override;
+    ~DefaultDiskIoHandler() override;
 
     void setBinder(Binder* aBinder) override;
+
+    void checkOrInitWorldFiles(const ContentsConfig& aContentsConfig,
+                               const StorageConfig*  aStorageConfig) override;
 
     std::optional<Chunk> loadChunkFromRuntimeCache(
         ChunkId                      aChunkId,
@@ -57,9 +60,20 @@ private:
 
     ReusableConversionBuffers* _reusableConversionBuffers = nullptr;
 
-    std::filesystem::path _basePath;
+    std::filesystem::path _storageDirectory;
 
-    std::filesystem::path _buildPathToChunk(ChunkId aChunkId) const;
+    std::filesystem::path _buildPathToChunk(ChunkId                      aChunkId,
+                                            const std::filesystem::path& aCacheSubdir) const;
+
+    std::optional<Chunk> _loadChunkImpl(ChunkId                      aChunkId,
+                                        const ChunkMemoryLayoutInfo& aChunkMemoryLayout,
+                                        const std::filesystem::path& aCacheSubdir) const;
+
+    void _storeChunkImpl(const Chunk&                 aChunk,
+                         ChunkId                      aChunkId,
+                         BuildingBlockMask            aBuildingBlocks,
+                         const ChunkMemoryLayoutInfo& aChunkMemoryLayout,
+                         const std::filesystem::path& aCacheSubdir) const;
 };
 
 } // namespace detail
