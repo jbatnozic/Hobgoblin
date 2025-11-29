@@ -27,6 +27,7 @@ class InputStreamExtender;
 // Forward-declare append operators
 // clang-format off
 OutputStream& operator<<(OutputStreamExtender& aStreamExtender, bool                 aData);
+OutputStream& operator<<(OutputStreamExtender& aStreamExtender, char                 aData);
 OutputStream& operator<<(OutputStreamExtender& aStreamExtender, std::int8_t          aData);
 OutputStream& operator<<(OutputStreamExtender& aStreamExtender, std::uint8_t         aData);
 OutputStream& operator<<(OutputStreamExtender& aStreamExtender, std::int16_t         aData);
@@ -44,6 +45,7 @@ OutputStream& operator<<(OutputStreamExtender& aStreamExtender, const UnicodeStr
 // Forward-declare extract operators
 // clang-format off
 InputStream& operator>>(InputStreamExtender& aStreamExtender, bool&          aData);
+InputStream& operator>>(InputStreamExtender& aStreamExtender, char&          aData);
 InputStream& operator>>(InputStreamExtender& aStreamExtender, std::int8_t&   aData);
 InputStream& operator>>(InputStreamExtender& aStreamExtender, std::uint8_t&  aData);
 InputStream& operator>>(InputStreamExtender& aStreamExtender, std::int16_t&  aData);

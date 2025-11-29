@@ -24,6 +24,11 @@ OutputStream& operator<<(OutputStreamExtender& aOutputStreamExt, bool aData) {
     return *aOutputStreamExt;
 }
 
+OutputStream& operator<<(OutputStreamExtender& aOutputStreamExt, char aData) {
+    aOutputStreamExt->write(&aData, sizeof(aData));
+    return *aOutputStreamExt;
+}
+
 OutputStream& operator<<(OutputStreamExtender& aOutputStreamExt, std::int8_t aData) {
     aOutputStreamExt->write(&aData, sizeof(aData));
     return *aOutputStreamExt;
@@ -130,6 +135,15 @@ OutputStream& operator<<(OutputStreamExtender& aOutputStreamExt, const UnicodeSt
 
 InputStream& operator>>(InputStreamExtender& aInputStreamExt, bool& aData) {
     aData = (aInputStreamExt->extractNoThrow<std::int8_t>() != 0);
+    return *aInputStreamExt;
+}
+
+InputStream& operator>>(InputStreamExtender& aInputStreamExt, char& aData) {
+    static constexpr auto BYTE_COUNT =
+        static_cast<std::int64_t>(sizeof(std::remove_reference_t<decltype(aData)>));
+
+    (void)aInputStreamExt->read(&aData, BYTE_COUNT);
+
     return *aInputStreamExt;
 }
 

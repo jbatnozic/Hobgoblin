@@ -6,6 +6,7 @@
 #include <Hobgoblin/Utility/Compact_int.hpp>
 
 #include <bit>
+#include <cassert>
 #include <cstring>
 #include <type_traits>
 
@@ -23,6 +24,7 @@ namespace {
 //! BitWidth return the number of bits needed to represent an unsigned int (64 bit) value.
 //! \warning the return value is UNDEFINED if `aValue` is 0!
 PZInteger BitWidth(std::uint64_t aValue) {
+    assert(aValue != 0);
 #if defined(_MSC_VER)
     unsigned long index;
     _BitScanReverse64(&index, aValue);
@@ -63,6 +65,8 @@ OutputStream& operator<<(OutputStreamExtender& aStreamExt, CompactIntImpl<taValu
         PZInteger packWidth;
         if (val > 0) {
             packWidth = (BitWidth(val) + 6 + (IS_SIGNED ? 1 : 0)) / 7;
+        } else if (val == -1) {
+            packWidth = 1;
         } else {
             packWidth = (BitWidth(~static_cast<std::uint64_t>(val)) + 6 + (IS_SIGNED ? 1 : 0)) / 7;
         }
