@@ -10,6 +10,7 @@ add_executable(${PROJECT_NAME}
     "Compact_int_test.cpp"
     "Compressed_small_vector_test.cpp"
     "Packet_test.cpp"
+    "Parcel_pool_test.cpp"
     "Stream_out_adapter_test.cpp"
     "Value_sorted_map_test.cpp"
 )

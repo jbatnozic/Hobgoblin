@@ -16,6 +16,8 @@ set(COMPONENT_SOURCES
   "Source/Dynamic_bitset.cpp"
   "Source/File_io.cpp"
   "Source/Flow_field_spooler_impl.cpp"
+  "Source/Parcel_pool.cpp"
+  "Source/Parcel.cpp"
   "Source/Randomization.cpp"
   "Source/Serialization.cpp"
   "Source/Stream_buffer.cpp"

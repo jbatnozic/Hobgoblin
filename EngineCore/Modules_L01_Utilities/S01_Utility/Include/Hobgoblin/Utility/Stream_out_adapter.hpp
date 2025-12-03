@@ -26,8 +26,8 @@ namespace util {
 template <class taContainer>
 // `taContainer` must declare a type alias `value_type` and that type an integral of size 1
     requires(requires { typename taContainer::value_type; } &&
-             std::is_integral_v<typename taContainer::value_type> &&
-             (sizeof(typename taContainer::value_type) == sizeof(char)))
+             (sizeof(typename taContainer::value_type) == sizeof(char)) &&
+             (alignof(typename taContainer::value_type) == alignof(char)))
 class OutputStreamContainerAdapter : public OutputStream {
 public:
     //! When this constructor is used, binary data will be written to the end of the `aContainer`
