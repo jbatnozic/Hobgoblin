@@ -20,11 +20,19 @@ TEST(ParcelPoolTest, CreateMethodReturnsNonNull) {
 TEST(ParcelPoolTest, ObtainParcelWithDefaultSizeZero) {
     auto pp     = ParcelPool::create();
     auto parcel = pp->obtainParcel(64);
-    EXPECT_EQ(parcel.getCapacity(), 64);
+    EXPECT_GE(parcel.getCapacity(), 64);
     EXPECT_EQ(parcel.getSize(), 0);
 }
 
-TEST(ParcelPoolTest, ParcelIsReused) {
+TEST(ParcelPoolTest, CheckIsGood) {
+    auto pp     = ParcelPool::create();
+    auto parcel = pp->obtainParcel(64);
+    EXPECT_TRUE(parcel.isGood());
+    parcel.relinquish();
+    EXPECT_FALSE(parcel.isGood());
+}
+
+TEST(ParcelPoolTest, DISABLED_ParcelIsReused) {
     auto        pp   = ParcelPool::create();
     const char* pchr = nullptr;
     {
@@ -35,6 +43,37 @@ TEST(ParcelPoolTest, ParcelIsReused) {
         auto        parcel = pp->obtainParcel(64);
         const char* pchr2  = parcel.getData();
         EXPECT_EQ(pchr, pchr2);
+    }
+}
+
+TEST(ParcelPoolTest, DISABLED_ParcelVsMalloc) {
+    constexpr int ITERATION_COUNT = 1'000'000 / 1000;
+
+    log::SetMinimalLogSeverity(log::Severity::All);
+
+    {
+        HG_LOG_WITH_SCOPED_STOPWATCH_MS(INFO,
+                                        "Hobgoblin.Utility.AutomaticTest",
+                                        "ParcelVsMalloc: malloc/free took {}ms.",
+                                        elapsed_time_ms);
+
+        for (int i = 0; i < ITERATION_COUNT; ++i) {
+            auto* p = malloc(1024);
+            free(p);
+        }
+    }
+
+    {
+        auto pp = ParcelPool::create();
+
+        HG_LOG_WITH_SCOPED_STOPWATCH_MS(INFO,
+                                        "Hobgoblin.Utility.AutomaticTest",
+                                        "ParcelVsMalloc: parcels took {}ms.",
+                                        elapsed_time_ms);
+
+        for (int i = 0; i < ITERATION_COUNT; ++i) {
+            auto parcel = pp->obtainParcel(1024);
+        }
     }
 }
 

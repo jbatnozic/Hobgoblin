@@ -61,10 +61,17 @@ public:
     //! \note the only valid operations on a non-good parcel are to reassign it or destroy it.
     bool isGood() const;
 
-    //! TODO
+    //! Return the parcel's resources to its pool of origin.
+    //!
+    //! Call this when you know you won't be using the parcel anymore.
+    //! `relinquish()` is idempotent.
+    //!
+    //! \warning once this call returns, the parcel won't be good anymore, and the only valid operations
+    //!          after that will be to reassign it or destroy it.
     void relinquish();
 
-    //! TODO
+    //! Get a pointer to the parcel's pool of origin.
+    //! Returns `nullptr` if the pool has been destroyed or the parcel isn't good anymore.
     std::shared_ptr<ParcelPool> getPool() const;
 
     //! Return the number of bytes in the parcel.
@@ -82,7 +89,7 @@ public:
     //!          invalidated.
     void resize(PZInt64 aSize);
 
-    //! TODO
+    //! Reduce the logical size of the parcel back to 0 without affecting the actual allocated capacity.
     //! \note equivalent to `resize(0)`.
     void clear();
 
@@ -91,10 +98,8 @@ public:
     //!          invalidated.
     void reserve(PZInt64 aSize);
 
-    //! TODO
-    PZInt64 getCapacity() const {
-        return stopz64(_buffer.capacity());
-    }
+    //! Get the actual allocated memory capacity of the parcel.
+    PZInt64 getCapacity() const;
 
     //! Get a const pointer to the first allocated byte of the parcel.
     //! \note the pointer is guaranteed to be aligned to at least an 8-byte boundary.
@@ -167,7 +172,8 @@ private:
 #endif
 
 inline bool Parcel::isGood() const {
-    return (!_pool.expired());
+    const auto empty = std::weak_ptr<ParcelPool>{};
+    return (_pool.owner_before(empty) || empty.owner_before(_pool));
 }
 
 inline PZInt64 Parcel::getSize() const {
@@ -180,7 +186,18 @@ inline void Parcel::resize(PZInt64 aSize) {
 }
 
 inline void Parcel::clear() {
-    _buffer.clear();
+    _buffer.resize(0);
+}
+
+inline void Parcel::reserve(PZInt64 aSize) {
+    const auto s = pz64tos(aSize);
+    if (s > _buffer.capacity()) {
+        _buffer.reserve(s);
+    }
+}
+
+PZInt64 inline Parcel::getCapacity() const {
+    return stopz64(_buffer.capacity());
 }
 
 inline const char* Parcel::getData() const {
@@ -219,7 +236,8 @@ inline Parcel::UHOBGOBLIN_OutStream Parcel::createOutputStream(PZInt64 aPosition
 
 inline Parcel::Parcel(UHOBGOBLIN_UnderlyingContainer aBuffer, std::weak_ptr<ParcelPool> aPool)
     : _buffer{std::move(aBuffer)}
-    , _pool{std::move(aPool)} {
+    , _pool{std::move(aPool)} //
+{
     assert(_buffer.empty() || IS_ALIGNED(_buffer.data(), sizeof(void*)));
     assert(!_pool.expired());
 }

@@ -32,7 +32,10 @@ public:
     Parcel obtainParcel(PZInt64 aCapacity);
 
     //! TODO
-    Parcel obtainParcel(PZInt64 aCapacity, PZInt64 aSize, char aFill = 0);
+    Parcel obtainParcel(PZInt64 aCapacity, PZInt64 aSize);
+
+    //! TODO
+    Parcel obtainParcel(PZInt64 aCapacity, PZInt64 aSize, char aFill);
 
 private:
     friend class Parcel;
