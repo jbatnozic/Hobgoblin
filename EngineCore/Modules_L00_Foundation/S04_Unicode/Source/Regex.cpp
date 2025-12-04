@@ -81,40 +81,44 @@ URegex::URegex(const UnicodeString& aPattern, std::uint32_t aFlags)
 
 // MARK: Functions
 
-bool RegexMatch(const UnicodeString& aString, URegex& aRegex, UMatchResults& aResults) {
-    aRegex._matcher.reset(aString);
+bool RegexMatch(NeverNull<const UnicodeString*> aString,
+                NeverNull<URegex*>              aRegex,
+                NeverNull<UMatchResults*>       aResults) {
+    aRegex->_matcher.reset(*aString);
 
     UErrorCode status = U_ZERO_ERROR;
-    if (aRegex._matcher.matches(status)) {
+    if (aRegex->_matcher.matches(status)) {
         if (U_FAILURE(status)) {
             HG_THROW_TRACED(URegexError, status, "Failed to match pattern: {}.", u_errorName(status));
         }
-        aResults._regex = &aRegex;
+        aResults->_regex = aRegex;
         return true;
     } else {
         if (U_FAILURE(status)) {
             HG_THROW_TRACED(URegexError, status, "Failed to match pattern: {}.", u_errorName(status));
         }
-        aResults._regex = nullptr;
+        aResults->_regex = nullptr;
         return false;
     }
 }
 
-bool RegexMatchPartial(const UnicodeString& aString, URegex& aRegex, UMatchResults& aResults) {
-    aRegex._matcher.reset(aString);
+bool RegexMatchPartial(NeverNull<const UnicodeString*> aString,
+                       NeverNull<URegex*>              aRegex,
+                       NeverNull<UMatchResults*>       aResults) {
+    aRegex->_matcher.reset(*aString);
 
     UErrorCode status = U_ZERO_ERROR;
-    if (aRegex._matcher.lookingAt(status)) {
+    if (aRegex->_matcher.lookingAt(status)) {
         if (U_FAILURE(status)) {
             HG_THROW_TRACED(URegexError, status, "Failed to match pattern: {}.", u_errorName(status));
         }
-        aResults._regex = &aRegex;
+        aResults->_regex = aRegex;
         return true;
     } else {
         if (U_FAILURE(status)) {
             HG_THROW_TRACED(URegexError, status, "Failed to match pattern: {}.", u_errorName(status));
         }
-        aResults._regex = nullptr;
+        aResults->_regex = nullptr;
         return false;
     }
 }

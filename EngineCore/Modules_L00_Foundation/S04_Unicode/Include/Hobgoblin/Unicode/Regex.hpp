@@ -38,8 +38,12 @@ public:
     UnicodeString operator[](PZInteger aGroup) const;
 
 private:
-    friend bool RegexMatch(const UnicodeString& aString, URegex& aRegex, UMatchResults& aResults);
-    friend bool RegexMatchPartial(const UnicodeString& aString, URegex& aRegex, UMatchResults& aResults);
+    friend bool RegexMatch(NeverNull<const UnicodeString*> aString,
+                           NeverNull<URegex*>              aRegex,
+                           NeverNull<UMatchResults*>       aResults);
+    friend bool RegexMatchPartial(NeverNull<const UnicodeString*> aString,
+                                  NeverNull<URegex*>              aRegex,
+                                  NeverNull<UMatchResults*>       aResults);
 
     URegex* _regex = nullptr;
 };
@@ -107,8 +111,12 @@ public:
     URegex(const UnicodeString& aPattern, std::uint32_t aFlags = 0);
 
 private:
-    friend bool RegexMatch(const UnicodeString& aString, URegex& aRegex, UMatchResults& aResults);
-    friend bool RegexMatchPartial(const UnicodeString& aString, URegex& aRegex, UMatchResults& aResults);
+    friend bool RegexMatch(NeverNull<const UnicodeString*> aString,
+                           NeverNull<URegex*>              aRegex,
+                           NeverNull<UMatchResults*>       aResults);
+    friend bool RegexMatchPartial(NeverNull<const UnicodeString*> aString,
+                                  NeverNull<URegex*>              aRegex,
+                                  NeverNull<UMatchResults*>       aResults);
     friend class UMatchResults;
 
     UErrorCode        _status;
@@ -118,10 +126,24 @@ private:
 // MARK: Functions
 
 //! Try to match the entire input string against a regex pattern.
-bool RegexMatch(const UnicodeString& aString, URegex& aRegex, UMatchResults& aResults);
+//!
+//! \warning the input string `aString` must stay alive and unchanged for as long as you do any
+//!          operations on `aRegex` and `aResults`. Once the string is modified or destroyed, you must
+//!          either destroy these two objects, or provide them with new values using `RegexMatch` or
+//!          similar.
+bool RegexMatch(NeverNull<const UnicodeString*> aString,
+                NeverNull<URegex*>              aRegex,
+                NeverNull<UMatchResults*>       aResults);
 
 //! Try to match the input string against a regex pattern (doesn't have to be the whole string).
-bool RegexMatchPartial(const UnicodeString& aString, URegex& aRegex, UMatchResults& aResults);
+//!
+//! \warning the input string `aString` must stay alive and unchanged for as long as you do any
+//!          operations on `aRegex` and `aResults`. Once the string is modified or destroyed, you must
+//!          either destroy these two objects, or provide them with new values using `RegexMatch` or
+//!          similar.
+bool RegexMatchPartial(NeverNull<const UnicodeString*> aString,
+                       NeverNull<URegex*>              aRegex,
+                       NeverNull<UMatchResults*>       aResults);
 
 HOBGOBLIN_NAMESPACE_END
 

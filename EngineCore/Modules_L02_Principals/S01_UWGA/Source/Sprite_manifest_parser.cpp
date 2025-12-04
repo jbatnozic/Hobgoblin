@@ -159,7 +159,7 @@ private:
             _ustring.tempSubStringBetween(aUStringStartInclusive, aUStringEndInclusive + 1);
 
         UMatchResults results;
-        if (RegexMatch(fragment, _strippingRegex, results)) {
+        if (RegexMatch(&fragment, &_strippingRegex, &results)) {
             HG_HARD_ASSERT(results.getGroupCount() >= 2);
             aAppendTo.append(results[1]);
         } else {
@@ -222,18 +222,18 @@ private:
                      UniStrConv(TO_ASCII_STD_STRING, fragment));
 
         UMatchResults results;
-        if (RegexMatch(fragment, _enumerationRegex, results)) {
+        if (RegexMatch(&fragment, &_enumerationRegex, &results)) {
             HG_HARD_ASSERT(results.getGroupCount() >= 2);
             const auto identifier = UniStrConv(TO_ASCII_STD_STRING, results[1]);
             const auto value      = std::stoi(UniStrConv(TO_ASCII_STD_STRING, results[2]), nullptr, 0);
             _addEnumerationMapping(identifier, value, nullptr);
-        } else if (RegexMatch(fragment, _enumerationFuncRegex, results)) {
+        } else if (RegexMatch(&fragment, &_enumerationFuncRegex, &results)) {
             HG_HARD_ASSERT(results.getGroupCount() >= 3);
             const auto identifier = UniStrConv(TO_ASCII_STD_STRING, results[1]);
             const auto function   = results[2];
             const auto value      = std::stoi(UniStrConv(TO_ASCII_STD_STRING, results[3]), nullptr, 0);
             _addEnumerationMapping(identifier, value, &function);
-        } else if (RegexMatch(fragment, _whitespaceRegex, results)) {
+        } else if (RegexMatch(&fragment, &_whitespaceRegex, &results)) {
             return;
         } else {
             HG_THROW_TRACED(SpriteManifestProcessingError,
@@ -275,7 +275,7 @@ private:
                      UniStrConv(TO_ASCII_STD_STRING, fragment));
 
         UMatchResults results;
-        if (RegexMatchPartial(fragment, _textureRegex, results)) {
+        if (RegexMatchPartial(&fragment, &_textureRegex, &results)) {
             HG_HARD_ASSERT(results.getGroupCount() >= 3);
             const auto texW = std::stoi(UniStrConv(TO_ASCII_STD_STRING, results[1]), nullptr, 0);
             const auto texH = std::stoi(UniStrConv(TO_ASCII_STD_STRING, results[2]), nullptr, 0);

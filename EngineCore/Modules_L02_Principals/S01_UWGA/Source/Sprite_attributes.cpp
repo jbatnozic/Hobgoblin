@@ -30,7 +30,7 @@ SpriteAttributes ReadSpriteAttributesFromOriginFile(const std::filesystem::path&
     URegex        regex{pattern, URegex::CASE_INSENSITIVE};
     UMatchResults matchResults;
 
-    if (RegexMatch(contents, regex, matchResults)) {
+    if (RegexMatch(&contents, &regex, &matchResults)) {
         HG_HARD_ASSERT(matchResults.getGroupCount() == 3);
 
         const auto tag = matchResults[1];

@@ -513,14 +513,25 @@ TEST(HGUnicodeTest, ValidURegexTest) {
     hg::URegex        regex{HG_UNISTR("(([a-zA-Z])[a-zA-Z0-9]*)")};
     hg::UMatchResults results;
 
-    ASSERT_FALSE(hg::RegexMatch(HG_UNISTR("5ChunkNorris0123"), regex, results));
-    ASSERT_FALSE(hg::RegexMatch(HG_UNISTR("kChunkNorris_123"), regex, results));
+    const auto notMatchingString1 = HG_UNISTR("kChuckNorris_123");
+    const auto notMatchingString2 = HG_UNISTR("5ChuckNorris0123");
 
-    ASSERT_TRUE(hg::RegexMatch(HG_UNISTR("kChunkNorris0123"), regex, results));
+    ASSERT_FALSE(hg::RegexMatch(&notMatchingString1, &regex, &results));
+    ASSERT_FALSE(hg::RegexMatch(&notMatchingString2, &regex, &results));
+
+    const auto matchingString = HG_UNISTR("kChuckNorris0123");
+    
+    ASSERT_TRUE(hg::RegexMatch(&matchingString, &regex, &results));
     EXPECT_EQ(results.getGroupCount(), 2);
-    EXPECT_EQ(results[0], HG_UNISTR("kChunkNorris0123"));
-    EXPECT_EQ(results[1], HG_UNISTR("kChunkNorris0123"));
+    EXPECT_EQ(results[0], HG_UNISTR("kChuckNorris0123"));
+    std::cerr << jbatnozic::hobgoblin::UniStrConv(jbatnozic::hobgoblin::TO_UTF8_STD_STRING, results[0])
+              << " <end>\n";
+    EXPECT_EQ(results[1], HG_UNISTR("kChuckNorris0123"));
+    std::cerr << jbatnozic::hobgoblin::UniStrConv(jbatnozic::hobgoblin::TO_UTF8_STD_STRING, results[1])
+              << " <end>\n";
     EXPECT_EQ(results[2], HG_UNISTR("k"));
+    std::cerr << jbatnozic::hobgoblin::UniStrConv(jbatnozic::hobgoblin::TO_UTF8_STD_STRING, results[2])
+              << " <end>\n";
 
     EXPECT_THROW(results[3], hg::URegexError);
 }
