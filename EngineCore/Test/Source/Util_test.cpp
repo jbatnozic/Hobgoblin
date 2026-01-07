@@ -37,6 +37,7 @@ TEST(AnyPtrTest, VoidPtr) {
     ASSERT_EQ(p.get<void>(), pVoid);
 }
 
+#ifndef NDEBUG
 TEST(AnyPtrTest, TypeMismatchFailsAssert) {
     AnyPtr p;
     int dummy;
@@ -45,6 +46,7 @@ TEST(AnyPtrTest, TypeMismatchFailsAssert) {
 
     EXPECT_DEATH_IF_SUPPORTED(p.get<double>(), ".*");
 }
+#endif
 
 TEST(AnyPtrTest, TypeMismatchThrows) {
     AnyPtr p;

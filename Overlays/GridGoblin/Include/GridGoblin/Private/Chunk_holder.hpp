@@ -136,7 +136,7 @@ private:
 
     // ===== Chunk Grid
 
-    detail::ChunkImpl::MemoryLayoutInfo _chunkMemoryLayoutInfo;
+    ChunkImpl::MemoryLayoutInfo _chunkMemoryLayoutInfo;
 
     mutable hg::util::RowMajorGrid<Chunk> _chunks;
 
@@ -180,7 +180,7 @@ private:
     void _onChunkLoaded(ChunkId aChunkId, Chunk&& aChunk);
     void _createDefaultChunk(ChunkId aChunkId);
 
-    void _updateChunkUsage(const std::vector<detail::ChunkUsageChange>& aChunkUsageChanges);
+    void _updateChunkUsage(const std::vector<ChunkUsageChange>& aChunkUsageChanges);
 
 public:
     ///////////////////////////////////////////////////////////////////////////

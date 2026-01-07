@@ -17,6 +17,8 @@ namespace detail {
 
 class GridGoblinConversionsTest : public ::testing::Test {
 protected:
+    std::shared_ptr<RapidJsonContext> _ctx = CreateRapidJsonContext();
+
     json::Document _document;
 
     json::Document _jsonDocumentFromString(const char* aJsonString) {
@@ -46,14 +48,20 @@ TEST_F(GridGoblinConversionsTest, Cell_CellKindIdConversion) {
     cell::CellKindId cellKindId;
     cellKindId.value = 5;
 
-    EXPECT_EQ(cellKindId, JsonToCellKindId(CellKindIdToJson(cellKindId, _document.GetAllocator())));
+    const auto json = CellKindIdToJson(cellKindId, *_ctx);
+    const auto copy = JsonToCellKindId(json);
+
+    EXPECT_EQ(cellKindId, copy);
 }
 
 TEST_F(GridGoblinConversionsTest, Cell_FloorSpriteConversion) {
     cell::FloorSprite floorSprite;
     floorSprite.id = 7;
 
-    EXPECT_EQ(floorSprite, JsonToFloorSprite(FloorSpriteToJson(floorSprite, _document.GetAllocator())));
+    const auto json = FloorSpriteToJson(floorSprite, *_ctx);
+    const auto copy = JsonToFloorSprite(json);
+
+    EXPECT_EQ(floorSprite, copy);
 }
 
 TEST_F(GridGoblinConversionsTest, Cell_WallSpriteConversion) {
@@ -61,26 +69,37 @@ TEST_F(GridGoblinConversionsTest, Cell_WallSpriteConversion) {
     wallSprite.id         = 11;
     wallSprite.id_reduced = 127;
 
-    EXPECT_EQ(wallSprite, JsonToWallSprite(WallSpriteToJson(wallSprite, _document.GetAllocator())));
+    const auto json = WallSpriteToJson(wallSprite, *_ctx);
+    const auto copy = JsonToWallSprite(json);
+
+    EXPECT_EQ(wallSprite, copy);
 }
 
 TEST_F(GridGoblinConversionsTest, Cell_SpatialInfoConversion) {
     cell::SpatialInfo spatialInfo;
 
-    EXPECT_EQ(spatialInfo, JsonToSpatialInfo(SpatialInfoToJson(spatialInfo, _document.GetAllocator())));
+    const auto json = SpatialInfoToJson(spatialInfo, *_ctx);
+    const auto copy = JsonToSpatialInfo(json);
+
+    EXPECT_EQ(spatialInfo, copy);
 }
 
 TEST_F(GridGoblinConversionsTest, Cell_RendererAuxDataConversion) {
     cell::RendererAuxData rendererAuxData;
 
-    EXPECT_EQ(rendererAuxData,
-              JsonToRendererAuxData(RendererAuxDataToJson(rendererAuxData, _document.GetAllocator())));
+    const auto json = RendererAuxDataToJson(rendererAuxData, *_ctx);
+    const auto copy = JsonToRendererAuxData(json);
+
+    EXPECT_EQ(rendererAuxData, copy);
 }
 
 TEST_F(GridGoblinConversionsTest, Cell_UserDataConversion) {
-    cell::UserData userData;
+    cell::UserData userData{.i64 = 0};
 
-    EXPECT_EQ(userData, JsonToUserData(UserDataToJson(userData, _document.GetAllocator())));
+    const auto json = UserDataToJson(userData, *_ctx);
+    const auto copy = JsonToUserData(json);
+
+    EXPECT_EQ(userData, copy);
 }
 
 #if 0
@@ -110,7 +129,7 @@ TEST_F(GridGoblinConversionsTest, ChunkConversionToJsonAndBack) {
     cell.userData   = {1337};
 
     const auto bbs = BuildingBlock::CELL_KIND_ID | BuildingBlock::WALL_SPRITE | BuildingBlock::USER_DATA;
-    const auto memLayout = detail::CalcChunkMemoryLayoutInfo(4, 4, bbs);
+    const auto memLayout = CalcChunkMemoryLayoutInfo(4, 4, bbs);
 
     Chunk chunk{memLayout};
     chunk.setAll(memLayout, cell);

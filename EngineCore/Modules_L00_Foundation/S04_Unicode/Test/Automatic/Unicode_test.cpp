@@ -520,7 +520,7 @@ TEST(HGUnicodeTest, ValidURegexTest) {
     ASSERT_FALSE(hg::RegexMatch(&notMatchingString2, &regex, &results));
 
     const auto matchingString = HG_UNISTR("kChuckNorris0123");
-    
+
     ASSERT_TRUE(hg::RegexMatch(&matchingString, &regex, &results));
     EXPECT_EQ(results.getGroupCount(), 2);
     EXPECT_EQ(results[0], HG_UNISTR("kChuckNorris0123"));

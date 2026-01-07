@@ -179,64 +179,76 @@ void Base64Decode(
 }
 } // namespace
 
+// MARK: RapidJsonContext
+
+using RapidJsonAllocator = json::MemoryPoolAllocator<json::CrtAllocator>;
+
+struct RapidJsonContext {
+    RapidJsonAllocator allocator;
+};
+
+std::shared_ptr<RapidJsonContext> CreateRapidJsonContext() {
+    return std::make_shared<RapidJsonContext>();
+}
+
 // MARK: Cell <-> JSON
 
-json::Value CellKindIdToJson(cell::CellKindId aCellKindId, JsonAllocator& aAllocator) {
+json::Value CellKindIdToJson(cell::CellKindId aCellKindId, RapidJsonContext& aCtx) {
     json::Value value;
     value.SetObject();
 
-    value.AddMember("value", json::Value{aCellKindId.value}.Move(), aAllocator);
+    value.AddMember("value", json::Value{aCellKindId.value}.Move(), aCtx.allocator);
 
     return value;
 }
 
-json::Value FloorSpriteToJson(cell::FloorSprite aFloorSprite, JsonAllocator& aAllocator) {
+json::Value FloorSpriteToJson(cell::FloorSprite aFloorSprite, RapidJsonContext& aCtx) {
     json::Value value;
     value.SetObject();
 
-    value.AddMember("id", json::Value{aFloorSprite.id}.Move(), aAllocator);
+    value.AddMember("id", json::Value{aFloorSprite.id}.Move(), aCtx.allocator);
 
     return value;
 }
 
-json::Value WallSpriteToJson(cell::WallSprite aWallSprite, JsonAllocator& aAllocator) {
+json::Value WallSpriteToJson(cell::WallSprite aWallSprite, RapidJsonContext& aCtx) {
     json::Value value;
     value.SetObject();
 
-    value.AddMember("id", json::Value{aWallSprite.id}.Move(), aAllocator);
-    value.AddMember("id_reduced", json::Value{aWallSprite.id_reduced}.Move(), aAllocator);
+    value.AddMember("id", json::Value{aWallSprite.id}.Move(), aCtx.allocator);
+    value.AddMember("id_reduced", json::Value{aWallSprite.id_reduced}.Move(), aCtx.allocator);
 
     return value;
 }
 
-json::Value SpatialInfoToJson(cell::SpatialInfo aSpatialInfo, JsonAllocator& aAllocator) {
+json::Value SpatialInfoToJson(cell::SpatialInfo aSpatialInfo, RapidJsonContext& aCtx) {
     json::Value value;
     value.SetObject();
 
     value.AddMember("wallShape",
-                    json::Value{ShapeToString(aSpatialInfo.wallShape), aAllocator}.Move(),
-                    aAllocator);
-    value.AddMember("obFlags", json::Value{aSpatialInfo.obFlags}.Move(), aAllocator);
-    value.AddMember("openness", json::Value{aSpatialInfo.openness}.Move(), aAllocator);
+                    json::Value{ShapeToString(aSpatialInfo.wallShape), aCtx.allocator}.Move(),
+                    aCtx.allocator);
+    value.AddMember("obFlags", json::Value{aSpatialInfo.obFlags}.Move(), aCtx.allocator);
+    value.AddMember("openness", json::Value{aSpatialInfo.openness}.Move(), aCtx.allocator);
 
     return value;
 }
 
-json::Value RendererAuxDataToJson(cell::RendererAuxData aRendererAuxData, JsonAllocator& aAllocator) {
+json::Value RendererAuxDataToJson(cell::RendererAuxData aRendererAuxData, RapidJsonContext& aCtx) {
     json::Value value;
     value.SetObject();
 
-    value.AddMember("mask", json::Value{aRendererAuxData.mask}.Move(), aAllocator);
-    value.AddMember("mask2", json::Value{aRendererAuxData.mask2}.Move(), aAllocator);
+    value.AddMember("mask", json::Value{aRendererAuxData.mask}.Move(), aCtx.allocator);
+    value.AddMember("mask2", json::Value{aRendererAuxData.mask2}.Move(), aCtx.allocator);
 
     return value;
 }
 
-json::Value UserDataToJson(cell::UserData aUserData, JsonAllocator& aAllocator) {
+json::Value UserDataToJson(cell::UserData aUserData, RapidJsonContext& aCtx) {
     json::Value value;
     value.SetObject();
 
-    value.AddMember("i64", json::Value{aUserData.i64}.Move(), aAllocator);
+    value.AddMember("i64", json::Value{aUserData.i64}.Move(), aCtx.allocator);
 
     return value;
 }
@@ -286,12 +298,13 @@ cell::UserData JsonToUserData(const json::Value& aJsonValue) {
 json::Document ChunkToJson(const Chunk&                 aChunk,
                            BuildingBlockMask            aBuildingBlocks,
                            const ChunkMemoryLayoutInfo& aChunkMemLayout,
+                           RapidJsonContext&            aCtx,
                            ReusableConversionBuffers*   aReusableConversionBuffers) {
     const auto chunkWidth  = ChunkMemoryLayoutInfoAccessor::getChunkWidth(aChunkMemLayout);
     const auto chunkHeight = ChunkMemoryLayoutInfoAccessor::getChunkHeight(aChunkMemLayout);
 
     json::Document doc;
-    auto&          allocator = doc.GetAllocator();
+    auto&          allocator = aCtx.allocator;
     doc.SetObject();
 
     // Add CellKindId
@@ -303,7 +316,7 @@ json::Document ChunkToJson(const Chunk&                 aChunk,
             for (hg::PZInteger y = 0; y < chunkHeight; y += 1) {
                 for (hg::PZInteger x = 0; x < chunkWidth; x += 1) {
                     aChunk.getCellDataAtUnchecked(aChunkMemLayout, x, y, &cellKindId);
-                    auto value = CellKindIdToJson(cellKindId, doc.GetAllocator());
+                    auto value = CellKindIdToJson(cellKindId, aCtx);
                     array.PushBack(value, allocator);
                 }
             }
@@ -320,7 +333,7 @@ json::Document ChunkToJson(const Chunk&                 aChunk,
             for (hg::PZInteger y = 0; y < chunkHeight; y += 1) {
                 for (hg::PZInteger x = 0; x < chunkWidth; x += 1) {
                     aChunk.getCellDataAtUnchecked(aChunkMemLayout, x, y, &floorSprite);
-                    auto value = FloorSpriteToJson(floorSprite, doc.GetAllocator());
+                    auto value = FloorSpriteToJson(floorSprite, aCtx);
                     array.PushBack(value, allocator);
                 }
             }
@@ -337,7 +350,7 @@ json::Document ChunkToJson(const Chunk&                 aChunk,
             for (hg::PZInteger y = 0; y < chunkHeight; y += 1) {
                 for (hg::PZInteger x = 0; x < chunkWidth; x += 1) {
                     aChunk.getCellDataAtUnchecked(aChunkMemLayout, x, y, &wallSprite);
-                    auto value = WallSpriteToJson(wallSprite, doc.GetAllocator());
+                    auto value = WallSpriteToJson(wallSprite, aCtx);
                     array.PushBack(value, allocator);
                 }
             }
@@ -354,7 +367,7 @@ json::Document ChunkToJson(const Chunk&                 aChunk,
             for (hg::PZInteger y = 0; y < chunkHeight; y += 1) {
                 for (hg::PZInteger x = 0; x < chunkWidth; x += 1) {
                     aChunk.getCellDataAtUnchecked(aChunkMemLayout, x, y, &spatialInfo);
-                    auto value = SpatialInfoToJson(spatialInfo, doc.GetAllocator());
+                    auto value = SpatialInfoToJson(spatialInfo, aCtx);
                     array.PushBack(value, allocator);
                 }
             }
@@ -371,7 +384,7 @@ json::Document ChunkToJson(const Chunk&                 aChunk,
             for (hg::PZInteger y = 0; y < chunkHeight; y += 1) {
                 for (hg::PZInteger x = 0; x < chunkWidth; x += 1) {
                     aChunk.getCellDataAtUnchecked(aChunkMemLayout, x, y, &rendererAuxData);
-                    auto value = RendererAuxDataToJson(rendererAuxData, doc.GetAllocator());
+                    auto value = RendererAuxDataToJson(rendererAuxData, aCtx);
                     array.PushBack(value, allocator);
                 }
             }
@@ -388,7 +401,7 @@ json::Document ChunkToJson(const Chunk&                 aChunk,
             for (hg::PZInteger y = 0; y < chunkHeight; y += 1) {
                 for (hg::PZInteger x = 0; x < chunkWidth; x += 1) {
                     aChunk.getCellDataAtUnchecked(aChunkMemLayout, x, y, &userData);
-                    auto value = UserDataToJson(userData, doc.GetAllocator());
+                    auto value = UserDataToJson(userData, aCtx);
                     array.PushBack(value, allocator);
                 }
             }
@@ -425,7 +438,8 @@ json::Document ChunkToJson(const Chunk&                 aChunk,
         }
     } else {
         const auto& kind = ExtensionKindToString(std::nullopt);
-        doc.AddMember("extension_kind", json::Value{kind, allocator}.Move(), allocator);
+        json::Value val(kind.c_str(), kind.size(), allocator);
+        doc.AddMember("extension_kind", val.Move(), allocator);
     }
 
     return doc;
@@ -604,7 +618,10 @@ std::string ChunkToJsonString(const Chunk&                 aChunk,
 #define JsonWriter json::Writer
 #endif
 
-    const auto doc = ChunkToJson(aChunk, aBuildingBlocks, aChunkMemLayout, aReusableConversionBuffers);
+    RapidJsonContext rjCtx;
+
+    const auto doc =
+        ChunkToJson(aChunk, aBuildingBlocks, aChunkMemLayout, rjCtx, aReusableConversionBuffers);
 
     json::StringBuffer             stringbuf;
     JsonWriter<json::StringBuffer> writer(stringbuf);

@@ -43,14 +43,17 @@ void                                      DeleteReusableConversionBuffers(Reusab
 
 // MARK: Cell
 
-using JsonAllocator = decltype(std::declval<json::Document>().GetAllocator());
+struct RapidJsonContext;
 
-json::Value CellKindIdToJson(cell::CellKindId aCellKindId, JsonAllocator& aAllocator);
-json::Value FloorSpriteToJson(cell::FloorSprite aFloorSprite, JsonAllocator& aAllocator);
-json::Value WallSpriteToJson(cell::WallSprite aWallSprite, JsonAllocator& aAllocator);
-json::Value SpatialInfoToJson(cell::SpatialInfo aSpatialInfo, JsonAllocator& aAllocator);
-json::Value RendererAuxDataToJson(cell::RendererAuxData aRendererAuxData, JsonAllocator& aAllocator);
-json::Value UserDataToJson(cell::UserData aUserData, JsonAllocator& aAllocator);
+//! Function for testing purposes only
+std::shared_ptr<RapidJsonContext> CreateRapidJsonContext();
+
+json::Value CellKindIdToJson(cell::CellKindId aCellKindId, RapidJsonContext& aCtx);
+json::Value FloorSpriteToJson(cell::FloorSprite aFloorSprite, RapidJsonContext& aCtx);
+json::Value WallSpriteToJson(cell::WallSprite aWallSprite, RapidJsonContext& aCtx);
+json::Value SpatialInfoToJson(cell::SpatialInfo aSpatialInfo, RapidJsonContext& aCtx);
+json::Value RendererAuxDataToJson(cell::RendererAuxData aRendererAuxData, RapidJsonContext& aCtx);
+json::Value UserDataToJson(cell::UserData aUserData, RapidJsonContext& aCtx);
 
 cell::CellKindId      JsonToCellKindId(const json::Value& aJsonValue);
 cell::FloorSprite     JsonToFloorSprite(const json::Value& aJsonValue);
@@ -67,6 +70,7 @@ cell::UserData        JsonToUserData(const json::Value& aJsonValue);
 json::Document ChunkToJson(const Chunk&                 aChunk,
                            BuildingBlockMask            aBuildingBlocks,
                            const ChunkMemoryLayoutInfo& aChunkMemLayout,
+                           RapidJsonContext&            aCtx,
                            ReusableConversionBuffers*   aReusableConversionBuffers = nullptr);
 
 //! Creates a Chunk from the passed JSON Document.
