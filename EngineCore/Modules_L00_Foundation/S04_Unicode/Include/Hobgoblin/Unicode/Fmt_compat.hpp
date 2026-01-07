@@ -202,7 +202,7 @@ HG_NODISCARD auto ToU16Formattable(taType&& aVal)
 //! Similar to `fmt::format`, with the following differences:
 //! - The format string needs to be UTF-16 encoded (recommended to obtain it using `HG_UNILIT` or
 //!   `HG_UNIFMT` macros).
-//! - The arguments will be processed accodring to the rules laid out on `ToU16Formattable`.
+//! - The arguments will be processed according to the rules laid out on `ToU16Formattable`.
 //! - The result will be returned as `hg::UnicodeString`.
 template <class taFormat, class... taArgs>
 HG_NODISCARD UnicodeString UFormat(taFormat&& aFormat, taArgs&&... aArgs) {

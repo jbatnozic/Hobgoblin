@@ -12,7 +12,6 @@
 #include <Hobgoblin/QAO/Orderer.hpp>
 #include <Hobgoblin/Utility/Any_ptr.hpp>
 #include <Hobgoblin/Utility/No_copy_no_move.hpp>
-#include <Hobgoblin/Utility/Packet.hpp>
 
 #include <cstdint>
 #include <string>
@@ -55,10 +54,6 @@ public:
     QAO_GenericId getId() const noexcept;
 
     const std::type_info& getTypeInfo() const;
-
-    virtual bool message(int tag, util::AnyPtr context);
-
-    friend util::OutputStream& operator<<(util::OutputStreamExtender& ostream, const QAO_Base& self);
 
 protected:
     // Lifecycle callbacks

@@ -82,10 +82,6 @@ const std::type_info& QAO_Base::getTypeInfo() const {
     return _typeInfo;
 }
 
-bool QAO_Base::message(int tag, util::AnyPtr context) {
-    return false;
-}
-
 void QAO_Base::setExecutionPriority(int new_priority) {
     if (_executionPriority == new_priority) {
         return;
