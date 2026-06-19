@@ -15,7 +15,6 @@
 
 #include <cstdint>
 #include <string>
-#include <typeinfo>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
@@ -36,10 +35,7 @@ class QAO_Base
 public:
     QAO_Base() = delete;
 
-    QAO_Base(QAO_InstGuard         aInstGuard,
-             const std::type_info& aTypeInfo,
-             int                   aExecutionPriority,
-             std::string           aName);
+    QAO_Base(QAO_InstGuard aInstGuard, int aExecutionPriority, std::string aName);
 
     virtual ~QAO_Base() = 0;
 
@@ -52,8 +48,6 @@ public:
     std::string getName() const;
 
     QAO_GenericId getId() const noexcept;
-
-    const std::type_info& getTypeInfo() const;
 
 protected:
     // Lifecycle callbacks
@@ -76,11 +70,10 @@ private:
         QAO_Runtime*        runtime = nullptr;
     };
 
-    std::string           _instanceName;
-    Context               _context;
-    const std::type_info& _typeInfo;
-    std::int32_t          _executionPriority;
-    std::uint32_t         _flags = 0;
+    std::string   _instanceName;
+    Context       _context;
+    std::int32_t  _executionPriority;
+    std::uint32_t _flags = 0;
 
     enum Flags : std::uint32_t {
         SET_UP_PROPERLY    = (1u << 31u),

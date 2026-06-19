@@ -6,11 +6,7 @@
 #include <Hobgoblin/UWGA.hpp>
 
 AutodiffPlayerCharacter::AutodiffPlayerCharacter(QAO_InstGuard aInstGuard, spe::SyncId aSyncId)
-    : SyncObjSuper{aInstGuard,
-                   SPEMPE_TYPEID_SELF,
-                   PRIORITY_PLAYERAVATAR,
-                   "AutodiffPlayerCharacter",
-                   aSyncId} {}
+    : SyncObjSuper{aInstGuard, PRIORITY_PLAYERAVATAR, "AutodiffPlayerCharacter", aSyncId} {}
 
 void AutodiffPlayerCharacter::_didAttach(QAO_Runtime& aRuntime) {
     SyncObjSuper::_didAttach(aRuntime);

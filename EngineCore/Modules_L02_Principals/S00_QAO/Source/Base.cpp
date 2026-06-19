@@ -19,12 +19,8 @@ namespace qao {
 
 static constexpr auto LOG_ID = "Hobgoblin.QAO";
 
-QAO_Base::QAO_Base(QAO_InstGuard,
-                   const std::type_info& typeInfo,
-                   int                   executionPriority,
-                   std::string           name)
+QAO_Base::QAO_Base(QAO_InstGuard, int executionPriority, std::string name)
     : _instanceName{std::move(name)}
-    , _typeInfo{typeInfo}
     , _executionPriority{executionPriority} {}
 
 QAO_Base::~QAO_Base() {
@@ -36,7 +32,7 @@ QAO_Base::~QAO_Base() {
                      "classes call the "
                      "_tearDown() method of their superclasses?",
                      getName(),
-                     getTypeInfo().name());
+                     typeid(*this).name());
 
         assert(false && "Object to destroy wasn't torn down properly. Do all derived "
                         "classes call the "
@@ -76,10 +72,6 @@ std::string QAO_Base::getName() const {
 
 QAO_GenericId QAO_Base::getId() const noexcept {
     return _context.id;
-}
-
-const std::type_info& QAO_Base::getTypeInfo() const {
-    return _typeInfo;
 }
 
 void QAO_Base::setExecutionPriority(int new_priority) {

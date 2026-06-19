@@ -18,12 +18,11 @@ namespace spempe {
 // MARK: SYNCHRONIZED OBJECT BASE                                        //
 ///////////////////////////////////////////////////////////////////////////
 
-SynchronizedObjectBase::SynchronizedObjectBase(hg::QAO_InstGuard     aInstGuard,
-                                               const std::type_info& aTypeInfo,
-                                               int                   aExecutionPriority,
-                                               std::string           aName,
-                                               SyncId                aSyncId)
-    : StateObject{aInstGuard, aTypeInfo, aExecutionPriority, std::move(aName)}
+SynchronizedObjectBase::SynchronizedObjectBase(hg::QAO_InstGuard aInstGuard,
+                                               int               aExecutionPriority,
+                                               std::string       aName,
+                                               SyncId            aSyncId)
+    : StateObject{aInstGuard, aExecutionPriority, std::move(aName)}
     , _syncId(aSyncId) {}
 
 SynchronizedObjectBase::~SynchronizedObjectBase() = default;

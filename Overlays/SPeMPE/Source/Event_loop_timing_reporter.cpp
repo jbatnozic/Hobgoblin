@@ -29,7 +29,6 @@ EventLoopTimingReporter::EventLoopTimingReporter(hobgoblin::QAO_InstGuard aInstG
                                                  int aExecutionPriority,
                                                  const Config& aConfig)
     : NonstateObject{aInstGuard,
-                     SPEMPE_TYPEID_SELF,
                      aExecutionPriority,
                      "EventLoopTimingReporter"}
     , _cycleLength{aConfig.cycleLength}

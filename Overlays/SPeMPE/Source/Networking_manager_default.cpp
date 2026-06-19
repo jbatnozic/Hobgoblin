@@ -20,10 +20,7 @@ constexpr const char* LOG_ID = "SPeMPE";
 DefaultNetworkingManager::DefaultNetworkingManager(hobgoblin::QAO_InstGuard aInstGuard,
                                                    int                      aExecutionPriority,
                                                    hg::PZInteger            aStateBufferingLength)
-    : NonstateObject{aInstGuard,
-                     SPEMPE_TYPEID_SELF,
-                     aExecutionPriority,
-                     "::jbatnozic::spempe::DefaultNetworkingManager"}
+    : NonstateObject{aInstGuard, aExecutionPriority, "::jbatnozic::spempe::DefaultNetworkingManager"}
     , _node{hg::RN_ServerFactory::createDummyServer()}
     , _syncObjReg{*_node, aStateBufferingLength} {}
 

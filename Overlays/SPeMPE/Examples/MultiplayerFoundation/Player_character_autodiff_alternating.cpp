@@ -8,11 +8,7 @@
 
 AutodiffAlternatingPlayerCharacter::AutodiffAlternatingPlayerCharacter(QAO_InstGuard aInstGuard,
                                                                        spe::SyncId   aSyncId)
-    : SyncObjSuper{aInstGuard,
-                   SPEMPE_TYPEID_SELF,
-                   PRIORITY_PLAYERAVATAR,
-                   "AutodiffAlternatingPlayerCharacter",
-                   aSyncId} //
+    : SyncObjSuper{aInstGuard, PRIORITY_PLAYERAVATAR, "AutodiffAlternatingPlayerCharacter", aSyncId} //
 {
     _enableAlternatingUpdates();
 }

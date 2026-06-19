@@ -11,8 +11,6 @@
 
 using namespace hg::qao;
 
-#define TYPEID_SELF typeid(decltype(*this))
-
 class QAO_TestWithRuntime : public ::testing::Test {
 protected:
     QAO_TestWithRuntime()
@@ -37,7 +35,7 @@ protected:
 class SimpleActiveObject : public QAO_Base {
 public:
     SimpleActiveObject(QAO_InstGuard aInstGuard, std::vector<int>& vec, int number)
-        : QAO_Base{aInstGuard, TYPEID_SELF, 0, "SimpleActiveObject"}
+        : QAO_Base{aInstGuard, 0, "SimpleActiveObject"}
         , _myVec{vec}
         , _myNumber{number} {}
 
@@ -245,7 +243,7 @@ namespace {
 class SimpleActiveObjectWhichDeletesItself : public QAO_Base {
 public:
     SimpleActiveObjectWhichDeletesItself(QAO_InstGuard aInstGuard)
-        : QAO_Base{aInstGuard, TYPEID_SELF, 0, "SimpleActiveObjectWhichDeletesItself"} {}
+        : QAO_Base{aInstGuard, 0, "SimpleActiveObjectWhichDeletesItself"} {}
 
     void _eventUpdate1() override {
         if (getRuntime()->ownsObject(*this)) {

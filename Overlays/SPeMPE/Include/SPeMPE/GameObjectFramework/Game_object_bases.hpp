@@ -22,8 +22,6 @@
 #include <type_traits>
 #include <utility>
 
-#define SPEMPE_TYPEID_SELF (typeid(decltype(*this)))
-
 namespace jbatnozic {
 namespace spempe {
 
@@ -96,7 +94,6 @@ class SynchronizedObjectBase : public StateObject {
 public:
     //! Big scary constructor with way too many arguments.
     SynchronizedObjectBase(hg::QAO_InstGuard     aInstGuard,
-                           const std::type_info& aTypeInfo,
                            int                   aExecutionPriority,
                            std::string           aName,
                            SyncId                aSyncId);
@@ -310,12 +307,11 @@ public:
 protected:
     using SyncObjSuper = SynchronizedObject;
 
-    SynchronizedObject(hg::QAO_InstGuard     aInstGuard,
-                       const std::type_info& aTypeInfo,
-                       int                   aExecutionPriority,
-                       std::string           aName,
-                       SyncId                aSyncId = SYNC_ID_NEW)
-        : SynchronizedObjectBase{aInstGuard, aTypeInfo, aExecutionPriority, std::move(aName), aSyncId}
+    SynchronizedObject(hg::QAO_InstGuard aInstGuard,
+                       int               aExecutionPriority,
+                       std::string       aName,
+                       SyncId            aSyncId = SYNC_ID_NEW)
+        : SynchronizedObjectBase{aInstGuard, aExecutionPriority, std::move(aName), aSyncId}
         , _ssch{0} {}
 
     taVisibleState& _getCurrentState() {

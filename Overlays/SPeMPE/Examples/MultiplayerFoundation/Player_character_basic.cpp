@@ -6,11 +6,7 @@
 #include <Hobgoblin/UWGA.hpp>
 
 BasicPlayerCharacter::BasicPlayerCharacter(QAO_InstGuard aInstGuard, spe::SyncId aSyncId)
-    : SyncObjSuper{aInstGuard,
-                   SPEMPE_TYPEID_SELF,
-                   PRIORITY_PLAYERAVATAR,
-                   "BasicPlayerCharacter",
-                   aSyncId} {}
+    : SyncObjSuper{aInstGuard, PRIORITY_PLAYERAVATAR, "BasicPlayerCharacter", aSyncId} {}
 
 void BasicPlayerCharacter::init(int aOwningPlayerIndex, float aX, float aY) {
     assert(isMasterObject());

@@ -11,10 +11,7 @@ namespace jbatnozic {
 namespace spempe {
 
 DefaultWindowManager::DefaultWindowManager(hobgoblin::QAO_InstGuard aInstGuard, int aExecutionPriority)
-    : NonstateObject{aInstGuard,
-                     SPEMPE_TYPEID_SELF,
-                     aExecutionPriority,
-                     "::jbatnozic::spempe::DefaultWindowManager"}
+    : NonstateObject{aInstGuard, aExecutionPriority, "::jbatnozic::spempe::DefaultWindowManager"}
     , _rmlUiContextDriver{}
     , _inputTracker{[this](const hg::uwga::View* aView) -> hg::math::Vector2d {
                         return _getViewRelativeMousePos(aView);

@@ -347,7 +347,6 @@ But calling it from the cannonical constructor actually isn't that hard:
 Enemy::Enemy(QAO_RuntimeRef aRuntimeRef, spe::SyncId aSyncId)
     : SyncObjSuper{ // SyncObjSuper is a convenience alias provided by SynchronizedObject
                    aRuntimeRef,
-                   SPEMPE_TYPEID_SELF, // Convenience macro provided by SPeMPE
                    PRIORITY_ENEMY,     // You will have to define this yourself
                    "<put whatever you want here>",
                    aSyncId} { ... }

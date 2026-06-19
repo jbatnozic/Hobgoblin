@@ -7,11 +7,7 @@
 #include <Hobgoblin/UWGA.hpp>
 
 AlternatingPlayerCharacter::AlternatingPlayerCharacter(QAO_InstGuard aInstGuard, spe::SyncId aSyncId)
-    : SyncObjSuper{aInstGuard,
-                   SPEMPE_TYPEID_SELF,
-                   PRIORITY_PLAYERAVATAR,
-                   "AlternatingCharacterAlt",
-                   aSyncId} //
+    : SyncObjSuper{aInstGuard, PRIORITY_PLAYERAVATAR, "AlternatingCharacterAlt", aSyncId} //
 {
     _enableAlternatingUpdates();
 }

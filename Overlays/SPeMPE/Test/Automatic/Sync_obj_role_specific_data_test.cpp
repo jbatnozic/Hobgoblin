@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <typeinfo>
 #include <utility>
 
 namespace jbatnozic {
@@ -41,7 +42,7 @@ class AvatarWithInlineRSData
                                 SPEMPE_RSDATA_INLINE(Avatar_RSData, Avatar_RSData)> {
 public:
     AvatarWithInlineRSData(hg::QAO_InstGuard aInstGuard, SyncId aSyncId = SYNC_ID_NEW)
-        : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, 0, "AvatarWithInlineRSData", aSyncId} {}
+        : SyncObjSuper{aInstGuard, 0, "AvatarWithInlineRSData", aSyncId} {}
 
     Avatar_RSData* getMasterData() {
         return _masterData;
@@ -75,7 +76,7 @@ class AvatarWithHeapRSData
     : public SynchronizedObject<Avatar_VisibleState, SPEMPE_RSDATA_HEAP(Avatar_RSData, Avatar_RSData)> {
 public:
     AvatarWithHeapRSData(hg::QAO_InstGuard aInstGuard, SyncId aSyncId = SYNC_ID_NEW)
-        : SyncObjSuper{aInstGuard, SPEMPE_TYPEID_SELF, 0, "AvatarWithHeapRSData", aSyncId} {}
+        : SyncObjSuper{aInstGuard, 0, "AvatarWithHeapRSData", aSyncId} {}
 
     Avatar_RSData* getMasterData() {
         return _masterData.get();
@@ -189,7 +190,7 @@ protected:
         _clientCtx->runFor(1);
 
         for (auto handle : _clientCtx->getQAORuntime()) {
-            if (handle->getTypeInfo() == typeid(taSyncObj)) {
+            if (typeid(*handle) == typeid(taSyncObj)) {
                 _dummyObj = handle;
                 break;
             }
