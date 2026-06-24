@@ -7,6 +7,7 @@
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/QAO/Base.hpp>
 #include <Hobgoblin/QAO/Config.hpp>
+#include <Hobgoblin/QAO/Execon.hpp>
 #include <Hobgoblin/QAO/Handle.hpp>
 #include <Hobgoblin/QAO/Id.hpp>
 #include <Hobgoblin/QAO/Orderer.hpp>
@@ -32,7 +33,9 @@ class QAO_Runtime
     , NO_MOVE {
 public:
     QAO_Runtime();
-    QAO_Runtime(util::AnyPtr userData);
+    QAO_Runtime(util::AnyPtr aUserData);
+    QAO_Runtime(const QAO_ExeCon* aExeconAddress);
+    QAO_Runtime(util::AnyPtr aUserData, const QAO_ExeCon* aExeconAddress);
     ~QAO_Runtime();
 
     //! Create a non-owning reference to this runtime.
@@ -91,6 +94,15 @@ public:
     template <class T>
     T* getUserDataOrThrow() const;
 
+    // Execon
+
+    //! \brief set the address from which the runtime will read the current execon level
+    //! If set to null, the runtime will always assume `QAO_ExeCon::META_EXECUTE_ALL`.
+    void setExeconAddress(const QAO_ExeCon* aExeconAddress);
+
+    //! \brief return the set execon address.
+    const QAO_ExeCon* getExeconAddress() const;
+
     // Orderer/instance iterations:
     QAO_OrdererIterator begin();
     QAO_OrdererIterator end();
@@ -111,6 +123,7 @@ private:
     QAO_Event::Enum          _currentEvent;
     QAO_OrdererIterator      _step_orderer_iterator;
     util::AnyPtr             _userData;
+    const QAO_ExeCon*        _execon;
 };
 
 template <class T>

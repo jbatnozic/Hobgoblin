@@ -18,6 +18,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <type_traits>
 #include <vector>
@@ -91,9 +92,26 @@ public:
     // MARK: GAME STATE MANAGEMENT                                           //
     ///////////////////////////////////////////////////////////////////////////
 
-    struct GameState {
-        bool isPaused = false;
-        // TODO: isStopping
+    class GameState {
+    public:
+        //! \brief Set the context's EXECON level for Update events.
+        void setUpdateExeconLevel(hg::QAO_ExeCon aExecon, std::string_view aCallerID);
+        //! \brief Set the context's EXECON level for Draw events.
+        void setDrawExeconLevel(hg::QAO_ExeCon aExecon, std::string_view aCallerID);
+        //! \brief Set the context's EXECON level for Display events.
+        void setDisplayExeconLevel(hg::QAO_ExeCon aExecon, std::string_view aCallerID);
+
+        hg::QAO_ExeCon getUpdateExeconLevel() const;
+        hg::QAO_ExeCon getDrawExeconLevel() const;
+        hg::QAO_ExeCon getDisplayExeconLevel() const;
+
+        bool isGameplayPaused() const;
+
+    private:
+        friend class GameContext;
+        hg::QAO_ExeCon _execonForUpdate  = hg::QAO_ExeCon::META_EXECUTE_ALL;
+        hg::QAO_ExeCon _execonForDraw    = hg::QAO_ExeCon::META_EXECUTE_ALL;
+        hg::QAO_ExeCon _execonForDisplay = hg::QAO_ExeCon::META_EXECUTE_ALL;
     };
 
     GameState&       getGameState();

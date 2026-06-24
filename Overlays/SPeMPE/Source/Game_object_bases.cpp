@@ -19,10 +19,11 @@ namespace spempe {
 ///////////////////////////////////////////////////////////////////////////
 
 SynchronizedObjectBase::SynchronizedObjectBase(hg::QAO_InstGuard aInstGuard,
+                                               hg::QAO_ExeCon    aExeconThreshold,
                                                int               aExecutionPriority,
                                                std::string       aName,
                                                SyncId            aSyncId)
-    : StateObject{aInstGuard, aExecutionPriority, std::move(aName)}
+    : StateObject{aInstGuard, aExeconThreshold, aExecutionPriority, std::move(aName)}
     , _syncId(aSyncId) {}
 
 SynchronizedObjectBase::~SynchronizedObjectBase() = default;
@@ -48,7 +49,7 @@ void SynchronizedObjectBase::_didAttach(hg::QAO_Runtime& aRuntime) {
 
 void SynchronizedObjectBase::_willDetach(hg::QAO_Runtime& aRuntime) {
     if (isMasterObject()) {
-        _doSyncDestroy();
+        _doSyncDestroy(false /* false = respect sync filters */);
     }
 
     _syncObjReg->unregisterObject(this);
@@ -87,25 +88,25 @@ void SynchronizedObjectBase::__spempeimpl_destroySelfIn(int aStepCount) {
     _deathCounter = aStepCount;
 }
 
-void SynchronizedObjectBase::_doSyncCreate() const {
+void SynchronizedObjectBase::_doSyncCreate(bool aIgnoreFilters) const {
     if (!isMasterObject()) {
         HG_THROW_TRACED(hg::TracedLogicError, 0, "Dummy objects cannot request synchronization.");
     }
-    _syncObjReg->syncObjectCreate(this);
+    _syncObjReg->syncObjectCreate(this, aIgnoreFilters);
 }
 
-void SynchronizedObjectBase::_doSyncUpdate() const {
+void SynchronizedObjectBase::_doSyncUpdate(bool aIgnoreFilters) const {
     if (!isMasterObject()) {
         HG_THROW_TRACED(hg::TracedLogicError, 0, "Dummy objects cannot request synchronization.");
     }
-    _syncObjReg->syncObjectUpdate(this);
+    _syncObjReg->syncObjectUpdate(this, aIgnoreFilters);
 }
 
-void SynchronizedObjectBase::_doSyncDestroy() const {
+void SynchronizedObjectBase::_doSyncDestroy(bool aIgnoreFilters) const {
     if (!isMasterObject()) {
         HG_THROW_TRACED(hg::TracedLogicError, 0, "Dummy objects cannot request synchronization");
     }
-    _syncObjReg->syncObjectDestroy(this);
+    _syncObjReg->syncObjectDestroy(this, aIgnoreFilters);
 }
 
 bool SynchronizedObjectBase::_willUpdateDeleteThis() const {

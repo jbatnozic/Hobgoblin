@@ -25,13 +25,20 @@ constexpr std::int64_t MIN_STEP_ORDINAL = std::numeric_limits<std::int64_t>::min
 } // namespace
 
 QAO_Runtime::QAO_Runtime()
-    : QAO_Runtime{nullptr} {}
+    : QAO_Runtime{nullptr, nullptr} {}
 
-QAO_Runtime::QAO_Runtime(util::AnyPtr userData)
+QAO_Runtime::QAO_Runtime(util::AnyPtr aUserData)
+    : QAO_Runtime{aUserData, nullptr} {}
+
+QAO_Runtime::QAO_Runtime(const QAO_ExeCon* aExeconAddress)
+    : QAO_Runtime{nullptr, aExeconAddress} {}
+
+QAO_Runtime::QAO_Runtime(util::AnyPtr aUserData, const QAO_ExeCon* aExeconAddress)
     : _step_counter{MIN_STEP_ORDINAL + 1}
     , _currentEvent{QAO_Event::NONE}
     , _step_orderer_iterator{_orderer.end()}
-    , _userData{userData} {}
+    , _userData{aUserData}
+    , _execon{aExeconAddress} {}
 
 QAO_Runtime::~QAO_Runtime() {
     destroyAllOwnedObjects(NO_PROPAGATE_EXCEPTIONS);
@@ -44,7 +51,7 @@ QAO_RuntimeRef QAO_Runtime::nonOwning() {
 }
 
 void QAO_Runtime::attachObject(AvoidNull<QAO_GenericHandle> aHandle) {
-    if (HG_UNLIKELY_CONDITION((aHandle->_flags & QAO_Base::SET_UP_PROPERLY) == 0)) {
+    if (HG_UNLIKELY_CONDITION((aHandle->_flags & QAO_Base::SET_UP_PROPERLY_BIT) == 0)) {
         HG_UNLIKELY_BRANCH;
         HG_THROW_TRACED(AssertionFailedError,
                         0,
@@ -71,7 +78,7 @@ void QAO_Runtime::attachObject(AvoidNull<QAO_GenericHandle> aHandle) {
 
     objRaw->_didAttach(SELF);
 
-    if (HG_UNLIKELY_CONDITION((objRaw->_flags & QAO_Base::ATTACHED_PROPERLY) == 0)) {
+    if (HG_UNLIKELY_CONDITION((objRaw->_flags & QAO_Base::ATTACHED_PROPERLY_BIT) == 0)) {
         HG_UNLIKELY_BRANCH;
         HG_THROW_TRACED(AssertionFailedError,
                         0,
@@ -84,7 +91,7 @@ void QAO_Runtime::attachObject(AvoidNull<QAO_GenericHandle> aHandle) {
 }
 
 void QAO_Runtime::attachObject(AvoidNull<QAO_GenericHandle> aHandle, QAO_GenericId aSpecificId) {
-    if (HG_UNLIKELY_CONDITION((aHandle->_flags & QAO_Base::SET_UP_PROPERLY) == 0)) {
+    if (HG_UNLIKELY_CONDITION((aHandle->_flags & QAO_Base::SET_UP_PROPERLY_BIT) == 0)) {
         HG_UNLIKELY_BRANCH;
         HG_THROW_TRACED(AssertionFailedError,
                         0,
@@ -111,7 +118,7 @@ void QAO_Runtime::attachObject(AvoidNull<QAO_GenericHandle> aHandle, QAO_Generic
 
     objRaw->_didAttach(SELF);
 
-    if (HG_UNLIKELY_CONDITION((aHandle->_flags & QAO_Base::ATTACHED_PROPERLY) == 0)) {
+    if (HG_UNLIKELY_CONDITION((aHandle->_flags & QAO_Base::ATTACHED_PROPERLY_BIT) == 0)) {
         HG_UNLIKELY_BRANCH;
         HG_THROW_TRACED(AssertionFailedError,
                         0,
@@ -129,7 +136,7 @@ AvoidNull<QAO_GenericHandle> QAO_Runtime::detachObject(QAO_GenericId aId) {
                              "Object by given ID must exist attached to the Runtime.");
 
     handle->_willDetach(SELF);
-    if (HG_UNLIKELY_CONDITION((handle->_flags & QAO_Base::DETACHED_PROPERLY) == 0)) {
+    if (HG_UNLIKELY_CONDITION((handle->_flags & QAO_Base::DETACHED_PROPERLY_BIT) == 0)) {
         HG_UNLIKELY_BRANCH;
         HG_THROW_TRACED(AssertionFailedError,
                         0,
@@ -246,7 +253,9 @@ void QAO_Runtime::advanceStep(bool& done, std::int32_t eventFlags) {
             char currBeforeEvent[sizeof(curr)];
             std::memcpy(currBeforeEvent, &curr, sizeof(curr));
 
-            if (instance->_context.stepOrdinal < _step_counter) {
+            if ((!_execon || (*_execon >= instance->getExeconThreshold())) &&
+                instance->_context.stepOrdinal < _step_counter) //
+            {
                 instance->_context.stepOrdinal = _step_counter;
                 instance->_callEvent(ev);
                 // After calling _callEvent, the instance variable must no longer be used until
@@ -299,6 +308,16 @@ bool QAO_Runtime::ownsObject(NeverNull<QAO_GenericHandle> aObject) const {
 
 void QAO_Runtime::setUserData(std::nullptr_t) {
     _userData.reset(nullptr);
+}
+
+// Execon
+
+void QAO_Runtime::setExeconAddress(const QAO_ExeCon* aExeconAddress) {
+    _execon = aExeconAddress;
+}
+
+const QAO_ExeCon* QAO_Runtime::getExeconAddress() const {
+    return _execon;
 }
 
 // Orderer/instance iterations

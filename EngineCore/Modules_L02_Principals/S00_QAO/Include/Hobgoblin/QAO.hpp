@@ -3,6 +3,7 @@
 
 #include <Hobgoblin/QAO/Base.hpp>
 #include <Hobgoblin/QAO/Config.hpp>
+#include <Hobgoblin/QAO/Execon.hpp>
 #include <Hobgoblin/QAO/Functions_create.hpp>
 #include <Hobgoblin/QAO/Functions_destroy.hpp>
 #include <Hobgoblin/QAO/Id.hpp>

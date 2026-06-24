@@ -6,6 +6,7 @@ project("Hobgoblin.QAO.AutomaticTest")
 find_package(GTest CONFIG REQUIRED)
 
 add_executable(${PROJECT_NAME}
+    "Base_test.cpp"
     "Priority_resolver_test.cpp"
     "Test_with_runtime.cpp"
 )

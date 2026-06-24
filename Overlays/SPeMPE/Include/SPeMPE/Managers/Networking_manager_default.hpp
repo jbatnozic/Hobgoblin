@@ -76,6 +76,18 @@ public:
 
     void setPacemakerPulsePeriod(hg::PZInteger aPeriod) override;
 
+    void setSyncCreateExeconFilter(ExeConSyncFilter aFilter) override;
+
+    void setSyncUpdateExeconFilter(ExeConSyncFilter aFilter) override;
+
+    void setSyncDestroyExeconFilter(ExeConSyncFilter aFilter) override;
+
+    ExeConSyncFilter getSyncCreateExeconFilter() const override;
+
+    ExeConSyncFilter getSyncUpdateExeconFilter() const override;
+
+    ExeConSyncFilter getSyncDestroyExeconFilter() const override;
+
     void setAutomaticStateSyncForNewConnectionsEnabled(bool aEnabled) override;
 
     void syncCompleteStateToClient(hg::PZInteger aClientIndex, bool aCleanFirst) override;

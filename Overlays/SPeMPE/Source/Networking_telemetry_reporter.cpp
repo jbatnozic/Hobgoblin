@@ -19,6 +19,7 @@ NetworkingTelemetryReporter::NetworkingTelemetryReporter(hobgoblin::QAO_InstGuar
                                                          int aExecutionPriority,
                                                          const Config& aConfig)
     : NonstateObject{aInstGuard,
+                     hg::QAO_ExeCon::INTERACTIVITY,
                      aExecutionPriority,
                      "NetworkingTelemetryReporter"}
     , _cycleLength{aConfig.cycleLength}

@@ -59,7 +59,10 @@ RN_DEFINE_RPC(USPEMPE_DefaultInputSyncManager_SendInput, RN_ARGS(hg::util::Packe
 }
 
 DefaultInputSyncManager::DefaultInputSyncManager(hobgoblin::QAO_InstGuard aInstGuard, int aExecutionPriority) 
-    : NonstateObject{aInstGuard, aExecutionPriority, "::jbatnozic::spempe::DefaultInputSyncManager"}
+    : NonstateObject{aInstGuard,
+                     hg::QAO_ExeCon::SYNCHRONIZATION,
+                     aExecutionPriority,
+                     "::jbatnozic::spempe::DefaultInputSyncManager"}
 {
 }
 

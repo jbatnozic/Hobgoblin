@@ -67,6 +67,52 @@ const GameContext::RuntimeConfig& GameContext::getRuntimeConfig() const {
 // MARK: GAME STATE MANAGEMENT                                           //
 ///////////////////////////////////////////////////////////////////////////
 
+void GameContext::GameState::setUpdateExeconLevel(hg::QAO_ExeCon aExecon, std::string_view aCallerID) {
+    if (aExecon != _execonForUpdate) {
+        _execonForUpdate = aExecon;
+        HG_LOG_WARN(LOG_ID,
+                    "EXECON level for UPDATE events set to {} by {}.",
+                    (int)aExecon,
+                    aCallerID.empty() ? "<unknown>" : aCallerID);
+    }
+}
+
+void GameContext::GameState::setDrawExeconLevel(hg::QAO_ExeCon aExecon, std::string_view aCallerID) {
+    if (aExecon != _execonForDraw) {
+        _execonForDraw = aExecon;
+        HG_LOG_WARN(LOG_ID,
+                    "EXECON level for DRAW events set to {} by {}.",
+                    (int)aExecon,
+                    aCallerID.empty() ? "<unknown>" : aCallerID);
+    }
+}
+
+void GameContext::GameState::setDisplayExeconLevel(hg::QAO_ExeCon aExecon, std::string_view aCallerID) {
+    if (aExecon != _execonForDisplay) {
+        _execonForDisplay = aExecon;
+        HG_LOG_WARN(LOG_ID,
+                    "EXECON level for DISPLAY events set to {} by {}.",
+                    (int)aExecon,
+                    aCallerID.empty() ? "<unknown>" : aCallerID);
+    }
+}
+
+hg::QAO_ExeCon GameContext::GameState::getUpdateExeconLevel() const {
+    return _execonForUpdate;
+}
+
+hg::QAO_ExeCon GameContext::GameState::getDrawExeconLevel() const {
+    return _execonForDraw;
+}
+
+hg::QAO_ExeCon GameContext::GameState::getDisplayExeconLevel() const {
+    return _execonForDisplay;
+}
+
+bool GameContext::GameState::isGameplayPaused() const {
+    return !(_execonForUpdate >= hg::QAO_ExeCon::META_MIN_FOR_GAMEPLAY_FLOW);
+}
+
 GameContext::GameState& GameContext::getGameState() {
     return _state;
 }
@@ -279,9 +325,12 @@ void GameContext::_runImpl(hg::NeverNull<GameContext*> aContext,
              maxConsecutiveUpdates,
              MsCount(deltaTime));
 
-    aContext->_performanceInfo.updateStart  = std::chrono::steady_clock::now();
-    aContext->_performanceInfo.drawStart    = std::chrono::steady_clock::now();
-    aContext->_performanceInfo.displayStart = std::chrono::steady_clock::now();
+    auto& gameState = aContext->_state;
+    auto& perfInfo  = aContext->_performanceInfo;
+
+    perfInfo.updateStart  = std::chrono::steady_clock::now();
+    perfInfo.drawStart    = std::chrono::steady_clock::now();
+    perfInfo.displayStart = std::chrono::steady_clock::now();
 
     int            iterationsCovered = 0;
     TimingDuration accumulator       = deltaTime;
@@ -299,7 +348,7 @@ void GameContext::_runImpl(hg::NeverNull<GameContext*> aContext,
             break;
         }
 
-        aContext->_performanceInfo.consecutiveUpdateSteps = 0;
+        perfInfo.consecutiveUpdateSteps = 0;
         for (int i = 0; i < maxConsecutiveUpdates; i += 1) {
             if (aMaxIterations > 0 && iterationsCovered >= aMaxIterations) {
                 DebugLog("_runImpl - Inner for loop breaking because aMaxIterations was reached.");
@@ -315,12 +364,13 @@ void GameContext::_runImpl(hg::NeverNull<GameContext*> aContext,
                 break;
             }
 
-            aContext->_performanceInfo.consecutiveUpdateSteps += 1;
+            perfInfo.consecutiveUpdateSteps += 1;
 
             // UPDATE
             {
                 Stopwatch updateStopwatch;
-                aContext->_performanceInfo.updateStart = std::chrono::steady_clock::now();
+                perfInfo.updateStart = std::chrono::steady_clock::now();
+                aContext->_qaoRuntime.setExeconAddress(&gameState._execonForUpdate);
                 DebugLog("_runImpl - UPDATE start");
                 (*aReturnValue) = DoSingleQaoIteration(aContext->_qaoRuntime,
                                                        QAO_EVENT_MASK_ALL_EXCEPT_DRAW_AND_DISPLAY);
@@ -328,7 +378,7 @@ void GameContext::_runImpl(hg::NeverNull<GameContext*> aContext,
                 if ((*aReturnValue) != 0) {
                     return;
                 }
-                aContext->_performanceInfo.updateTime = updateStopwatch.getElapsedTime<nanoseconds>();
+                perfInfo.updateTime = updateStopwatch.getElapsedTime<nanoseconds>();
             }
 
             accumulator -= deltaTime;
@@ -339,20 +389,21 @@ void GameContext::_runImpl(hg::NeverNull<GameContext*> aContext,
             // TODO(poll post step actions)
         } // End for
 
-        const bool didAtLeastOneUpdate = (aContext->_performanceInfo.consecutiveUpdateSteps > 0);
+        const bool didAtLeastOneUpdate = (perfInfo.consecutiveUpdateSteps > 0);
 
         if (didAtLeastOneUpdate && !aContext->isHeadless()) {
             // DRAW
             {
                 Stopwatch drawStopwatch;
-                aContext->_performanceInfo.drawStart = std::chrono::steady_clock::now();
+                perfInfo.drawStart = std::chrono::steady_clock::now();
+                aContext->_qaoRuntime.setExeconAddress(&gameState._execonForDraw);
                 DebugLog("_runImpl - DRAW start");
                 (*aReturnValue) = DoSingleQaoIteration(aContext->_qaoRuntime, QAO_EVENT_MASK_ALL_DRAWS);
                 DebugLog("_runImpl - DRAW end (status = {})", *aReturnValue);
                 if ((*aReturnValue) != 0) {
                     return;
                 }
-                aContext->_performanceInfo.drawTime = drawStopwatch.getElapsedTime<nanoseconds>();
+                perfInfo.drawTime = drawStopwatch.getElapsedTime<nanoseconds>();
             }
         }
 
@@ -371,14 +422,15 @@ void GameContext::_runImpl(hg::NeverNull<GameContext*> aContext,
         // DISPLAY
         {
             Stopwatch displayStopwatch;
-            aContext->_performanceInfo.displayStart = std::chrono::steady_clock::now();
+            perfInfo.displayStart = std::chrono::steady_clock::now();
+            aContext->_qaoRuntime.setExeconAddress(&gameState._execonForDisplay);
             DebugLog("_runImpl - DISPLAY start");
             (*aReturnValue) = DoSingleQaoIteration(aContext->_qaoRuntime, QAO_EVENT_MASK_DISPLAY);
             DebugLog("_runImpl - DISPLAY end (status = {})", *aReturnValue);
             if ((*aReturnValue) != 0) {
                 return;
             }
-            aContext->_performanceInfo.displayTime = displayStopwatch.getElapsedTime<nanoseconds>();
+            perfInfo.displayTime = displayStopwatch.getElapsedTime<nanoseconds>();
         }
 
         // 'Refill' accumulator

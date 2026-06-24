@@ -13,7 +13,7 @@
 SPEMPE_GENERATE_DEFAULT_SYNC_HANDLERS(BasicActor, (CREATE, UPDATE, DESTROY));
 
 BasicActor::BasicActor(hg::QAO_InstGuard aInstGuard, spe::SyncId aSyncId)
-    : SyncObjSuper{aInstGuard, PRIORITY_ACTOR, "BasicActor", aSyncId} {}
+    : SyncObjSuper{aInstGuard, hg::QAO_ExeCon::GAMEPLAY, PRIORITY_ACTOR, "BasicActor", aSyncId} {}
 
 void BasicActor::init(float aX, float aY, hg::uwga::Color aColor, std::int8_t aIndex) {
     HG_HARD_ASSERT(isMasterObject());
@@ -93,7 +93,7 @@ void BasicActor::_syncDestroyImpl(spe::SyncControlDelegate& aSyncCtrl) const {
 SPEMPE_GENERATE_DEFAULT_SYNC_HANDLERS(AutodiffActor, (CREATE, UPDATE, DESTROY));
 
 AutodiffActor::AutodiffActor(hg::QAO_InstGuard aInstGuard, spe::SyncId aSyncId)
-    : SyncObjSuper{aInstGuard, PRIORITY_ACTOR, "AutodiffActor", aSyncId} {}
+    : SyncObjSuper{aInstGuard, hg::QAO_ExeCon::GAMEPLAY, PRIORITY_ACTOR, "AutodiffActor", aSyncId} {}
 
 void AutodiffActor::_didAttach(hg::QAO_Runtime& aRuntime) {
     SyncObjSuper::_didAttach(aRuntime);
@@ -185,7 +185,7 @@ void AutodiffActor::_syncDestroyImpl(spe::SyncControlDelegate& aSyncCtrl) const 
 SPEMPE_GENERATE_DEFAULT_SYNC_HANDLERS(AlternatingActor, (CREATE, UPDATE, DESTROY));
 
 AlternatingActor::AlternatingActor(hg::QAO_InstGuard aInstGuard, spe::SyncId aSyncId)
-    : SyncObjSuper{aInstGuard, PRIORITY_ACTOR, "AlternatingActor", aSyncId} {}
+    : SyncObjSuper{aInstGuard, hg::QAO_ExeCon::GAMEPLAY, PRIORITY_ACTOR, "AlternatingActor", aSyncId} {}
 
 void AlternatingActor::_didAttach(hg::QAO_Runtime& aRuntime) {
     SyncObjSuper::_didAttach(aRuntime);
@@ -271,7 +271,12 @@ void AlternatingActor::_syncDestroyImpl(spe::SyncControlDelegate& aSyncCtrl) con
 SPEMPE_GENERATE_DEFAULT_SYNC_HANDLERS(AlternatingAutodiffActor, (CREATE, UPDATE, DESTROY));
 
 AlternatingAutodiffActor::AlternatingAutodiffActor(hg::QAO_InstGuard aInstGuard, spe::SyncId aSyncId)
-    : SyncObjSuper{aInstGuard, PRIORITY_ACTOR, "AlternatingAutodiffActor", aSyncId} {
+    : SyncObjSuper{aInstGuard,
+                   hg::QAO_ExeCon::GAMEPLAY,
+                   PRIORITY_ACTOR,
+                   "AlternatingAutodiffActor",
+                   aSyncId} //
+{
     _enableAlternatingUpdates();
 }
 

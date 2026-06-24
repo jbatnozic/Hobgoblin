@@ -8,7 +8,11 @@
 
 AutodiffAlternatingPlayerCharacter::AutodiffAlternatingPlayerCharacter(QAO_InstGuard aInstGuard,
                                                                        spe::SyncId   aSyncId)
-    : SyncObjSuper{aInstGuard, PRIORITY_PLAYERAVATAR, "AutodiffAlternatingPlayerCharacter", aSyncId} //
+    : SyncObjSuper{aInstGuard,
+                   QAO_ExeCon::GAMEPLAY,
+                   PRIORITY_PLAYERAVATAR,
+                   "AutodiffAlternatingPlayerCharacter",
+                   aSyncId} //
 {
     _enableAlternatingUpdates();
 }
@@ -30,9 +34,6 @@ void AutodiffAlternatingPlayerCharacter::init(int aOwningPlayerIndex, float aX, 
 }
 
 void AutodiffAlternatingPlayerCharacter::_eventUpdate1(spe::IfMaster) {
-    if (ctx().getGameState().isPaused)
-        return;
-
     auto& self = _getCurrentState();
     assert(self.owningPlayerIndex >= 0);
     if (const auto clientIndex = ccomp<MLobbyBackend>().playerIdxToClientIdx(self.owningPlayerIndex);

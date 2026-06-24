@@ -29,6 +29,7 @@ EventLoopTimingReporter::EventLoopTimingReporter(hobgoblin::QAO_InstGuard aInstG
                                                  int aExecutionPriority,
                                                  const Config& aConfig)
     : NonstateObject{aInstGuard,
+                     hg::QAO_ExeCon::INTERACTIVITY,
                      aExecutionPriority,
                      "EventLoopTimingReporter"}
     , _cycleLength{aConfig.cycleLength}

@@ -210,7 +210,10 @@ bool DefaultLobbyBackendManager::ExtendedPlayerInfo::isSameAs(const hg::RN_Conne
 }
 
 DefaultLobbyBackendManager::DefaultLobbyBackendManager(hobgoblin::QAO_InstGuard aInstGuard, int aExecutionPriority)
-    : NonstateObject(aInstGuard, aExecutionPriority, "::jbatnozic::spempe::DefaultLobbyBackendManager")
+    : NonstateObject(aInstGuard,
+                     hg::QAO_ExeCon::SYNCHRONIZATION,
+                     aExecutionPriority,
+                     "::jbatnozic::spempe::DefaultLobbyBackendManager")
 {    
 }
 

@@ -19,12 +19,17 @@ namespace qao {
 
 static constexpr auto LOG_ID = "Hobgoblin.QAO";
 
-QAO_Base::QAO_Base(QAO_InstGuard, int executionPriority, std::string name)
-    : _instanceName{std::move(name)}
-    , _executionPriority{executionPriority} {}
+QAO_Base::QAO_Base(QAO_InstGuard aInstGuard, int aExecutionPriority, std::string aName)
+    : QAO_Base{aInstGuard, QAO_ExeCon::ESSENTIAL, aExecutionPriority, aName} {}
+
+QAO_Base::QAO_Base(QAO_InstGuard, QAO_ExeCon aExeconThreshold, int aExecutionPriority, std::string aName)
+    : _instanceName{std::move(aName)}
+    , _executionPriority{aExecutionPriority} {
+    setExeconThreshold(aExeconThreshold);
+}
 
 QAO_Base::~QAO_Base() {
-    if (HG_UNLIKELY_CONDITION((_flags & TORN_DOWN_PROPERLY) == 0)) {
+    if (HG_UNLIKELY_CONDITION((_flags & TORN_DOWN_PROPERLY_BIT) == 0)) {
         HG_UNLIKELY_BRANCH;
 
         HG_LOG_ERROR(LOG_ID,
@@ -41,25 +46,35 @@ QAO_Base::~QAO_Base() {
 }
 
 void QAO_Base::_setUp() {
-    _flags |= SET_UP_PROPERLY;
+    _flags |= SET_UP_PROPERLY_BIT;
 }
 
 void QAO_Base::_tearDown() {
-    _flags |= TORN_DOWN_PROPERLY;
+    _flags |= TORN_DOWN_PROPERLY_BIT;
 }
 
 void QAO_Base::_didAttach(QAO_Runtime&) {
-    _flags |= ATTACHED_PROPERLY;
-    _flags &= ~DETACHED_PROPERLY;
+    _flags |= ATTACHED_PROPERLY_BIT;
+    _flags &= ~DETACHED_PROPERLY_BIT;
 }
 
 void QAO_Base::_willDetach(QAO_Runtime&) {
-    _flags |= DETACHED_PROPERLY;
-    _flags &= ~ATTACHED_PROPERLY;
+    _flags |= DETACHED_PROPERLY_BIT;
+    _flags &= ~ATTACHED_PROPERLY_BIT;
 }
 
 QAO_Runtime* QAO_Base::getRuntime() const noexcept {
     return _context.runtime;
+}
+
+void QAO_Base::setExeconThreshold(QAO_ExeCon aExeconThreshold) {
+    std::memcpy(((char*)(&_flags)) + FLAGS_EXECON_BYTE_OFFSET, &aExeconThreshold, sizeof(QAO_ExeCon));
+}
+
+QAO_ExeCon QAO_Base::getExeconThreshold() const {
+    QAO_ExeCon result;
+    std::memcpy(&result, ((const char*)(&_flags)) + FLAGS_EXECON_BYTE_OFFSET, sizeof(QAO_ExeCon));
+    return result;
 }
 
 int QAO_Base::getExecutionPriority() const noexcept {

@@ -93,10 +93,11 @@ struct IfDummy  {};
 class SynchronizedObjectBase : public StateObject {
 public:
     //! Big scary constructor with way too many arguments.
-    SynchronizedObjectBase(hg::QAO_InstGuard     aInstGuard,
-                           int                   aExecutionPriority,
-                           std::string           aName,
-                           SyncId                aSyncId);
+    SynchronizedObjectBase(hg::QAO_InstGuard aInstGuard,
+                           hg::QAO_ExeCon    aExeconThreshold,
+                           int               aExecutionPriority,
+                           std::string       aName,
+                           SyncId            aSyncId);
 
     ~SynchronizedObjectBase() override;
 
@@ -109,9 +110,9 @@ public:
 protected:
     // Call the following to sync this object's creation/update/destruction right away.
 
-    void _doSyncCreate() const;
-    void _doSyncUpdate() const;
-    void _doSyncDestroy() const;
+    void _doSyncCreate(bool aIgnoreFilters = true) const;
+    void _doSyncUpdate(bool aIgnoreFilters = true) const;
+    void _doSyncDestroy(bool aIgnoreFilters = true) const;
 
     // Lifecycle
 
@@ -308,10 +309,27 @@ protected:
     using SyncObjSuper = SynchronizedObject;
 
     SynchronizedObject(hg::QAO_InstGuard aInstGuard,
+                       hg::QAO_ExeCon    aExeconThreshold,
                        int               aExecutionPriority,
                        std::string       aName,
                        SyncId            aSyncId = SYNC_ID_NEW)
-        : SynchronizedObjectBase{aInstGuard, aExecutionPriority, std::move(aName), aSyncId}
+        : SynchronizedObjectBase{aInstGuard,
+                                 aExeconThreshold,
+                                 aExecutionPriority,
+                                 std::move(aName),
+                                 aSyncId}
+        , _ssch{0} {}
+
+    [[deprecated("Use the other constructor which also accepts a QAO_ExeCon parameter.")]]
+    SynchronizedObject(hg::QAO_InstGuard aInstGuard,
+                       int               aExecutionPriority,
+                       std::string       aName,
+                       SyncId            aSyncId = SYNC_ID_NEW)
+        : SynchronizedObjectBase{aInstGuard,
+                                 hg::QAO_ExeCon::ESSENTIAL,
+                                 aExecutionPriority,
+                                 std::move(aName),
+                                 aSyncId}
         , _ssch{0} {}
 
     taVisibleState& _getCurrentState() {

@@ -32,10 +32,11 @@ protected:
     }
 };
 
+namespace {
 class SimpleActiveObject : public QAO_Base {
 public:
     SimpleActiveObject(QAO_InstGuard aInstGuard, std::vector<int>& vec, int number)
-        : QAO_Base{aInstGuard, 0, "SimpleActiveObject"}
+        : QAO_Base{aInstGuard, QAO_ExeCon::ESSENTIAL, 0, "SimpleActiveObject"}
         , _myVec{vec}
         , _myNumber{number} {}
 
@@ -49,6 +50,7 @@ private:
     std::vector<int>& _myVec;
     int               _myNumber;
 };
+} // namespace
 
 static_assert(std::is_nothrow_move_constructible_v<QAO_GenericHandle>);
 static_assert(std::is_move_assignable_v<QAO_GenericHandle>);
@@ -239,11 +241,57 @@ TEST_F(QAO_TestWithRuntime, Ordering) {
     ASSERT_EQ(_numbers[2], VALUE_0);
 }
 
+TEST_F(QAO_TestWithRuntime, Execon) {
+    auto execon = QAO_ExeCon::META_EXECUTE_ALL;
+    _runtime.setExeconAddress(&execon);
+
+    constexpr int VALUE_0 = 1;
+    constexpr int VALUE_1 = 2;
+    constexpr int VALUE_2 = 3;
+
+    auto obj0 = QAO_Create<SimpleActiveObject>(&_runtime, _numbers, VALUE_0);
+    obj0->setExecutionPriority(80);
+    obj0->setExeconThreshold(QAO_ExeCon::ESSENTIAL);
+    auto obj1 = QAO_Create<SimpleActiveObject>(&_runtime, _numbers, VALUE_1);
+    obj1->setExecutionPriority(70);
+    obj1->setExeconThreshold(QAO_ExeCon::SYNCHRONIZATION);
+    auto obj2 = QAO_Create<SimpleActiveObject>(&_runtime, _numbers, VALUE_2);
+    obj2->setExecutionPriority(60);
+    obj2->setExeconThreshold(QAO_ExeCon::GAMEPLAY);
+
+    performStep();
+    ASSERT_EQ(_numbers.size(), 3u);
+    ASSERT_EQ(_numbers[0], VALUE_0);
+    ASSERT_EQ(_numbers[1], VALUE_1);
+    ASSERT_EQ(_numbers[2], VALUE_2);
+
+    _numbers.clear();
+
+    // Lower execon
+    execon = QAO_ExeCon::SYNCHRONIZATION;
+
+    performStep();
+    ASSERT_EQ(_numbers.size(), 2u);
+    ASSERT_EQ(_numbers[0], VALUE_0);
+    ASSERT_EQ(_numbers[1], VALUE_1);
+
+    _numbers.clear();
+
+    // Lower execon again
+    execon = QAO_ExeCon::INTERACTIVITY;
+
+    _numbers.clear();
+
+    performStep();
+    ASSERT_EQ(_numbers.size(), 1u);
+    ASSERT_EQ(_numbers[0], VALUE_0);
+}
+
 namespace {
 class SimpleActiveObjectWhichDeletesItself : public QAO_Base {
 public:
     SimpleActiveObjectWhichDeletesItself(QAO_InstGuard aInstGuard)
-        : QAO_Base{aInstGuard, 0, "SimpleActiveObjectWhichDeletesItself"} {}
+        : QAO_Base{aInstGuard, QAO_ExeCon::ESSENTIAL, 0, "SimpleActiveObjectWhichDeletesItself"} {}
 
     void _eventUpdate1() override {
         if (getRuntime()->ownsObject(*this)) {

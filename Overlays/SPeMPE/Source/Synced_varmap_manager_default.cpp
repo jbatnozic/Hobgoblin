@@ -75,8 +75,10 @@ RN_DEFINE_RPC(USPEMPE_DefaultSyncedVarmapManager_RequestToSet,
 
 DefaultSyncedVarmapManager::DefaultSyncedVarmapManager(hobgoblin::QAO_InstGuard aInstGuard,
                                                        int                      aExecutionPriority)
-    : NonstateObject{aInstGuard, aExecutionPriority, "::jbatnozic::spempe::DefaultSyncedVarmapManager"} {
-}
+    : NonstateObject{aInstGuard,
+                     hg::QAO_ExeCon::ESSENTIAL,
+                     aExecutionPriority,
+                     "::jbatnozic::spempe::DefaultSyncedVarmapManager"} {}
 
 DefaultSyncedVarmapManager::~DefaultSyncedVarmapManager() = default;
 

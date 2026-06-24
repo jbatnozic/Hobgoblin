@@ -42,7 +42,7 @@ class AvatarWithInlineRSData
                                 SPEMPE_RSDATA_INLINE(Avatar_RSData, Avatar_RSData)> {
 public:
     AvatarWithInlineRSData(hg::QAO_InstGuard aInstGuard, SyncId aSyncId = SYNC_ID_NEW)
-        : SyncObjSuper{aInstGuard, 0, "AvatarWithInlineRSData", aSyncId} {}
+        : SyncObjSuper{aInstGuard, hg::QAO_ExeCon::GAMEPLAY, 0, "AvatarWithInlineRSData", aSyncId} {}
 
     Avatar_RSData* getMasterData() {
         return _masterData;
@@ -76,7 +76,7 @@ class AvatarWithHeapRSData
     : public SynchronizedObject<Avatar_VisibleState, SPEMPE_RSDATA_HEAP(Avatar_RSData, Avatar_RSData)> {
 public:
     AvatarWithHeapRSData(hg::QAO_InstGuard aInstGuard, SyncId aSyncId = SYNC_ID_NEW)
-        : SyncObjSuper{aInstGuard, 0, "AvatarWithHeapRSData", aSyncId} {}
+        : SyncObjSuper{aInstGuard, hg::QAO_ExeCon::GAMEPLAY, 0, "AvatarWithHeapRSData", aSyncId} {}
 
     Avatar_RSData* getMasterData() {
         return _masterData.get();

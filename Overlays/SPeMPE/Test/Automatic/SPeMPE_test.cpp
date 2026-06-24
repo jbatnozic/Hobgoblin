@@ -148,7 +148,7 @@ struct Avatar_VisibleState {
 class Avatar : public SynchronizedObject<Avatar_VisibleState> {
 public:
     Avatar(hg::QAO_InstGuard aInstGuard, SyncId aSyncId = SYNC_ID_NEW)
-        : SyncObjSuper{aInstGuard, 0, "Avatar", aSyncId} {}
+        : SyncObjSuper{aInstGuard, hg::QAO_ExeCon::GAMEPLAY, 0, "Avatar", aSyncId} {}
 
     void _willDetach(hg::QAO_Runtime& aRuntime) override {
         hg::QAO_Create<AvatarDrop>(aRuntime)->customData = _getCurrentState().customData;
@@ -314,6 +314,93 @@ TEST_F(SPeMPE_SynchronizedTest, BasicFunctionalityTest) {
     }
 }
 
+TEST_F(SPeMPE_SynchronizedTest, ExeConFilteringTest) {
+    {
+        SCOPED_TRACE("Configure contexts");
+
+        using namespace hobgoblin::rn;
+
+        constexpr static int BUFFERING_LENGTH = 0;
+
+        // Server context:
+        _serverCtx->setToMode(GameContext::Mode::Server);
+
+        auto netwMgr1 = QAO_Create<DefaultNetworkingManager>(_serverCtx->getQAORuntime().nonOwning(), 
+                                                             0, BUFFERING_LENGTH);
+        netwMgr1->setToServerMode(RN_Protocol::UDP, "pass", 2, 512, RN_NetworkingStack::Default);
+        _serverCtx->attachAndOwnComponent(std::move(netwMgr1));
+
+        // Client context:
+        _clientCtx->setToMode(GameContext::Mode::Client);
+
+        auto netwMgr2 = QAO_Create<DefaultNetworkingManager>(_clientCtx->getQAORuntime().nonOwning(), 
+                                                             0, BUFFERING_LENGTH);
+        netwMgr2->setToClientMode(RN_Protocol::UDP, "pass", 512, RN_NetworkingStack::Default);
+        _clientCtx->attachAndOwnComponent(std::move(netwMgr2));
+    }
+    {
+        SCOPED_TRACE("Establish conection between contexts");
+
+        ASSERT_TRUE(_serverCtx->getComponent<MNetworking>().isServer());
+        ASSERT_TRUE(_clientCtx->getComponent<MNetworking>().isClient());
+
+        auto& server = _serverCtx->getComponent<MNetworking>().getServer();
+        auto& client = _clientCtx->getComponent<MNetworking>().getClient();
+        
+        server.setUserData(static_cast<GameContext*>(&*_serverCtx));
+        server.start(0);
+
+        client.setUserData(static_cast<GameContext*>(&*_clientCtx));
+        client.connectLocal(server);
+
+        _serverCtx->runFor(1);
+        _clientCtx->runFor(1);
+        _serverCtx->runFor(1);
+        _clientCtx->runFor(1);
+
+        ASSERT_EQ(server.getClientConnector(0).getStatus(), hg::RN_ConnectorStatus::Connected);
+        ASSERT_EQ(client.getServerConnector().getStatus(),  hg::RN_ConnectorStatus::Connected);
+    }
+    {
+        SCOPED_TRACE("Add a synchronized Avatar instance to server");
+
+        auto master = hg::QAO_Create<Avatar>(&_serverCtx->getQAORuntime());
+
+        _serverCtx->runFor(1);
+        _clientCtx->runFor(1);
+
+        auto* dummy = dynamic_cast<Avatar*>(_clientCtx->getQAORuntime().find("Avatar").ptr());
+        ASSERT_NE(dummy, nullptr);
+        EXPECT_EQ(dummy->getCustomData(), Avatar::VisibleState::CD_INITIAL);
+    }
+    {
+        SCOPED_TRACE("Check state updates with EXECON level decreased");
+
+        _serverCtx->getComponent<MNetworking>().setSyncUpdateExeconFilter({
+            .max = hg::QAO_ExeCon::INTERACTIVITY
+        });
+
+        auto* master = dynamic_cast<Avatar*>(_serverCtx->getQAORuntime().find("Avatar").ptr());
+        ASSERT_NE(master, nullptr);
+        master->setCustomData(Avatar::VisibleState::CD_INITIAL + 5);
+
+        _serverCtx->runFor(1);
+        _clientCtx->runFor(1);
+
+        auto* dummy = dynamic_cast<Avatar*>(_clientCtx->getQAORuntime().find("Avatar").ptr());
+        ASSERT_NE(dummy, nullptr);
+        EXPECT_EQ(dummy->getCustomData(), Avatar::VisibleState::CD_INITIAL);
+    }
+    {
+        SCOPED_TRACE("Clean up client context");
+        _clientCtx.reset();
+    }
+    {
+        SCOPED_TRACE("Clean up server context");
+        _serverCtx.reset();
+    }
+}
+
 // ============================================================================================= //
 
 struct DeactivatingAvatar_VisibleState {
@@ -326,7 +413,11 @@ struct DeactivatingAvatar_VisibleState {
 class DeactivatingAvatar : public SynchronizedObject<DeactivatingAvatar_VisibleState> {
 public:
     DeactivatingAvatar(hg::QAO_InstGuard aInstGuard, SyncId aSyncId = SYNC_ID_NEW)
-        : SyncObjSuper{aInstGuard, 0, "DeactivatingAvatar", aSyncId} {}
+        : SyncObjSuper{aInstGuard,
+                       hobgoblin::qao::QAO_ExeCon::GAMEPLAY,
+                       0,
+                       "DeactivatingAvatar",
+                       aSyncId} {}
 
     int getCustomData() const {
         return _getCurrentState().customData;
@@ -556,7 +647,7 @@ class AutodiffDeactivatingAvatar
     : public SynchronizedObject<AutodiffDeactivatingAvatar_VisibleState> {
 public:
     AutodiffDeactivatingAvatar(hg::QAO_InstGuard aInstGuard, SyncId aSyncId = SYNC_ID_NEW)
-        : SyncObjSuper{aInstGuard, 0, "AutodiffDeactivatingAvatar", aSyncId} {}
+        : SyncObjSuper{aInstGuard, hg::QAO_ExeCon::GAMEPLAY, 0, "AutodiffDeactivatingAvatar", aSyncId} {}
 
     int getI0() const {
         return _getCurrentState().i0;

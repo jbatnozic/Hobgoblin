@@ -1,13 +1,12 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-// clang-format off
-
 #ifndef SPEMPE_GAME_OBJECT_FRAMEWORK_SYNCHRONIZED_OBJECT_REGISTRY_HPP
 #define SPEMPE_GAME_OBJECT_FRAMEWORK_SYNCHRONIZED_OBJECT_REGISTRY_HPP
 
 #include <SPeMPE/GameObjectFramework/Sync_control_delegate.hpp>
 #include <SPeMPE/GameObjectFramework/Sync_id.hpp>
+#include <SPeMPE/Managers/Networking_manager_interface.hpp>
 
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/RigelNet.hpp>
@@ -28,27 +27,37 @@ class SynchronizedObjectBase;
 
 namespace detail {
 
-class SynchronizedObjectRegistry 
+class SynchronizedObjectRegistry
     : public hg::util::NonCopyable
     , public hg::util::NonMoveable {
 public:
     SynchronizedObjectRegistry(hg::RN_NodeInterface& node, hg::PZInteger defaultDelay);
 
-    void setNode(hg::RN_NodeInterface& node);
+    void                  setNode(hg::RN_NodeInterface& node);
     hg::RN_NodeInterface& getNode() const;
 
     SyncId registerMasterObject(SynchronizedObjectBase* object);
-    void registerDummyObject(SynchronizedObjectBase* object, SyncId masterSyncId);
-    void unregisterObject(SynchronizedObjectBase* object);
+    void   registerDummyObject(SynchronizedObjectBase* object, SyncId masterSyncId);
+    void   unregisterObject(SynchronizedObjectBase* object);
 
     void destroyAllRegisteredObjects();
+
+    using ExeConSyncFilter = NetworkingManagerInterface::ExeConSyncFilter;
+
+    void setSyncCreateExeconFilter(ExeConSyncFilter aFilter);
+    void setSyncUpdateExeconFilter(ExeConSyncFilter aFilter);
+    void setSyncDestroyExeconFilter(ExeConSyncFilter aFilter);
+
+    ExeConSyncFilter getSyncCreateExeconFilter() const;
+    ExeConSyncFilter getSyncUpdateExeconFilter() const;
+    ExeConSyncFilter getSyncDestroyExeconFilter() const;
 
     //! Can return nullptr if there is no matching object.
     SynchronizedObjectBase* getMapping(SyncId syncId) const;
 
-    void syncObjectCreate(const SynchronizedObjectBase* object);
-    void syncObjectUpdate(const SynchronizedObjectBase* object);
-    void syncObjectDestroy(const SynchronizedObjectBase* object);
+    void syncObjectCreate(const SynchronizedObjectBase* object, bool aIgnoreFilters);
+    void syncObjectUpdate(const SynchronizedObjectBase* object, bool aIgnoreFilters);
+    void syncObjectDestroy(const SynchronizedObjectBase* object, bool aIgnoreFilters);
 
     void syncStateUpdates();
     void syncCompleteState(hg::PZInteger clientIndex);
@@ -78,23 +87,27 @@ public:
 
 private:
     std::unordered_map<SyncId, SynchronizedObjectBase*> _mappings;
-    std::unordered_set<const SynchronizedObjectBase*> _newlyCreatedObjects;
-    std::unordered_set<const SynchronizedObjectBase*> _alreadyUpdatedObjects;
-    std::unordered_set<const SynchronizedObjectBase*> _alreadyDestroyedObjects;
+    std::unordered_set<const SynchronizedObjectBase*>   _newlyCreatedObjects;
+    std::unordered_set<const SynchronizedObjectBase*>   _alreadyUpdatedObjects;
+    std::unordered_set<const SynchronizedObjectBase*>   _alreadyDestroyedObjects;
+
+    ExeConSyncFilter _execonCreateFilter;
+    ExeConSyncFilter _execonUpdateFilter;
+    ExeConSyncFilter _execonDestroyFilter;
 
     hg::NeverNull<hg::RN_NodeInterface*> _node;
-    SyncControlDelegate _syncControlDelegate;
+    SyncControlDelegate                  _syncControlDelegate;
 
-    SyncId _syncIdCounter = 2;
+    SyncId        _syncIdCounter = 2;
     hg::PZInteger _defaultDelay;
 
-    hg::PZInteger _pacemakerPulsePeriod = 30; // 30 => 60 frames
+    hg::PZInteger _pacemakerPulsePeriod    = 30; // 30 => 60 frames
     hg::PZInteger _pacemakerPulseCountdown = _pacemakerPulsePeriod;
-    bool _alternatingUpdateFlag = true;
+    bool          _alternatingUpdateFlag   = true;
 
     static void Align(const SynchronizedObjectBase* aObject,
-                      const SyncControlDelegate& aSyncCtrl,
-                      hg::RN_NodeInterface& aLocalNode);
+                      const SyncControlDelegate&    aSyncCtrl,
+                      hg::RN_NodeInterface&         aLocalNode);
 };
 
 } // namespace detail
@@ -103,5 +116,3 @@ private:
 } // namespace jbatnozic
 
 #endif // !SPEMPE_GAME_OBJECT_FRAMEWORK_SYNCHRONIZED_OBJECT_REGISTRY_HPP
-
-// clang-format on

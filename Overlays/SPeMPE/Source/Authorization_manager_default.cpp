@@ -113,7 +113,10 @@ RN_DEFINE_RPC(SetLocalAuthToken, RN_ARGS(AuthToken&, aToken)) {
 
 DefaultAuthorizationManager::DefaultAuthorizationManager(hobgoblin::QAO_InstGuard aInstGuard,
                                                          int aExecutionPriority)
-    : NonstateObject(aInstGuard, aExecutionPriority, "jbatnozic::spempe::DefaultAuthorizationManager")
+    : NonstateObject(aInstGuard,
+                     hg::QAO_ExeCon::INTERACTIVITY,
+                     aExecutionPriority,
+                     "jbatnozic::spempe::DefaultAuthorizationManager")
 {
 }
 

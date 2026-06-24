@@ -6,7 +6,11 @@
 #include <Hobgoblin/UWGA.hpp>
 
 AutodiffPlayerCharacter::AutodiffPlayerCharacter(QAO_InstGuard aInstGuard, spe::SyncId aSyncId)
-    : SyncObjSuper{aInstGuard, PRIORITY_PLAYERAVATAR, "AutodiffPlayerCharacter", aSyncId} {}
+    : SyncObjSuper{aInstGuard,
+                   QAO_ExeCon::GAMEPLAY,
+                   PRIORITY_PLAYERAVATAR,
+                   "AutodiffPlayerCharacter",
+                   aSyncId} {}
 
 void AutodiffPlayerCharacter::_didAttach(QAO_Runtime& aRuntime) {
     SyncObjSuper::_didAttach(aRuntime);
@@ -25,9 +29,6 @@ void AutodiffPlayerCharacter::init(int aOwningPlayerIndex, float aX, float aY) {
 }
 
 void AutodiffPlayerCharacter::_eventUpdate1(spe::IfMaster) {
-    if (ctx().getGameState().isPaused)
-        return;
-
     auto& self = _getCurrentState();
     assert(self.owningPlayerIndex >= 0);
     if (const auto clientIndex = ccomp<MLobbyBackend>().playerIdxToClientIdx(self.owningPlayerIndex);

@@ -6,7 +6,11 @@
 #include <Hobgoblin/UWGA.hpp>
 
 BasicPlayerCharacter::BasicPlayerCharacter(QAO_InstGuard aInstGuard, spe::SyncId aSyncId)
-    : SyncObjSuper{aInstGuard, PRIORITY_PLAYERAVATAR, "BasicPlayerCharacter", aSyncId} {}
+    : SyncObjSuper{aInstGuard,
+                   QAO_ExeCon::GAMEPLAY,
+                   PRIORITY_PLAYERAVATAR,
+                   "BasicPlayerCharacter",
+                   aSyncId} {}
 
 void BasicPlayerCharacter::init(int aOwningPlayerIndex, float aX, float aY) {
     assert(isMasterObject());
@@ -18,9 +22,6 @@ void BasicPlayerCharacter::init(int aOwningPlayerIndex, float aX, float aY) {
 }
 
 void BasicPlayerCharacter::_eventUpdate1(spe::IfMaster) {
-    if (ctx().getGameState().isPaused)
-        return;
-
     auto& self = _getCurrentState();
     assert(self.owningPlayerIndex >= 0);
     if (const auto clientIndex = ccomp<MLobbyBackend>().playerIdxToClientIdx(self.owningPlayerIndex);

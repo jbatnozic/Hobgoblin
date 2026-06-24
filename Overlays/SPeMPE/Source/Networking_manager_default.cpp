@@ -20,7 +20,10 @@ constexpr const char* LOG_ID = "SPeMPE";
 DefaultNetworkingManager::DefaultNetworkingManager(hobgoblin::QAO_InstGuard aInstGuard,
                                                    int                      aExecutionPriority,
                                                    hg::PZInteger            aStateBufferingLength)
-    : NonstateObject{aInstGuard, aExecutionPriority, "::jbatnozic::spempe::DefaultNetworkingManager"}
+    : NonstateObject{aInstGuard,
+                     hg::QAO_ExeCon::ESSENTIAL,
+                     aExecutionPriority,
+                     "::jbatnozic::spempe::DefaultNetworkingManager"}
     , _node{hg::RN_ServerFactory::createDummyServer()}
     , _syncObjReg{*_node, aStateBufferingLength} {}
 
@@ -157,6 +160,30 @@ void DefaultNetworkingManager::setStateBufferingLength(hg::PZInteger aNewStateBu
 
 void DefaultNetworkingManager::setPacemakerPulsePeriod(hg::PZInteger aPeriod) {
     _syncObjReg.setPacemakerPulsePeriod(aPeriod);
+}
+
+void DefaultNetworkingManager::setSyncCreateExeconFilter(ExeConSyncFilter aFilter) {
+    _syncObjReg.setSyncCreateExeconFilter(aFilter);
+}
+
+void DefaultNetworkingManager::setSyncUpdateExeconFilter(ExeConSyncFilter aFilter) {
+    _syncObjReg.setSyncUpdateExeconFilter(aFilter);
+}
+
+void DefaultNetworkingManager::setSyncDestroyExeconFilter(ExeConSyncFilter aFilter) {
+    _syncObjReg.setSyncDestroyExeconFilter(aFilter);
+}
+
+auto DefaultNetworkingManager::getSyncCreateExeconFilter() const -> ExeConSyncFilter {
+    return _syncObjReg.getSyncCreateExeconFilter();
+}
+
+auto DefaultNetworkingManager::getSyncUpdateExeconFilter() const -> ExeConSyncFilter {
+    return _syncObjReg.getSyncUpdateExeconFilter();
+}
+
+auto DefaultNetworkingManager::getSyncDestroyExeconFilter() const -> ExeConSyncFilter {
+    return _syncObjReg.getSyncDestroyExeconFilter();
 }
 
 void DefaultNetworkingManager::setAutomaticStateSyncForNewConnectionsEnabled(bool aEnabled) {

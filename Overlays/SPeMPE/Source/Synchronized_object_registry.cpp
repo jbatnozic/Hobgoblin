@@ -10,6 +10,7 @@
 #include <SPeMPE/Managers/Networking_manager_interface.hpp>
 #include <SPeMPE/Utility/Rpc_receiver_context_template.hpp>
 
+#include <Hobgoblin/Common/Build_type.hpp>
 #include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/Logging.hpp>
 #include <Hobgoblin/RigelNet.hpp>
@@ -39,10 +40,15 @@ RN_DEFINE_RPC(USPEMPE_DeactivateObject, RN_ARGS(SyncId, aSyncId)) {
             throw hg::RN_IllegalMessage("Server received a sync message");
         });
 }
+
+bool IsFilteredOut(NetworkingManagerInterface::ExeCon aExeconThreshold,
+                   NetworkingManagerInterface::ExeConSyncFilter aFilter) {
+    return aExeconThreshold < aFilter.min || aExeconThreshold > aFilter.max;
+}
 } // namespace
 
 ///////////////////////////////////////////////////////////////////////////
-// SYNC CONTROL DELEGATE                                                 //
+// MARK: SYNC CONTROL DELEGATE                                           //
 ///////////////////////////////////////////////////////////////////////////
 
 class SyncControlDelegate::Impl {
@@ -237,7 +243,7 @@ int SyncControlDelegate::_applyFilterStatus(std::size_t aIndex, SyncFilterStatus
 namespace detail {
 
 ///////////////////////////////////////////////////////////////////////////
-// SYNCHRONIZED OBJECT REGISTRY                                          //
+// MARK: SYNCHRONIZED OBJECT REGISTRY                                    //
 ///////////////////////////////////////////////////////////////////////////
 
 //! Use this macro to properly call a synchronized object's CREATE
@@ -331,9 +337,12 @@ void SynchronizedObjectRegistry::unregisterObject(SynchronizedObjectBase* object
     if (object->isMasterObject()) {
         auto iter = _alreadyDestroyedObjects.find(object);
         if (iter == _alreadyDestroyedObjects.end()) {
-            assert(false && "Unregistering object which did not sync its destruction.");
-            HG_THROW_TRACED(hg::TracedLogicError, 0,
-                            "Unregistering object which did not sync its destruction.");
+            // The used can choose not to sync certain object's destruction events, so it's
+            // technically not an error, though it can be alarming.
+            HG_LOG_WARN(LOG_ID,
+                        "Unregistering object ('{}' of type '{}') which did not sync its destruction!",
+                        object->getName(),
+                        typeid(*object).name());
         }
         else {
             _alreadyDestroyedObjects.erase(iter);
@@ -369,6 +378,30 @@ void SynchronizedObjectRegistry::destroyAllRegisteredObjects() {
     }
 }
 
+void SynchronizedObjectRegistry::setSyncCreateExeconFilter(ExeConSyncFilter aFilter) {
+    _execonCreateFilter = aFilter;
+}
+
+void SynchronizedObjectRegistry::setSyncUpdateExeconFilter(ExeConSyncFilter aFilter) {
+    _execonUpdateFilter = aFilter;
+}
+
+void SynchronizedObjectRegistry::setSyncDestroyExeconFilter(ExeConSyncFilter aFilter) {
+    _execonDestroyFilter = aFilter;
+}
+
+auto SynchronizedObjectRegistry::getSyncCreateExeconFilter() const -> ExeConSyncFilter {
+    return _execonCreateFilter;
+}
+
+auto SynchronizedObjectRegistry::getSyncUpdateExeconFilter() const -> ExeConSyncFilter {
+    return _execonUpdateFilter;
+}
+
+auto SynchronizedObjectRegistry::getSyncDestroyExeconFilter() const -> ExeConSyncFilter {
+    return _execonDestroyFilter;
+}
+
 SynchronizedObjectBase* SynchronizedObjectRegistry::getMapping(SyncId syncId) const {
     if (const auto iter = _mappings.find(syncId); iter != _mappings.end()) {
         return iter->second;
@@ -382,7 +415,9 @@ void SynchronizedObjectRegistry::syncStateUpdates() {
 
     // Sync creations:
     for (auto* object : _newlyCreatedObjects) {
-        CALL_SYNC_CREATE_IMPL(object, _syncControlDelegate, *_node);
+        if (!IsFilteredOut(object->getExeconThreshold(), _execonCreateFilter)) {
+            CALL_SYNC_CREATE_IMPL(object, _syncControlDelegate, *_node);
+        }
     }
     _newlyCreatedObjects.clear();
 
@@ -410,7 +445,9 @@ void SynchronizedObjectRegistry::syncStateUpdates() {
                 || _pacemakerPulseCountdown == 0
                 || !object->isUsingAlternatingUpdates())
             {
-                CALL_SYNC_UPDATE_IMPL(object, _syncControlDelegate, *_node);
+                if (!IsFilteredOut(object->getExeconThreshold(), _execonUpdateFilter)) {
+                    CALL_SYNC_UPDATE_IMPL(object, _syncControlDelegate, *_node);
+                }
             }
         }
     }
@@ -432,8 +469,12 @@ void SynchronizedObjectRegistry::syncCompleteState(hg::PZInteger clientIndex) {
     for (auto& mapping : _mappings) {
         auto* object = mapping.second;
 
-        CALL_SYNC_CREATE_IMPL(object, _syncControlDelegate, *_node);
-        CALL_SYNC_UPDATE_IMPL(object, _syncControlDelegate, *_node);
+        if (!IsFilteredOut(object->getExeconThreshold(), _execonCreateFilter)) {
+            CALL_SYNC_CREATE_IMPL(object, _syncControlDelegate, *_node);
+        }
+        if (!IsFilteredOut(object->getExeconThreshold(), _execonUpdateFilter)) {
+            CALL_SYNC_UPDATE_IMPL(object, _syncControlDelegate, *_node);
+        }
     }
 }
 
@@ -469,8 +510,13 @@ bool SynchronizedObjectRegistry::getAlternatingUpdatesFlag() const {
     return !_alternatingUpdateFlag;
 }
 
-void SynchronizedObjectRegistry::syncObjectCreate(const SynchronizedObjectBase* object) {
+void SynchronizedObjectRegistry::syncObjectCreate(const SynchronizedObjectBase* object,
+                                                  bool aIgnoreFilters) {
     HG_ASSERT(object != nullptr);
+
+    if (!aIgnoreFilters && IsFilteredOut(object->getExeconThreshold(), _execonCreateFilter)) {
+        return;
+    }
 
     _syncControlDelegate._impl->targetAllRecepientsConnectedToNode(*_node);
     _syncControlDelegate._impl->setSyncFlags(SyncFlags::NONE);
@@ -482,13 +528,18 @@ void SynchronizedObjectRegistry::syncObjectCreate(const SynchronizedObjectBase* 
     _newlyCreatedObjects.erase(object);
 }
 
-void SynchronizedObjectRegistry::syncObjectUpdate(const SynchronizedObjectBase* object) {
+void SynchronizedObjectRegistry::syncObjectUpdate(const SynchronizedObjectBase* object,
+                                                  bool aIgnoreFilters) {
     HG_ASSERT(object != nullptr);
+
+    if (!aIgnoreFilters && IsFilteredOut(object->getExeconThreshold(), _execonUpdateFilter)) {
+        return;
+    }
 
     _syncControlDelegate._impl->targetAllRecepientsConnectedToNode(*_node);
     _syncControlDelegate._impl->setSyncFlags(SyncFlags::NONE);
 
-    // Synchronized object sync Update called manualy, before the registry got to
+    // Synchronized object sync Update called manually, before the registry got to
     // sync its Create. We need to fix this because the order of these is important!
     {
         auto iter = _newlyCreatedObjects.find(const_cast<SynchronizedObjectBase*>(object));
@@ -503,8 +554,14 @@ void SynchronizedObjectRegistry::syncObjectUpdate(const SynchronizedObjectBase* 
     _alreadyUpdatedObjects.insert(object);
 }
 
-void SynchronizedObjectRegistry::syncObjectDestroy(const SynchronizedObjectBase* object) {
+void SynchronizedObjectRegistry::syncObjectDestroy(const SynchronizedObjectBase* object,
+                                                   bool aIgnoreFilters) {
     HG_ASSERT(object != nullptr);
+
+    if (!aIgnoreFilters && IsFilteredOut(object->getExeconThreshold(), _execonDestroyFilter)) {
+        return;
+    }
+
     _syncControlDelegate._impl->targetAllRecepientsConnectedToNode(*_node);
     _syncControlDelegate._impl->setSyncFlags(SyncFlags::NONE);
 
@@ -522,7 +579,7 @@ void SynchronizedObjectRegistry::syncObjectDestroy(const SynchronizedObjectBase*
             auto iter = _alreadyUpdatedObjects.find(object);
             if (iter == _alreadyUpdatedObjects.end()) {
                 CALL_SYNC_UPDATE_IMPL(object, _syncControlDelegate, *_node);
-            #ifndef NDEBUG // TODO: #ifdef HOBGOBLIN_DEBUG
+            #if HG_BUILD_TYPE == HG_DEBUG
                 // This isn't really needed as we don't expect to sync an object's
                 // destruction from anywhere other than its destructor, where it will
                 // get unregistered so this won't matter anyway. It's left here in

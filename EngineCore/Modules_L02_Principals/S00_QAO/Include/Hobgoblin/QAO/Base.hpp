@@ -6,6 +6,7 @@
 
 #include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/QAO/Config.hpp>
+#include <Hobgoblin/QAO/Execon.hpp>
 #include <Hobgoblin/QAO/Handle.hpp>
 #include <Hobgoblin/QAO/Id.hpp>
 #include <Hobgoblin/QAO/Instantiation_guard.hpp>
@@ -35,11 +36,38 @@ class QAO_Base
 public:
     QAO_Base() = delete;
 
+    //! \brief Constructor.
+    //! \param aInstGuard instantiation guard to make sure the instance is created using `QAO_Create`.
+    //! \param aExecutionPriority execution priority of the instance. Events of instances with higher
+    //!                           priority get executed before those of instances with lower priority.
+    //! \param aName name of the instance (it doesn't have to follow any specific pattern because the
+    //!              QAO framework doesn't use it except for logging; it's up to the user to choose).
+    //!
+    //! \note this constructor doesn't take a QAO_ExeCon parameter, so it defaults to `ESSENTIAL`.
+    [[deprecated("Use the other constructor which also accepts a QAO_ExeCon parameter.")]]
     QAO_Base(QAO_InstGuard aInstGuard, int aExecutionPriority, std::string aName);
+
+    //! \brief Constructor.
+    //! \param aInstGuard instantiation guard to make sure the instance is created using `QAO_Create`.
+    //! \param aExeconThreshold the EXECON threshold of the instance. Essentially it is the importance
+    //!                         score of the instance - events of this instance will only be executed
+    //!                         while the EXECON level of the runtime is equal to or higher than this
+    //!                         threshold.
+    //! \param aExecutionPriority execution priority of the instance. Events of instances with higher
+    //!                           priority get executed before those of instances with lower priority.
+    //! \param aName name of the instance (it doesn't have to follow any specific pattern because the
+    //!              QAO framework doesn't use it except for logging; it's up to the user to choose).
+    QAO_Base(QAO_InstGuard aInstGuard,
+             QAO_ExeCon    aExeconThreshold,
+             int           aExecutionPriority,
+             std::string   aName);
 
     virtual ~QAO_Base() = 0;
 
     QAO_Runtime* getRuntime() const noexcept;
+
+    void       setExeconThreshold(QAO_ExeCon aExeconThreshold);
+    QAO_ExeCon getExeconThreshold() const;
 
     void setExecutionPriority(int priority);
     int  getExecutionPriority() const noexcept;
@@ -76,10 +104,12 @@ private:
     std::uint32_t _flags = 0;
 
     enum Flags : std::uint32_t {
-        SET_UP_PROPERLY    = (1u << 31u),
-        TORN_DOWN_PROPERLY = (1u << 30u),
-        ATTACHED_PROPERLY  = (1u << 29u),
-        DETACHED_PROPERLY  = (1u << 28u)
+        SET_UP_PROPERLY_BIT    = (1u << 31u),
+        TORN_DOWN_PROPERLY_BIT = (1u << 30u),
+        ATTACHED_PROPERLY_BIT  = (1u << 29u),
+        DETACHED_PROPERLY_BIT  = (1u << 28u),
+
+        FLAGS_EXECON_BYTE_OFFSET = 2 //!< Execon threshold is stored in bits 16..23
     };
 
     // Update
