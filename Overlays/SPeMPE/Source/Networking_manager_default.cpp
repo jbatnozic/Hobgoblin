@@ -257,6 +257,7 @@ void DefaultNetworkingManager::_eventBeginUpdate() {
 void DefaultNetworkingManager::_eventEndUpdate() {
     // Update all Synchronized objects
     if (_node->isServer()) {
+        _syncObjReg.update();
         _syncObjReg.syncStateUpdates();
     }
 

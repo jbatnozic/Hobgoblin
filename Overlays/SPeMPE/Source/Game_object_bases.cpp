@@ -129,6 +129,14 @@ bool SynchronizedObjectBase::_didAlternatingUpdatesSync() const {
     return _syncObjReg->getAlternatingUpdatesFlag();
 }
 
+PacemakerConfig& SynchronizedObjectBase::_getPacemakerConfig() {
+    return _pacemakerConfig;
+}
+
+const PacemakerConfig& SynchronizedObjectBase::_getPacemakerConfig() const {
+    return _pacemakerConfig;
+}
+
 void SynchronizedObjectBase::_eventPreUpdate() {
     if (isMasterObject()) {
         _eventPreUpdate(IfMaster{});
@@ -297,6 +305,10 @@ bool SynchronizedObjectBase::__spempeimpl_getNoDiffSkipFlagForClient(hg::PZInteg
 void SynchronizedObjectBase::__spempeimpl_setStateSchedulerDefaultDelay(
     hg::PZInteger aNewDefaultDelaySteps) {
     _setStateSchedulerDefaultDelay(aNewDefaultDelaySteps);
+}
+
+PacemakerConfig& SynchronizedObjectBase::__spempeimpl_getPacemakerConfig() {
+    return _getPacemakerConfig();
 }
 
 } // namespace spempe

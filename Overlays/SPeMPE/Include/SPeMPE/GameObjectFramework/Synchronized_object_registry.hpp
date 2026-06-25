@@ -59,6 +59,8 @@ public:
     void syncObjectUpdate(const SynchronizedObjectBase* object, bool aIgnoreFilters);
     void syncObjectDestroy(const SynchronizedObjectBase* object, bool aIgnoreFilters);
 
+    //! \brief call this once per update step to keep the registry up to date
+    void update();
     void syncStateUpdates();
     void syncCompleteState(hg::PZInteger clientIndex);
 
@@ -69,7 +71,7 @@ public:
     //! registered synchronized objects.
     void setDefaultDelay(hg::PZInteger aNewDefaultDelaySteps);
 
-    //! Argument must be an even number!
+    //! \param aPeriod must be at least 1
     void setPacemakerPulsePeriod(hg::PZInteger aPeriod);
 
     //! Checks the alternating updates flag:
@@ -101,9 +103,9 @@ private:
     SyncId        _syncIdCounter = 2;
     hg::PZInteger _defaultDelay;
 
-    hg::PZInteger _pacemakerPulsePeriod    = 30; // 30 => 60 frames
-    hg::PZInteger _pacemakerPulseCountdown = _pacemakerPulsePeriod;
-    bool          _alternatingUpdateFlag   = true;
+    hg::PZInteger _pacemakerPulsePeriod  = 60;
+    std::uint32_t _pacemakerPulseCounter = 0;
+    bool          _alternatingUpdateFlag = true;
 
     static void Align(const SynchronizedObjectBase* aObject,
                       const SyncControlDelegate&    aSyncCtrl,
