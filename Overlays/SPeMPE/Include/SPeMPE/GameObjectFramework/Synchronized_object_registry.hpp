@@ -14,7 +14,6 @@
 #include <Hobgoblin/Utility/Packet.hpp>
 
 #include <cstdint>
-#include <functional>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -106,6 +105,8 @@ private:
     hg::PZInteger _pacemakerPulsePeriod  = 60;
     std::uint32_t _pacemakerPulseCounter = 0;
     bool          _alternatingUpdateFlag = true;
+
+    bool _isPacemakerPulseFiring(const SynchronizedObjectBase* aObject) const;
 
     static void Align(const SynchronizedObjectBase* aObject,
                       const SyncControlDelegate&    aSyncCtrl,

@@ -270,6 +270,9 @@ public:
 
     //! \warning Internal implementation, do not call in user code!
     PacemakerConfig& __spempeimpl_getPacemakerConfig();
+
+    //! \warning Internal implementation, do not call in user code!
+    const PacemakerConfig& __spempeimpl_getPacemakerConfig() const;
 };
 
 // clang-format on

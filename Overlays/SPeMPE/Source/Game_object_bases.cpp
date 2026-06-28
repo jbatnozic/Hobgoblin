@@ -311,5 +311,9 @@ PacemakerConfig& SynchronizedObjectBase::__spempeimpl_getPacemakerConfig() {
     return _getPacemakerConfig();
 }
 
+const PacemakerConfig& SynchronizedObjectBase::__spempeimpl_getPacemakerConfig() const {
+    return _getPacemakerConfig();
+}
+
 } // namespace spempe
 } // namespace jbatnozic
