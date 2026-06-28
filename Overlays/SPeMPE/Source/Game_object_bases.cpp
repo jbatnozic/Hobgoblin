@@ -2,6 +2,7 @@
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
 #include "SPeMPE/GameObjectFramework/Sync_id.hpp"
+#include <Hobgoblin/Common/Build_type.hpp>
 #include <Hobgoblin/HGExcept.hpp>
 
 #include <SPeMPE/GameContext/Game_context.hpp>
@@ -121,11 +122,13 @@ void SynchronizedObjectBase::_enableAlternatingUpdates() {
 }
 
 bool SynchronizedObjectBase::_didAlternatingUpdatesSync() const {
-    if (ctx().getQAORuntime().getCurrentEvent() != hg::QAO_Event::POST_UPDATE) {
+#if HG_BUILD_TYPE == HG_DEBUG
+    if (ctx().getQAORuntime().getCurrentEvent() <= hg::QAO_Event::END_UPDATE) {
         HG_THROW_TRACED(hg::TracedLogicError,
                         0,
-                        "This method may only be called during the POST_UPDATE event.");
+                        "This method may only be called during events after END_UPDATE.");
     }
+#endif
     return _syncObjReg->getAlternatingUpdatesFlag();
 }
 

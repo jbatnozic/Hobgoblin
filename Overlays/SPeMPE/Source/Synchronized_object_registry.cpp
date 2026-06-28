@@ -414,6 +414,7 @@ SynchronizedObjectBase* SynchronizedObjectRegistry::getMapping(SyncId syncId) co
 
 void SynchronizedObjectRegistry::update() {
     ++_pacemakerPulseCounter;
+    _alternatingUpdateFlag = !_alternatingUpdateFlag;
 }
 
 void SynchronizedObjectRegistry::syncStateUpdates() {
@@ -455,8 +456,6 @@ void SynchronizedObjectRegistry::syncStateUpdates() {
         }
     }
     _alreadyUpdatedObjects.clear();
-
-    _alternatingUpdateFlag = !_alternatingUpdateFlag;
 
     // Sync destroys
     // - not needed (dealt with in destructors)
@@ -505,9 +504,8 @@ void SynchronizedObjectRegistry::setPacemakerPulsePeriod(hg::PZInteger aPeriod) 
 }
 
 bool SynchronizedObjectRegistry::getAlternatingUpdatesFlag() const {
-    // This method is only for use in _eventFinalizeFrame; however by this point
-    // the flag has been read and flipped, so we flip it again before returning.
-    return !_alternatingUpdateFlag;
+    // This method is only for use in events after END_UPDATE event!
+    return _alternatingUpdateFlag;
 }
 
 void SynchronizedObjectRegistry::syncObjectCreate(const SynchronizedObjectBase* object,

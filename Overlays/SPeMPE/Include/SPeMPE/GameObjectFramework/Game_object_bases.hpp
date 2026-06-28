@@ -188,7 +188,7 @@ protected:
 
     void _enableAlternatingUpdates();
 
-    //! This method can be called only during _eventFinalizeStep().
+    //! \warning This method can only be called during events AFTER `END_UPDATE`!
     //! It will return true if objects with alternating updates enabled have
     //! synced during this cycle.
     //! Usually this is only useful for objects that use both autodiff states
