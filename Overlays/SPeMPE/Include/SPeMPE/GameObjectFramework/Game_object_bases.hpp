@@ -99,7 +99,7 @@ struct PacemakerConfig {
 
     //! Random value used to stagger the pacemaker pulses of instances so they don't all happen in the
     //! same 'frame'. This value is automatically randomized when a synchronized object is registered
-    //! (in `SynchronizedObjectBase::_didAttach()`). If, for whatever reason, you want to se tit to a
+    //! (in `SynchronizedObjectBase::_didAttach()`). If, for whatever reason, you want to set it to a
     //! specific value, set it after that.
     std::uint16_t offset : 15 = 0;
 };
