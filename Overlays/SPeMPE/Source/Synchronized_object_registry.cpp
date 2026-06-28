@@ -3,7 +3,6 @@
 
 // clang-format off
 
-
 #include <SPeMPE/GameContext/Game_context.hpp>
 #include <SPeMPE/GameObjectFramework/Game_object_bases.hpp>
 #include <SPeMPE/GameObjectFramework/Synchronized_object_registry.hpp>
@@ -15,6 +14,7 @@
 #include <Hobgoblin/Logging.hpp>
 #include <Hobgoblin/RigelNet.hpp>
 #include <Hobgoblin/RigelNet_macros.hpp>
+#include <Hobgoblin/Utility/Randomization.hpp>
 
 #include <cassert>
 #include <sstream>
@@ -324,6 +324,9 @@ SyncId SynchronizedObjectRegistry::registerMasterObject(SynchronizedObjectBase* 
 
     _newlyCreatedObjects.insert(object);
 
+    auto& pmConfig = object->__spempeimpl_getPacemakerConfig();
+    pmConfig.offset = hg::util::GetRandomNumber<std::uint16_t>(0, 32767);
+
     return id;
 }
 
@@ -409,57 +412,53 @@ SynchronizedObjectBase* SynchronizedObjectRegistry::getMapping(SyncId syncId) co
     return nullptr;
 }
 
+void SynchronizedObjectRegistry::update() {
+    ++_pacemakerPulseCounter;
+    _alternatingUpdateFlag = !_alternatingUpdateFlag;
+}
+
 void SynchronizedObjectRegistry::syncStateUpdates() {
     _syncControlDelegate._impl->targetAllRecepientsConnectedToNode(*_node);
     _syncControlDelegate._impl->setSyncFlags(SyncFlags::NONE);
 
     // Sync creations:
     for (auto* object : _newlyCreatedObjects) {
-        if (!IsFilteredOut(object->getExeconThreshold(), _execonCreateFilter)) {
-            CALL_SYNC_CREATE_IMPL(object, _syncControlDelegate, *_node);
+        if (IsFilteredOut(object->getExeconThreshold(), _execonCreateFilter)) {
+            continue;
         }
+        CALL_SYNC_CREATE_IMPL(object, _syncControlDelegate, *_node);
     }
     _newlyCreatedObjects.clear();
 
     // Sync updates:
-    if (!_alternatingUpdateFlag && _pacemakerPulseCountdown > 0) {
-        _pacemakerPulseCountdown -= 1;
-    }
-
-    _syncControlDelegate._impl->setSyncFlags(
-        (_pacemakerPulseCountdown == 0) ? SyncFlags::PACEMAKER_PULSE 
-                                        : SyncFlags::NONE
-    );
-
     for (auto& pair : _mappings) {
         SynchronizedObjectBase* object = pair.second;
+
+        if (IsFilteredOut(object->getExeconThreshold(), _execonUpdateFilter)) {
+            continue;
+        }
 
         auto iter = _alreadyUpdatedObjects.find(object);
         if (iter != _alreadyUpdatedObjects.end()) {
             // Not needed to remove elements one by one; we'll 
             // just clear the whole container at the end.
             // _alreadyUpdatedObjects.erase(iter);
-        }
-        else {
-            if (_alternatingUpdateFlag
-                || _pacemakerPulseCountdown == 0
+        } else {
+            const bool pacemakerPulseFiring = _isPacemakerPulseFiring(object);
+            if (pacemakerPulseFiring
+                || _alternatingUpdateFlag
                 || !object->isUsingAlternatingUpdates())
             {
-                if (!IsFilteredOut(object->getExeconThreshold(), _execonUpdateFilter)) {
-                    CALL_SYNC_UPDATE_IMPL(object, _syncControlDelegate, *_node);
-                }
+                _syncControlDelegate._impl->setSyncFlags(
+                    pacemakerPulseFiring ? SyncFlags::PACEMAKER_PULSE : SyncFlags::NONE);
+                CALL_SYNC_UPDATE_IMPL(object, _syncControlDelegate, *_node);
             }
         }
     }
     _alreadyUpdatedObjects.clear();
 
-    _alternatingUpdateFlag = !_alternatingUpdateFlag;
-
-    if (_pacemakerPulseCountdown == 0) {
-        _pacemakerPulseCountdown = _pacemakerPulsePeriod;
-    }
-
-    // Sync destroys - not needed (dealt with in destructors)
+    // Sync destroys
+    // - not needed (dealt with in destructors)
 }
 
 void SynchronizedObjectRegistry::syncCompleteState(hg::PZInteger clientIndex) {
@@ -497,17 +496,16 @@ void SynchronizedObjectRegistry::setDefaultDelay(hg::PZInteger aNewDefaultDelayS
 }
 
 void SynchronizedObjectRegistry::setPacemakerPulsePeriod(hg::PZInteger aPeriod) {
-    if ((aPeriod % 2 == 1) || (aPeriod < 2)) {
+    if (aPeriod < 1) {
         HG_THROW_TRACED(hg::InvalidArgumentError, 0,
-                        "Pacemaker pulse period must be an even number and at least 2!");
+                        "Pacemaker pulse period must be at least 1!");
     }
-    _pacemakerPulsePeriod = (aPeriod / 2);
+    _pacemakerPulsePeriod = aPeriod;
 }
 
 bool SynchronizedObjectRegistry::getAlternatingUpdatesFlag() const {
-    // This method is only for use in _eventFinalizeFrame; however by this point
-    // the flag has been read and flipped, so we flip it again before returning.
-    return !_alternatingUpdateFlag;
+    // This method is only for use in events after END_UPDATE event!
+    return _alternatingUpdateFlag;
 }
 
 void SynchronizedObjectRegistry::syncObjectCreate(const SynchronizedObjectBase* object,
@@ -598,6 +596,35 @@ void SynchronizedObjectRegistry::syncObjectDestroy(const SynchronizedObjectBase*
 void SynchronizedObjectRegistry::deactivateObject(SyncId aObjectId, hg::PZInteger aDelayInSteps) {
     auto& object = _mappings.at(aObjectId);
     object->__spempeimpl_deactivateSelfIn(aDelayInSteps);
+}
+
+bool SynchronizedObjectRegistry::_isPacemakerPulseFiring(const SynchronizedObjectBase* aObject) const {
+    if (!aObject->isUsingAlternatingUpdates()) {
+        // For 'regular' (non alternating updates) objects, the required conditions to fire the pulse
+        // are that a) it has to be enabled on the object, and b) it has to be the right moment in the
+        // defined period
+        const auto& pmConfig = aObject->__spempeimpl_getPacemakerConfig();
+        if (pmConfig.enabled != 0) {
+            const auto counterWithOffset = _pacemakerPulseCounter + (std::uint32_t)pmConfig.offset;
+            if ((counterWithOffset % (std::uint32_t)_pacemakerPulsePeriod) == 0) {
+                return true;
+            }
+        }
+    } else if (!_alternatingUpdateFlag) {
+        // For objects with alternating updates, the required conditions to fire the pulse are
+        // basically the same as above, with the added caveat that pacemaker pulses come inbetween
+        // regular alternating updates (the result of the modulo operand will be 0 and then 1 for two
+        // consecutive iterations, and we know that in exactly one of those two iterations
+        // `_alternatingUpdateFlag` will be `false`)
+        const auto& pmConfig = aObject->__spempeimpl_getPacemakerConfig();
+        if (pmConfig.enabled != 0) {
+            const auto counterWithOffset = _pacemakerPulseCounter + (std::uint32_t)pmConfig.offset;
+            if ((counterWithOffset % (std::uint32_t)_pacemakerPulsePeriod) <= 1) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 void SynchronizedObjectRegistry::Align(const SynchronizedObjectBase* aObject,

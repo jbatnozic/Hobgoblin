@@ -18,7 +18,6 @@
 
 #include <cassert>
 #include <optional>
-#include <typeinfo>
 #include <type_traits>
 #include <utility>
 
@@ -87,6 +86,23 @@ enum class SyncUpdateStatus {
 
 struct IfMaster {};
 struct IfDummy  {};
+
+//! Pacemaker parameters for a single SynchronizedObject instance.
+//! \note in the code of a class derived from `SynchronizedObjectBase` (see below), use
+//!       `_getPacemakerConfig()` to access an instance's pacemaker config.
+struct PacemakerConfig {
+    //! Whether the instance wants the pacemaker functionality at all (0 = OFF, 1 = ON).
+    //! You should leave this ON unless you have a good reason to do otherwise (one such reason is if
+    //! you know that an object's state will be changed very rarely - significantly more rarely than
+    //! the game's pacemaker pulse period).
+    std::uint16_t enabled : 1 = 1;
+
+    //! Random value used to stagger the pacemaker pulses of instances so they don't all happen in the
+    //! same 'frame'. This value is automatically randomized when a synchronized object is registered
+    //! (in `SynchronizedObjectBase::_didAttach()`). If, for whatever reason, you want to set it to a
+    //! specific value, set it after that.
+    std::uint16_t offset : 15 = 0;
+};
 
 // MARK: Virtual base
 
@@ -172,13 +188,18 @@ protected:
 
     void _enableAlternatingUpdates();
 
-    //! This method can be called only during _eventFinalizeStep().
+    //! \warning This method can only be called during events AFTER `END_UPDATE`!
     //! It will return true if objects with alternating updates enabled have
     //! synced during this cycle.
     //! Usually this is only useful for objects that use both autodiff states
     //! and alternating updates, as they will want to commit their autodiff
     //! states only after a sync.
     bool _didAlternatingUpdatesSync() const;
+
+    // Pacemaker
+
+    PacemakerConfig& _getPacemakerConfig();
+    const PacemakerConfig& _getPacemakerConfig() const;
 
 private:
     detail::SynchronizedObjectRegistry* _syncObjReg = nullptr;
@@ -192,6 +213,8 @@ private:
     mutable hg::util::DynamicBitset _remoteSyncStatuses;
 
     int _deathCounter = -1;
+
+    PacemakerConfig _pacemakerConfig;
 
     bool _alternatingUpdatesEnabled = false;
 
@@ -244,6 +267,12 @@ public:
 
     //! \warning Internal implementation, do not call in user code!
     void __spempeimpl_setStateSchedulerDefaultDelay(hg::PZInteger aNewDefaultDelaySteps);
+
+    //! \warning Internal implementation, do not call in user code!
+    PacemakerConfig& __spempeimpl_getPacemakerConfig();
+
+    //! \warning Internal implementation, do not call in user code!
+    const PacemakerConfig& __spempeimpl_getPacemakerConfig() const;
 };
 
 // clang-format on
