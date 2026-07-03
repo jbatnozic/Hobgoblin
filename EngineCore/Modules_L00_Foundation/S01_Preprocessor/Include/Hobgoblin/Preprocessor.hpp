@@ -13,8 +13,14 @@
 #if defined(_MSC_VER) && (!defined(_MSVC_TRADITIONAL) || _MSVC_TRADITIONAL)
 
 #define UHOBGOBLIN_USING_TRADITIONAL_MSVC_PREPROCESSOR
+
 #define UHOBGOBLIN_PP_EXPAND(...) __VA_ARGS__
 #define UHOBGOBLIN_PP_VA_ARGS(_leading_arg_, ...) _leading_arg_, __VA_ARGS__
+#define HG_PP_INVOKE(_macro_name_, ...) UHOBGOBLIN_PP_EXPAND(_macro_name_(__VA_ARGS__))
+
+#else
+
+#define HG_PP_INVOKE(_macro_name_, ...) _macro_name_(__VA_ARGS__)
 
 #endif
 
@@ -76,6 +82,8 @@
 
 // If not using MSVC, we just hope the used compiler supports __VA_OPT__ ...
 
+//! \brief Expands to the integer constant representing the number of
+//!        parameters that were passed to the macro (0-100).
 #define HG_PP_COUNT_ARGS(...) \
     UHOBGOBLIN_PP_COUNT_ARGS_FINAL(0 __VA_OPT__(,) __VA_ARGS__, \
        100, 99, 98, 97, 96, 95, 94, 93, 92, 91, \
@@ -95,14 +103,33 @@
 // DO BEFORE MAIN                                                        //
 ///////////////////////////////////////////////////////////////////////////
 
-#define HG_PP_DO_BEFORE_MAIN(_name_) \
-    namespace { \
-    struct UHOBGOBLIN_DoBeforeMainImpl_##_name_ { \
-        explicit UHOBGOBLIN_DoBeforeMainImpl_##_name_(); \
+#define UHOBGOBLIN_DO_BEFORE_MAIN_IMPL(_name_, _ln_) \
+    struct UHOBGOBLIN_DoBeforeMainImpl_##_name_##_##_ln_ { \
+        explicit inline UHOBGOBLIN_DoBeforeMainImpl_##_name_##_##_ln_ (); \
     }; \
-    } \
-    UHOBGOBLIN_DoBeforeMainImpl_##_name_ UHOBGOBLIN_DoBeforeMainInstance_##_name_{}; \
-    UHOBGOBLIN_DoBeforeMainImpl_##_name_::UHOBGOBLIN_DoBeforeMainImpl_##_name_()
+    inline \
+    UHOBGOBLIN_DoBeforeMainImpl_##_name_##_##_ln_  UHOBGOBLIN_DoBeforeMainInstance_##_name_##_##_ln_ {}; \
+    inline \
+    UHOBGOBLIN_DoBeforeMainImpl_##_name_##_##_ln_ ::UHOBGOBLIN_DoBeforeMainImpl_##_name_##_##_ln_ ()
+
+//! \brief Execute a code block before entering `main()`.
+//!
+//! \param _name_ Unique identifier for the code block (at worst, giving a non-unique ID
+//!               will produce a linker error. If it doesn't then the code will work as
+//!               intended anyway).
+//!
+//! \note it doesn't matter if you put the invocation of this macro in a .cpp or a .hpp file -
+//!       its body will be invoked only once either way.
+//!
+//! \example
+//!
+//!     HG_DO_BEFORE_MAIN(MyUniqueIdentifier123) {
+//!         DoSomething();
+//!     }
+//!
+#define HG_DO_BEFORE_MAIN(_name_) \
+    /* Defer through `HG_PP_INVOKE` so `__LINE__` gets expanded properly */ \
+    HG_PP_INVOKE(UHOBGOBLIN_DO_BEFORE_MAIN_IMPL, _name_, __LINE__)
 
 #endif // !UHOBGOBLIN_PREPROCESSOR_HPP
 
