@@ -4,7 +4,7 @@
 # ===== COMPONENT SETUP =====
 
 find_package(GLEW CONFIG REQUIRED)
-find_package(rmlui CONFIG REQUIRED)
+find_package(RmlUi CONFIG REQUIRED)
 find_package(SFML CONFIG REQUIRED)
 
 set(COMPONENT_NAME "Hobgoblin.RmlUi")
@@ -41,7 +41,7 @@ PUBLIC
 
     # External
     "GLEW::GLEW"
-    "rmlui::rmlui"
+    "RmlUi::RmlUi"
     "sfml::sfml"
 )
 

@@ -1,13 +1,10 @@
 #! /bin/bash
 
-LIBZT_COMMITHASH=daf70601c9e784d0bd6e5b672d4d4bf44d92d351
-LIBZT_VERSION=3.0.3
+LIBZT_COMMITHASH=19bc10691b99c89c760c24cfb27f5256ae18ec7c
+LIBZT_VERSION=3.0.4
 
-ZTCPP_COMMITHASH=830cfd291270dbf0c02a04e6c3781fb68f544f1e
-ZTCPP_VERSION=3.0.3
-
-RMLUI_COMMITHASH=33dc5517c883edf9bf54f9339bf223333e8f79c4
-RMLUI_VERSION=5.1
+ZTCPP_COMMITHASH=f1e853ad1ee4fcaa378bf920e46b9448c873234e
+ZTCPP_VERSION=3.0.4
 
 echo "Looking for git..."
 if ! command -v git &> /dev/null
@@ -41,14 +38,6 @@ git clone https://github.com/jbatnozic/ztcpp
 pushd ztcpp
 git checkout ${ZTCPP_COMMITHASH}
 conan export . --version ${ZTCPP_VERSION} --user jbatnozic --channel stable
-# TODO: exit on failure of conan export
-popd
-
-echo "Getting RmlUi..."
-git clone https://github.com/jbatnozic/rmlui-conan
-pushd rmlui-conan
-git checkout ${RMLUI_COMMITHASH}
-conan export . --version ${RMLUI_VERSION} --user jbatnozic --channel stable
 # TODO: exit on failure of conan export
 popd
 
