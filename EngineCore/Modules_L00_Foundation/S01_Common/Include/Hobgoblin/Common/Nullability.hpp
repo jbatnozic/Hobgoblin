@@ -39,7 +39,7 @@ public:
 };
 
 ///////////////////////////////////////////////////////////////////////////
-// NEVERNULL                                                             //
+// MARK: NEVERNULL                                                       //
 ///////////////////////////////////////////////////////////////////////////
 
 //! Restricts a raw pointer or smart pointer to only hold non-NULL values.
@@ -250,7 +250,7 @@ struct hash<jbatnozic::hobgoblin::NeverNull<taPointer>> {
 HOBGOBLIN_NAMESPACE_BEGIN
 
 ///////////////////////////////////////////////////////////////////////////
-// AVOIDNULL                                                             //
+// MARK: AVOIDNULL                                                       //
 ///////////////////////////////////////////////////////////////////////////
 
 //! `AvoidNull` class template is very similar to `NeverNull` class template.
@@ -305,6 +305,14 @@ T MoveToUnderlying(AvoidNull<T> aPtr) {
     T rv = static_cast<AvoidNull<T>&&>(aPtr);
     return rv;
 }
+
+///////////////////////////////////////////////////////////////////////////
+// MARK: NULLABLE                                                        //
+///////////////////////////////////////////////////////////////////////////
+
+//! Doesn't do anything, but signals to the reader that the pointer `T` can be NULL.
+template <class T>
+using Nullable = T;
 
 HOBGOBLIN_NAMESPACE_END
 

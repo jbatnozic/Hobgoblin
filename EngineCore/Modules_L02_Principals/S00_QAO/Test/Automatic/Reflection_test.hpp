@@ -11,13 +11,28 @@
 
 namespace test {
 
+QAO_DEFINE_MESSAGE(SetPower, const double);
+QAO_DEFINE_MESSAGE(UnusedMessage, int);
+
 //! Reflection & Messaging tester
 class RMTesterBase : public hg::QAO_Base {
 public:
-    using hg::QAO_Base::QAO_Base;
+    RMTesterBase(hg::QAO_InstGuard aInstGuard)
+        : QAO_Base{aInstGuard, hg::QAO_ExeCon::GAMEPLAY, 0, "RMTesterBase"} {}
+
+    void setPower(const double* aPower) {
+        power = *aPower;
+    }
+
+    double power = 0.0;
 
 private:
 };
+
+QAO_REGISTER_CLASS(RMTesterBase, QAO_AutomaticTest_RMTesterBase) {
+    QAO_LOCAL_ALIAS(C, clazz);
+    clazz.setMessageHandler<C, SetPower, &C::setPower>();
+}
 
 class RMTesterDerived : public RMTesterBase {
 public:
@@ -26,7 +41,7 @@ public:
 private:
 };
 
-QAO_REGISTER_CLASS(RMTesterBase, QAO_AutomaticTest_RMTesterBase) {
+QAO_REGISTER_CLASS(RMTesterDerived, QAO_AutomaticTest_RMTesterDerived) {
     // QAO_LOCAL_ALIAS(C, clazz);
 }
 

@@ -11,6 +11,32 @@
 
 using namespace hg::qao;
 
-TEST(QAO_ReflTest, Asdf) {
+namespace test {
 
+class QAO_ReflectionTest : public ::testing::Test {
+public:
+private:
+};
+
+TEST_F(QAO_ReflectionTest, RegisteredClassCount) {
+    EXPECT_EQ(QAO_ClassMetadata::getClassCount(), 2);
 }
+
+TEST_F(QAO_ReflectionTest, SendMessage) {
+    auto inst = QAO_Create<RMTesterBase>(nullptr);
+
+    {
+        const double power   = 5.0;
+        const bool   didSend = QAO_SendMessage<SetPower>((QAO_Base&)(*inst), &power);
+
+        EXPECT_TRUE(didSend);
+        EXPECT_EQ(inst->power, power);
+    }
+    {
+        const bool didSend = QAO_SendMessage<UnusedMessage>((QAO_Base&)(*inst), nullptr);
+
+        EXPECT_FALSE(didSend);
+    }
+}
+
+} // namespace test
