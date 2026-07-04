@@ -11,6 +11,7 @@
 #include <Hobgoblin/QAO/Orderer.hpp>
 #include <Hobgoblin/QAO/Priority_resolver.hpp>
 #include <Hobgoblin/QAO/Priority_resolver2.hpp>
+#include <Hobgoblin/QAO/Reflection.hpp>
 #include <Hobgoblin/QAO/Registry.hpp>
 #include <Hobgoblin/QAO/Runtime.hpp>
 #include <Hobgoblin/QAO/Runtime_ref.hpp>

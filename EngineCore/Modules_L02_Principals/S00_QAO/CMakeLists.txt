@@ -15,6 +15,7 @@ set(COMPONENT_SOURCES
   "Source/Orderer.cpp"
   "Source/Priority_resolver.cpp"
   "Source/Priority_resolver2.cpp"
+  "Source/Reflection.cpp"
   "Source/Registry.cpp"
   "Source/Runtime.cpp"
 )
