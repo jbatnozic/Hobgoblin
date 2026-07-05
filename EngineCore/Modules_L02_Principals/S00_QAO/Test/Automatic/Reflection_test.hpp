@@ -7,12 +7,15 @@
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/QAO.hpp>
 
+#include <string>
+
 #include <gtest/gtest.h>
 
 namespace test {
 
-QAO_DEFINE_MESSAGE(SetPower, const double);
-QAO_DEFINE_MESSAGE(UnusedMessage, int);
+QAO_DEFINE_MESSAGE(SetPower, const double*);
+QAO_DEFINE_MESSAGE(MsgWithoutPayload, QAO_NO_PAYLOAD);
+QAO_DEFINE_MESSAGE(UnusedMessage, int*);
 
 //! Reflection & Messaging tester
 class RMTesterBase : public hg::QAO_Base {
@@ -20,11 +23,23 @@ public:
     RMTesterBase(hg::QAO_InstGuard aInstGuard)
         : QAO_Base{aInstGuard, hg::QAO_ExeCon::GAMEPLAY, 0, "RMTesterBase"} {}
 
-    void setPower(const double* aPower) {
-        power = *aPower;
+    virtual void setPower(SetPower::PayloadPtr aPower, bool aConst) {
+        lastReceivedMessage             = "SetPower";
+        constParamOfLastReceivedMessage = aConst;
+
+        if (!aConst) {
+            power = *aPower;
+        }
     }
 
-    double power = 0.0;
+    void handleMsgWithoutPayload(MsgWithoutPayload::PayloadPtr, bool aConst) {
+        lastReceivedMessage             = "MsgWithoutPayload";
+        constParamOfLastReceivedMessage = aConst;
+    }
+
+    double      power                           = 0.0;
+    std::string lastReceivedMessage             = "";
+    bool        constParamOfLastReceivedMessage = false;
 
 private:
 };
@@ -32,6 +47,7 @@ private:
 QAO_REGISTER_CLASS(RMTesterBase, QAO_AutomaticTest_RMTesterBase) {
     QAO_LOCAL_ALIAS(C, clazz);
     clazz.setMessageHandler<C, SetPower, &C::setPower>();
+    clazz.setMessageHandler<C, MsgWithoutPayload, &C::handleMsgWithoutPayload>();
 }
 
 class RMTesterDerived : public RMTesterBase {

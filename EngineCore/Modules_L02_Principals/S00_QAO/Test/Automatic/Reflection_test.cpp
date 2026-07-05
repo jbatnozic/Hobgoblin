@@ -31,11 +31,22 @@ TEST_F(QAO_ReflectionTest, SendMessage) {
 
         EXPECT_TRUE(didSend);
         EXPECT_EQ(inst->power, power);
+        EXPECT_EQ(inst->lastReceivedMessage, "SetPower");
+        EXPECT_EQ(inst->constParamOfLastReceivedMessage, false);
     }
     {
         const bool didSend = QAO_SendMessage<UnusedMessage>((QAO_Base&)(*inst), nullptr);
 
         EXPECT_FALSE(didSend);
+        EXPECT_EQ(inst->lastReceivedMessage, "SetPower");
+        EXPECT_EQ(inst->constParamOfLastReceivedMessage, false);
+    }
+    {
+        const bool   didSend = QAO_SendMessage<MsgWithoutPayload>((const QAO_Base&)(*inst), nullptr);
+
+        EXPECT_TRUE(didSend);
+        EXPECT_EQ(inst->lastReceivedMessage, "MsgWithoutPayload");
+        EXPECT_EQ(inst->constParamOfLastReceivedMessage, true);
     }
 }
 

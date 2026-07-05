@@ -92,7 +92,8 @@ namespace qao_detail {
 bool QAO_SendMessage(QAO_MessageHandlerMap& aMessageHandlerMap,
                      std::type_index        aMessageTypeIndex,
                      QAO_Base&              aReceiverInstance,
-                     void*                  aMessagePayloadPtr) {
+                     void*                  aMessagePayloadPtr,
+                     bool                   aConst) {
     QAO_UntypedMessage untypedMessagePtr = nullptr;
 
     aMessageHandlerMap.lazy_emplace_l(
@@ -109,13 +110,13 @@ bool QAO_SendMessage(QAO_MessageHandlerMap& aMessageHandlerMap,
             // Generate the value lazily
             const auto* metadata = QAO_ClassMetadata::get(typeid(aReceiverInstance));
             if (!metadata) {
-                aCtor(aMessageTypeIndex, nullptr);
+                aCtor(aMessageTypeIndex, nullptr); // Atomically construct it in-place
                 return;
             }
 
             const auto iter = metadata->_messageHandlers.find(aMessageTypeIndex);
             if (iter == metadata->_messageHandlers.end()) {
-                aCtor(aMessageTypeIndex, nullptr);
+                aCtor(aMessageTypeIndex, nullptr); // Atomically construct it in-place
                 return;
             }
 
@@ -128,7 +129,7 @@ bool QAO_SendMessage(QAO_MessageHandlerMap& aMessageHandlerMap,
         return false;
     }
 
-    untypedMessagePtr(aReceiverInstance, aMessagePayloadPtr);
+    untypedMessagePtr(aReceiverInstance, aMessagePayloadPtr, aConst);
     return true;
 }
 
