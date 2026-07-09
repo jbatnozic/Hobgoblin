@@ -13,7 +13,9 @@
 HOBGOBLIN_NAMESPACE_BEGIN
 namespace qao {
 
-QAO_REGISTER_CLASS(QAO_Base, UHOBGOBLIN_QAO_Base) {}
+QAO_REGISTER_CLASS(QAO_Base, UHOBGOBLIN_QAO_Base) {
+    /* This is the only class which doesn't need to have its superclass set */
+}
 
 // MARK: Maps
 
@@ -61,7 +63,23 @@ PZInteger QAO_ClassMetadata::getClassCount() {
     return stopz(GetTypeIdxMap().size());
 }
 
-std::span<const QAO_ClassMetadata* const> QAO_ClassMetadata::getChildClasses() {
+std::string_view QAO_ClassMetadata::getUniqueName() const {
+    return _selfUniqueName;
+}
+
+const std::type_info& QAO_ClassMetadata::getTypeInfo() const {
+    return _selfTypeInfo;
+}
+
+std::type_index QAO_ClassMetadata::getTypeIndex() const {
+    return std::type_index{_selfTypeInfo};
+}
+
+const QAO_ClassMetadata* QAO_ClassMetadata::getSuperclass() const {
+    return _superclassMetadata;
+}
+
+std::span<const QAO_ClassMetadata* const> QAO_ClassMetadata::getChildClasses() const {
     return _childClasses;
 }
 
@@ -114,7 +132,8 @@ bool QAO_SendMessage(QAO_MessageHandlerMap& aMessageHandlerMap,
         // --- CASE 2: Key is missing ---
         // Called under a submap lock.
         [&untypedMessagePtr, &aMessageTypeIndex, &aReceiverInstance, instTypeIdx](
-            const QAO_MessageHandlerMap::constructor& aCtor) {
+            const QAO_MessageHandlerMap::constructor& aCtor) //
+        {
             // Generate the value lazily
             const auto* metadata = QAO_ClassMetadata::get(typeid(aReceiverInstance));
             if (!metadata) {
@@ -169,12 +188,21 @@ void QAO_InitializeMetadata() {
                 continue; // QAO_Base doesn't have a superclass in the QAO hierarchy
             }
 
-            auto iter = typeIdxMap.find(std::type_index{*metadata._superclassTypeInfo});
-            if (iter == typeIdxMap.end()) {
+            const auto* superclassTypeInfo = metadata._superclassTypeInfo;
+            if (!superclassTypeInfo) {
                 HG_THROW_TRACED(TracedLogicError,
                                 0,
                                 "No superclass was set for class '{}'",
                                 metadata._selfUniqueName);
+            }
+
+            auto iter = typeIdxMap.find(std::type_index{*metadata._superclassTypeInfo});
+            if (iter == typeIdxMap.end()) {
+                HG_THROW_TRACED(TracedLogicError,
+                                0,
+                                "No superclass of class '{}' points to a non-registered type '{}'",
+                                metadata._selfUniqueName,
+                                superclassTypeInfo->name());
             }
 
             metadata._superclassMetadata = &(iter->second);
@@ -182,15 +210,16 @@ void QAO_InitializeMetadata() {
         }
     }
 
-    // By this point, the classes will form a structure kind of like a tree inside the map,
+    // By this point, the classes will form a structure pretty much like a tree inside the map,
     // with the metadata for QAO_Base being the root. We can now traverse the tree breadth-first
     // in order to resolve message handler inheritance.
 
     {
-        PZInteger visitedClassesCount = 1;
+        PZInteger visitedClassesCount = 1; // We don't really visit `QAO_Base` but it counts
+
         std::deque<QAO_ClassMetadata*> queue;
         for (auto* child : typeIdxMap.find(QAO_BASE_TYPE_IDX)->second._childClasses) {
-            queue.push_back(const_cast<QAO_ClassMetadata*>(child));
+            queue.push_back(child);
         }
 
         while (!queue.empty()) {
@@ -198,16 +227,17 @@ void QAO_InitializeMetadata() {
             queue.pop_front();
             ++visitedClassesCount;
 
-            // inherit
+            // Inherit message handlers which aren't overriden
             auto& parent = *current->_superclassMetadata;
             for (auto& [typeIndex, untypedMessage] : parent._messageHandlers) {
                 (void)current->_messageHandlers.try_emplace(typeIndex, untypedMessage);
             }
 
             for (auto& child : current->_childClasses) {
-                queue.push_back(const_cast<QAO_ClassMetadata*>(child));
+                queue.push_back(child);
             }
         }
+
         HG_HARD_ASSERT(visitedClassesCount == stopz(typeIdxMap.size()));
     }
 }

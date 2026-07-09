@@ -26,6 +26,45 @@ TEST_F(QAO_ReflectionTest, RegisteredClassCount) {
     EXPECT_EQ(QAO_ClassMetadata::getClassCount(), 3); // Two testers and QAO_Base
 }
 
+TEST_F(QAO_ReflectionTest, CheckQAO_BaseMetadata) {
+    const auto* metadata        = QAO_ClassMetadata::get(typeid(QAO_Base));
+    const auto* metadata_byName = QAO_ClassMetadata::get("UHOBGOBLIN_QAO_Base");
+
+    ASSERT_NE(metadata, nullptr);
+    EXPECT_EQ(metadata, metadata_byName);
+
+    EXPECT_EQ(metadata->getUniqueName(), "UHOBGOBLIN_QAO_Base");
+    EXPECT_EQ(metadata->getTypeInfo(), typeid(QAO_Base));
+    EXPECT_EQ(metadata->getSuperclass(), nullptr);
+    EXPECT_EQ(metadata->getChildClasses().size(), 1);
+}
+
+TEST_F(QAO_ReflectionTest, CheckBaseClassMetadata) {
+    const auto* metadata        = QAO_ClassMetadata::get(typeid(RMTesterBase));
+    const auto* metadata_byName = QAO_ClassMetadata::get("QAO_AutomaticTest_RMTesterBase");
+
+    ASSERT_NE(metadata, nullptr);
+    EXPECT_EQ(metadata, metadata_byName);
+
+    EXPECT_EQ(metadata->getUniqueName(), "QAO_AutomaticTest_RMTesterBase");
+    EXPECT_EQ(metadata->getTypeInfo(), typeid(RMTesterBase));
+    EXPECT_EQ(metadata->getSuperclass(), QAO_ClassMetadata::get(typeid(QAO_Base)));
+    EXPECT_EQ(metadata->getChildClasses().size(), 1);
+}
+
+TEST_F(QAO_ReflectionTest, CheckDerivedClassMetadata) {
+    const auto* metadata        = QAO_ClassMetadata::get(typeid(RMTesterDerived));
+    const auto* metadata_byName = QAO_ClassMetadata::get("QAO_AutomaticTest_RMTesterDerived");
+
+    ASSERT_NE(metadata, nullptr);
+    EXPECT_EQ(metadata, metadata_byName);
+
+    EXPECT_EQ(metadata->getUniqueName(), "QAO_AutomaticTest_RMTesterDerived");
+    EXPECT_EQ(metadata->getTypeInfo(), typeid(RMTesterDerived));
+    EXPECT_EQ(metadata->getSuperclass(), QAO_ClassMetadata::get(typeid(RMTesterBase)));
+    EXPECT_EQ(metadata->getChildClasses().size(), 0);
+}
+
 TEST_F(QAO_ReflectionTest, SendMessagesToBaseClass) {
     auto inst = QAO_Create<RMTesterBase>(nullptr);
 
