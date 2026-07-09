@@ -23,7 +23,7 @@ public:
     RMTesterBase(hg::QAO_InstGuard aInstGuard)
         : QAO_Base{aInstGuard, hg::QAO_ExeCon::GAMEPLAY, 0, "RMTesterBase"} {}
 
-    virtual void setPower(SetPower::PayloadPtr aPower, bool aConst) {
+    void setPower(SetPower::PayloadPtr aPower, bool aConst) {
         lastReceivedMessage             = "SetPower";
         constParamOfLastReceivedMessage = aConst;
 
@@ -46,6 +46,7 @@ private:
 
 QAO_REGISTER_CLASS(RMTesterBase, QAO_AutomaticTest_RMTesterBase) {
     QAO_LOCAL_ALIAS(C, clazz);
+    clazz.setSuperclass<hg::QAO_Base>();
     clazz.setMessageHandler<C, SetPower, &C::setPower>();
     clazz.setMessageHandler<C, MsgWithoutPayload, &C::handleMsgWithoutPayload>();
 }
@@ -54,11 +55,22 @@ class RMTesterDerived : public RMTesterBase {
 public:
     using RMTesterBase::RMTesterBase;
 
+    void setDoubledPower(SetPower::PayloadPtr aPower, bool aConst) {
+        lastReceivedMessage             = "SetPower";
+        constParamOfLastReceivedMessage = aConst;
+
+        if (!aConst) {
+            power = *aPower * 2.0;
+        }
+    }
+
 private:
 };
 
 QAO_REGISTER_CLASS(RMTesterDerived, QAO_AutomaticTest_RMTesterDerived) {
-    // QAO_LOCAL_ALIAS(C, clazz);
+    QAO_LOCAL_ALIAS(C, clazz);
+    clazz.setSuperclass<RMTesterBase>();
+    clazz.setMessageHandler<C, SetPower, &C::setDoubledPower>();
 }
 
 } // namespace test

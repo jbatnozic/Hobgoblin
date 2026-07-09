@@ -6,11 +6,14 @@
 #include <Hobgoblin/QAO/Reflection.hpp>
 
 #include <cassert>
+#include <deque>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
 HOBGOBLIN_NAMESPACE_BEGIN
 namespace qao {
+
+QAO_REGISTER_CLASS(QAO_Base, UHOBGOBLIN_QAO_Base) {}
 
 // MARK: Maps
 
@@ -58,6 +61,10 @@ PZInteger QAO_ClassMetadata::getClassCount() {
     return stopz(GetTypeIdxMap().size());
 }
 
+std::span<const QAO_ClassMetadata* const> QAO_ClassMetadata::getChildClasses() {
+    return _childClasses;
+}
+
 // MARK: Registering classes
 
 namespace qao_detail {
@@ -71,7 +78,7 @@ QAO_ClassMetadata& QAO_RegisterClass(const std::type_info& aTypeInfo, std::strin
         HG_THROW_TRACED(PreconditionNotMetError, 0, "TODO"); // TODO
     }
 
-    auto [iter, didInsert] = typeIdxMap.try_emplace(std::type_index{aTypeInfo});
+    auto [iter, didInsert] = typeIdxMap.try_emplace(std::type_index{aTypeInfo}, aTypeInfo, aUniqueName);
 
     if (!didInsert) {
         assert(false && "QAO: Failed to register class - type index is not unique!");
@@ -96,8 +103,9 @@ bool QAO_SendMessage(QAO_MessageHandlerMap& aMessageHandlerMap,
                      bool                   aConst) {
     QAO_UntypedMessage untypedMessagePtr = nullptr;
 
+    const auto instTypeIdx = std::type_index{typeid(aReceiverInstance)};
     aMessageHandlerMap.lazy_emplace_l(
-        aMessageTypeIndex,
+        instTypeIdx,
         // --- CASE 1: Key already exists ---
         // Called under a submap lock.
         [&untypedMessagePtr](QAO_MessageHandlerMap::value_type& aPair) {
@@ -105,24 +113,24 @@ bool QAO_SendMessage(QAO_MessageHandlerMap& aMessageHandlerMap,
         },
         // --- CASE 2: Key is missing ---
         // Called under a submap lock.
-        [&untypedMessagePtr, &aMessageTypeIndex, &aReceiverInstance](
+        [&untypedMessagePtr, &aMessageTypeIndex, &aReceiverInstance, instTypeIdx](
             const QAO_MessageHandlerMap::constructor& aCtor) {
             // Generate the value lazily
             const auto* metadata = QAO_ClassMetadata::get(typeid(aReceiverInstance));
             if (!metadata) {
-                aCtor(aMessageTypeIndex, nullptr); // Atomically construct it in-place
+                aCtor(instTypeIdx, nullptr); // Atomically construct it in-place
                 return;
             }
 
             const auto iter = metadata->_messageHandlers.find(aMessageTypeIndex);
             if (iter == metadata->_messageHandlers.end()) {
-                aCtor(aMessageTypeIndex, nullptr); // Atomically construct it in-place
+                aCtor(instTypeIdx, nullptr); // Atomically construct it in-place
                 return;
             }
 
             untypedMessagePtr = iter->second;
 
-            aCtor(aMessageTypeIndex, untypedMessagePtr); // Atomically construct it in-place
+            aCtor(instTypeIdx, untypedMessagePtr); // Atomically construct it in-place
         });
 
     if (!untypedMessagePtr) {
@@ -134,6 +142,75 @@ bool QAO_SendMessage(QAO_MessageHandlerMap& aMessageHandlerMap,
 }
 
 } // namespace qao_detail
+
+// MARK: Init
+namespace {
+bool g_qaoMetadataInitialized = false;
+} // namespace
+
+void QAO_InitializeMetadata() {
+    {
+        bool b = true;
+        std::swap(b, g_qaoMetadataInitialized);
+        if (b) {
+            return;
+        }
+    }
+
+    auto& typeIdxMap  = GetTypeIdxMap();
+    auto& uniqNameMap = GetUniqNameMap();
+
+    const auto QAO_BASE_TYPE_IDX = std::type_index{typeid(QAO_Base)};
+
+    // Resolve superclasses and child classes
+    {
+        for (auto& [typeIndex, metadata] : typeIdxMap) {
+            if (typeIndex == QAO_BASE_TYPE_IDX) {
+                continue; // QAO_Base doesn't have a superclass in the QAO hierarchy
+            }
+
+            auto iter = typeIdxMap.find(std::type_index{*metadata._superclassTypeInfo});
+            if (iter == typeIdxMap.end()) {
+                HG_THROW_TRACED(TracedLogicError,
+                                0,
+                                "No superclass was set for class '{}'",
+                                metadata._selfUniqueName);
+            }
+
+            metadata._superclassMetadata = &(iter->second);
+            (iter->second)._childClasses.push_back(&metadata);
+        }
+    }
+
+    // By this point, the classes will form a structure kind of like a tree inside the map,
+    // with the metadata for QAO_Base being the root. We can now traverse the tree breadth-first
+    // in order to resolve message handler inheritance.
+
+    {
+        PZInteger visitedClassesCount = 1;
+        std::deque<QAO_ClassMetadata*> queue;
+        for (auto* child : typeIdxMap.find(QAO_BASE_TYPE_IDX)->second._childClasses) {
+            queue.push_back(const_cast<QAO_ClassMetadata*>(child));
+        }
+
+        while (!queue.empty()) {
+            auto* current = queue.front();
+            queue.pop_front();
+            ++visitedClassesCount;
+
+            // inherit
+            auto& parent = *current->_superclassMetadata;
+            for (auto& [typeIndex, untypedMessage] : parent._messageHandlers) {
+                (void)current->_messageHandlers.try_emplace(typeIndex, untypedMessage);
+            }
+
+            for (auto& child : current->_childClasses) {
+                queue.push_back(const_cast<QAO_ClassMetadata*>(child));
+            }
+        }
+        HG_HARD_ASSERT(visitedClassesCount == stopz(typeIdxMap.size()));
+    }
+}
 
 } // namespace qao
 HOBGOBLIN_NAMESPACE_END

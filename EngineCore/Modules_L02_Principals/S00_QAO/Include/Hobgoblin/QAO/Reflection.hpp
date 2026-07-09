@@ -11,11 +11,13 @@
 #include <gtl/phmap.hpp>
 
 #include <mutex>
+#include <span>
 #include <string_view>
 #include <type_traits>
 #include <typeindex>
 #include <unordered_map>
 #include <utility>
+#include <vector>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
@@ -23,12 +25,38 @@ HOBGOBLIN_NAMESPACE_BEGIN
 namespace qao {
 
 ///////////////////////////////////////////////////////////////////////////
-// MARK: MESSAGING                                                       //
+// MARK: FORWARD DECLARATIONS                                            //
 ///////////////////////////////////////////////////////////////////////////
 
 namespace qao_detail {
 using QAO_UntypedMessage = void (*)(QAO_Base&, void*, bool);
+
+using QAO_MessageHandlerMap =
+    gtl::parallel_flat_hash_map<std::type_index,
+                                QAO_UntypedMessage,
+                                gtl::priv::hash_default_hash<std::type_index>,
+                                gtl::priv::hash_default_eq<std::type_index>,
+                                std::allocator<std::pair<std::type_index, QAO_UntypedMessage>>,
+                                4,
+                                std::recursive_mutex>;
+
+bool QAO_SendMessage(QAO_MessageHandlerMap& aMessageHandlerMap,
+                     std::type_index        aMessageTypeIndex,
+                     QAO_Base&              aReceiverInstance,
+                     void*                  aMessagePayloadPtr,
+                     bool                   aConst);
 } // namespace qao_detail
+
+///////////////////////////////////////////////////////////////////////////
+// MARK: INIT                                                            //
+///////////////////////////////////////////////////////////////////////////
+
+//!
+void QAO_InitializeMetadata();
+
+///////////////////////////////////////////////////////////////////////////
+// MARK: MESSAGING                                                       //
+///////////////////////////////////////////////////////////////////////////
 
 //! \brief Payload pointer type to use with `QAO_DEFINE_MESSAGE` for messages that carry no payload.
 //!
@@ -191,6 +219,26 @@ public:
     // INSTANCE METHODS                                                      //
     ///////////////////////////////////////////////////////////////////////////
 
+    // Getters
+
+    //! \brief return the unique name of the described class.
+    std::string_view getUniqueName() const;
+
+    //! \brief return the type info of the described class.
+    const std::type_info& getTypeInfo() const;
+
+    //! \brief return the type index of the returned class.
+    std::type_index getTypeIndex() const;
+    
+    // getSuperclass
+    // getChildClasses
+
+    std::span<const QAO_ClassMetadata* const> getChildClasses();
+
+    QAO_ClassMetadata* getSuperclass();
+
+    // Setters
+
     //! \brief Declares the superclass of the class this metadata describes.
     //!
     //! \tparam taSuperclass the (already registered) base class of this class.
@@ -206,6 +254,7 @@ public:
     //! \endcode
     template <class taSuperclass>
     QAO_ClassMetadata& setSuperclass() {
+        _superclassTypeInfo = &typeid(taSuperclass);
         return SELF;
     }
 
@@ -254,8 +303,34 @@ public:
         return SELF;
     }
 
-    // private:
+private:
+    friend void QAO_InitializeMetadata();
+    friend bool qao_detail::QAO_SendMessage(qao_detail::QAO_MessageHandlerMap&,
+                                            std::type_index,
+                                            QAO_Base&,
+                                            void*,
+                                            bool);
+
+    // Superclass
+    const std::type_info*    _superclassTypeInfo = nullptr;
+    const QAO_ClassMetadata* _superclassMetadata = nullptr;
+
+    // Self
+    const std::type_info&           _selfTypeInfo;
+    const std::string_view          _selfUniqueName;
+    std::vector<QAO_ClassMetadata*> _childClasses;
+
+    // Messaging
     std::unordered_map<std::type_index, qao_detail::QAO_UntypedMessage> _messageHandlers;
+
+public:
+    //! \brief Constructor.
+    //! \param[in] aTypeInfo type info object of the class this metadata describes.
+    //! \param[in] aUniqueName unique name of the class this metadata describes.
+    //! \warning DO NOT USE THIS C-TOR FROM USER CODE, IT IS FOR ENGINE USE ONLY!
+    QAO_ClassMetadata(const std::type_info& aTypeInfo, const std::string_view aUniqueName)
+        : _selfTypeInfo{aTypeInfo}
+        , _selfUniqueName{aUniqueName} {}
 };
 
 using QAO_TypeIndexToClassMetadataMap  = std::unordered_map<std::type_index, QAO_ClassMetadata>;
@@ -368,21 +443,6 @@ template <class T>
 QAO_ClassMetadata& QAO_RegisterClass(std::string_view aUniqueName) {
     return QAO_RegisterClass(typeid(T), aUniqueName);
 }
-
-using QAO_MessageHandlerMap =
-    gtl::parallel_flat_hash_map<std::type_index,
-                                QAO_UntypedMessage,
-                                gtl::priv::hash_default_hash<std::type_index>,
-                                gtl::priv::hash_default_eq<std::type_index>,
-                                std::allocator<std::pair<std::type_index, QAO_UntypedMessage>>,
-                                4,
-                                std::recursive_mutex>;
-
-bool QAO_SendMessage(QAO_MessageHandlerMap& aMessageHandlerMap,
-                     std::type_index        aMessageTypeIndex,
-                     QAO_Base&              aReceiverInstance,
-                     void*                  aMessagePayloadPtr,
-                     bool                   aConst);
 
 } // namespace qao_detail
 
