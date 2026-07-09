@@ -40,4 +40,12 @@ private:
     void _syncDestroyImpl(spe::SyncControlDelegate& aSyncCtrl) const override;
 };
 
+// IMPORTANT: Since `spempe::SynchronizedObject` is a template and not a concrete class,
+//            the declared superclass for directly-derived synchronized objects must be
+//            `spempe::SynchronizedObjectBase`.
+QAO_REGISTER_CLASS(AlternatingPlayerCharacter, Example_AlternatingPlayerCharacter) {
+    QAO_LOCAL_ALIAS(C, clazz);
+    clazz.setSuperclass<spe::SynchronizedObjectBase>();
+}
+
 // clang-format on

@@ -263,6 +263,9 @@ int main(int argc, char* argv[]) {
         aRNG.seed(hg::util::Generate64bitSeed());
     });
 
+    // Initialize QAO:
+    QAO_InitializeMetadata();
+
     // Initialize RigelNet:
     RN_IndexHandlers();
 

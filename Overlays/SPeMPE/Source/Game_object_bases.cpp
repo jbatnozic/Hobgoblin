@@ -15,6 +15,26 @@
 namespace jbatnozic {
 namespace spempe {
 
+QAO_REGISTER_CLASS(GameObjectBase, USPEMPE_GameObjectBase) {
+    QAO_LOCAL_ALIAS(C, clazz);
+    clazz.setSuperclass<hg::QAO_Base>();
+}
+
+QAO_REGISTER_CLASS(NonstateObject, USPEMPE_NonstateObject) {
+    QAO_LOCAL_ALIAS(C, clazz);
+    clazz.setSuperclass<GameObjectBase>();
+}
+
+QAO_REGISTER_CLASS(StateObject, USPEMPE_StateObject) {
+    QAO_LOCAL_ALIAS(C, clazz);
+    clazz.setSuperclass<GameObjectBase>();
+}
+
+QAO_REGISTER_CLASS(SynchronizedObjectBase, USPEMPE_SynchronizedObjectBase) {
+    QAO_LOCAL_ALIAS(C, clazz);
+    clazz.setSuperclass<StateObject>();
+}
+
 ///////////////////////////////////////////////////////////////////////////
 // MARK: SYNCHRONIZED OBJECT BASE                                        //
 ///////////////////////////////////////////////////////////////////////////
