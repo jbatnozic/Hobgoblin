@@ -5,6 +5,8 @@
 
 set(COMPONENT_NAME "Hobgoblin.QAO")
 
+find_package(gtl CONFIG REQUIRED)
+
 # ===== GATHER SOURCES ======
 
 set(COMPONENT_SOURCES
@@ -15,6 +17,7 @@ set(COMPONENT_SOURCES
   "Source/Orderer.cpp"
   "Source/Priority_resolver.cpp"
   "Source/Priority_resolver2.cpp"
+  "Source/Reflection.cpp"
   "Source/Registry.cpp"
   "Source/Runtime.cpp"
 )
@@ -33,6 +36,9 @@ PUBLIC
     # Utilities
     "Hobgoblin_L00_S01_Common"
     "Hobgoblin_L01_S01_Utility"
+
+    # External
+    "gtl::gtl"
 )
 
 add_library("Hobgoblin_L02_S00_QAO" ALIAS ${COMPONENT_NAME})

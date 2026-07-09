@@ -76,6 +76,11 @@ private:
     void _syncDestroyImpl(spe::SyncControlDelegate& aSyncCtrl) const override;
 };
 
+QAO_REGISTER_CLASS(BasicActor, SPeMPE_ManualTest_BasicActor) {
+    QAO_LOCAL_ALIAS(C, clazz);
+    clazz.setSuperclass<spe::SynchronizedObjectBase>();
+}
+
 ///////////////////////////////////////////////////////////////////////////
 // MARK: AUTODIFF ACTOR                                                  //
 ///////////////////////////////////////////////////////////////////////////
@@ -114,6 +119,11 @@ private:
     void _syncDestroyImpl(spe::SyncControlDelegate& aSyncCtrl) const override;
 };
 
+QAO_REGISTER_CLASS(AutodiffActor, SPeMPE_ManualTest_AutodiffActor) {
+    QAO_LOCAL_ALIAS(C, clazz);
+    clazz.setSuperclass<spe::SynchronizedObjectBase>();
+}
+
 ///////////////////////////////////////////////////////////////////////////
 // MARK: ALTERNATING ACTOR                                               //
 ///////////////////////////////////////////////////////////////////////////
@@ -150,6 +160,11 @@ private:
     void _syncUpdateImpl(spe::SyncControlDelegate& aSyncCtrl) const override;
     void _syncDestroyImpl(spe::SyncControlDelegate& aSyncCtrl) const override;
 };
+
+QAO_REGISTER_CLASS(AlternatingActor, SPeMPE_ManualTest_AlternatingActor) {
+    QAO_LOCAL_ALIAS(C, clazz);
+    clazz.setSuperclass<spe::SynchronizedObjectBase>();
+}
 
 ///////////////////////////////////////////////////////////////////////////
 // MARK: ALTERNATING AUTODIFF ACTOR                                      //
@@ -188,3 +203,8 @@ private:
     void _syncUpdateImpl(spe::SyncControlDelegate& aSyncCtrl) const override;
     void _syncDestroyImpl(spe::SyncControlDelegate& aSyncCtrl) const override;
 };
+
+QAO_REGISTER_CLASS(AlternatingAutodiffActor, SPeMPE_ManualTest_AlternatingAutodiffActor) {
+    QAO_LOCAL_ALIAS(C, clazz);
+    clazz.setSuperclass<spe::SynchronizedObjectBase>();
+}

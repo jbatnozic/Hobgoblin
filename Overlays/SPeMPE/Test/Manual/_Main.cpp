@@ -20,6 +20,7 @@ static constexpr auto LOG_ID = "SPeMPE.ManualTest";
 int main(int argc, char* argv[]) {
   hg::log::SetMinimalLogSeverity(hg::log::Severity::Debug);
   RN_IndexHandlers();
+  QAO_InitializeMetadata();
 
   const char mode = (argc >= 2) ? (argv[1][0]) : 'n';
   switch (mode) {

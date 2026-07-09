@@ -32,3 +32,8 @@ private:
 
     friend void ActivateCommand(LobbyFrontendManager& aMgr, int aCommand, void* aArgs);
 };
+
+QAO_REGISTER_CLASS(LobbyFrontendManager, Example_LobbyFrontendManager) {
+    QAO_LOCAL_ALIAS(C, clazz);
+    clazz.setSuperclass<spe::NonstateObject>();
+}

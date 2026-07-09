@@ -284,6 +284,10 @@ public:
 //! For example, units, terrain, interactible items (and, basically, most other
 //! game objects).
 //!
+//! \warning When registering classes using `QAO_REGISTER_CLASS`: Since `SynchronizedObject` is a
+//!          template and not a concrete class, the declared superclass for directly-derived
+//!          synchronized objects must be `SynchronizedObjectBase`.
+//!
 //! ===== ROLE-SPECIFIC DATA =====
 //!
 //! The template parameters `taMasterSpecificInlineData` and `taMasterSpecificHeapData` are used
