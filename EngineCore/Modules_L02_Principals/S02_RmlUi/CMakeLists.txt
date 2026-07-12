@@ -3,7 +3,7 @@
 
 # ===== COMPONENT SETUP =====
 
-find_package(GLEW CONFIG REQUIRED)
+find_package(glew CONFIG REQUIRED)
 find_package(RmlUi CONFIG REQUIRED)
 find_package(SFML CONFIG REQUIRED)
 
