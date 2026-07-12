@@ -4,9 +4,9 @@ build_type=Debug
 compiler=msvc
 compiler.cppstd=20
 compiler.runtime=dynamic
-compiler.version=194
+compiler.version=195
 os=Windows
 
 [conf]
-tools.microsoft.msbuild:vs_version=17
-tools.cmake.cmaketoolchain:generator=Visual Studio 17 2022
+tools.microsoft.msbuild:vs_version=18
+tools.cmake.cmaketoolchain:generator=Visual Studio 18 2026
