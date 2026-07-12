@@ -29,8 +29,12 @@ namespace qao {
 // MARK: FORWARD DECLARATIONS                                            //
 ///////////////////////////////////////////////////////////////////////////
 
+class QAO_ClassMetadata;
+
 namespace qao_detail {
 using QAO_UntypedMessage = void (*)(QAO_Base&, void*, bool);
+
+using QAO_UntypedClassMessage = void (*)(const QAO_ClassMetadata&, void*);
 
 using QAO_MessageHandlerMap =
     gtl::parallel_flat_hash_map<std::type_index,
@@ -119,6 +123,32 @@ void QAO_InitializeMetadata();
         }                                                                                             \
     }
 
+//! \brief Declares a message type that can be sent to QAO classes via `QAO_SendMessage`.
+//!
+//! Defines a new type named `_message_name_` that acts as a compile-time tag identifying the
+//! message when registering handlers and dispatching. This type carries no state and exposes
+//!  two member aliases derived from `_payload_ptr_`:
+//! - `_message_name_::PayloadPtr` - the pointer type itself (equal to `_payload_ptr_`).
+//! - `_message_name_::Payload`    - the pointed-to type (`_payload_ptr_` with the pointer removed).
+//!
+//! As static methods are to regular methods in C++, so `QAO_DEFINE_CLASS_MESSAGE` is to
+//! `QAO_DEFINE_MESSAGE`. Usage is the same.
+//!
+//! \param _message_name_ the name of the message class to define.
+//! \param _payload_ptr_ the pointer type of the payload carried by the message. This MUST be a
+//!                      pointer type; use `QAO_NO_PAYLOAD` for messages that carry no data.
+//!
+//! Example:
+//! QAO_DEFINE_MESSAGE(SetPower, const double*); // A message carrying a pointer to a read-only `double`
+//! QAO_DEFINE_MESSAGE(AddScore, int*);          // A message carrying a pointer to a mutable `int`
+//! QAO_DEFINE_MESSAGE(Ping, QAO_NO_PAYLOAD);    // A message carrying no payload at all
+#define QAO_DEFINE_CLASS_MESSAGE(_message_name_, _payload_ptr_)                                  \
+    static_assert(::std::is_pointer_v<_payload_ptr_>, #_payload_ptr_ " is not a pointer type!"); \
+    struct _message_name_ {                                                                      \
+        using PayloadPtr = _payload_ptr_;                                                        \
+        using Payload      = ::std::remove_pointer_t<_payload_ptr_>;                             \
+    }
+
 //! \brief Sends a message of type `taMessage` to a single QAO instance.
 //!
 //! Receivers handle messages based on their dynamic type (same as virtual functions). If no handler
@@ -158,6 +188,32 @@ bool QAO_SendMessage(QAO_Base&                                aReceiverInstance,
 //! signalling that it should treat the receiver as read-only and not mutate it.
 template <class taMessage>
 bool QAO_SendMessage(const QAO_Base&                          aReceiverInstance,
+                     Nullable<typename taMessage::PayloadPtr> aMessagePayloadPtr);
+
+//! \brief Send a message of type `taMessage` to a class itself rather than an instance of a class.
+//!
+//! Unlike 'regular' messages, class messages don't interact with inheritance - the specific class
+//! to which a message is sent has to have a registered handler for that message, or nothing will
+//! happen.
+//!
+//! \tparam taMessage message type previously declared with `QAO_DEFINE_CLASS_MESSAGE`.
+//!
+//! \param aReceiverClass class metadata instance to receive the message. This reference is also
+//!                       passed to the handler if one is found.
+//! \param aMessagePayloadPtr the payload pointer to pass to the handler (of type
+//!                           `taMessage::PayloadPtr`). May be `nullptr` (receiver is expected to
+//!                           handle this).
+//!
+//! \returns `true` if a handler was found and invoked, `false` otherwise.
+//!
+//! Example:
+//! struct MyPayload { ... };
+//! QAO_DEFINE_CLASS_MESSAGE(MyMessage, const MyPayload*);
+//! ...
+//! MyPayload payload = GetPayload();
+//! const bool didSend = QAO_SendMessage<MyMessage>(metadataRef, &payload);
+template <class taMessage>
+bool QAO_SendMessage(const QAO_ClassMetadata&                 aReceiverClass,
                      Nullable<typename taMessage::PayloadPtr> aMessagePayloadPtr);
 
 ///////////////////////////////////////////////////////////////////////////
@@ -236,8 +292,8 @@ public:
     //!
     //! Example:
     //! QAO_REGISTER_CLASS(Derived, MyDerived) {
-    //!     QAO_LOCAL_ALIAS(C, clazz);
-    //!     clazz.setSuperclass<Base>();
+    //!     QAO_LOCAL_ALIAS(C, klass);
+    //!     klass.setSuperclass<Base>();
     //! }
     template <class taSuperclass>
     QAO_ClassMetadata& setSuperclass() {
@@ -280,8 +336,8 @@ public:
     //! };
     //!
     //! QAO_REGISTER_CLASS(MyClass, MyClass) {
-    //!     QAO_LOCAL_ALIAS(C, clazz);
-    //!     clazz.setMessageHandler<C, SetPower, &C::setPower>();
+    //!     QAO_LOCAL_ALIAS(C, klass);
+    //!     klass.setMessageHandler<C, SetPower, &C::setPower>();
     //! }
     template <class taReceiver, class taMessage, auto taMethod>
     QAO_ClassMetadata& setMessageHandler() {
@@ -293,6 +349,16 @@ public:
         return SELF;
     }
 
+    //! TODO(add desc.)
+    template <class taMessage, auto taMethod>
+    QAO_ClassMetadata& setClassMessageHandler() {
+        auto lambda = [](const QAO_ClassMetadata& aClass, void* aPayload) {
+            (taMethod)(aClass, (typename taMessage::Payload*)aPayload);
+        };
+        _classMessageHandlers.insert(std::make_pair(std::type_index{typeid(taMessage)}, lambda));
+        return SELF;
+    }
+
 private:
     friend void QAO_InitializeMetadata();
     friend bool qao_detail::QAO_SendMessage(qao_detail::QAO_MessageHandlerMap&,
@@ -300,6 +366,9 @@ private:
                                             QAO_Base&,
                                             void*,
                                             bool);
+    template <class taMessage>
+    friend bool QAO_SendMessage(const QAO_ClassMetadata&                 aReceiverClass,
+                                Nullable<typename taMessage::PayloadPtr> aMessagePayloadPtr);
 
     // Superclass
     const std::type_info*    _superclassTypeInfo = nullptr;
@@ -311,7 +380,8 @@ private:
     std::vector<QAO_ClassMetadata*> _childClasses;
 
     // Messaging
-    std::unordered_map<std::type_index, qao_detail::QAO_UntypedMessage> _messageHandlers;
+    std::unordered_map<std::type_index, qao_detail::QAO_UntypedMessage>      _messageHandlers;
+    std::unordered_map<std::type_index, qao_detail::QAO_UntypedClassMessage> _classMessageHandlers;
 
 public:
     //! \brief Constructor.
@@ -363,8 +433,8 @@ const QAO_UniqueNameToClassMetadataMap& QAO_GetAllUniqueNameToClassMetadataMappi
 //! class MyClass : public QAO_Base { /* ... */ };
 //!
 //! QAO_REGISTER_CLASS(MyClass, MyUniqueClassName) {
-//!     QAO_LOCAL_ALIAS(C, clazz);
-//!     clazz.setSuperclass<QAO_Base>();
+//!     QAO_LOCAL_ALIAS(C, klass);
+//!     klass.setSuperclass<QAO_Base>();
 //! }
 #define QAO_REGISTER_CLASS(_actual_type_, _unique_name_)                    \
     /* Defer through `HG_PP_INVOKE` so `__LINE__` gets expanded properly */ \
@@ -381,9 +451,9 @@ const QAO_UniqueNameToClassMetadataMap& QAO_GetAllUniqueNameToClassMetadataMappi
 //!
 //! Example:
 //! QAO_REGISTER_CLASS(MyClass, MyClass) {
-//!     QAO_LOCAL_ALIAS(C, clazz); // `C` == `MyClass`, `clazz` == this class's metadata
-//!     clazz.setSuperclass<QAO_Base>();
-//!     clazz.setMessageHandler<C, SetPower, &C::setPower>();
+//!     QAO_LOCAL_ALIAS(C, klass); // `C` == `MyClass`, `klass` == this class's metadata
+//!     klass.setSuperclass<QAO_Base>();
+//!     klass.setMessageHandler<C, SetPower, &C::setPower>();
 //! }
 #define QAO_LOCAL_ALIAS(_class_type_, _class_metadata_object_)                                 \
     using _class_type_            = std::remove_pointer_t<decltype(UHOBGOBLIN_QAO_dummy_ptr)>; \
@@ -440,6 +510,17 @@ bool QAO_SendMessage(const QAO_Base&                aReceiverInstance,
                                        const_cast<QAO_Base&>(aReceiverInstance),
                                        (void*)aMessagePayloadPtr,
                                        true);
+}
+
+template <class taMessage>
+bool QAO_SendMessage(const QAO_ClassMetadata&                 aReceiverClass,
+                     Nullable<typename taMessage::PayloadPtr> aMessagePayloadPtr) {
+    auto iter = aReceiverClass._classMessageHandlers.find(std::type_index{typeid(taMessage)});
+    if (iter == aReceiverClass._classMessageHandlers.end()) {
+        return false;
+    }
+    (iter->second)(aReceiverClass, aMessagePayloadPtr);
+    return true;
 }
 
 } // namespace qao

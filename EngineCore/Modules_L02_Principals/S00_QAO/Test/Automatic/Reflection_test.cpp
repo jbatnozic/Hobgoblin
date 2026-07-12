@@ -65,7 +65,7 @@ TEST_F(QAO_ReflectionTest, CheckDerivedClassMetadata) {
     EXPECT_EQ(metadata->getChildClasses().size(), 0);
 }
 
-TEST_F(QAO_ReflectionTest, SendMessagesToBaseClass) {
+TEST_F(QAO_ReflectionTest, SendMessagesToBaseInstance) {
     auto inst = QAO_Create<RMTesterBase>(nullptr);
 
     {
@@ -93,7 +93,7 @@ TEST_F(QAO_ReflectionTest, SendMessagesToBaseClass) {
     }
 }
 
-TEST_F(QAO_ReflectionTest, SendMessagesToDerivedClass) {
+TEST_F(QAO_ReflectionTest, SendMessagesToDerivedInstance) {
     auto inst = QAO_Create<RMTesterDerived>(nullptr);
 
     {
@@ -119,6 +119,28 @@ TEST_F(QAO_ReflectionTest, SendMessagesToDerivedClass) {
         EXPECT_EQ(inst->lastReceivedMessage, "MsgWithoutPayload");
         EXPECT_EQ(inst->constParamOfLastReceivedMessage, true);
     }
+}
+
+TEST_F(QAO_ReflectionTest, SendClassMessageToBaseClass) {
+    const auto* klass = QAO_ClassMetadata::get("QAO_AutomaticTest_RMTesterBase");
+    ASSERT_NE(klass, nullptr);
+
+    int i = 5;
+
+    const bool didSend = QAO_SendMessage<NegateInt>(*klass, &i);
+
+    EXPECT_TRUE(didSend);
+    EXPECT_EQ(i, -5);
+}
+
+// The derived class doesn't answer to any class messages
+TEST_F(QAO_ReflectionTest, SendClassMessageToDerivedClass) {
+    const auto* klass = QAO_ClassMetadata::get("QAO_AutomaticTest_RMTesterDerived");
+    ASSERT_NE(klass, nullptr);
+
+    const bool didSend = QAO_SendMessage<NegateInt>(*klass, nullptr);
+
+    EXPECT_FALSE(didSend);
 }
 
 } // namespace test
