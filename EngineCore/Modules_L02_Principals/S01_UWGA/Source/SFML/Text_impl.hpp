@@ -11,13 +11,20 @@ namespace jbatnozic::hobgoblin::uwga {
 class SFMLTextImpl;
 }
 
-// Of all the terrible hacks that can be found in Hobgoblin, this HAS to be the worst one -
-// the amount of Undefined Behaviour this relies on is astounding.
+// Of all the terrible hacks that can be found in Hobgoblin, this has to be one of the worst ones.
 // However... It does actually work, and since SFML isn't likely to change this code very
-// much, it will probably keep working for the foreeable future.
+// much, it will probably keep working for the foreeable future (the trick relies on using #define
+// to inject a friend declaration together with one of the member variable declarations).
 // Still, it would be good to refactor it into something more sane and less fragile, eventually.
 // TODO(think of a better way to implement SFMLTextImpl)
-#define private private: friend class ::jbatnozic::hobgoblin::uwga::SFMLTextImpl; private
+// Forcibly befriend `sf::Text`
+#define m_fontTextureId \
+    m_fontTextureId;    \
+    friend class ::jbatnozic::hobgoblin::uwga::SFMLTextImpl
+// Forcibly befriend `sf::VertexArray`
+#define m_primitiveType \
+    m_primitiveType;    \
+    friend class ::jbatnozic::hobgoblin::uwga::SFMLTextImpl
 #include <SFML/Graphics/Text.hpp>
 #undef private
 
