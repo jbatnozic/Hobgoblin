@@ -2,7 +2,7 @@
 # See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
 from conan import ConanFile
-from conan.tools.cmake import CMake, CMakeConfigDeps, CMakeToolchain, cmake_layout
+from conan.tools.cmake import CMake, CMakeDeps, CMakeConfigDeps, CMakeToolchain, cmake_layout
 from conan.tools.files import copy
 from os.path import join, sep
 
@@ -144,7 +144,10 @@ class HobgoblinConan(ConanFile):
                 copy(self, "*.dll",   bindirs[0], hobgoblin_bindir)
 
         # Generate build system
-        cmake_deps = CMakeConfigDeps(self)
+        if self.settings.os == "Windows":
+            cmake_deps = CMakeConfigDeps(self)
+        else:
+            cmake_deps = CMakeDeps(self)
         cmake_deps.generate()
         tc = CMakeToolchain(self)
         tc.variables["CMAKE_EXPORT_COMPILE_COMMANDS"] = "ON"

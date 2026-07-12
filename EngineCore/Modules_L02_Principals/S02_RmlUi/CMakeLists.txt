@@ -3,13 +3,6 @@
 
 # ===== COMPONENT SETUP =====
 
-# The 'glu' Conan package resolves to a system package on some platforms (e.g. macOS)
-# and does not declare a 'glu::glu' target, yet GLEW's link interface references it.
-# GLU is provided via the OpenGL framework (opengl::opengl), so a stub target is enough.
-if(NOT TARGET glu::glu)
-    add_library(glu::glu INTERFACE IMPORTED)
-endif()
-
 find_package(glew CONFIG REQUIRED)
 find_package(RmlUi CONFIG REQUIRED)
 find_package(SFML CONFIG REQUIRED)
