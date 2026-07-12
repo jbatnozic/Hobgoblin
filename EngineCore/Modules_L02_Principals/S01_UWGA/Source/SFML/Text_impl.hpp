@@ -7,13 +7,17 @@
 #include <Hobgoblin/UWGA/Text.hpp>
 #include <Hobgoblin/UWGA/Transform.hpp>
 
+namespace jbatnozic::hobgoblin::uwga {
+class SFMLTextImpl;
+}
+
 // Of all the terrible hacks that can be found in Hobgoblin, this HAS to be the worst one -
 // the amount of Undefined Behaviour this relies on is astounding.
 // However... It does actually work, and since SFML isn't likely to change this code very
 // much, it will probably keep working for the foreeable future.
 // Still, it would be good to refactor it into something more sane and less fragile, eventually.
 // TODO(think of a better way to implement SFMLTextImpl)
-#define private public
+#define private private: friend class ::jbatnozic::hobgoblin::uwga::SFMLTextImpl; private
 #include <SFML/Graphics/Text.hpp>
 #undef private
 

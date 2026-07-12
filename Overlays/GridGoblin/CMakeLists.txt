@@ -3,7 +3,7 @@
 
 project(GridGoblin)
 
-find_package(GLEW CONFIG REQUIRED)
+find_package(glew CONFIG REQUIRED)
 find_package(RapidJSON CONFIG REQUIRED)
 
 add_library(${PROJECT_NAME}
@@ -39,7 +39,9 @@ add_library(${PROJECT_NAME}
     "Source/World/World.cpp"
 )
 
-target_compile_options(${PROJECT_NAME} PRIVATE -Wconversion)
+if(NOT MSVC)
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wconversion)
+endif()
 
 target_link_libraries(${PROJECT_NAME}
 PUBLIC
