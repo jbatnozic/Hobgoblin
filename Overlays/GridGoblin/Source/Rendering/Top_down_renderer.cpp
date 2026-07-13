@@ -63,7 +63,8 @@ void TopDownRenderer::endPrepareToRender() {
               });
 }
 
-void TopDownRenderer::render(hg::uwga::Canvas& aCanvas, const hg::uwga::RenderStates& aRenderStates) {
+void TopDownRenderer::render(hg::uwga::Canvas&             aCanvas,
+                             const hg::uwga::RenderStates& aRenderStates) const {
     for (const auto& object : _objectsToRender) {
         const auto& boundsInfo = object->getBoundsInfo();
         const auto  posInView  = topdown::ToPositionInView(boundsInfo.getCenter());

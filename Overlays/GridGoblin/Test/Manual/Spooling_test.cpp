@@ -58,7 +58,9 @@ public:
                         HG_LOG_INFO(LOG_ID, "Loaded chunk {}, {} from disk.", id.x, id.y);
                     } else {
                         // create new one
-                        _chunkGrid.at(id.y, id.x) = std::make_unique<Chunk>(_chunkMemLayout);
+                        auto chunk = std::make_unique<Chunk>(_chunkMemLayout);
+                        chunk->zeroOut(_chunkMemLayout);
+                        _chunkGrid.at(id.y, id.x) = std::move(chunk);
                         HG_LOG_INFO(LOG_ID, "Created chunk {}, {}.", id.x, id.y);
                     }
                     iter = _requests.erase(iter);

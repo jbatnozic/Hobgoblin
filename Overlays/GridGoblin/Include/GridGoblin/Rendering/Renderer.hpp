@@ -50,7 +50,7 @@ public:
 
     virtual void render(
         hg::uwga::Canvas&             aCanvas,
-        const hg::uwga::RenderStates& aRenderStates = hg::uwga::RENDER_STATES_DEFAULT) = 0;
+        const hg::uwga::RenderStates& aRenderStates = hg::uwga::RENDER_STATES_DEFAULT) const = 0;
 };
 
 } // namespace gridgoblin

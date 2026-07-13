@@ -2,6 +2,7 @@
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
 #include <GridGoblin/Rendering/Visibility_calculator.hpp>
+#include <GridGoblin/World/World.hpp>
 
 #include <GridGoblin/Model/Shape_vertices.hpp>
 
@@ -98,7 +99,7 @@ void VisibilityCalculator::calc(PositionInWorld aViewCenter,
         _stats.highDetailRingCount = currentRingIndex;
         currentRingIndex += 1;
 
-        if ((_minRingsBeforeRaycasting != 0 && currentRingIndex > _minRingsBeforeRaycasting) &&
+        if (currentRingIndex > _minRingsBeforeRaycasting &&
             _triangles.size() >= hg::pztos(_minTrianglesBeforeRaycasting)) //
         {
             _processRays();
@@ -317,7 +318,9 @@ void VisibilityCalculator::_processCell(Vector2pz aCell, hg::PZInteger aRingInde
         _triangles.push_back({vertices[i], vertices[i + 1], ray1End, edgesOfInterest});
         _triangles.push_back({ray1End, vertices[i + 1], ray2End, edgesOfInterest});
 
-        _setRaysFromTriangles(a1, a2);
+        if (_rayCount != 0) {
+            _setRaysFromTriangles(a1, a2);
+        }
     }
 }
 
@@ -422,7 +425,7 @@ bool VisibilityCalculator::_isPointVisible(PositionInWorld aPosInWorld,
         const auto     angle = AngleD::fromVector(diff.x, diff.y);
         const auto     idx =
             static_cast<std::size_t>(std::round(_rayCount * (angle / AngleD::fullCircle())));
-        if (dist > _rays[idx]) {
+        if (dist > _rays[idx % hg::pztos(_rayCount)]) {
             return false;
         }
     }

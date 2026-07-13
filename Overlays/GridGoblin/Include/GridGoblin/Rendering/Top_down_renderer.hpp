@@ -38,8 +38,9 @@ public:
 
     void endPrepareToRender() override;
 
-    void render(hg::uwga::Canvas&             aCanvas,
-                const hg::uwga::RenderStates& aRenderStates = hg::uwga::RENDER_STATES_DEFAULT) override;
+    void render(
+        hg::uwga::Canvas&             aCanvas,
+        const hg::uwga::RenderStates& aRenderStates = hg::uwga::RENDER_STATES_DEFAULT) const override;
 
 private:
     // ===== Dependencies =====
