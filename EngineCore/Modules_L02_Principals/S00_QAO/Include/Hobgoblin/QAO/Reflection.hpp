@@ -146,7 +146,7 @@ void QAO_InitializeMetadata();
     static_assert(::std::is_pointer_v<_payload_ptr_>, #_payload_ptr_ " is not a pointer type!"); \
     struct _message_name_ {                                                                      \
         using PayloadPtr = _payload_ptr_;                                                        \
-        using Payload      = ::std::remove_pointer_t<_payload_ptr_>;                             \
+        using Payload    = ::std::remove_pointer_t<_payload_ptr_>;                               \
     }
 
 //! \brief Sends a message of type `taMessage` to a single QAO instance.
@@ -340,24 +340,40 @@ public:
     //!     klass.setMessageHandler<C, SetPower, &C::setPower>();
     //! }
     template <class taReceiver, class taMessage, auto taMethod>
-    QAO_ClassMetadata& setMessageHandler() {
-        assert(typeid(taReceiver) == _selfTypeInfo);
-        auto lambda = [](QAO_Base& aInstance, void* aPayload, bool aConst) {
-            ((taReceiver&)(aInstance).*taMethod)((typename taMessage::Payload*)aPayload, aConst);
-        };
-        _messageHandlers.insert(std::make_pair(std::type_index{typeid(taMessage)}, lambda));
-        return SELF;
-    }
+    QAO_ClassMetadata& setMessageHandler();
 
-    //! TODO(add desc.)
+    //! \brief Registers a free function as the handler for a given class message type on this class.
+    //!
+    //! When `QAO_SendMessage<taMessage>` is called on this class's metadata, the registered `taMethod`
+    //! will be invoked with a reference to this metadata and the message payload. Unlike regular
+    //! message handlers, class message handlers do not participate in inheritance: the handler must be
+    //! registered on the exact class the message is sent to (see `QAO_DEFINE_CLASS_MESSAGE`).
+    //!
+    //! \tparam taMessage the class message type (declared with `QAO_DEFINE_CLASS_MESSAGE`) to handle.
+    //! \tparam taMethod pointer to the function that handles the message. It must be callable as
+    //!                  `(const QAO_ClassMetadata&, taMessage::PayloadPtr)`: the first argument is the
+    //!                  metadata of the receiving class, and the second is the payload pointer (which
+    //!                  can be null, and the receiver is expected to handle this).
+    //!
+    //! \note it's recommended that the registered function be a static member class of the receiving
+    //!       class, but this is not required.
+    //!
+    //! Example:
+    //! QAO_DEFINE_CLASS_MESSAGE(Describe, std::string*);
+    //!
+    //! class MyClass : public QAO_Base {
+    //! public:
+    //!     static void describe(const QAO_ClassMetadata& aClass, Describe::PayloadPtr aOut) {
+    //!         *aOut = aClass.getUniqueName();
+    //!     }
+    //! };
+    //!
+    //! QAO_REGISTER_CLASS(MyClass, MyClass) {
+    //!     QAO_LOCAL_ALIAS(C, klass);
+    //!     klass.setClassMessageHandler<Describe, &C::describe>();
+    //! }
     template <class taMessage, auto taMethod>
-    QAO_ClassMetadata& setClassMessageHandler() {
-        auto lambda = [](const QAO_ClassMetadata& aClass, void* aPayload) {
-            (taMethod)(aClass, (typename taMessage::Payload*)aPayload);
-        };
-        _classMessageHandlers.insert(std::make_pair(std::type_index{typeid(taMessage)}, lambda));
-        return SELF;
-    }
+    QAO_ClassMetadata& setClassMessageHandler();
 
 private:
     friend void QAO_InitializeMetadata();
@@ -481,6 +497,29 @@ const QAO_UniqueNameToClassMetadataMap& QAO_GetAllUniqueNameToClassMetadataMappi
     inline void UHOBGOBLIN_QAO_RegisterClassUserFunc_##_name_##_##_ln_(                              \
         [[maybe_unused]] ::jbatnozic::hobgoblin::qao::QAO_ClassMetadata& UHOBGOBLIN_QAO_classmd_ref, \
         [[maybe_unused]] _type_*                                         UHOBGOBLIN_QAO_dummy_ptr)
+
+template <class taReceiver, class taMessage, auto taMethod>
+QAO_ClassMetadata& QAO_ClassMetadata::setMessageHandler() {
+    assert(typeid(taReceiver) == _selfTypeInfo);
+    auto lambda = [](QAO_Base& aInstance, void* aPayload, bool aConst) {
+        ((taReceiver&)(aInstance).*taMethod)((typename taMessage::Payload*)aPayload, aConst);
+    };
+    auto [_, didInsert] =
+        _messageHandlers.insert(std::make_pair(std::type_index{typeid(taMessage)}, lambda));
+    assert(didInsert && "Cannot have multiple message handlers for the same message type!");
+    return SELF;
+}
+
+template <class taMessage, auto taMethod>
+QAO_ClassMetadata& QAO_ClassMetadata::setClassMessageHandler() {
+    auto lambda = [](const QAO_ClassMetadata& aClass, void* aPayload) {
+        (taMethod)(aClass, (typename taMessage::Payload*)aPayload);
+    };
+    auto [_, didInsert] =
+        _classMessageHandlers.insert(std::make_pair(std::type_index{typeid(taMessage)}, lambda));
+    assert(didInsert && "Cannot have multiple message handlers for the same message type!");
+    return SELF;
+}
 
 namespace qao_detail {
 
