@@ -5,16 +5,20 @@
 
 #include <GridGoblin/Positional/Position_in_view.hpp>
 #include <GridGoblin/Positional/Position_in_world.hpp>
+#include <GridGoblin/Rendering/Rendered_object.hpp>
 
+#include <Hobgoblin/Common/Nullability.hpp>
 #include <Hobgoblin/Common/Enum_op.hpp>
 #include <Hobgoblin/UWGA/Canvas.hpp>
 #include <Hobgoblin/UWGA/View.hpp>
 
 #include <cstdint>
+#include <vector>
 
 namespace jbatnozic {
 namespace gridgoblin {
 
+//! TODO
 enum class RenderFlags : std::uint32_t {
     NONE                             = 0,
     REDUCE_WALLS_BASED_ON_POSITION   = (1 << 0),
@@ -26,38 +30,66 @@ enum class RenderFlags : std::uint32_t {
 
 class Renderer;
 class VisibilityProvider;
+class LightingProvider;
 
+//! TODO
 struct RenderContext {
-    //! TODO
-    Renderer* renderer = nullptr;
+    //! Pointers to objects implementing the `Renderer` and various `-Provider` and other interfaces
+    //! which abstract the actual rendering algorithms.
+    //! No rendering function will ever change these values. - this is up to the user (though it is
+    //! very much NOT recommended to change them mid-rendering cycle).
+    struct Implementations {
+        //! TODO
+        Renderer* renderer = nullptr;
 
-    //! TODO
-    VisibilityProvider* visibilityProvider = nullptr;
+        //! TODO
+        VisibilityProvider* visibilityProvider = nullptr;
 
-    //! Position in the world corresponding to the center of the view.
-    PositionInWorld viewCenter = {};
+        //! TODO
+        LightingProvider* lightingProvider = nullptr;
+    } impls;
 
-    //! Width and height of the view.
-    hg::math::Vector2d viewSize = {};
+    //! Values and objects which describe the dynamic state of the rendering context.
+    //! No rendering function will ever change these values - this is up to the user, and it is
+    //! expected that these values will change often, even between every two rendering cycles (though
+    //! it is very much NOT recommended to change them mid-rendering cycle).
+    struct Dynamic {
+        //! Position in the world corresponding to the center of the view.
+        PositionInWorld viewCenter = {};
 
-    //! Position in the world corresponding to point of view of the player (or their player
-    //! character, or similar). This is used by certain renderer implementations to provide
-    //! a clearer view for the player - for example, the dimetric renderer may lower or
-    //! make transparent some walls so the player can see what's behind them.
-    PositionInWorld pointOfView = {};
+        //! Width and height of the view.
+        hg::math::Vector2d viewSize = {};
 
-    //! TODO
-    RenderFlags flags = RenderFlags::NONE;
+        //! Position in the world corresponding to point of view of the player (or their player
+        //! character, or similar). This is used by certain renderer implementations to provide
+        //! a clearer view for the player - for example, the dimetric renderer may lower or
+        //! make transparent some walls so the player can see what's behind them.
+        PositionInWorld pointOfView = {};
+
+        //! TODO
+        RenderFlags flags = RenderFlags::NONE;
+    } dynamic;
+
+    //! Values and objects which are only valid for one rendering cycle.
+    //! A `Reset()` call reverts them to their default values.
+    struct Ephemeral {
+        //! TODO
+        std::vector<RenderedObject*> renderedObjects;
+    } ephemeral;
 };
 
 //! TODO
-void StartPrepareToRender(const RenderContext& aRenderContext);
+void Reset(RenderContext& aRenderContext);
 
 //! TODO
-void AddRenderedObject(const RenderContext& aRenderContext);
+void AddRenderedObject(RenderContext& aRenderContext, RenderedObject& aRenderedObject);
 
 //! TODO
-void FinishPrepareToRender(const RenderContext& aRenderContext);
+void AddRenderedObject(RenderContext&                        aRenderContext,
+                       hobgoblin::NeverNull<RenderedObject*> aRenderedObject);
+
+//! TODO
+void FinishPrepareToRender(RenderContext& aRenderContext);
 
 //! TODO
 void Render(const RenderContext&          aRenderContext,
