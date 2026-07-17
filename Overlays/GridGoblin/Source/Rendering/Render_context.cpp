@@ -12,7 +12,7 @@ namespace gridgoblin {
 void Reset(RenderContext& aRenderContext) {
     HG_VALIDATE_ARGUMENT(aRenderContext.impls.renderer != nullptr);
     aRenderContext.ephemeral.renderedObjects.clear();
-    aRenderContext.impls.renderer->startPrepareToRender(aRenderContext);
+    aRenderContext.impls.renderer->reset(aRenderContext);
 }
 
 void AddRenderedObject(RenderContext& aRenderContext, const RenderedObject& aRenderedObject) {
@@ -25,9 +25,9 @@ void AddRenderedObject(RenderContext&                              aRenderContex
     aRenderContext.ephemeral.renderedObjects.push_back(aRenderedObject);
 }
 
-void FinishPrepareToRender(RenderContext& aRenderContext) {
+void PrepareToRender(RenderContext& aRenderContext) {
     HG_VALIDATE_ARGUMENT(aRenderContext.impls.renderer != nullptr);
-    aRenderContext.impls.renderer->finishPrepareToRender(aRenderContext);
+    aRenderContext.impls.renderer->prepareToRender(aRenderContext);
 }
 
 void Render(const RenderContext&          aRenderContext,

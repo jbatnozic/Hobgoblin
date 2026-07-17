@@ -165,7 +165,7 @@ void RunVisibilityCalculatorTestImpl() {
         });
     }
 
-    TopDownRenderer            renderer{world, spriteLoader};
+    TopDownRenderer            renderer{spriteLoader};
     VisibilityCalculatorConfig visCalcConfig;
     visCalcConfig.minRingsBeforeRaycasting = 0;
     VisibilityCalculator visCalc{world, visCalcConfig};
@@ -266,7 +266,7 @@ void RunVisibilityCalculatorTestImpl() {
         // clang-format on
 
         Reset(renderCtx);
-        FinishPrepareToRender(renderCtx);
+        PrepareToRender(renderCtx);
         Render(renderCtx, *window);
 
         window->draw(vcSprite);

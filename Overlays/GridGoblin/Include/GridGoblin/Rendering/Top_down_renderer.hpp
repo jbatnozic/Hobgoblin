@@ -19,21 +19,15 @@
 namespace jbatnozic {
 namespace gridgoblin {
 
-struct TopDownRendererConfig {
-    // Nothing for now...
-};
-
 //! Renders the world in a simple 2D top-down perspective (but it can be also used for sidescrollers).
 //! \note Doesn't ever reduce walls.
 class TopDownRenderer : public Renderer {
 public:
-    TopDownRenderer(const World&                  aWorld,
-                    const hg::uwga::SpriteLoader& aSpriteLoader,
-                    const TopDownRendererConfig&  aConfig = {});
+    TopDownRenderer(const hg::uwga::SpriteLoader& aSpriteLoader);
 
-    void startPrepareToRender(RenderContext& aRenderCtx) override;
+    void reset(RenderContext& aRenderCtx) override;
 
-    void finishPrepareToRender(RenderContext& aRenderCtx) override;
+    void prepareToRender(RenderContext& aRenderCtx) override;
 
     void render(
         const RenderContext&          aRenderCtx,
@@ -43,7 +37,6 @@ public:
 private:
     // ===== Dependencies =====
 
-    const World&                  _world;
     const hg::uwga::SpriteLoader& _spriteLoader;
 
     // ===== Cell adapters =====

@@ -15,19 +15,16 @@ namespace gridgoblin {
 
 // MARK: Public
 
-TopDownRenderer::TopDownRenderer(const World&                  aWorld,
-                                 const hg::uwga::SpriteLoader& aSpriteLoader,
-                                 const TopDownRendererConfig&  aConfig)
-    : _world{aWorld}
-    , _spriteLoader{aSpriteLoader} {}
+TopDownRenderer::TopDownRenderer(const hg::uwga::SpriteLoader& aSpriteLoader)
+    : _spriteLoader{aSpriteLoader} {}
 
-void TopDownRenderer::startPrepareToRender(RenderContext& aRenderCtx) {
+void TopDownRenderer::reset(RenderContext& aRenderCtx) {
     _cellAdapters.clear();
 
     _prepareCells(aRenderCtx);
 }
 
-void TopDownRenderer::finishPrepareToRender(RenderContext& aRenderCtx) {
+void TopDownRenderer::prepareToRender(RenderContext& aRenderCtx) {
     auto& objs = aRenderCtx.ephemeral.renderedObjects;
     std::sort(objs.begin(),
               objs.end(),
@@ -42,7 +39,9 @@ void TopDownRenderer::finishPrepareToRender(RenderContext& aRenderCtx) {
 
 void TopDownRenderer::render(const RenderContext&          aRenderCtx,
                              hg::uwga::Canvas&             aCanvas,
-                             const hg::uwga::RenderStates& aRenderStates) const { // TODO: RenderStates unused
+                             const hg::uwga::RenderStates& aRenderStates) const //
+{
+    (void)aRenderStates; // TODO: RenderStates unused
     const auto& objs = aRenderCtx.ephemeral.renderedObjects;
     for (const auto& object : objs) {
         const auto& boundsInfo = object->getBoundsInfo();
@@ -67,29 +66,31 @@ hg::uwga::Sprite& TopDownRenderer::_getSprite(SpriteId aSpriteId) const {
 }
 
 void TopDownRenderer::_prepareCells(RenderContext& aRenderCtx) {
-    const auto cr = _world.getCellResolution();
+    HG_HARD_ASSERT(aRenderCtx.impls.renderer == this);
+    HG_HARD_ASSERT(aRenderCtx.world != nullptr);
+
     const auto& viewCenter = aRenderCtx.dynamic.viewCenter;
-    const auto& viewSize = aRenderCtx.dynamic.viewSize;
+    const auto& viewSize   = aRenderCtx.dynamic.viewSize;
+    const auto& world      = *aRenderCtx.world;
+    const auto  cr         = world.getCellResolution();
 
     const auto topLeft = topdown::ToPositionInWorld(
-        PositionInView{viewCenter->x - (viewSize.x * 0.5),
-                       viewCenter->y - (viewSize.y * 0.5)});
+        PositionInView{viewCenter->x - (viewSize.x * 0.5), viewCenter->y - (viewSize.y * 0.5)});
 
     const auto bottomRight = topdown::ToPositionInWorld(
-        PositionInView{viewCenter->x + (viewSize.x * 0.5),
-                       viewCenter->y + (viewSize.y * 0.5)});
+        PositionInView{viewCenter->x + (viewSize.x * 0.5), viewCenter->y + (viewSize.y * 0.5)});
 
     const int startX = std::max(0, static_cast<int>(topLeft->x / cr));
     const int startY = std::max(0, static_cast<int>(topLeft->y / cr));
 
-    const int endX = std::min(_world.getCellCountX() - 1, static_cast<int>(bottomRight->x / cr));
-    const int endY = std::min(_world.getCellCountY() - 1, static_cast<int>(bottomRight->y / cr));
+    const int endX = std::min(world.getCellCountX() - 1, static_cast<int>(bottomRight->x / cr));
+    const int endY = std::min(world.getCellCountY() - 1, static_cast<int>(bottomRight->y / cr));
 
     cell::FloorSprite floorSprite;
     cell::WallSprite  wallSprite;
     for (int y = startY; y <= endY; y += 1) {
         for (int x = startX; x <= endX; x += 1) {
-            const auto cellIsLoaded = _world.getCellDataAtUnchecked(x, y, &floorSprite, &wallSprite);
+            const auto cellIsLoaded = world.getCellDataAtUnchecked(x, y, &floorSprite, &wallSprite);
             if (!cellIsLoaded) {
                 continue;
             }
