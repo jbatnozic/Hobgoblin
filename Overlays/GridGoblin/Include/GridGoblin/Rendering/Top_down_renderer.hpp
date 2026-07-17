@@ -31,14 +31,12 @@ public:
                     const hg::uwga::SpriteLoader& aSpriteLoader,
                     const TopDownRendererConfig&  aConfig = {});
 
-    void startPrepareToRender(const RenderParameters&   aRenderParams,
-                              const VisibilityProvider* aVisProv = nullptr) override;
+    void startPrepareToRender(RenderContext& aRenderCtx) override;
 
-    void addObject(const RenderedObject& aObject) override;
-
-    void endPrepareToRender() override;
+    void finishPrepareToRender(RenderContext& aRenderCtx) override;
 
     void render(
+        const RenderContext&          aRenderCtx,
         hg::uwga::Canvas&             aCanvas,
         const hg::uwga::RenderStates& aRenderStates = hg::uwga::RENDER_STATES_DEFAULT) const override;
 
@@ -47,10 +45,6 @@ private:
 
     const World&                  _world;
     const hg::uwga::SpriteLoader& _spriteLoader;
-
-    // ===== Render parameters =====
-
-    RenderParameters _renderParams;
 
     // ===== Cell adapters =====
 
@@ -78,10 +72,6 @@ private:
 
     std::vector<CellToRenderedObjectAdapter> _cellAdapters;
 
-    // ===== Rendered objects =====
-
-    std::vector<const RenderedObject*> _objectsToRender;
-
     // ===== Sprite cache =====
 
     mutable std::unordered_map<SpriteId, hg::uwga::Sprite> _spriteCache;
@@ -90,7 +80,7 @@ private:
 
     hg::uwga::Sprite& _getSprite(SpriteId aSpriteId) const;
 
-    void _prepareCells(const VisibilityProvider* aVisProv);
+    void _prepareCells(RenderContext& aRenderCtx);
 };
 
 } // namespace gridgoblin

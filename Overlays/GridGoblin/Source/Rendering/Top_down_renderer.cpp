@@ -21,51 +21,30 @@ TopDownRenderer::TopDownRenderer(const World&                  aWorld,
     : _world{aWorld}
     , _spriteLoader{aSpriteLoader} {}
 
-void TopDownRenderer::startPrepareToRender(const RenderParameters&   aRenderParams,
-                                           const VisibilityProvider* aVisProv) {
-    _renderParams = aRenderParams;
-
-    _objectsToRender.clear();
+void TopDownRenderer::startPrepareToRender(RenderContext& aRenderCtx) {
     _cellAdapters.clear();
 
-    _prepareCells(aVisProv);
+    _prepareCells(aRenderCtx);
 }
 
-void TopDownRenderer::addObject(const RenderedObject& aObject) {
-    HG_NOT_IMPLEMENTED("TODO");
-}
-
-void TopDownRenderer::endPrepareToRender() {
-    std::sort(_objectsToRender.begin(),
-              _objectsToRender.end(),
+void TopDownRenderer::finishPrepareToRender(RenderContext& aRenderCtx) {
+    auto& objs = aRenderCtx.ephemeral.renderedObjects;
+    std::sort(objs.begin(),
+              objs.end(),
               [](const RenderedObject* aLhs, const RenderedObject* aRhs) -> bool {
                   // Implements: Does `aLhs` come before `aRhs`?
 
                   HG_ASSERT(aLhs != nullptr && aRhs != nullptr);
 
-                  const auto order =
-                      dimetric::CheckDrawingOrder(aLhs->getBoundsInfo(), aRhs->getBoundsInfo());
-
-                  switch (order) {
-                  case dimetric::DRAW_LHS_FIRST:
-                      return true;
-
-                  case dimetric::DOES_NOT_MATTER:
-                      return (aLhs < aRhs);
-
-                  case dimetric::DRAW_RHS_FIRST:
-                      return false;
-
-                  default:
-                      HG_UNREACHABLE("Invalid value for drawing order ({}).", (int)order);
-                      return {};
-                  }
+                  return (aLhs->getBoundsInfo().getLayer() < aRhs->getBoundsInfo().getLayer());
               });
 }
 
-void TopDownRenderer::render(hg::uwga::Canvas&             aCanvas,
-                             const hg::uwga::RenderStates& aRenderStates) const {
-    for (const auto& object : _objectsToRender) {
+void TopDownRenderer::render(const RenderContext&          aRenderCtx,
+                             hg::uwga::Canvas&             aCanvas,
+                             const hg::uwga::RenderStates& aRenderStates) const { // TODO: RenderStates unused
+    const auto& objs = aRenderCtx.ephemeral.renderedObjects;
+    for (const auto& object : objs) {
         const auto& boundsInfo = object->getBoundsInfo();
         const auto  posInView  = topdown::ToPositionInView(boundsInfo.getCenter());
         object->render(aCanvas, posInView);
@@ -87,16 +66,18 @@ hg::uwga::Sprite& TopDownRenderer::_getSprite(SpriteId aSpriteId) const {
     return newIter.first->second;
 }
 
-void TopDownRenderer::_prepareCells(const VisibilityProvider* /*aVisProv*/) {
+void TopDownRenderer::_prepareCells(RenderContext& aRenderCtx) {
     const auto cr = _world.getCellResolution();
+    const auto& viewCenter = aRenderCtx.dynamic.viewCenter;
+    const auto& viewSize = aRenderCtx.dynamic.viewSize;
 
     const auto topLeft = topdown::ToPositionInWorld(
-        PositionInView{_renderParams.viewCenter->x - (_renderParams.viewSize.x * 0.5),
-                       _renderParams.viewCenter->y - (_renderParams.viewSize.y * 0.5)});
+        PositionInView{viewCenter->x - (viewSize.x * 0.5),
+                       viewCenter->y - (viewSize.y * 0.5)});
 
     const auto bottomRight = topdown::ToPositionInWorld(
-        PositionInView{_renderParams.viewCenter->x + (_renderParams.viewSize.x * 0.5),
-                       _renderParams.viewCenter->y + (_renderParams.viewSize.y * 0.5)});
+        PositionInView{viewCenter->x + (viewSize.x * 0.5),
+                       viewCenter->y + (viewSize.y * 0.5)});
 
     const int startX = std::max(0, static_cast<int>(topLeft->x / cr));
     const int startY = std::max(0, static_cast<int>(topLeft->y / cr));
@@ -129,7 +110,7 @@ void TopDownRenderer::_prepareCells(const VisibilityProvider* /*aVisProv*/) {
     }
 
     for (const auto& adapter : _cellAdapters) {
-        _objectsToRender.push_back(&adapter);
+        aRenderCtx.ephemeral.renderedObjects.push_back(&adapter);
     }
 }
 

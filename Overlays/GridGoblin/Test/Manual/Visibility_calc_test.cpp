@@ -172,6 +172,16 @@ void RunVisibilityCalculatorTestImpl() {
     auto                 vcImage   = uwgaSystem->createImage();
     auto                 vcTexture = uwgaSystem->createTexture();
 
+    // clang-format off
+    RenderContext renderCtx = {
+        .world = &world,
+        .impls = {
+            .renderer           = &renderer,
+            .visibilityProvider = &visCalc,
+        },
+    };
+    // clang-format on
+
     const auto generateLoS = [&](hg::math::Vector2d pos) {
         HG_LOG_INFO(LOG_ID, "===============================================");
         HG_LOG_INFO(LOG_ID, "Running calc()...");
@@ -246,15 +256,18 @@ void RunVisibilityCalculatorTestImpl() {
 
         window->clear(hg::uwga::Color{155, 155, 200});
 
-        const Renderer::RenderParameters renderParams{
-            .viewCenter  = PositionInWorld{view->getAnchor() + view->getCenter().cast<double>()},
-            .viewSize    = view->getSize(),
+        // clang-format off
+        renderCtx.dynamic = {
+            .viewCenter = PositionInWorld{view->getAnchor() + view->getCenter().cast<double>()},
+            .viewSize = view->getSize(),
             .pointOfView = {},
-            .flags       = 0};
+            .flags = {}
+        };
+        // clang-format on
 
-        renderer.startPrepareToRender(renderParams);
-        renderer.endPrepareToRender();
-        renderer.render(*window);
+        Reset(renderCtx);
+        FinishPrepareToRender(renderCtx);
+        Render(renderCtx, *window);
 
         window->draw(vcSprite);
         window->flush();

@@ -7,8 +7,8 @@
 #include <GridGoblin/Positional/Position_in_world.hpp>
 #include <GridGoblin/Rendering/Rendered_object.hpp>
 
-#include <Hobgoblin/Common/Nullability.hpp>
 #include <Hobgoblin/Common/Enum_op.hpp>
+#include <Hobgoblin/Common/Nullability.hpp>
 #include <Hobgoblin/UWGA/Canvas.hpp>
 #include <Hobgoblin/UWGA/View.hpp>
 
@@ -28,12 +28,17 @@ enum class RenderFlags : std::uint32_t {
 [[nodiscard]] inline HG_ENUM_DEFINE_ARITHMETIC_OP(RenderFlags, |);
 [[nodiscard]] inline HG_ENUM_DEFINE_ARITHMETIC_OP(RenderFlags, &);
 
+// Forward declarations
+class LightingProvider;
 class Renderer;
 class VisibilityProvider;
-class LightingProvider;
+class World;
 
 //! TODO
 struct RenderContext {
+    //! The `World` instance to render.
+    World* world = nullptr;
+
     //! Pointers to objects implementing the `Renderer` and various `-Provider` and other interfaces
     //! which abstract the actual rendering algorithms.
     //! No rendering function will ever change these values. - this is up to the user (though it is
@@ -74,7 +79,7 @@ struct RenderContext {
     //! A `Reset()` call reverts them to their default values.
     struct Ephemeral {
         //! TODO
-        std::vector<RenderedObject*> renderedObjects;
+        std::vector<const RenderedObject*> renderedObjects;
     } ephemeral;
 };
 
@@ -82,11 +87,11 @@ struct RenderContext {
 void Reset(RenderContext& aRenderContext);
 
 //! TODO
-void AddRenderedObject(RenderContext& aRenderContext, RenderedObject& aRenderedObject);
+void AddRenderedObject(RenderContext& aRenderContext, const RenderedObject& aRenderedObject);
 
 //! TODO
-void AddRenderedObject(RenderContext&                        aRenderContext,
-                       hobgoblin::NeverNull<RenderedObject*> aRenderedObject);
+void AddRenderedObject(RenderContext&                              aRenderContext,
+                       hobgoblin::NeverNull<const RenderedObject*> aRenderedObject);
 
 //! TODO
 void FinishPrepareToRender(RenderContext& aRenderContext);

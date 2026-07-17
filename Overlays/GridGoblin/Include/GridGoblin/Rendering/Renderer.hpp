@@ -15,9 +15,9 @@ class Renderer {
 public:
     virtual ~Renderer() = default;
 
-    virtual void startPrepareToRender(const RenderContext& aRenderCtx) = 0;
+    virtual void startPrepareToRender(RenderContext& aRenderCtx) = 0;
 
-    virtual void finishPrepareToRender(const RenderContext& aRenderCtx) = 0;
+    virtual void finishPrepareToRender(RenderContext& aRenderCtx) = 0;
 
     virtual void render(
         const RenderContext&          aRenderCtx,

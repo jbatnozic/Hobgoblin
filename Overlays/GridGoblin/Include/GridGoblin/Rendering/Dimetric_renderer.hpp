@@ -10,7 +10,7 @@
 #include <GridGoblin/Rendering/Visibility_provider.hpp>
 #include <GridGoblin/World/World.hpp>
 
-#include <Hobgoblin/Graphics.hpp>
+#include <Hobgoblin/Graphics/Sprite_loader.hpp>
 
 #include <vector>
 
@@ -41,15 +41,14 @@ public:
                      const hg::uwga::SpriteLoader& aSpriteLoader,
                      const DimetricRendererConfig& aConfig = {});
 
-    void startPrepareToRender(const RenderParameters&   aRenderParams,
-                              std::int32_t              aRenderFlags,
-                              const VisibilityProvider* aVisProv) override;
+    void startPrepareToRender(const RenderContext& aRenderCtx) override;
 
-    void addObject(const RenderedObject& aObject) override;
+    void finishPrepareToRender(const RenderContext& aRenderCtx) override;
 
-    void endPrepareToRender() override;
-
-    void render(hg::uwga::Canvas& aCanvas) override;
+    void render(
+        const RenderContext&          aRenderCtx,
+        hg::uwga::Canvas&             aCanvas,
+        const hg::uwga::RenderStates& aRenderStates = hg::uwga::RENDER_STATES_DEFAULT) const override;
 
 private:
     // ===== Dependencies =====

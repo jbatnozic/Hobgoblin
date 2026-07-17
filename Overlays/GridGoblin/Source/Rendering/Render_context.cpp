@@ -12,22 +12,22 @@ namespace gridgoblin {
 void Reset(RenderContext& aRenderContext) {
     HG_VALIDATE_ARGUMENT(aRenderContext.impls.renderer != nullptr);
     aRenderContext.ephemeral.renderedObjects.clear();
-    aRenderContext.impls.renderer->startPrepareToRender(aRenderContext);    
+    aRenderContext.impls.renderer->startPrepareToRender(aRenderContext);
 }
 
-void AddRenderedObject(RenderContext& aRenderContext, RenderedObject& aRenderedObject) {
+void AddRenderedObject(RenderContext& aRenderContext, const RenderedObject& aRenderedObject) {
     aRenderContext.ephemeral.renderedObjects.push_back(&aRenderedObject);
 }
 
-void AddRenderedObject(RenderContext&                        aRenderContext,
-                       hobgoblin::NeverNull<RenderedObject*> aRenderedObject) {
+void AddRenderedObject(RenderContext&                              aRenderContext,
+                       hobgoblin::NeverNull<const RenderedObject*> aRenderedObject) {
     HG_VALIDATE_ARGUMENT(aRenderContext.impls.renderer != nullptr);
     aRenderContext.ephemeral.renderedObjects.push_back(aRenderedObject);
 }
 
 void FinishPrepareToRender(RenderContext& aRenderContext) {
     HG_VALIDATE_ARGUMENT(aRenderContext.impls.renderer != nullptr);
-    aRenderContext.impls.renderer->finishPrepareToRender(aRenderContext);    
+    aRenderContext.impls.renderer->finishPrepareToRender(aRenderContext);
 }
 
 void Render(const RenderContext&          aRenderContext,
