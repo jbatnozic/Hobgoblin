@@ -165,12 +165,22 @@ void RunVisibilityCalculatorTestImpl() {
         });
     }
 
-    TopDownRenderer            renderer{world, spriteLoader};
+    TopDownRenderer            renderer{spriteLoader};
     VisibilityCalculatorConfig visCalcConfig;
     visCalcConfig.minRingsBeforeRaycasting = 0;
     VisibilityCalculator visCalc{world, visCalcConfig};
     auto                 vcImage   = uwgaSystem->createImage();
     auto                 vcTexture = uwgaSystem->createTexture();
+
+    // clang-format off
+    RenderContext renderCtx = {
+        .world = &world,
+        .impls = {
+            .renderer           = &renderer,
+            .visibilityProvider = &visCalc,
+        },
+    };
+    // clang-format on
 
     const auto generateLoS = [&](hg::math::Vector2d pos) {
         HG_LOG_INFO(LOG_ID, "===============================================");
@@ -246,15 +256,18 @@ void RunVisibilityCalculatorTestImpl() {
 
         window->clear(hg::uwga::Color{155, 155, 200});
 
-        const Renderer::RenderParameters renderParams{
-            .viewCenter  = PositionInWorld{view->getAnchor() + view->getCenter().cast<double>()},
-            .viewSize    = view->getSize(),
+        // clang-format off
+        renderCtx.dynamic = {
+            .viewCenter = PositionInWorld{view->getAnchor() + view->getCenter().cast<double>()},
+            .viewSize = view->getSize(),
             .pointOfView = {},
-            .flags       = 0};
+            .flags = {}
+        };
+        // clang-format on
 
-        renderer.startPrepareToRender(renderParams);
-        renderer.endPrepareToRender();
-        renderer.render(*window);
+        Reset(renderCtx);
+        PrepareToRender(renderCtx);
+        Render(renderCtx, *window);
 
         window->draw(vcSprite);
         window->flush();

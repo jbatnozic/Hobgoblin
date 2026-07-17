@@ -19,38 +19,25 @@
 namespace jbatnozic {
 namespace gridgoblin {
 
-struct TopDownRendererConfig {
-    // Nothing for now...
-};
-
 //! Renders the world in a simple 2D top-down perspective (but it can be also used for sidescrollers).
 //! \note Doesn't ever reduce walls.
 class TopDownRenderer : public Renderer {
 public:
-    TopDownRenderer(const World&                  aWorld,
-                    const hg::uwga::SpriteLoader& aSpriteLoader,
-                    const TopDownRendererConfig&  aConfig = {});
+    TopDownRenderer(const hg::uwga::SpriteLoader& aSpriteLoader);
 
-    void startPrepareToRender(const RenderParameters&   aRenderParams,
-                              const VisibilityProvider* aVisProv = nullptr) override;
+    void reset(RenderContext& aRenderCtx) override;
 
-    void addObject(const RenderedObject& aObject) override;
-
-    void endPrepareToRender() override;
+    void prepareToRender(RenderContext& aRenderCtx) override;
 
     void render(
+        const RenderContext&          aRenderCtx,
         hg::uwga::Canvas&             aCanvas,
         const hg::uwga::RenderStates& aRenderStates = hg::uwga::RENDER_STATES_DEFAULT) const override;
 
 private:
     // ===== Dependencies =====
 
-    const World&                  _world;
     const hg::uwga::SpriteLoader& _spriteLoader;
-
-    // ===== Render parameters =====
-
-    RenderParameters _renderParams;
 
     // ===== Cell adapters =====
 
@@ -78,10 +65,6 @@ private:
 
     std::vector<CellToRenderedObjectAdapter> _cellAdapters;
 
-    // ===== Rendered objects =====
-
-    std::vector<const RenderedObject*> _objectsToRender;
-
     // ===== Sprite cache =====
 
     mutable std::unordered_map<SpriteId, hg::uwga::Sprite> _spriteCache;
@@ -90,7 +73,7 @@ private:
 
     hg::uwga::Sprite& _getSprite(SpriteId aSpriteId) const;
 
-    void _prepareCells(const VisibilityProvider* aVisProv);
+    void _prepareCells(RenderContext& aRenderCtx);
 };
 
 } // namespace gridgoblin

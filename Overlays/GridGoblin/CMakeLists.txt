@@ -30,6 +30,7 @@ add_library(${PROJECT_NAME}
     "Source/Rendering/Drawing_order.cpp"
     # "Source/Rendering/Top_down_los_renderer.cpp"
     "Source/Rendering/OpenGL_helpers.cpp"
+    "Source/Rendering/Render_context.cpp"
     "Source/Rendering/Top_down_renderer.cpp"
     "Source/Rendering/Visibility_calculator.cpp"
 
