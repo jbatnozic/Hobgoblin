@@ -2,41 +2,40 @@
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
 #include <GridGoblin/Positional/Position_conversions.hpp>
+#include <GridGoblin/Private/Reduction_predicates.hpp>
 #include <GridGoblin/Rendering/Dimetric_renderer.hpp>
 #include <GridGoblin/Rendering/Drawing_order.hpp>
-
-#include "../Detail_access.hpp"
 
 #include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/Math/Core.hpp>
 
 #include <algorithm>
+#include <optional>
 
 namespace jbatnozic {
 namespace gridgoblin {
 
-#define vector_cast hg::math::VectorCast
-
 // MARK: Cell renderer mask bits
 
-#define RM_REDUCTION_COUNTER_MASK 0x03FF
-#define RM_RENDER_CYCLE_FLAG      0x0400
-#define RM_CELL_TOUCHED           0x0800
-#define RM_SHOULD_REDUCE          0x1000
+#define RM_REDUCTION_COUNTER_MASK static_cast<std::uint32_t>(0x03FF)
+#define RM_RENDER_CYCLE_FLAG      static_cast<std::uint32_t>(0x0400)
+#define RM_CELL_TOUCHED           static_cast<std::uint32_t>(0x0800)
+#define RM_SHOULD_REDUCE          static_cast<std::uint32_t>(0x1000)
 
 // MARK: Templates
 
 template <class taCallable>
-void DimetricRenderer::_diagonalTraverse(const World&                                 aWorld,
-                                         const DimetricRenderer::RenderParametersExt& aRenderParams,
-                                         taCallable&&                                 aFunc) {
+void DimetricRenderer::_diagonalTraverse(const World&       aWorld,
+                                         PositionInWorld    aViewTopLeft,
+                                         hg::math::Vector2d aViewSize,
+                                         taCallable&&       aFunc) {
     const double cellRes = aWorld.getCellResolution();
 
-    const int cellsPerRow    = static_cast<int>((aRenderParams.viewSize.x) / (2.0 * cellRes)) + 1;
-    const int cellsPerColumn = static_cast<int>((aRenderParams.viewSize.y) * 2.0 / cellRes);
+    const int cellsPerRow    = static_cast<int>((aViewSize.x) / (2.0 * cellRes)) + 1;
+    const int cellsPerColumn = static_cast<int>((aViewSize.y) * 2.0 / cellRes);
 
-    int startX = static_cast<int>(trunc(aRenderParams.topLeft->x / cellRes));
-    int startY = static_cast<int>(trunc(aRenderParams.topLeft->y / cellRes));
+    int startX = static_cast<int>(trunc(aViewTopLeft->x / cellRes));
+    int startY = static_cast<int>(trunc(aViewTopLeft->y / cellRes));
 
     for (int row = 0; row < cellsPerColumn; row += 1) {
         for (int col = 0; col < cellsPerRow; col += 1) {
@@ -44,13 +43,22 @@ void DimetricRenderer::_diagonalTraverse(const World&                           
             const int y = startY + col;
 
             if (x >= 0 && x < aWorld.getCellCountX() && y >= 0 && y < aWorld.getCellCountY()) {
-                const auto* cell = aWorld.getCellAtUnchecked(x, y);
+                std::optional<CellInfo> cellInfo = CellInfo{.gridX = x, .gridY = y};
+
+                if (!aWorld.getCellDataAtUnchecked(x,
+                                                   y,
+                                                   &cellInfo->floorSprite,
+                                                   &cellInfo->wallSprite,
+                                                   &cellInfo->rendererAuxData,
+                                                   &cellInfo->spatialInfo)) {
+                    cellInfo.reset();
+                }
 
                 const auto posInWorld =
                     PositionInWorld{((float)x + 0.5f) * cellRes, ((float)y + 0.5f) * cellRes};
                 const auto posInView = dimetric::ToPositionInView(posInWorld);
 
-                aFunc(CellInfo{cell, x, y}, posInView);
+                aFunc(cellInfo, posInView);
             }
         }
 
@@ -64,43 +72,35 @@ void DimetricRenderer::_diagonalTraverse(const World&                           
 
 // MARK: Public
 
-DimetricRenderer::DimetricRenderer(const World&                  aWorld,
-                                   const hg::uwga::SpriteLoader& aSpriteLoader,
-                                   const DimetricRendererConfig& aConfig)
-    : _world{aWorld}
-    , _spriteLoader{aSpriteLoader}
-    , _config{aConfig} //
+DimetricRenderer::DimetricRenderer(const hg::uwga::SpriteLoader& aSpriteLoader)
+    : _spriteLoader{aSpriteLoader} //
 {
-    HG_VALIDATE_ARGUMENT(aConfig.wallReductionConfig.lowerBound <
-                         aConfig.wallReductionConfig.upperBound);
+    // HG_VALIDATE_ARGUMENT(aConfig.wallReductionConfig.lowerBound <
+    //                      aConfig.wallReductionConfig.upperBound);
 }
 
-void DimetricRenderer::startPrepareToRender(const RenderParameters&   aRenderParams,
-                                            std::int32_t              aRenderFlags,
-                                            const VisibilityProvider* aVisProv) {
-    HG_VALIDATE_ARGUMENT(!!(aRenderFlags & REDUCE_WALLS_BASED_ON_VISIBILITY) == !!aVisProv);
+void DimetricRenderer::reset(RenderContext& aRenderCtx) {
+    // HG_VALIDATE_ARGUMENT(!!(aRenderFlags & REDUCE_WALLS_BASED_ON_VISIBILITY) == !!aVisProv);
 
-    static_cast<RenderParameters&>(_renderParams) = aRenderParams;
+    _renderCtx = nullptr;
 
-    _renderParams.topLeft = dimetric::ToPositionInWorld(
-        PositionInView{_renderParams.viewCenter->x - (_renderParams.viewSize.x * 0.5),
-                       _renderParams.viewCenter->y - (_renderParams.viewSize.y * 0.5)});
-
-    _objectsToRender.clear();
     _cellAdapters.clear();
+}
 
-    _prepareCells(aRenderFlags, aVisProv);
+void DimetricRenderer::prepareToRender(RenderContext& aRenderCtx) {
+    _renderCtx = &aRenderCtx;
+
+    _viewTopLeft = dimetric::ToPositionInWorld(
+        PositionInView{aRenderCtx.dynamic.viewCenter->x - (aRenderCtx.dynamic.viewSize.x * 0.5),
+                       aRenderCtx.dynamic.viewCenter->y - (aRenderCtx.dynamic.viewSize.y * 0.5)});
+
+    _prepareCells();
 
     _renderCycleCounter += 1;
-}
 
-void DimetricRenderer::addObject(const RenderedObject& aObject) {
-    HG_NOT_IMPLEMENTED("TODO");
-}
-
-void DimetricRenderer::endPrepareToRender() {
-    std::sort(_objectsToRender.begin(),
-              _objectsToRender.end(),
+    auto& objs = aRenderCtx.ephemeral.renderedObjects;
+    std::sort(objs.begin(),
+              objs.end(),
               [](const RenderedObject* aLhs, const RenderedObject* aRhs) -> bool {
                   // Implements: Does `aLhs` come before `aRhs`?
 
@@ -126,12 +126,15 @@ void DimetricRenderer::endPrepareToRender() {
               });
 }
 
-void DimetricRenderer::render(hg::uwga::Canvas& aCanvas) {
-    for (const auto& object : _objectsToRender) {
+void DimetricRenderer::render(const RenderContext&          aRenderCtx,
+                              hg::uwga::Canvas&             aCanvas,
+                              const hg::uwga::RenderStates& aRenderStates) const //
+{
+    (void)aRenderStates; // TODO: aRenderStates unused
+    const auto& objs = aRenderCtx.ephemeral.renderedObjects;
+    for (const auto& object : objs) {
         const auto& boundsInfo = object->getBoundsInfo();
         auto        posInView  = dimetric::ToPositionInView(boundsInfo.getCenter());
-        posInView->x += _renderParams.xOffset;
-        posInView->y += _renderParams.yOffset;
         object->render(aCanvas, posInView);
     }
 }
@@ -154,6 +157,7 @@ hg::uwga::Sprite& DimetricRenderer::_getSprite(SpriteId aSpriteId) const {
 void DimetricRenderer::_reduceCellsBelowIfCellIsVisible(hg::math::Vector2pz       aCell,
                                                         PositionInView            aCellPosInView,
                                                         const VisibilityProvider& aVisProv) {
+#if 0
     const auto cr = _world.getCellResolution();
 
     static constexpr double  PADDING      = 1.f;
@@ -216,168 +220,168 @@ void DimetricRenderer::_reduceCellsBelowIfCellIsVisible(hg::math::Vector2pz     
             }
         }
     } // end_for
+#endif
 }
 
-void DimetricRenderer::_prepareCells(std::int32_t aRenderFlags, const VisibilityProvider* aVisProv) {
-    const auto cr = _world.getCellResolution();
+void DimetricRenderer::_prepareCells() {
+    auto& world = *(_renderCtx->world);
 
-    _diagonalTraverse(
-        _world,
-        _renderParams,
-        [this, cr, aRenderFlags, aVisProv](const CellInfo& aCellInfo, PositionInView aPosInView) {
-            if (aCellInfo.cell == nullptr) {
-                return;
-            }
+    world.edit(*world.getPermissionToEdit(), [this, &world](World::Editor aEditor) {
+        _diagonalTraverse(
+            world,
+            _viewTopLeft,
+            _renderCtx->dynamic.viewSize,
+            [this, &world, aEditor](std::optional<CellInfo> aCellInfo,
+                                    PositionInView          aPosInView) //
+            {
+                if (!aCellInfo.has_value()) {
+                    return; // The cell's chunk isn't currently loaded
+                }
 
-            std::uint16_t mask;
-            mask = _updateFlagsOfCellRendererMask(*aCellInfo.cell);
+                _updateRendererAuxDataOfCell(*aCellInfo, aEditor);
 
-            const auto flags = aCellInfo.cell->getFlags();
+                if (const auto* visProv = _renderCtx->impls.visibilityProvider;
+                    visProv != nullptr && (aCellInfo->wallSprite.id == SPRITEID_NONE)) //
+                {
+                    _reduceCellsBelowIfCellIsVisible({aCellInfo->gridX, aCellInfo->gridY},
+                                                     aPosInView,
+                                                     *visProv);
+                }
 
-            if (aVisProv != nullptr && (flags & CellModel::WALL_INITIALIZED) == 0) {
-                _reduceCellsBelowIfCellIsVisible({aCellInfo.gridX, aCellInfo.gridY},
-                                                 aPosInView,
-                                                 *aVisProv);
-            }
+                const auto cr = world.getCellResolution();
 
-            const auto drawingData = GetExtensionData(*aCellInfo.cell)
-                                         .getDrawingData(cr,
-                                                         {aCellInfo.gridX * cr, aCellInfo.gridY * cr},
-                                                         _renderParams.pointOfView);
+                const auto drawMode = (detail::GetReductionPredicate(aCellInfo->spatialInfo))(
+                    cr,
+                    {aCellInfo->gridX * cr, aCellInfo->gridY * cr},
+                    _renderCtx->dynamic.pointOfView);
 
-            mask = _updateFadeValueOfCellRendererMask(aCellInfo, drawingData, aRenderFlags);
+                _updateFadeValueOfCellRendererMask(*aCellInfo, drawMode, aEditor);
 
-            if (drawingData.suggestedDrawMode == detail::DrawingData::NONE) {
-                return;
-            }
+                if (drawMode == detail::RecommendedDrawMode::NOT_DRAWN) {
+                    return;
+                }
 
-            if (flags & CellModel::WALL_INITIALIZED) {
-                _cellAdapters.emplace_back(
-                    *this,
-                    *aCellInfo.cell,
-                    BoundsInfo::fromTopLeftAndSize({aCellInfo.gridX * cr, aCellInfo.gridY * cr},
-                                                   {cr, cr},
-                                                   Layer::WALL),
-                    mask);
-            } else if (flags & CellModel::FLOOR_INITIALIZED) {
-                _cellAdapters.emplace_back(
-                    *this,
-                    *aCellInfo.cell,
-                    BoundsInfo::fromTopLeftAndSize({aCellInfo.gridX * cr, aCellInfo.gridY * cr},
-                                                   {cr, cr},
-                                                   Layer::FLOOR),
-                    mask);
-            }
-        });
+                if (aCellInfo->wallSprite.id != SPRITEID_NONE) {
+                    _cellAdapters.emplace_back(
+                        *this,
+                        *aCellInfo,
+                        BoundsInfo::fromTopLeftAndSize({aCellInfo->gridX * cr, aCellInfo->gridY * cr},
+                                                       {cr, cr},
+                                                       Layer::WALL));
+                } else if (aCellInfo->floorSprite.id != SPRITEID_NONE) {
+                    _cellAdapters.emplace_back(
+                        *this,
+                        *aCellInfo,
+                        BoundsInfo::fromTopLeftAndSize({aCellInfo->gridX * cr, aCellInfo->gridY * cr},
+                                                       {cr, cr},
+                                                       Layer::FLOOR));
+                }
+            });
+    });
 
     for (const auto& adapter : _cellAdapters) {
-        _objectsToRender.push_back(&adapter);
+        _renderCtx->ephemeral.renderedObjects.push_back(&adapter);
     }
 }
 
-std::uint16_t DimetricRenderer::_updateFlagsOfCellRendererMask(const CellModel& aCell) {
-    auto& ext  = GetMutableExtensionData(aCell);
-    auto  mask = ext.getRendererMask();
+void DimetricRenderer::_updateRendererAuxDataOfCell(CellInfo& aCellInfo, World::Editor aWorldEditor) {
+    auto bits = aCellInfo.rendererAuxData.storage;
 
     if ((_renderCycleCounter & 0x01) == 0) {
         static constexpr auto EXPECTED           = RM_RENDER_CYCLE_FLAG | RM_CELL_TOUCHED;
-        const bool            cellAlreadyTouched = ((mask & EXPECTED) == EXPECTED);
+        const bool            cellAlreadyTouched = ((bits & EXPECTED) == EXPECTED);
         if (!cellAlreadyTouched) {
-            mask &= ~RM_SHOULD_REDUCE;
-            mask |= EXPECTED;
+            bits &= ~RM_SHOULD_REDUCE;
+            bits |= EXPECTED;
         }
     } else {
         static constexpr auto EXPECTED           = RM_RENDER_CYCLE_FLAG | RM_CELL_TOUCHED;
-        const bool            cellAlreadyTouched = ((mask & EXPECTED) == 0);
+        const bool            cellAlreadyTouched = ((bits & EXPECTED) == 0);
         if (!cellAlreadyTouched) {
-            mask &= ~RM_SHOULD_REDUCE;
-            mask &= ~EXPECTED;
+            bits &= ~RM_SHOULD_REDUCE;
+            bits &= ~EXPECTED;
         }
     }
 
-    ext.setRendererMask(mask);
-    return mask;
+    aWorldEditor.setCellDataAtUnchecked(aCellInfo.gridX, aCellInfo.gridY, &aCellInfo.rendererAuxData);
 }
 
-std::uint16_t DimetricRenderer::_updateFadeValueOfCellRendererMask(
-    const CellInfo&            aCellInfo,
-    const detail::DrawingData& aDrawingData,
-    std::int32_t               aRenderFlags) //
-{
-    auto& ext  = GetMutableExtensionData(*aCellInfo.cell);
-    auto  mask = ext.getRendererMask();
-
-    const auto cr      = _world.getCellResolution();
+void DimetricRenderer::_updateFadeValueOfCellRendererMask(CellInfo&                   aCellInfo,
+                                                          detail::RecommendedDrawMode aDrawMode,
+                                                          World::Editor               aWorldEditor) {
+    const auto cr      = _renderCtx->world->getCellResolution();
     const auto cellPos = hg::math::Vector2d{(aCellInfo.gridX + 0.5) * cr, (aCellInfo.gridY + 0.5) * cr};
+    const auto rflags  = _renderCtx->dynamic.flags;
 
-    if (hg::math::EuclideanDist(cellPos, *_renderParams.pointOfView) >
-        _config.wallReductionConfig.reductionDistanceLimit) //
+    auto& rAuxDataBits = aCellInfo.rendererAuxData.storage;
+
+    if (hg::math::EuclideanDist(cellPos, *(_renderCtx->dynamic.pointOfView)) >
+        _renderCtx->config.wallReductionConfig.reductionDistanceLimit) //
     {
-        mask &= ~RM_SHOULD_REDUCE;
-    } else if ((aRenderFlags & REDUCE_WALLS_BASED_ON_POSITION) != 0) {
-        switch (aDrawingData.suggestedDrawMode) {
-        case detail::DrawingData::NONE:
-            mask &= ~RM_SHOULD_REDUCE;
+        rAuxDataBits &= ~RM_SHOULD_REDUCE;
+    } else if ((rflags & RenderFlags::REDUCE_WALLS_BASED_ON_POSITION) != RenderFlags::NONE) {
+        switch (aDrawMode) {
+        case detail::RecommendedDrawMode::NOT_DRAWN:
+            rAuxDataBits &= ~RM_SHOULD_REDUCE;
             break;
 
-        case detail::DrawingData::REDUCED:
-            mask |= RM_SHOULD_REDUCE;
+        case detail::RecommendedDrawMode::REDUCED:
+            rAuxDataBits |= RM_SHOULD_REDUCE;
             break;
 
-        case detail::DrawingData::FULL:
-            if ((aRenderFlags & REDUCE_WALLS_BASED_ON_VISIBILITY) == 0) {
-                mask &= ~RM_SHOULD_REDUCE;
+        case detail::RecommendedDrawMode::FULL:
+            if ((rflags & RenderFlags::REDUCE_WALLS_BASED_ON_VISIBILITY) == RenderFlags::NONE) {
+                rAuxDataBits &= ~RM_SHOULD_REDUCE;
             }
             break;
 
         default:
-            HG_UNREACHABLE("Unexpected value for DrawingData::DrawMode ({}).",
-                           (int)aDrawingData.suggestedDrawMode);
+            HG_UNREACHABLE("Unexpected value for DrawingData::DrawMode ({}).", (int)aDrawMode);
             break;
         }
-    } else if ((aRenderFlags & REDUCE_WALLS_BASED_ON_VISIBILITY) == 0) {
-        mask &= ~RM_SHOULD_REDUCE;
+    } else if ((rflags & RenderFlags::REDUCE_WALLS_BASED_ON_VISIBILITY) == RenderFlags::NONE) {
+        rAuxDataBits &= ~RM_SHOULD_REDUCE;
     }
 
-    auto reductionCounter = mask & RM_REDUCTION_COUNTER_MASK;
-    if ((mask & RM_SHOULD_REDUCE) == 0) {
-        if (reductionCounter < _config.wallReductionConfig.delta) {
+    auto reductionCounter = rAuxDataBits & RM_REDUCTION_COUNTER_MASK;
+    if ((rAuxDataBits & RM_SHOULD_REDUCE) == 0) {
+        if (reductionCounter < _renderCtx->config.wallReductionConfig.delta) {
             reductionCounter = 0;
         } else {
-            reductionCounter -= _config.wallReductionConfig.delta;
+            reductionCounter -= _renderCtx->config.wallReductionConfig.delta;
         }
     } else {
-        if (reductionCounter + _config.wallReductionConfig.delta > WallReductionConfig::MAX_VALUE) {
-            reductionCounter = WallReductionConfig::MAX_VALUE;
+        if (reductionCounter + _renderCtx->config.wallReductionConfig.delta >
+            RenderContext::Config::WallReductionConfig::MAX_VALUE) //
+        {
+            reductionCounter = RenderContext::Config::WallReductionConfig::MAX_VALUE;
         } else {
-            reductionCounter += _config.wallReductionConfig.delta;
+            reductionCounter += _renderCtx->config.wallReductionConfig.delta;
         }
     }
 
-    mask = static_cast<std::uint16_t>((mask & ~RM_REDUCTION_COUNTER_MASK) | reductionCounter);
+    rAuxDataBits = (rAuxDataBits & ~RM_REDUCTION_COUNTER_MASK) | reductionCounter;
 
-    ext.setRendererMask(mask);
-    return mask;
+    aWorldEditor.setCellDataAtUnchecked(aCellInfo.gridX, aCellInfo.gridY, &aCellInfo.rendererAuxData);
 }
 
 // MARK: Cell adapter impl
 
-DimetricRenderer::CellToRenderedObjectAdapter::CellToRenderedObjectAdapter(DimetricRenderer& aRenderer,
-                                                                           const CellModel&  aCell,
-                                                                           const BoundsInfo& aBoundsInfo,
-                                                                           std::uint16_t aRendererMask)
+DimetricRenderer::CellToRenderedObjectAdapter::CellToRenderedObjectAdapter(
+    DimetricRenderer& aRenderer,
+    CellGraphicsInfo  aCellGraphicsInfo,
+    const BoundsInfo& aBoundsInfo)
     : RenderedObject{aBoundsInfo}
     , _renderer{aRenderer}
-    , _cell{aCell}
-    , _rendererMask{aRendererMask} {}
+    , _cellGraphicsInfo{aCellGraphicsInfo} {}
 
 void DimetricRenderer::CellToRenderedObjectAdapter::render(hg::uwga::Canvas& aCanvas,
                                                            PositionInView    aScreenPosition) const {
     switch (_boundsInfo.getLayer()) {
     case Layer::FLOOR:
         {
-            auto& sprite = _renderer._getSprite(_cell.getFloor().spriteId);
-            sprite.setPosition(vector_cast<float>(*aScreenPosition));
+            auto& sprite = _renderer._getSprite(_cellGraphicsInfo.floorSprite.id);
+            sprite.setAnchor(*aScreenPosition);
             sprite.setColor(hg::uwga::COLOR_WHITE);
             aCanvas.draw(sprite);
         }
@@ -386,8 +390,9 @@ void DimetricRenderer::CellToRenderedObjectAdapter::render(hg::uwga::Canvas& aCa
     case Layer::WALL:
         {
             std::uint8_t opacity;
-            const auto   reductionCounter = _rendererMask & RM_REDUCTION_COUNTER_MASK;
-            const auto&  wrConfig         = _renderer._config.wallReductionConfig;
+            const auto   reductionCounter =
+                _cellGraphicsInfo.rendererAuxData.storage & RM_REDUCTION_COUNTER_MASK;
+            const auto& wrConfig = _renderer._renderCtx->config.wallReductionConfig;
 
             if (reductionCounter <= wrConfig.lowerBound) {
                 opacity = 255;
@@ -403,17 +408,17 @@ void DimetricRenderer::CellToRenderedObjectAdapter::render(hg::uwga::Canvas& aCa
             }
 
             if (opacity < 255) {
-                auto& reducedSprite = _renderer._getSprite(_cell.getWall().spriteId_reduced);
+                auto& reducedSprite = _renderer._getSprite(_cellGraphicsInfo.wallSprite.id_reduced);
 
-                reducedSprite.setPosition(vector_cast<float>(*aScreenPosition));
+                reducedSprite.setAnchor(*aScreenPosition);
                 reducedSprite.setColor(hg::uwga::COLOR_WHITE);
                 aCanvas.draw(reducedSprite);
             }
 
             if (opacity > 0) {
-                auto& fullSprite = _renderer._getSprite(_cell.getWall().spriteId);
+                auto& fullSprite = _renderer._getSprite(_cellGraphicsInfo.wallSprite.id);
 
-                fullSprite.setPosition(vector_cast<float>(*aScreenPosition));
+                fullSprite.setAnchor(*aScreenPosition);
                 fullSprite.setColor(hg::uwga::COLOR_WHITE.withAlpha(opacity));
                 aCanvas.draw(fullSprite);
             }

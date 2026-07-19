@@ -58,8 +58,7 @@ struct SpatialInfo {
 };
 
 struct RendererAuxData {
-    std::uint16_t mask  = 0;
-    std::uint16_t mask2 = 0;
+    std::uint32_t storage = 0;
 };
 
 struct UserData {
@@ -104,7 +103,7 @@ inline bool operator!=(SpatialInfo lhs, SpatialInfo rhs) {
 }
 
 inline bool operator==(RendererAuxData lhs, RendererAuxData rhs) {
-    return lhs.mask == rhs.mask && lhs.mask2 == rhs.mask2;
+    return lhs.storage == rhs.storage;
 }
 
 inline bool operator!=(RendererAuxData lhs, RendererAuxData rhs) {
