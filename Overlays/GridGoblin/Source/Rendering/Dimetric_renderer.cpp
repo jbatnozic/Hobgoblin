@@ -10,6 +10,7 @@
 #include <Hobgoblin/Math/Core.hpp>
 
 #include <algorithm>
+#include <functional>
 #include <optional>
 
 namespace jbatnozic {
@@ -80,23 +81,25 @@ DimetricRenderer::DimetricRenderer(const hg::uwga::SpriteLoader& aSpriteLoader)
 }
 
 void DimetricRenderer::reset(RenderContext& aRenderCtx) {
-    // HG_VALIDATE_ARGUMENT(!!(aRenderFlags & REDUCE_WALLS_BASED_ON_VISIBILITY) == !!aVisProv);
-
     _renderCtx = nullptr;
-
     _cellAdapters.clear();
 }
 
 void DimetricRenderer::prepareToRender(RenderContext& aRenderCtx) {
+    HG_VALIDATE_ARGUMENT(aRenderCtx.world != nullptr);
+    HG_VALIDATE_ARGUMENT(aRenderCtx.impls.renderer == this);
+    // TODO: Validate others...
+    // HG_VALIDATE_ARGUMENT(!!(aRenderFlags & REDUCE_WALLS_BASED_ON_VISIBILITY) == !!aVisProv);
+
     _renderCtx = &aRenderCtx;
 
     _viewTopLeft = dimetric::ToPositionInWorld(
         PositionInView{aRenderCtx.dynamic.viewCenter->x - (aRenderCtx.dynamic.viewSize.x * 0.5),
                        aRenderCtx.dynamic.viewCenter->y - (aRenderCtx.dynamic.viewSize.y * 0.5)});
 
-    _prepareCells();
+   _renderCycleCounter += 1;
 
-    _renderCycleCounter += 1;
+    _prepareCells();
 
     auto& objs = aRenderCtx.ephemeral.renderedObjects;
     std::sort(objs.begin(),
@@ -114,7 +117,7 @@ void DimetricRenderer::prepareToRender(RenderContext& aRenderCtx) {
                       return true;
 
                   case dimetric::DOES_NOT_MATTER:
-                      return (aLhs < aRhs);
+                      return std::less<const RenderedObject*>{}(aLhs, aRhs);
 
                   case dimetric::DRAW_RHS_FIRST:
                       return false;
@@ -285,7 +288,7 @@ void DimetricRenderer::_prepareCells() {
 }
 
 void DimetricRenderer::_updateRendererAuxDataOfCell(CellInfo& aCellInfo, World::Editor aWorldEditor) {
-    auto bits = aCellInfo.rendererAuxData.storage;
+    auto& bits = aCellInfo.rendererAuxData.storage;
 
     if ((_renderCycleCounter & 0x01) == 0) {
         static constexpr auto EXPECTED           = RM_RENDER_CYCLE_FLAG | RM_CELL_TOUCHED;

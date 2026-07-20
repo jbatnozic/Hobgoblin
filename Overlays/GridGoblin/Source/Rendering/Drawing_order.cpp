@@ -67,7 +67,7 @@ int CheckDrawingOrder(const BoundsInfo& aLhs, const BoundsInfo& aRhs) {
     const bool cmpX1 = (( lhsBbox.x + lhsBbox.w) <= rhsBbox.x);
     const bool cmpX2 = (( rhsBbox.x + rhsBbox.w) <= lhsBbox.x);
     const bool cmpY1 = ((-lhsBbox.y            ) <= (-rhsBbox.y - rhsBbox.h));
-    const bool cmpY2 = ((-rhsBbox.y            ) <= (-lhsBbox.y - rhsBbox.h));
+    const bool cmpY2 = ((-rhsBbox.y            ) <= (-lhsBbox.y - lhsBbox.h));
 #endif
 
 #if !USE_LOOKUP_TABLE

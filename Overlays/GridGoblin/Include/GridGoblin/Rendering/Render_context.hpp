@@ -19,10 +19,16 @@ namespace gridgoblin {
 
 // MARK: Datatypes
 
-//! TODO(add description)
+//! Bitwise flags which toggle optional rendering behaviours for a single render cycle.
+//! Combine them using the `|` operator and test them using the `&` operator.
 enum class RenderFlags : std::uint32_t {
-    NONE                             = 0,
-    REDUCE_WALLS_BASED_ON_POSITION   = (1 << 0),
+    //! No optional behaviours enabled.
+    NONE = 0,
+    //! Reduce (lower or fade) walls based on their position relative to the point of view, so that
+    //! they don't obscure whatever is behind them.
+    REDUCE_WALLS_BASED_ON_POSITION = (1 << 0),
+    //! Reduce (lower or fade) walls based on the visibility information provided by the
+    //! `VisibilityProvider`, so that they don't obscure whatever is behind them.
     REDUCE_WALLS_BASED_ON_VISIBILITY = (1 << 1),
 };
 
@@ -35,7 +41,10 @@ class Renderer;
 class VisibilityProvider;
 class World;
 
-//! TODO(add description)
+//! Aggregates all the state required to render a GridGoblin `World`: the world itself, the
+//! implementations of the rendering algorithms, the static configuration, and the per-cycle dynamic
+//! and ephemeral state. A single instance is meant to be reused across many render cycles.
+//! See the "Render cycle functions" section below for how the fields are expected to be used.
 struct RenderContext {
     //! The `World` instance to render.
     //! \warning you MUST set this to a valid, non-null value before using the context!
@@ -46,14 +55,17 @@ struct RenderContext {
     //! No rendering function will ever change these values. - this is up to the user (though it is
     //! very much NOT recommended to change them mid-rendering cycle).
     struct Implementations {
-        //! TODO(add description)
+        //! The `Renderer` implementation which performs the actual rendering algorithm.
         //! \warning you MUST set this to a valid, non-null value before using the context!
         Renderer* renderer = nullptr;
 
-        //! TODO(add description)
+        //! Optional `VisibilityProvider` implementation used to determine which points in the world
+        //! are visible from the point of view. May be left null if no visibility-based behaviour
+        //! (e.g. `REDUCE_WALLS_BASED_ON_VISIBILITY`) is needed.
         VisibilityProvider* visibilityProvider = nullptr;
 
-        //! TODO(add description)
+        //! Optional `LightingProvider` implementation used to determine the lighting of the scene.
+        //! May be left null if the renderer does not use dynamic lighting.
         LightingProvider* lightingProvider = nullptr;
     } impls;
 
@@ -61,7 +73,8 @@ struct RenderContext {
     //! meaning that you most likely won't change them once initially set (but you can,
     //! though it is not recommended to do so mid-rendering cycle).
     struct Config {
-        //! TODO(add description)
+        //! Parameters controlling how much and how quickly walls are reduced (lowered or faded)
+        //! when wall reduction is enabled via the corresponding `RenderFlags`.
         struct WallReductionConfig {
             static constexpr std::uint16_t MIN_VALUE = 0;    //!< Minimal reduction
             static constexpr std::uint16_t MAX_VALUE = 1023; //!< Maximal reduction
@@ -94,14 +107,16 @@ struct RenderContext {
         //! make transparent some walls so the player can see what's behind them.
         PositionInWorld pointOfView = {};
 
-        //! TODO(add description)
+        //! Combination of `RenderFlags` toggling optional rendering behaviours for this cycle.
         RenderFlags flags = RenderFlags::NONE;
     } dynamic;
 
     //! Values and objects which are only valid for one rendering cycle.
     //! A `Reset()` call reverts them to their default values.
     struct Ephemeral {
-        //! TODO(add description)
+        //! Non-owning pointers to the objects to be drawn during this render cycle. Populated via
+        //! the `AddRenderedObject()` convenience functions (or directly), and cleared by `Reset()`.
+        //! \warning each referenced object must be kept alive for the whole render cycle.
         std::vector<const RenderedObject*> renderedObjects;
     } ephemeral;
 };
@@ -145,10 +160,21 @@ void AddRenderedObject(RenderContext& aRenderContext, const RenderedObject& aRen
 void AddRenderedObject(RenderContext&                              aRenderContext,
                        hobgoblin::NeverNull<const RenderedObject*> aRenderedObject);
 
-//! TODO(add description)
+//! Prepare the context for rendering once all `dynamic` and `ephemeral` fields have been set.
+//! This gives the renderer a chance to precompute whatever it needs (based on the current context
+//! state) before any `Render()` calls are made.
+//! \note must be called after `Reset()` and after all rendered objects have been added, but before
+//!       the first `Render()` call of the cycle.
 void PrepareToRender(RenderContext& aRenderContext);
 
-//! TODO(add description)
+//! Render the scene described by the context onto the given canvas.
+//! \param aRenderContext the context describing the scene to render; must have been prepared by a
+//!                       preceding `PrepareToRender()` call.
+//! \param aCanvas the canvas to render onto.
+//! \param aRenderStates the render states to use while rendering.
+//! \note this may be called multiple times within a single render cycle (for example onto different
+//!       canvases or with different render states); to change anything about the scene you must
+//!       start a new render cycle.
 void Render(const RenderContext&          aRenderContext,
             hobgoblin::uwga::Canvas&      aCanvas,
             const hg::uwga::RenderStates& aRenderStates = hg::uwga::RENDER_STATES_DEFAULT);
