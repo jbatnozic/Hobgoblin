@@ -205,7 +205,7 @@ void RunDimetricRenderingTestImpl() {
         renderCtx.dynamic = {
             .viewCenter  = PositionInWorld{view->getAnchor() + view->getCenter().cast<double>()},
             .viewSize    = view->getSize(),
-            .pointOfView = PositionInWorld{mouseWindowPos},
+            .pointOfView = dimetric::ToPositionInWorld(PositionInView{mouseWindowPos}),
             .flags       = RenderFlags::REDUCE_WALLS_BASED_ON_POSITION
         };
         // clang-format on
