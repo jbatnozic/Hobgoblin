@@ -12,6 +12,14 @@
 #include <vector>
 
 namespace jbatnozic {
+
+namespace hobgoblin {
+namespace uwga {
+// Forward-declare
+class Canvas;
+}
+} // namespace hobgoblin
+
 namespace gridgoblin {
 
 namespace hg = jbatnozic::hobgoblin;
@@ -63,7 +71,7 @@ public:
 
     std::optional<bool> testVisibilityAt(PositionInWorld aPos) const override;
 
-    // TODO: render()
+    void __ggimpl_experimental_render(hg::uwga::Canvas& aCanvas) const;
 
 private:
     // ===== Dependencies =====

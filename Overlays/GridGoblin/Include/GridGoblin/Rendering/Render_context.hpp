@@ -95,8 +95,8 @@ struct RenderContext {
     //! expected that these values will change often, even between every two rendering cycles (though
     //! it is very much NOT recommended to change them mid-rendering cycle).
     struct Dynamic {
-        //! Position in the world corresponding to the center of the view.
-        PositionInWorld viewCenter = {};
+        //! The center of the view in its own coordinate system.
+        PositionInView viewCenter = {};
 
         //! Width and height of the view.
         hg::math::Vector2d viewSize = {};

@@ -96,9 +96,10 @@ private:
                            hg::math::Vector2d aViewSize,
                            taCallable&&       aFunc);
 
-    void _reduceCellsBelowIfCellIsVisible(hg::math::Vector2pz       aCell,
+    void _reduceCellsBelowIfCellIsVisible(CellInfo&                 aCellInfo,
                                           PositionInView            aCellPosInView,
-                                          const VisibilityProvider& aVisProv);
+                                          const VisibilityProvider& aVisProv,
+                                          World::Editor             aWorldEditor);
 
     void _prepareCells();
 

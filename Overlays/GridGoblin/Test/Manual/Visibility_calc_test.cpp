@@ -258,7 +258,7 @@ void RunVisibilityCalculatorTestImpl() {
 
         // clang-format off
         renderCtx.dynamic = {
-            .viewCenter = PositionInWorld{view->getAnchor() + view->getCenter().cast<double>()},
+            .viewCenter = PositionInView{view->getAnchor() + view->getCenter().cast<double>()},
             .viewSize = view->getSize(),
             .pointOfView = {},
             .flags = {}
