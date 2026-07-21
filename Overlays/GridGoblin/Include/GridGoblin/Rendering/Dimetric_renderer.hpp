@@ -3,47 +3,29 @@
 
 #pragma once
 
+#include <GridGoblin/Model/Cell.hpp>
 #include <GridGoblin/Positional/Position_in_view.hpp>
 #include <GridGoblin/Positional/Position_in_world.hpp>
 #include <GridGoblin/Rendering/Rendered_object.hpp>
 #include <GridGoblin/Rendering/Renderer.hpp>
 #include <GridGoblin/Rendering/Visibility_provider.hpp>
+#include <GridGoblin/Private/Reduction_predicates.hpp>
 #include <GridGoblin/World/World.hpp>
 
-#include <Hobgoblin/Graphics/Sprite_loader.hpp>
+#include <Hobgoblin/UWGA/Sprite_loader.hpp>
 
 #include <vector>
 
 namespace jbatnozic {
 namespace gridgoblin {
 
-struct WallReductionConfig {
-    static constexpr std::uint16_t MIN_VALUE = 0;    //!< Minimal reduction
-    static constexpr std::uint16_t MAX_VALUE = 1023; //!< Maximal reduction
-
-    std::uint16_t delta        = 15;
-    std::uint16_t lowerBound   = 100; //! Below this value, the wall is at fully rendered
-    std::uint16_t upperBound   = 900; //! Above this value, the wall is at fully reduced
-    float         maxReduction = 1.f; //! Normalized to range [0.f, 1.f]
-
-    double reductionDistanceLimit = 640.f;
-
-    // TODO: boolean choice - fade or lower
-};
-
-struct DimetricRendererConfig {
-    WallReductionConfig wallReductionConfig;
-};
-
 class DimetricRenderer : public Renderer {
 public:
-    DimetricRenderer(const World&                  aWorld,
-                     const hg::uwga::SpriteLoader& aSpriteLoader,
-                     const DimetricRendererConfig& aConfig = {});
+    DimetricRenderer(const hg::uwga::SpriteLoader& aSpriteLoader);
 
-    void startPrepareToRender(const RenderContext& aRenderCtx) override;
+    void reset(RenderContext& aRenderCtx) override;
 
-    void finishPrepareToRender(const RenderContext& aRenderCtx) override;
+    void prepareToRender(RenderContext& aRenderCtx) override;
 
     void render(
         const RenderContext&          aRenderCtx,
@@ -53,12 +35,9 @@ public:
 private:
     // ===== Dependencies =====
 
-    const World&                  _world;
     const hg::uwga::SpriteLoader& _spriteLoader;
 
-    // ===== Configuration =====
-
-    DimetricRendererConfig _config;
+    RenderContext* _renderCtx = nullptr;
 
     // ===== Cycle counter =====
 
@@ -66,18 +45,20 @@ private:
 
     // ===== View data =====
 
-    struct RenderParametersExt : RenderParameters {
-        PositionInWorld topLeft;
-    };
-
-    RenderParametersExt _renderParams;
+    PositionInWorld _viewTopLeft;
 
     // ===== Cell info =====
 
-    struct CellInfo {
-        const CellModel* cell;
-        hg::PZInteger    gridX;
-        hg::PZInteger    gridY;
+    struct CellGraphicsInfo {
+        cell::FloorSprite     floorSprite;
+        cell::WallSprite      wallSprite;
+        cell::RendererAuxData rendererAuxData;
+    };
+
+    struct CellInfo : CellGraphicsInfo {
+        cell::SpatialInfo spatialInfo;
+        hg::PZInteger     gridX;
+        hg::PZInteger     gridY;
     };
 
     // ===== Cell adapters =====
@@ -85,27 +66,21 @@ private:
     class CellToRenderedObjectAdapter : public RenderedObject {
     public:
         CellToRenderedObjectAdapter(DimetricRenderer& aRenderer,
-                                    const CellModel&  aCell,
-                                    const BoundsInfo& aBoundsInfo,
-                                    std::uint16_t     aRendererMask);
+                                    CellGraphicsInfo  aCellGraphicsInfo,
+                                    const BoundsInfo& aBoundsInfo);
 
         void render(hg::uwga::Canvas& aCanvas, PositionInView aPosInView) const override;
 
     private:
         DimetricRenderer& _renderer;
-        const CellModel&  _cell;
+        CellGraphicsInfo  _cellGraphicsInfo;
 
-        std::uint16_t _rendererMask;
         // TODO: Render parameters: color etc.
     };
 
     friend class CellToRenderedObjectAdapter;
 
     std::vector<CellToRenderedObjectAdapter> _cellAdapters;
-
-    // ===== Rendered objects =====
-
-    std::vector<const RenderedObject*> _objectsToRender;
 
     // ===== Sprite cache =====
 
@@ -116,20 +91,30 @@ private:
     hg::uwga::Sprite& _getSprite(SpriteId aSpriteId) const;
 
     template <class taCallable>
-    void _diagonalTraverse(const World&               aWorld,
-                           const RenderParametersExt& aRenderParams,
-                           taCallable&&               aFunc);
+    void _diagonalTraverse(const World&       aWorld,
+                           PositionInWorld    aViewTopLeft,
+                           hg::math::Vector2d aViewSize,
+                           taCallable&&       aFunc);
 
-    void _reduceCellsBelowIfCellIsVisible(hg::math::Vector2pz       aCell,
+    void _reduceCellsBelowIfCellIsVisible(CellInfo&                 aCellInfo,
                                           PositionInView            aCellPosInView,
-                                          const VisibilityProvider& aVisProv);
+                                          const VisibilityProvider& aVisProv,
+                                          World::Editor             aWorldEditor);
 
-    void _prepareCells(std::int32_t aRenderFlags, const VisibilityProvider* aVisProv);
+    void _prepareCells();
 
-    std::uint16_t _updateFlagsOfCellRendererMask(const CellModel& aCell);
-    std::uint16_t _updateFadeValueOfCellRendererMask(const CellInfo&            aCellInfo,
-                                                     const detail::DrawingData& aDrawingData,
-                                                     std::int32_t               aRenderFlags);
+    //! bits 0..9   Reduction counter
+    //! bit  10     Render cycle flag
+    //! bit  11     Cell touched
+    //! bit  12     Should reduce
+    //! bits 13..31 -- Unused --
+    using AuxDataBits = std::uint32_t;
+
+    void _updateRendererAuxDataOfCell(CellInfo& aCellInfo, World::Editor aWorldEditor);
+
+    void _updateFadeValueOfCellRendererMask(CellInfo&                   aCellInfo,
+                                            detail::RecommendedDrawMode aDrawMode,
+                                            World::Editor               aWorldEditor);
 };
 
 } // namespace gridgoblin

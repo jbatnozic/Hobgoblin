@@ -20,9 +20,8 @@ namespace jbatnozic {
 namespace gridgoblin {
 namespace {
 
-namespace hg = jbatnozic::hobgoblin;
-
-#define vector_cast hg::math::VectorCast
+namespace hg   = jbatnozic::hobgoblin;
+namespace uwga = hg::uwga;
 
 void DrawIsometricSquareAt(hg::uwga::Canvas&  aCanvas,
                            float              aSize,
@@ -39,16 +38,16 @@ void DrawIsometricSquareAt(hg::uwga::Canvas&  aCanvas,
     using hg::uwga::Vertex;
     using hg::uwga::VertexArray;
 
-    // VertexArray va;
-    // va.primitiveType = hg::uwga::PrimitiveType::LINE_STRIP;
+    uwga::VertexArray va;
+    va.primitiveType = hg::uwga::PrimitiveType::LINE_STRIP;
 
-    // for (int i = 0; i < 5; i += 1) {
-    //     auto iso = gridworld::IsometricCoordinatesToScreen(
-    //         {coords[i][0] + aPosition.x, coords[i][1] + aPosition.y});
-    //     va.vertices.push_back(Vertex{iso, aColor});
-    // }
+    for (int i = 0; i < 5; i += 1) {
+        auto iso = dimetric::ToPositionInView(
+            PositionInWorld{coords[i][0] + aPosition.x, coords[i][1] + aPosition.y});
+        va.vertices.push_back(uwga::Vertex{(*iso).cast<float>(), aColor});
+    }
 
-    // aCanvas.draw(va);
+    aCanvas.draw(va);
 }
 
 #define SPR_STONE_TILE 0
@@ -59,24 +58,26 @@ void DrawIsometricSquareAt(hg::uwga::Canvas&  aCanvas,
 void RunDimetricRenderingTestImpl() {
     hg::log::SetMinimalLogSeverity(hg::log::Severity::Info);
 
-    hg::uwga::SpriteLoader loader;
+    auto uwgaSystem = uwga::CreateGraphicsSystem("SFML");
+
+    hg::uwga::SpriteLoader loader{*uwgaSystem};
     loader.startTexture(1024, 1024)
         ->addSprite(SPR_STONE_TILE, (HG_TEST_ASSET_DIR "/isometric-stone-tile.png"))
         ->addSprite(SPR_WALL, (HG_TEST_ASSET_DIR "/isometric-wall.png"))
         ->addSprite(SPR_WALL_SHORT, (HG_TEST_ASSET_DIR "/isometric-wall-short.png"))
         ->addSprite(SPR_LIGHT, (HG_TEST_ASSET_DIR "/light.png"))
-        ->finalize(hg::uwga::TexturePackingHeuristic::BestAreaFit);
+        ->finalize(hg::uwga::TexturePackingHeuristic::BEST_AREA_FIT);
 
-    WorldConfig config{.chunkCountX                 = 8,
-                       .chunkCountY                 = 8,
-                       .cellsPerChunkX              = 8,
-                       .cellsPerChunkY              = 8,
-                       .cellResolution              = 32.f,
-                       .maxCellOpenness             = 3,
-                       .maxLoadedNonessentialChunks = 64,
-                       .chunkDirectoryPath          = "GGManualTest_WorkDir"};
+    ContentsConfig cc{.chunkCountX                 = 8,
+                      .chunkCountY                 = 8,
+                      .cellsPerChunkX              = 8,
+                      .cellsPerChunkY              = 8,
+                      .buildingBlocks              = BuildingBlockMask::ALL,
+                      .cellResolution              = 32.f,
+                      .maxCellOpenness             = 3,
+                      .maxLoadedNonessentialChunks = 64};
 
-    World world{config};
+    World world{cc};
 
     // Generate world:
     {
@@ -85,49 +86,62 @@ void RunDimetricRenderingTestImpl() {
         world.edit(*perm, [&world](World::Editor& aEditor) {
             for (int y = 0; y < world.getCellCountY(); y += 1) {
                 for (int x = 0; x < world.getCellCountX(); x += 1) {
-                    aEditor.setFloorAt({x, y}, CellModel::Floor{SPR_STONE_TILE});
-                    if (hg::util::GetRandomNumber(0, 99) < 15) {
-                        aEditor.setWallAt({x, y},
-                                          CellModel::Wall{SPR_WALL, SPR_WALL_SHORT, Shape::FULL_SQUARE});
+                    cell::FloorSprite floorSprite{.id = SPR_STONE_TILE};
+                    cell::WallSprite  wallSprite{.id = SPR_WALL, .id_reduced = SPR_WALL_SHORT};
+                    cell::SpatialInfo spatialInfo{.wallShape = Shape::EMPTY};
+
+                    if (hg::util::GetRandomNumber(0, 99) > 15) {
+                        wallSprite = {.id = SPRITEID_NONE, .id_reduced = SPRITEID_NONE};
                     }
+
+                    aEditor.setCellDataAtUnchecked(x, y, &floorSprite, &wallSprite, &spatialInfo);
                 }
             }
         });
         world.toggleGeneratorMode(*perm, false);
     }
 
-    hg::uwga::RenderWindow window{
-        hg::win::VideoMode{1280, 950},
-        "GridWorld"
-    };
-    window.setFramerateLimit(120);
-    // window.setVerticalSyncEnabled(true);
-    window.getView().setSize({1280, 950});
+    auto window = uwgaSystem->createRenderWindow(1280, 1280, uwga::WindowStyle::DEFAULT, "GridWorld");
+    window->setFramerateLimit(120);
+
+    auto view = uwgaSystem->createView();
+    view->setSize(1280, 1280);
+    window->setView(*view);
 
     GLenum err = glewInit();
     if (err != GLEW_OK) {
         fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
     }
 
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    DimetricRenderer     renderer{loader};
     VisibilityCalculator visCalc{world};
-    DimetricRenderer     renderer{world, loader};
-    double               renderingXOffset = 0.0;
-    double               renderingYOffset = 0.0;
+
+    // clang-format off
+    RenderContext renderCtx = {
+        .world = &world,
+        .impls = {
+            .renderer           = &renderer,
+            .visibilityProvider = nullptr, // TODO!
+        },
+    };
+    // clang-format on
 
     hg::util::Stopwatch swatch;
 
-    while (window.isOpen()) {
+    while (true) {
         const auto frameTime = swatch.restart<std::chrono::microseconds>();
 
         bool           mouseLClick = false;
         bool           mouseRClick = false;
-        hg::win::Event ev;
-        while (window.pollEvent(ev)) {
+        hg::uwga::WindowEvent ev;
+        while (window && window->pollEvent(ev)) {
             ev.visit(
-                [&](hg::win::Event::Closed&) {
-                    window.close();
+                [&](hg::uwga::WindowEvent::Closed&) {
+                    window.reset();
                 },
-                [&](hg::win::Event::MouseButtonPressed& aButton) {
+                [&](hg::uwga::WindowEvent::MouseButtonPressed& aButton) {
                     if (aButton.button == hg::in::MB_LEFT) {
                         mouseLClick = true;
                     }
@@ -136,97 +150,96 @@ void RunDimetricRenderingTestImpl() {
                     }
                 });
         } // end event processing
+        if (!window) {
+            break;
+        }
 
         {
             using namespace hg::in;
             const auto lr = (float)CheckPressedPK(PK_D) - (float)CheckPressedPK(PK_A);
             const auto ud = (float)CheckPressedPK(PK_S) - (float)CheckPressedPK(PK_W);
-            window.getView().move({lr * 4.f, ud * 4.f});
-        }
-        {
-            using namespace hg::in;
-            const auto lr = (double)CheckPressedPK(PK_L) - (double)CheckPressedPK(PK_J);
-            const auto ud = (double)CheckPressedPK(PK_K) - (double)CheckPressedPK(PK_I);
-            renderingXOffset += lr * 4.0;
-            renderingYOffset += ud * 4.0;
+            view->setAnchor(view->getAnchor() + hg::math::Vector2d{lr * 6.0, ud * 6.0});
+            window->setView(*view);
         }
 
-        window.clear(hg::uwga::Color{0, 0, 55});
+        window->clear(hg::uwga::Color{0, 0, 55});
 
-        const auto mouseWindowPos = hg::win::GetMousePositionRelativeToWindow(window);
-        const auto cursorInWorld  = dimetric::ToPositionInWorld(
-            PositionInView{vector_cast<double>(window.mapPixelToCoords(mouseWindowPos))});
+        const auto cursorWindowPos =
+            window->mapPixelToCoords(window->getRelativeCursorPosition(), *view);
 
+        const auto cursorWorldPos = dimetric::ToPositionInWorld(PositionInView{cursorWindowPos});
+
+        #if 1
         // Edit the world
         {
-            const auto xx = static_cast<int>(cursorInWorld->x / world.getCellResolution());
-            const auto yy = static_cast<int>(cursorInWorld->y / world.getCellResolution());
+            const auto xx = static_cast<int>(cursorWorldPos->x / world.getCellResolution());
+            const auto yy = static_cast<int>(cursorWorldPos->y / world.getCellResolution());
 
             if (xx >= 0 && xx < world.getCellCountX() && yy >= 0 && yy < world.getCellCountY()) {
                 auto perm = world.getPermissionToEdit();
                 // clang-format off
                 if (mouseLClick) {
                     world.edit(*perm, [&world, xx, yy](World::Editor& aEditor) {
-                        aEditor.setWallAtUnchecked(xx, yy, {{SPR_WALL, SPR_WALL_SHORT, Shape::FULL_SQUARE}});
+                        const auto ws = cell::WallSprite{.id = SPR_WALL, .id_reduced = SPR_WALL_SHORT};
+                        const auto si =  cell::SpatialInfo{.wallShape = Shape::FULL_SQUARE};
+                        aEditor.setCellDataAtUnchecked(xx, yy, &ws, &si);
                     });
                 } else if (mouseRClick) {
                     world.edit(*perm, [&world, xx, yy](World::Editor& aEditor) {
-                        aEditor.setWallAtUnchecked(xx, yy, std::nullopt);
+                        const auto ws = cell::WallSprite{.id = SPRITEID_NONE, .id_reduced = SPRITEID_NONE};
+                        const auto si =  cell::SpatialInfo{.wallShape = Shape::EMPTY};
+                        aEditor.setCellDataAtUnchecked(xx, yy, &ws, &si);
                     });
                 }
                 // clang-format on
             }
         }
+        #endif
 
         const auto t1 = std::chrono::steady_clock::now();
 
         const double overdrawLeft  = 32.0;
         const double overdrawRight = 32.0;
         const double overdrawUp    = 32.0;
-        const double overdrawDown  = 256.0;
+        const double overdrawDown  = 256.0; // TODO: unused!
 
-        const auto viewCenter =
-            vector_cast<double>(window.getView(0).getCenter()) +
-            hg::math::Vector2d{(overdrawRight - overdrawLeft) * 0.5, (overdrawDown - overdrawUp) * 0.5};
+        // clang-format off
+        renderCtx.dynamic = {
+            .viewCenter  = PositionInView{view->getAnchor() + view->getCenter().cast<double>()},
+            .viewSize    = view->getSize(),
+            .pointOfView = cursorWorldPos,
+            .flags       = RenderFlags::REDUCE_WALLS_BASED_ON_POSITION
+        };
+        // clang-format on
 
-        const auto viewSize =
-            vector_cast<double>(window.getView(0).getSize()) +
-            hg::math::Vector2d{overdrawLeft + overdrawRight, overdrawUp + overdrawDown};
-
-        const Renderer::RenderParameters renderParams{.viewCenter  = PositionInWorld{viewCenter},
-                                                      .viewSize    = viewSize,
-                                                      .pointOfView = cursorInWorld,
-                                                      .xOffset     = renderingXOffset,
-                                                      .yOffset     = renderingYOffset};
-
-        if (!hg::in::CheckPressedVK(hg::in::VK_SPACE)) {
-            renderer.startPrepareToRender(renderParams,
-                                          DimetricRenderer::REDUCE_WALLS_BASED_ON_POSITION,
-                                          nullptr);
-        } else {
-            visCalc.calc(dimetric::ToPositionInWorld(
-                             PositionInView{vector_cast<double>(window.getView(0).getCenter())}),
-                         vector_cast<double>(window.getView(0).getSize()),
-                         cursorInWorld);
-            renderer.startPrepareToRender(renderParams,
-                                          DimetricRenderer::REDUCE_WALLS_BASED_ON_POSITION |
-                                              DimetricRenderer::REDUCE_WALLS_BASED_ON_VISIBILITY,
-                                          &visCalc);
+        if (hg::in::CheckPressedVK(hg::in::VK_SPACE)) {
+            visCalc.calc(dimetric::ToPositionInWorld(renderCtx.dynamic.viewCenter),
+                         renderCtx.dynamic.viewSize,
+                         renderCtx.dynamic.pointOfView);
+            renderCtx.dynamic.flags =
+                /*renderCtx.dynamic.flags |*/ RenderFlags::REDUCE_WALLS_BASED_ON_VISIBILITY;
         }
-        renderer.endPrepareToRender();
-        renderer.render(window);
+
+        Reset(renderCtx);
+        PrepareToRender(renderCtx);
+        Render(renderCtx, *window);
+
         const auto t2 = std::chrono::steady_clock::now();
         // std::cout << "Time to render: " << std::chrono::duration_cast<std::chrono::microseconds>(t2 -
         // t1).count() / 1000.0 << "ms "
         //           << "frame time: " << frameTime.count() / 1000.0 << "ms.\n";
 
-        // if (true) {
-        //     const float xx = floorf(isoCoords.x / 32.f) * 32.f;
-        //     const float yy = floorf(isoCoords.y / 32.f) * 32.f;
-        //     DrawIsometricSquareAt(window, 32.f, hg::uwga::COLOR_RED, {xx, yy});
-        // }
+        if constexpr (true) {
+            const float xx = floorf((float)cursorWorldPos->x / 32.f) * 32.f;
+            const float yy = floorf((float)cursorWorldPos->y / 32.f) * 32.f;
+            DrawIsometricSquareAt(*window, 32.f, hg::uwga::COLOR_RED, {xx, yy});
+        }
 
-        window.display();
+        if constexpr (true) {
+            visCalc.__ggimpl_experimental_render(*window);
+        }
+
+        window->display();
     }
 }
 

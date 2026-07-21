@@ -238,8 +238,7 @@ json::Value RendererAuxDataToJson(cell::RendererAuxData aRendererAuxData, RapidJ
     json::Value value;
     value.SetObject();
 
-    value.AddMember("mask", json::Value{aRendererAuxData.mask}.Move(), aCtx.allocator);
-    value.AddMember("mask2", json::Value{aRendererAuxData.mask2}.Move(), aCtx.allocator);
+    value.AddMember("storage", json::Value{aRendererAuxData.storage}.Move(), aCtx.allocator);
 
     return value;
 }
@@ -282,8 +281,7 @@ cell::SpatialInfo JsonToSpatialInfo(const json::Value& aJsonValue) {
 
 cell::RendererAuxData JsonToRendererAuxData(const json::Value& aJsonValue) {
     cell::RendererAuxData result;
-    result.mask  = GetIntMember<decltype(result.mask)>(aJsonValue, "mask");
-    result.mask2 = GetIntMember<decltype(result.mask2)>(aJsonValue, "mask2");
+    result.storage = GetIntMember<decltype(result.storage)>(aJsonValue, "storage");
     return result;
 }
 

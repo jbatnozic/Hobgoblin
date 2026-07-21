@@ -8,6 +8,8 @@
 
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/Logging.hpp>
+#include <Hobgoblin/UWGA/Canvas.hpp>
+#include <Hobgoblin/UWGA/Vertex_array.hpp>
 
 #include <array>
 #include <cmath>
@@ -78,6 +80,22 @@ std::optional<bool> VisibilityCalculator::testVisibilityAt(PositionInWorld aPos)
         return _isPointVisible(aPos, 0, true);
     }
     return std::nullopt;
+}
+
+void VisibilityCalculator::__ggimpl_experimental_render(hg::uwga::Canvas& aCanvas) const  {
+    HG_HARD_ASSERT(_rayCheckingEnabled == false);
+
+    hg::uwga::VertexArray va;
+    va.primitiveType = hg::uwga::PrimitiveType::TRIANGLES;
+    va.vertices.reserve(_triangles.size() * 3u);
+
+    for (const auto& triangle : _triangles) {
+        va.vertices.push_back(hg::uwga::Vertex{triangle.a.cast<float>(), hg::uwga::COLOR_BLACK});
+        va.vertices.push_back(hg::uwga::Vertex{triangle.b.cast<float>(), hg::uwga::COLOR_BLACK});
+        va.vertices.push_back(hg::uwga::Vertex{triangle.c.cast<float>(), hg::uwga::COLOR_BLACK});
+    }
+
+    aCanvas.draw(va);
 }
 
 void VisibilityCalculator::calc(PositionInWorld aViewCenter,
