@@ -16,6 +16,8 @@
 namespace jbatnozic {
 namespace gridgoblin {
 
+using hg::AreBitsSet;
+
 // MARK: Cell renderer mask bits
 
 //! bits 0..9   Reduction counter
@@ -104,7 +106,7 @@ void DimetricRenderer::prepareToRender(RenderContext& aRenderCtx) {
         PositionInView{aRenderCtx.dynamic.viewCenter->x - (aRenderCtx.dynamic.viewSize.x * 0.5),
                        aRenderCtx.dynamic.viewCenter->y - (aRenderCtx.dynamic.viewSize.y * 0.5)});
 
-   _renderCycleCounter += 1;
+    _renderCycleCounter += 1;
 
     _prepareCells();
 
@@ -181,8 +183,8 @@ void DimetricRenderer::_prepareCells() {
 
                 _touchCellIfNotAlreadyTouched(*aCellInfo);
 
-                if ((_renderCtx->dynamic.flags & RenderFlags::REDUCE_WALLS_BASED_ON_VISIBILITY) !=
-                    RenderFlags::NONE) //
+                if (AreBitsSet(_renderCtx->dynamic.flags,
+                               RenderFlags::REDUCE_WALLS_BASED_ON_VISIBILITY)) //
                 {
                     if (const auto* visProv = _renderCtx->impls.visibilityProvider;
                         visProv != nullptr && (aCellInfo->wallSprite.id == SPRITEID_NONE)) //
@@ -340,7 +342,7 @@ void DimetricRenderer::_updateReductionCounterOfCell(CellInfo&                  
         _renderCtx->config.wallReductionConfig.reductionDistanceLimit) //
     {
         rAuxDataBits &= ~RM_SHOULD_REDUCE;
-    } else if ((rflags & RenderFlags::REDUCE_WALLS_BASED_ON_POSITION) != RenderFlags::NONE) {
+    } else if (AreBitsSet(rflags, RenderFlags::REDUCE_WALLS_BASED_ON_POSITION)) {
         switch (aDrawMode) {
         case detail::RecommendedDrawMode::NOT_DRAWN:
             rAuxDataBits &= ~RM_SHOULD_REDUCE;
@@ -351,7 +353,7 @@ void DimetricRenderer::_updateReductionCounterOfCell(CellInfo&                  
             break;
 
         case detail::RecommendedDrawMode::FULL:
-            if ((rflags & RenderFlags::REDUCE_WALLS_BASED_ON_VISIBILITY) == RenderFlags::NONE) {
+            if (!AreBitsSet(rflags, RenderFlags::REDUCE_WALLS_BASED_ON_VISIBILITY)) {
                 rAuxDataBits &= ~RM_SHOULD_REDUCE;
             }
             break;
@@ -360,7 +362,7 @@ void DimetricRenderer::_updateReductionCounterOfCell(CellInfo&                  
             HG_UNREACHABLE("Unexpected value for DrawingData::DrawMode ({}).", (int)aDrawMode);
             break;
         }
-    } else if ((rflags & RenderFlags::REDUCE_WALLS_BASED_ON_VISIBILITY) == RenderFlags::NONE) {
+    } else if (!AreBitsSet(rflags, RenderFlags::REDUCE_WALLS_BASED_ON_VISIBILITY)) {
         rAuxDataBits &= ~RM_SHOULD_REDUCE;
     }
 
