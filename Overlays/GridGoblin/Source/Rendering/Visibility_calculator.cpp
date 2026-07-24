@@ -82,7 +82,7 @@ std::optional<bool> VisibilityCalculator::testVisibilityAt(PositionInWorld aPos)
     return std::nullopt;
 }
 
-void VisibilityCalculator::__ggimpl_experimental_render(hg::uwga::Canvas& aCanvas) const  {
+void VisibilityCalculator::__ggimpl_experimental_render(hg::uwga::Canvas& aCanvas) const {
     HG_HARD_ASSERT(_rayCheckingEnabled == false);
 
     hg::uwga::VertexArray va;
@@ -98,11 +98,11 @@ void VisibilityCalculator::__ggimpl_experimental_render(hg::uwga::Canvas& aCanva
     aCanvas.draw(va);
 }
 
-void VisibilityCalculator::calc(PositionInWorld aViewCenter,
-                                Vector2d        aViewSize,
-                                PositionInWorld aLineOfSightOrigin) {
+void VisibilityCalculator::calculate(PositionInWorld aBboxTopLeft,
+                                     PositionInWorld aBboxBottomRight,
+                                     PositionInWorld aPointOfView) {
     _resetData();
-    _setInitialCalculationContext(aViewCenter, aViewSize, aLineOfSightOrigin);
+    _setInitialCalculationContext(aBboxTopLeft, aBboxBottomRight, aPointOfView);
 
     _calcOngoing = true;
 
@@ -131,6 +131,14 @@ void VisibilityCalculator::calc(PositionInWorld aViewCenter,
     _stats.triangleCount = hg::stopz(_triangles.size());
 }
 
+void VisibilityCalculator::calculate(PositionInWorld    aBboxCenter,
+                                     hg::math::Vector2d aBboxSize,
+                                     PositionInWorld    aPointOfView) {
+    const auto topLeft     = PositionInWorld{*aBboxCenter - (aBboxSize * 2.0)};
+    const auto bottomRight = PositionInWorld{*aBboxCenter + (aBboxSize * 2.0)};
+    calculate(topLeft, bottomRight, aPointOfView);
+}
+
 auto VisibilityCalculator::getStats() const -> const CalculationStats& {
     return _stats;
 }
@@ -147,27 +155,31 @@ void VisibilityCalculator::_resetData() {
     _stats = {.highDetailRingCount = 0, .triangleCount = 0, .triangleCheckCount = 0};
 }
 
-void VisibilityCalculator::_setInitialCalculationContext(PositionInWorld    aViewCenter,
-                                                         hg::math::Vector2d aViewSize,
-                                                         PositionInWorld    aLineOfSightOrigin) {
+void VisibilityCalculator::_setInitialCalculationContext(PositionInWorld aBboxTopLeft,
+                                                         PositionInWorld aBboxBottomRight,
+                                                         PositionInWorld aPointOfView) {
+    HG_VALIDATE_ARGUMENT(aBboxTopLeft->x <= aBboxBottomRight->x);
+    HG_VALIDATE_ARGUMENT(aBboxTopLeft->y <= aBboxBottomRight->y);
+    HG_VALIDATE_ARGUMENT(aPointOfView->x >= aBboxTopLeft->x && aPointOfView->x <= aBboxBottomRight->x &&
+                         aPointOfView->y >= aBboxTopLeft->y && aPointOfView->y <= aBboxBottomRight->y);
+
     _processedRingsBbox = {0.0, 0.0, 0.0, 0.0};
 
-    _viewBbox = {Clamp(aViewCenter->x - aViewSize.x * 0.5f, 0.0, _xLimit),
-                 Clamp(aViewCenter->y - aViewSize.y * 0.5f, 0.0, _yLimit),
-                 aViewSize.x,
-                 aViewSize.y};
+    aBboxTopLeft->x = Clamp(aBboxTopLeft->x, 0.0, _xLimit);
+    aBboxTopLeft->y = Clamp(aBboxTopLeft->y, 0.0, _yLimit);
 
-    if (_viewBbox.getRight() >= _xLimit) {
-        _viewBbox.w = _xLimit - _viewBbox.x;
-    }
-    if (_viewBbox.getBottom() >= _yLimit) {
-        _viewBbox.h = _yLimit - _viewBbox.y;
-    }
+    aBboxBottomRight->x = Clamp(aBboxBottomRight->x, 0.0, _xLimit);
+    aBboxBottomRight->y = Clamp(aBboxBottomRight->y, 0.0, _yLimit);
 
-    _viewTopLeftCell     = _world.posToCell(_viewBbox.getLeft(), _viewBbox.getTop());
-    _viewBottomRightCell = _world.posToCell(_viewBbox.getRight(), _viewBbox.getBottom());
+    _viewBbox = {aBboxTopLeft->x,
+                 aBboxTopLeft->y,
+                 aBboxBottomRight->x - aBboxTopLeft->x,
+                 aBboxBottomRight->y - aBboxTopLeft->y};
 
-    _lineOfSightOrigin     = *aLineOfSightOrigin;
+    _viewTopLeftCell     = _world.posToCellUnchecked(_viewBbox.getLeft(), _viewBbox.getTop());
+    _viewBottomRightCell = _world.posToCellUnchecked(_viewBbox.getRight(), _viewBbox.getBottom());
+
+    _lineOfSightOrigin     = *aPointOfView;
     _lineOfSightOriginCell = {hg::ToPz(_lineOfSightOrigin.x / _cr),
                               hg::ToPz(_lineOfSightOrigin.y / _cr)};
 

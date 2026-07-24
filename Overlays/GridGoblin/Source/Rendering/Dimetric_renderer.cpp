@@ -18,6 +18,13 @@ namespace gridgoblin {
 
 // MARK: Cell renderer mask bits
 
+//! bits 0..9   Reduction counter
+//! bit  10     Render cycle flag
+//! bit  11     Cell touched
+//! bit  12     Should reduce
+//! bits 13..31 -- Unused --
+//!
+//! note: the meanings of RM_RENDER_CYCLE_FLAG and RM_CELL_TOUCHED flip with every render cycle
 #define RM_REDUCTION_COUNTER_MASK static_cast<std::uint32_t>(0x03FF)
 #define RM_RENDER_CYCLE_FLAG      static_cast<std::uint32_t>(0x0400)
 #define RM_CELL_TOUCHED           static_cast<std::uint32_t>(0x0800)
@@ -157,76 +164,6 @@ hg::uwga::Sprite& DimetricRenderer::_getSprite(SpriteId aSpriteId) const {
     return newIter.first->second;
 }
 
-void DimetricRenderer::_reduceCellsBelowIfCellIsVisible(CellInfo&                 aCellInfo,
-                                                        PositionInView            aCellPosInView,
-                                                        const VisibilityProvider& aVisProv,
-                                                        World::Editor             aWorldEditor) {
-#if 1
-    const auto& world = *(_renderCtx->world);
-    const auto  cr    = world.getCellResolution();
-
-    static constexpr double  PADDING      = 1.f;
-    const hg::math::Vector2d positions[4] = {
-        {(aCellInfo.gridX + 0) * cr + PADDING, (aCellInfo.gridY + 0) * cr + PADDING},
-        {(aCellInfo.gridX + 1) * cr - PADDING, (aCellInfo.gridY + 0) * cr + PADDING},
-        {(aCellInfo.gridX + 1) * cr - PADDING, (aCellInfo.gridY + 1) * cr - PADDING},
-        {(aCellInfo.gridX + 0) * cr + PADDING, (aCellInfo.gridY + 1) * cr - PADDING}
-    };
-
-    const bool cellIsVisible =
-        std::any_of(std::begin(positions), std::end(positions), [&aVisProv](const auto& aPos) {
-            return aVisProv.testVisibilityAt(PositionInWorld{aPos}).value_or(false);
-        });
-
-    const auto markCell = [this, &aCellInfo, &aWorldEditor](hg::math::Vector2pz aCell) {
-        auto& bits = aCellInfo.rendererAuxData.storage;
-        if ((_renderCycleCounter & 0x01) == 0) {
-            bits |= (RM_RENDER_CYCLE_FLAG | RM_CELL_TOUCHED | RM_SHOULD_REDUCE);
-        } else {
-            bits &= ~(RM_RENDER_CYCLE_FLAG | RM_CELL_TOUCHED);
-            bits |= RM_SHOULD_REDUCE;
-        }
-        aWorldEditor.setCellDataAtUnchecked(aCellInfo.gridX,
-                                            aCellInfo.gridY,
-                                            &aCellInfo.rendererAuxData);
-    };
-
-    if (!cellIsVisible) {
-        return;
-    }
-
-    //const auto screenPov = dimetric::ToPositionInView(_renderParams.pointOfView);
-    const auto screenPov = _renderCtx->dynamic.pointOfView;
-    const auto limit     = static_cast<int>(world.getWallHeight() / cr);
-    for (int i = 0; i < limit; i += 1) {
-        if (screenPov->x > aCellPosInView->x) {
-            const int x = aCellInfo.gridX - 1 - i;
-            const int y = aCellInfo.gridY + 0 + i;
-
-            if (x >= 0 && x < world.getCellCountX() && y >= 0 && y < world.getCellCountY()) {
-                markCell({x, y});
-            }
-        }
-        {
-            const int x = aCellInfo.gridX - 1 - i;
-            const int y = aCellInfo.gridY + 1 + i;
-
-            if (x >= 0 && x < world.getCellCountX() && y >= 0 && y < world.getCellCountY()) {
-                markCell({x, y});
-            }
-        }
-        if (screenPov->x < aCellPosInView->x) {
-            const int x = aCellInfo.gridX - 0 - i;
-            const int y = aCellInfo.gridY + 1 + i;
-
-            if (x >= 0 && x < world.getCellCountX() && y >= 0 && y < world.getCellCountY()) {
-                markCell({x, y});
-            }
-        }
-    } // end_for
-#endif
-}
-
 void DimetricRenderer::_prepareCells() {
     auto& world = *(_renderCtx->world);
 
@@ -235,19 +172,23 @@ void DimetricRenderer::_prepareCells() {
             world,
             _viewTopLeft,
             _renderCtx->dynamic.viewSize,
-            [this, &world, aEditor](std::optional<CellInfo> aCellInfo,
-                                    PositionInView          aPosInView) //
+            [this, &world, &aEditor](std::optional<CellInfo> aCellInfo,
+                                     PositionInView          aPosInView) //
             {
                 if (!aCellInfo.has_value()) {
                     return; // The cell's chunk isn't currently loaded
                 }
 
-                _updateRendererAuxDataOfCell(*aCellInfo, aEditor);
+                _touchCellIfNotAlreadyTouched(*aCellInfo);
 
-                if (const auto* visProv = _renderCtx->impls.visibilityProvider;
-                    visProv != nullptr && (aCellInfo->wallSprite.id == SPRITEID_NONE)) //
+                if ((_renderCtx->dynamic.flags & RenderFlags::REDUCE_WALLS_BASED_ON_VISIBILITY) !=
+                    RenderFlags::NONE) //
                 {
-                    _reduceCellsBelowIfCellIsVisible(*aCellInfo, aPosInView, *visProv, aEditor);
+                    if (const auto* visProv = _renderCtx->impls.visibilityProvider;
+                        visProv != nullptr && (aCellInfo->wallSprite.id == SPRITEID_NONE)) //
+                    {
+                        _reduceCellsBelowIfCellIsVisible(*aCellInfo, aPosInView, *visProv, aEditor);
+                    }
                 }
 
                 const auto cr = world.getCellResolution();
@@ -257,7 +198,12 @@ void DimetricRenderer::_prepareCells() {
                     {aCellInfo->gridX * cr, aCellInfo->gridY * cr},
                     _renderCtx->dynamic.pointOfView);
 
-                _updateFadeValueOfCellRendererMask(*aCellInfo, drawMode, aEditor);
+                _updateReductionCounterOfCell(*aCellInfo, drawMode);
+
+                // Commit the edited renderer aux data back into the chunk from whence it came
+                aEditor.setCellDataAtUnchecked(aCellInfo->gridX,
+                                               aCellInfo->gridY,
+                                               &aCellInfo->rendererAuxData);
 
                 if (drawMode == detail::RecommendedDrawMode::NOT_DRAWN) {
                     return;
@@ -286,7 +232,10 @@ void DimetricRenderer::_prepareCells() {
     }
 }
 
-void DimetricRenderer::_updateRendererAuxDataOfCell(CellInfo& aCellInfo, World::Editor aWorldEditor) {
+//! This method performs the following operation on the given cell:
+//! "Unless the cell has already been touched (in this render cycle), reset its SHOULD_REDUCE flag
+//!  and mark it as touched".
+void DimetricRenderer::_touchCellIfNotAlreadyTouched(CellInfo& aCellInfo) {
     auto& bits = aCellInfo.rendererAuxData.storage;
 
     if ((_renderCycleCounter & 0x01) == 0) {
@@ -304,13 +253,83 @@ void DimetricRenderer::_updateRendererAuxDataOfCell(CellInfo& aCellInfo, World::
             bits &= ~EXPECTED;
         }
     }
-
-    aWorldEditor.setCellDataAtUnchecked(aCellInfo.gridX, aCellInfo.gridY, &aCellInfo.rendererAuxData);
 }
 
-void DimetricRenderer::_updateFadeValueOfCellRendererMask(CellInfo&                   aCellInfo,
-                                                          detail::RecommendedDrawMode aDrawMode,
-                                                          World::Editor               aWorldEditor) {
+void DimetricRenderer::_reduceCellsBelowIfCellIsVisible(CellInfo&                 aCellInfo,
+                                                        PositionInView            aCellPosInView,
+                                                        const VisibilityProvider& aVisProv,
+                                                        World::Editor             aWorldEditor) {
+    if (aCellInfo.spatialInfo.wallShape == Shape::FULL_SQUARE) {
+        return; // Fast bail: a cell with shape FULL_SQUARE can't be visible
+    }
+
+    const auto& world = *(_renderCtx->world);
+    const auto  cr    = world.getCellResolution();
+
+    static constexpr double  PADDING      = 1.f;
+    const hg::math::Vector2d positions[4] = {
+        {(aCellInfo.gridX + 0) * cr + PADDING, (aCellInfo.gridY + 0) * cr + PADDING},
+        {(aCellInfo.gridX + 1) * cr - PADDING, (aCellInfo.gridY + 0) * cr + PADDING},
+        {(aCellInfo.gridX + 1) * cr - PADDING, (aCellInfo.gridY + 1) * cr - PADDING},
+        {(aCellInfo.gridX + 0) * cr + PADDING, (aCellInfo.gridY + 1) * cr - PADDING}
+    };
+
+    const bool cellIsVisible =
+        std::any_of(std::begin(positions), std::end(positions), [&aVisProv](const auto& aPos) {
+            return aVisProv.testVisibilityAt(PositionInWorld{aPos}).value_or(false);
+        });
+
+    const auto markCell = [this, &world, &aWorldEditor](hg::math::Vector2pz aCell) {
+        cell::RendererAuxData rAux;
+        if (!world.getCellDataAtUnchecked(aCell.x, aCell.y, &rAux)) {
+            return;
+        }
+        auto& bits = rAux.storage;
+        if ((_renderCycleCounter & 0x01) == 0) {
+            bits |= (RM_RENDER_CYCLE_FLAG | RM_CELL_TOUCHED | RM_SHOULD_REDUCE);
+        } else {
+            bits &= ~(RM_RENDER_CYCLE_FLAG | RM_CELL_TOUCHED);
+            bits |= RM_SHOULD_REDUCE;
+        }
+        aWorldEditor.setCellDataAtUnchecked(aCell.x, aCell.y, &rAux);
+    };
+
+    if (!cellIsVisible) {
+        return;
+    }
+
+    const auto screenPov = _renderCtx->dynamic.pointOfView;
+    const auto limit     = static_cast<int>(world.getWallHeight() / cr);
+    for (int i = 0; i < limit; i += 1) {
+        if (screenPov->x > aCellPosInView->x) {
+            const int x = aCellInfo.gridX - 1 - i;
+            const int y = aCellInfo.gridY + 0 + i;
+
+            if (x >= 0 && x < world.getCellCountX() && y >= 0 && y < world.getCellCountY()) {
+                markCell({x, y});
+            }
+        }
+        {
+            const int x = aCellInfo.gridX - 1 - i;
+            const int y = aCellInfo.gridY + 1 + i;
+
+            if (x >= 0 && x < world.getCellCountX() && y >= 0 && y < world.getCellCountY()) {
+                markCell({x, y});
+            }
+        }
+        if (screenPov->x < aCellPosInView->x) {
+            const int x = aCellInfo.gridX - 0 - i;
+            const int y = aCellInfo.gridY + 1 + i;
+
+            if (x >= 0 && x < world.getCellCountX() && y >= 0 && y < world.getCellCountY()) {
+                markCell({x, y});
+            }
+        }
+    } // end_for
+}
+
+void DimetricRenderer::_updateReductionCounterOfCell(CellInfo&                   aCellInfo,
+                                                     detail::RecommendedDrawMode aDrawMode) {
     const auto cr      = _renderCtx->world->getCellResolution();
     const auto cellPos = hg::math::Vector2d{(aCellInfo.gridX + 0.5) * cr, (aCellInfo.gridY + 0.5) * cr};
     const auto rflags  = _renderCtx->dynamic.flags;
@@ -363,8 +382,6 @@ void DimetricRenderer::_updateFadeValueOfCellRendererMask(CellInfo&             
     }
 
     rAuxDataBits = (rAuxDataBits & ~RM_REDUCTION_COUNTER_MASK) | reductionCounter;
-
-    aWorldEditor.setCellDataAtUnchecked(aCellInfo.gridX, aCellInfo.gridY, &aCellInfo.rendererAuxData);
 }
 
 // MARK: Cell adapter impl

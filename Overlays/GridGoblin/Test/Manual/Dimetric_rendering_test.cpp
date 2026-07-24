@@ -73,7 +73,8 @@ void RunDimetricRenderingTestImpl() {
                       .cellsPerChunkX              = 8,
                       .cellsPerChunkY              = 8,
                       .buildingBlocks              = BuildingBlockMask::ALL,
-                      .cellResolution              = 32.f,
+                      .cellResolution              = 32.0,
+                      .wallHeight                  = 32.0 * 6.0,
                       .maxCellOpenness             = 3,
                       .maxLoadedNonessentialChunks = 64};
 
@@ -88,10 +89,11 @@ void RunDimetricRenderingTestImpl() {
                 for (int x = 0; x < world.getCellCountX(); x += 1) {
                     cell::FloorSprite floorSprite{.id = SPR_STONE_TILE};
                     cell::WallSprite  wallSprite{.id = SPR_WALL, .id_reduced = SPR_WALL_SHORT};
-                    cell::SpatialInfo spatialInfo{.wallShape = Shape::EMPTY};
+                    cell::SpatialInfo spatialInfo{.wallShape = Shape::FULL_SQUARE};
 
                     if (hg::util::GetRandomNumber(0, 99) > 15) {
                         wallSprite = {.id = SPRITEID_NONE, .id_reduced = SPRITEID_NONE};
+                        spatialInfo.wallShape = Shape::EMPTY;
                     }
 
                     aEditor.setCellDataAtUnchecked(x, y, &floorSprite, &wallSprite, &spatialInfo);
@@ -123,7 +125,7 @@ void RunDimetricRenderingTestImpl() {
         .world = &world,
         .impls = {
             .renderer           = &renderer,
-            .visibilityProvider = nullptr, // TODO!
+            .visibilityProvider = &visCalc,
         },
     };
     // clang-format on
@@ -133,8 +135,9 @@ void RunDimetricRenderingTestImpl() {
     while (true) {
         const auto frameTime = swatch.restart<std::chrono::microseconds>();
 
-        bool           mouseLClick = false;
-        bool           mouseRClick = false;
+        bool mouseLClick = false;
+        bool mouseRClick = false;
+
         hg::uwga::WindowEvent ev;
         while (window && window->pollEvent(ev)) {
             ev.visit(
@@ -169,7 +172,6 @@ void RunDimetricRenderingTestImpl() {
 
         const auto cursorWorldPos = dimetric::ToPositionInWorld(PositionInView{cursorWindowPos});
 
-        #if 1
         // Edit the world
         {
             const auto xx = static_cast<int>(cursorWorldPos->x / world.getCellResolution());
@@ -194,7 +196,6 @@ void RunDimetricRenderingTestImpl() {
                 // clang-format on
             }
         }
-        #endif
 
         const auto t1 = std::chrono::steady_clock::now();
 
@@ -213,9 +214,9 @@ void RunDimetricRenderingTestImpl() {
         // clang-format on
 
         if (hg::in::CheckPressedVK(hg::in::VK_SPACE)) {
-            visCalc.calc(dimetric::ToPositionInWorld(renderCtx.dynamic.viewCenter),
-                         renderCtx.dynamic.viewSize,
-                         renderCtx.dynamic.pointOfView);
+            visCalc.calculate(dimetric::ToPositionInWorld(renderCtx.dynamic.viewCenter),
+                              renderCtx.dynamic.viewSize,
+                              renderCtx.dynamic.pointOfView);
             renderCtx.dynamic.flags =
                 /*renderCtx.dynamic.flags |*/ RenderFlags::REDUCE_WALLS_BASED_ON_VISIBILITY;
         }
@@ -235,7 +236,7 @@ void RunDimetricRenderingTestImpl() {
             DrawIsometricSquareAt(*window, 32.f, hg::uwga::COLOR_RED, {xx, yy});
         }
 
-        if constexpr (true) {
+        if constexpr (false) {
             visCalc.__ggimpl_experimental_render(*window);
         }
 

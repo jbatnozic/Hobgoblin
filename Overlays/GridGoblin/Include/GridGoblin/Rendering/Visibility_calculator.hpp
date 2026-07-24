@@ -53,7 +53,13 @@ class VisibilityCalculator : public VisibilityProvider {
 public:
     VisibilityCalculator(const World& aWorld, const VisibilityCalculatorConfig& aConfig = {});
 
-    void calc(PositionInWorld aViewCenter, hg::math::Vector2d aViewSize, PositionInWorld aPointOfView);
+    void calculate(PositionInWorld aBboxTopLeft,
+                   PositionInWorld aBboxBottomRight,
+                   PositionInWorld aPointOfView);
+
+    void calculate(PositionInWorld    aBboxCenter,
+                   hg::math::Vector2d aBboxSize,
+                   PositionInWorld    aPointOfView);
 
     struct CalculationStats {
         //! Number of rings that were resolved in high detail.
@@ -132,9 +138,9 @@ private:
 
     void _resetData();
 
-    void _setInitialCalculationContext(PositionInWorld    aViewCenter,
-                                       hg::math::Vector2d aViewSize,
-                                       PositionInWorld    aLineOfSightOrigin);
+    void _setInitialCalculationContext(PositionInWorld aBboxTopLeft,
+                                       PositionInWorld aBboxBottomRight,
+                                       PositionInWorld aPointOfView);
 
     std::uint8_t _calcEdgesOfInterest(hg::math::Vector2pz aCell) const;
 

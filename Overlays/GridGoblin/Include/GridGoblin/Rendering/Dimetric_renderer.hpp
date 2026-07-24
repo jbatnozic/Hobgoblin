@@ -6,10 +6,10 @@
 #include <GridGoblin/Model/Cell.hpp>
 #include <GridGoblin/Positional/Position_in_view.hpp>
 #include <GridGoblin/Positional/Position_in_world.hpp>
+#include <GridGoblin/Private/Reduction_predicates.hpp>
 #include <GridGoblin/Rendering/Rendered_object.hpp>
 #include <GridGoblin/Rendering/Renderer.hpp>
 #include <GridGoblin/Rendering/Visibility_provider.hpp>
-#include <GridGoblin/Private/Reduction_predicates.hpp>
 #include <GridGoblin/World/World.hpp>
 
 #include <Hobgoblin/UWGA/Sprite_loader.hpp>
@@ -96,25 +96,17 @@ private:
                            hg::math::Vector2d aViewSize,
                            taCallable&&       aFunc);
 
-    void _reduceCellsBelowIfCellIsVisible(CellInfo&                 aCellInfo,
-                                          PositionInView            aCellPosInView,
-                                          const VisibilityProvider& aVisProv,
-                                          World::Editor             aWorldEditor);
-
     void _prepareCells();
 
-    //! bits 0..9   Reduction counter
-    //! bit  10     Render cycle flag
-    //! bit  11     Cell touched
-    //! bit  12     Should reduce
-    //! bits 13..31 -- Unused --
-    using AuxDataBits = std::uint32_t;
+    void _touchCellIfNotAlreadyTouched(/* inout */ CellInfo& aCellInfo);
 
-    void _updateRendererAuxDataOfCell(CellInfo& aCellInfo, World::Editor aWorldEditor);
+    void _reduceCellsBelowIfCellIsVisible(/* inout */ CellInfo&                 aCellInfo,
+                                          /*    in */ PositionInView            aCellPosInView,
+                                          /*    in */ const VisibilityProvider& aVisProv,
+                                          /*    in */ World::Editor             aWorldEditor);
 
-    void _updateFadeValueOfCellRendererMask(CellInfo&                   aCellInfo,
-                                            detail::RecommendedDrawMode aDrawMode,
-                                            World::Editor               aWorldEditor);
+    void _updateReductionCounterOfCell(/* inout */ CellInfo&                   aCellInfo,
+                                       /*    in */ detail::RecommendedDrawMode aDrawMode);
 };
 
 } // namespace gridgoblin
