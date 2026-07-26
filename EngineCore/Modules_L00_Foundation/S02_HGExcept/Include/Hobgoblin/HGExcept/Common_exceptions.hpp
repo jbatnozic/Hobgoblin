@@ -1,11 +1,10 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-// clang-format off
-
 #ifndef UHOBGOBLIN_HGEXCEPT_COMMON_EXCEPTIONS_HPP
 #define UHOBGOBLIN_HGEXCEPT_COMMON_EXCEPTIONS_HPP
 
+#include <Hobgoblin/Common/Branches.hpp>
 #include <Hobgoblin/HGExcept/Traced_exception.hpp>
 
 #include <cassert>
@@ -33,9 +32,9 @@ public:
 };
 
 //! TODO
-#define HG_NOT_IMPLEMENTED(...) \
-    HG_THROW_TRACED_C(::jbatnozic::hobgoblin::NotImplementedError, \
-                      0, \
+#define HG_NOT_IMPLEMENTED(...)                                                                \
+    HG_THROW_TRACED_C(::jbatnozic::hobgoblin::NotImplementedError,                             \
+                      0,                                                                       \
                       "Execution reached part of code which not implemented or not finished.", \
                       __VA_ARGS__)
 
@@ -46,9 +45,9 @@ public:
 };
 
 //! TODO
-#define HG_UNREACHABLE(...) \
-    HG_THROW_TRACED_C(::jbatnozic::hobgoblin::ReachedUnreachableCodeError, \
-                      0, \
+#define HG_UNREACHABLE(...)                                                                   \
+    HG_THROW_TRACED_C(::jbatnozic::hobgoblin::ReachedUnreachableCodeError,                    \
+                      0,                                                                      \
                       "Execution reached part of code which was supposed to be unreachable.", \
                       __VA_ARGS__)
 
@@ -59,39 +58,47 @@ public:
 };
 
 #ifdef NDEBUG // RELEASE
-    #define UHOBGOBLIN_ASSERT(_expr_) do { static_cast<void>(0); } while (false)
+#define UHOBGOBLIN_ASSERT(_expr_) \
+    do {                          \
+        static_cast<void>(0);     \
+    } while (false)
 #else // DEBUG
-    #define UHOBGOBLIN_ASSERT(_expr_) \
-        do { if (!(_expr_)) {  \
+#define UHOBGOBLIN_ASSERT(_expr_)                                           \
+    do {                                                                    \
+        if (HG_UNLIKELY_CONDITION(!(_expr_))) {                             \
+            HG_UNLIKELY_BRANCH;                                             \
             HG_THROW_TRACED_C(::jbatnozic::hobgoblin::AssertionFailedError, \
-                              0, \
-                              "Expression was: '" #_expr_ "'.", \
-                              "Debug assertion failed!"); \
-        }} while (false)
+                              0,                                            \
+                              "Expression was: '" #_expr_ "'.",             \
+                              "Debug assertion failed!");                   \
+        }                                                                   \
+    } while (false)
 #endif
 
 //! If NDEBUG is not defined (usually in Debug mode):
 //!     Checks that the given expression is true; otherwise AssertionFailedError is thrown.
-//! 
+//!
 //! If NDEBUG is defined (usually in Release mode):
 //!     Does nothing.
-//! 
+//!
 //! In either case, this macro always expands into a statement which has
 //! to be terminated by a semicolon.
-#define HG_ASSERT(_expr_) \
-    UHOBGOBLIN_ASSERT(_expr_)
+#define HG_ASSERT(_expr_) UHOBGOBLIN_ASSERT(_expr_)
 
 //! Checks that the given expression is true; otherwise AssertionFailedError is thrown
 //! (even if NDEBUG is defined!).
 //! This macro always expands into a statement which has
 //! to be terminated by a semicolon.
-#define HG_HARD_ASSERT(_expr_) \
-    do { if (!(_expr_)) {  \
-        HG_THROW_TRACED_C(::jbatnozic::hobgoblin::AssertionFailedError, \
-                          0, \
-                          "Expression was: '" #_expr_ "'.", \
-                          "Hard assertion failed!"); \
-    }} while (false)
+#define HG_HARD_ASSERT(_expr_)                                              \
+    do {                                                                    \
+        if (HG_UNLIKELY_CONDITION(!(_expr_))) {                             \
+            HG_UNLIKELY_BRANCH;                                             \
+            HG_THROW_TRACED_C(::jbatnozic::hobgoblin::AssertionFailedError, \
+                              0,                                            \
+                              "Expression was: '" #_expr_ "'.",             \
+                              "Hard assertion failed!");                    \
+        }                                                                   \
+    } while (false)
 
 //! Intended to be thrown when an invalid argument is passed to a function.
 class InvalidArgumentError : public TracedLogicError {
@@ -100,13 +107,16 @@ public:
 };
 
 //! TODO(add description)
-#define HG_VALIDATE_ARGUMENT(_expr_, ...) \
-    do { if (!(_expr_)) {  \
-        HG_THROW_TRACED_C(::jbatnozic::hobgoblin::InvalidArgumentError, \
-                          0, \
-                          "Validation expression was: '" #_expr_ "'.", \
-                          __VA_ARGS__); \
-    }} while (false)
+#define HG_VALIDATE_ARGUMENT(_expr_, ...)                                   \
+    do {                                                                    \
+        if (HG_UNLIKELY_CONDITION(!(_expr_))) {                             \
+            HG_UNLIKELY_BRANCH;                                             \
+            HG_THROW_TRACED_C(::jbatnozic::hobgoblin::InvalidArgumentError, \
+                              0,                                            \
+                              "Validation expression was: '" #_expr_ "'.",  \
+                              __VA_ARGS__);                                 \
+        }                                                                   \
+    } while (false)
 
 //!
 class PreconditionNotMetError : public TracedLogicError {
@@ -115,13 +125,16 @@ public:
 };
 
 //! TODO(add description)
-#define HG_VALIDATE_PRECONDITION(_expr_) \
-    do { if (!(_expr_)) {  \
-        HG_THROW_TRACED_C(::jbatnozic::hobgoblin::PreconditionNotMetError, \
-                          0, \
-                          "Precondition expression was: '" #_expr_ "'.", \
-                          "Precondition was not met!"); \
-    }} while (false)
+#define HG_VALIDATE_PRECONDITION(_expr_)                                       \
+    do {                                                                       \
+        if (HG_UNLIKELY_CONDITION(!(_expr_))) {                                \
+            HG_UNLIKELY_BRANCH;                                                \
+            HG_THROW_TRACED_C(::jbatnozic::hobgoblin::PreconditionNotMetError, \
+                              0,                                               \
+                              "Precondition expression was: '" #_expr_ "'.",   \
+                              "Precondition was not met!");                    \
+        }                                                                      \
+    } while (false)
 
 ///////////////////////////////////////////////////////////////////////////
 // RUNTIME ERRORS                                                        //
@@ -146,5 +159,3 @@ HOBGOBLIN_NAMESPACE_END
 #include <Hobgoblin/Private/Short_namespace.hpp>
 
 #endif // !UHOBGOBLIN_HGEXCEPT_COMMON_EXCEPTIONS_HPP
-
-// clang-format on
