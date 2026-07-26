@@ -4,6 +4,7 @@
 // clang-format off
 
 #include <Hobgoblin/Unicode.hpp>
+#include <Hobgoblin/HGExcept.hpp>
 
 #include <SFML/System/String.hpp>
 
@@ -84,8 +85,23 @@ TEST(HGUnicodeTest, UniStrConvTest_Utf8StrString) {
 namespace {
 std::string SlurpFileContents(std::filesystem::path aPath) {
     std::ifstream fileStream{aPath, std::ios::in | std::ios::binary};
+    if (!fileStream.is_open()) {
+        HG_THROW_TRACED(hg::IOError,
+                        0,
+                        "Could not open file '{}'; file does not exist!",
+                        aPath.filename().string());
+    }
+
     std::string fileContents{std::istreambuf_iterator<char>{fileStream},
                              std::istreambuf_iterator<char>()};
+
+    if (fileStream.fail()) {
+        HG_THROW_TRACED(hg::IOError,
+                        0,
+                        "Error encountered while reading file '{}'.",
+                        aPath.filename().string());
+    }
+
     return fileContents;
 }
 } // namespace
@@ -538,4 +554,8 @@ TEST(HGUnicodeTest, ValidURegexTest) {
 
 TEST(HGUnicodeTest, InvalidURegexTest) {
     EXPECT_THROW(hg::URegex{HG_UNISTR("?*([)")}, hg::URegexError);
+}
+
+TEST(HGUnicodeTest, LoadWholeFile_FileDoesNotExist) {
+    EXPECT_THROW(hg::LoadWholeFile("/file/does/not/exist.txt"), hg::IOError);
 }

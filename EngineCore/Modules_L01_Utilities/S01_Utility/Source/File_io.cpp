@@ -12,8 +12,23 @@ namespace util {
 
 std::string SlurpFileBytes(const std::filesystem::path& aPath) {
     std::ifstream fileStream{aPath, std::ios::in | std::ios::binary};
-    std::string   fileContents{std::istreambuf_iterator<char>{fileStream},
+    if (!fileStream.is_open()) {
+        HG_THROW_TRACED(IOError,
+                        0,
+                        "Could not open file '{}'; file does not exist!",
+                        aPath.filename().string());
+    }
+
+    std::string fileContents{std::istreambuf_iterator<char>{fileStream},
                              std::istreambuf_iterator<char>()};
+
+    if (fileStream.fail()) {
+        HG_THROW_TRACED(IOError,
+                        0,
+                        "Error encountered while reading file '{}'.",
+                        aPath.filename().string());
+    }
+
     return fileContents;
 }
 

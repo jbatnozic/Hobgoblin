@@ -15,9 +15,13 @@
 HOBGOBLIN_NAMESPACE_BEGIN
 
 //! Loads the whole contents of a textual file into a unicode string.
+//!
 //! \param aPath Path to the file.
 //! \param aCharset Encoding charset of the file. If none, the
 //!                 function will try to detect it automatically.
+//!
+//! \throws IOError if file could not be opened or there was an error during reading.
+//! \throws TracedRuntimeError if the file's charset could not be determined.
 UnicodeString LoadWholeFile(const std::filesystem::path& aPath, std::optional<Charset> aCharset = {});
 
 HOBGOBLIN_NAMESPACE_END

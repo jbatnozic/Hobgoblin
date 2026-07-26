@@ -4,6 +4,8 @@
 #ifndef UHOBGOBLIN_UTIL_FILE_IO_HPP
 #define UHOBGOBLIN_UTIL_FILE_IO_HPP
 
+#include <Hobgoblin/HGExcept.hpp>
+
 #include <filesystem>
 #include <string>
 
@@ -14,6 +16,8 @@ namespace util {
 
 //! Returns a bitwise copy of the contents of a file (no checks or conversions
 //! will be performed so the returned string might not be printable).
+//!
+//! \throws IOError if file could not be opened or there was an error during reading.
 std::string SlurpFileBytes(const std::filesystem::path& aPath);
 
 } // namespace util
