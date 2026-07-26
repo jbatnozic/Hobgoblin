@@ -143,12 +143,11 @@ void DimetricRenderer::render(const RenderContext&          aRenderCtx,
                               hg::uwga::Canvas&             aCanvas,
                               const hg::uwga::RenderStates& aRenderStates) const //
 {
-    (void)aRenderStates; // TODO: aRenderStates unused
     const auto& objs = aRenderCtx.ephemeral.renderedObjects;
     for (const auto& object : objs) {
         const auto& boundsInfo = object->getBoundsInfo();
         auto        posInView  = dimetric::ToPositionInView(boundsInfo.getCenter());
-        object->render(aCanvas, posInView);
+        object->render(aCanvas, posInView, aRenderStates);
     }
 }
 
@@ -397,15 +396,18 @@ DimetricRenderer::CellToRenderedObjectAdapter::CellToRenderedObjectAdapter(
     , _renderer{aRenderer}
     , _cellGraphicsInfo{aCellGraphicsInfo} {}
 
-void DimetricRenderer::CellToRenderedObjectAdapter::render(hg::uwga::Canvas& aCanvas,
-                                                           PositionInView    aScreenPosition) const {
+void DimetricRenderer::CellToRenderedObjectAdapter::render(
+    hg::uwga::Canvas&             aCanvas,
+    PositionInView                aScreenPosition,
+    const hg::uwga::RenderStates& aRenderStates) const //
+{
     switch (_boundsInfo.getLayer()) {
     case Layer::FLOOR:
         {
             auto& sprite = _renderer._getSprite(_cellGraphicsInfo.floorSprite.id);
             sprite.setAnchor(*aScreenPosition);
             sprite.setColor(hg::uwga::COLOR_WHITE);
-            aCanvas.draw(sprite);
+            aCanvas.draw(sprite, aRenderStates);
         }
         break;
 
@@ -434,7 +436,7 @@ void DimetricRenderer::CellToRenderedObjectAdapter::render(hg::uwga::Canvas& aCa
 
                 reducedSprite.setAnchor(*aScreenPosition);
                 reducedSprite.setColor(hg::uwga::COLOR_WHITE);
-                aCanvas.draw(reducedSprite);
+                aCanvas.draw(reducedSprite, aRenderStates);
             }
 
             if (opacity > 0) {
@@ -442,7 +444,7 @@ void DimetricRenderer::CellToRenderedObjectAdapter::render(hg::uwga::Canvas& aCa
 
                 fullSprite.setAnchor(*aScreenPosition);
                 fullSprite.setColor(hg::uwga::COLOR_WHITE.withAlpha(opacity));
-                aCanvas.draw(fullSprite);
+                aCanvas.draw(fullSprite, aRenderStates);
             }
         }
         break;

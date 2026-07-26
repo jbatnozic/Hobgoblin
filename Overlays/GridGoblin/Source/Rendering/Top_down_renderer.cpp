@@ -41,12 +41,11 @@ void TopDownRenderer::render(const RenderContext&          aRenderCtx,
                              hg::uwga::Canvas&             aCanvas,
                              const hg::uwga::RenderStates& aRenderStates) const //
 {
-    (void)aRenderStates; // TODO: RenderStates unused
     const auto& objs = aRenderCtx.ephemeral.renderedObjects;
     for (const auto& object : objs) {
         const auto& boundsInfo = object->getBoundsInfo();
         const auto  posInView  = topdown::ToPositionInView(boundsInfo.getCenter());
-        object->render(aCanvas, posInView);
+        object->render(aCanvas, posInView, aRenderStates);
     }
 }
 
@@ -131,8 +130,11 @@ TopDownRenderer::CellToRenderedObjectAdapter::CellToRenderedObjectAdapter(TopDow
     , _renderer{aRenderer}
     , _wallSprite{aWallSprite} {}
 
-void TopDownRenderer::CellToRenderedObjectAdapter::render(hg::uwga::Canvas& aCanvas,
-                                                          PositionInView    aScreenPosition) const {
+void TopDownRenderer::CellToRenderedObjectAdapter::render(
+    hg::uwga::Canvas&             aCanvas,
+    PositionInView                aScreenPosition,
+    const hg::uwga::RenderStates& aRenderStates) const //
+{
     // Select sprite ID based on layer
     SpriteId spriteId;
     switch (_boundsInfo.getLayer()) {
@@ -168,7 +170,7 @@ void TopDownRenderer::CellToRenderedObjectAdapter::render(hg::uwga::Canvas& aCan
         sprite.setScale(xscale, yscale);
     }
 
-    aCanvas.draw(sprite);
+    aCanvas.draw(sprite, aRenderStates);
 }
 
 } // namespace gridgoblin

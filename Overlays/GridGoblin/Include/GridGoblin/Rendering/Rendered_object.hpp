@@ -4,6 +4,7 @@
 #pragma once
 
 #include <Hobgoblin/UWGA/Canvas.hpp>
+#include <Hobgoblin/UWGA/Render_states.hpp>
 
 #include <GridGoblin/Positional/Bounds_info.hpp>
 #include <GridGoblin/Positional/Position_in_view.hpp>
@@ -40,7 +41,11 @@ public:
     //!                   parameter is needed because some renderers (for example, the dimetric one)
     //!                   transform the positions of objects in ways that don't correspond 1:1 to
     //!                   the coordinate system of the view.
-    virtual void render(hg::uwga::Canvas& aCanvas, PositionInView aPosInView) const = 0;
+    //! \param aRenderStates the render states to use while rendering.
+    virtual void render(
+        hg::uwga::Canvas&             aCanvas,
+        PositionInView                aPosInView,
+        const hg::uwga::RenderStates& aRenderStates = hg::uwga::RENDER_STATES_DEFAULT) const = 0;
 
 protected:
     //! Bounds info describing where in the world the object is placed. Remember to keep his information

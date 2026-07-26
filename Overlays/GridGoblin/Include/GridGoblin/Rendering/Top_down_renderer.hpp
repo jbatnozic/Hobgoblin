@@ -51,7 +51,9 @@ private:
                                     const BoundsInfo& aBoundsInfo,
                                     cell::WallSprite  aWallSprite);
 
-        void render(hg::uwga::Canvas& aCanvas, PositionInView aPosInView) const override;
+        void render(hg::uwga::Canvas&             aCanvas,
+                    PositionInView                aPosInView,
+                    const hg::uwga::RenderStates& aRenderStates) const override;
 
     private:
         TopDownRenderer& _renderer;

@@ -69,7 +69,9 @@ private:
                                     CellGraphicsInfo  aCellGraphicsInfo,
                                     const BoundsInfo& aBoundsInfo);
 
-        void render(hg::uwga::Canvas& aCanvas, PositionInView aPosInView) const override;
+        void render(hg::uwga::Canvas&             aCanvas,
+                    PositionInView                aPosInViewm,
+                    const hg::uwga::RenderStates& aRenderStates) const override;
 
     private:
         DimetricRenderer& _renderer;
