@@ -28,7 +28,7 @@ int main(int argc, const char* argv[]) try {
 
     HG_ADD_MANUAL_TEST(testRunner, RunChunkHolderTest);
     HG_ADD_MANUAL_TEST(testRunner, RunDefaultDiskIoTest);
-    // HG_ADD_MANUAL_TEST(testRunner, RunDimetricRenderingTest);
+    HG_ADD_MANUAL_TEST(testRunner, RunDimetricRenderingTest);
     HG_ADD_MANUAL_TEST(testRunner, RunOpennessTest);
     HG_ADD_MANUAL_TEST(testRunner, RunSpoolingTest);
     HG_ADD_MANUAL_TEST(testRunner, RunVisibilityCalculatorTest);

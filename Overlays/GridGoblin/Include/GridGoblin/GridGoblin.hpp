@@ -18,7 +18,7 @@
 #include <GridGoblin/Positional/Position_in_view.hpp>
 #include <GridGoblin/Positional/Position_in_world.hpp>
 
-// #include <GridGoblin/Rendering/Dimetric_renderer.hpp>
+#include <GridGoblin/Rendering/Dimetric_renderer.hpp>
 #include <GridGoblin/Rendering/Drawing_order.hpp>
 #include <GridGoblin/Rendering/Rendered_object.hpp>
 #include <GridGoblin/Rendering/Renderer.hpp>

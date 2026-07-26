@@ -17,16 +17,17 @@ add_library(${PROJECT_NAME}
     "Source/Positional/Bounds_info.cpp"
     "Source/Positional/Position_conversions.cpp"
 
-    # Private
-    "Source/Private/Disk_io_handler_default.cpp"
+    # Private 
     "Source/Private/Chunk_holder.cpp"
     "Source/Private/Chunk_impl.cpp"
     "Source/Private/Chunk_memory_layout_info.cpp"
     "Source/Private/Chunk_spooler_default.cpp"  
+    "Source/Private/Disk_io_handler_default.cpp"
+    "Source/Private/Draw_mode_predicates.cpp"
     "Source/Private/Model_conversions.cpp"
 
     # Rendering
-    # "Source/Rendering/Dimetric_renderer.cpp"
+    "Source/Rendering/Dimetric_renderer.cpp"
     "Source/Rendering/Drawing_order.cpp"
     # "Source/Rendering/Top_down_los_renderer.cpp"
     "Source/Rendering/OpenGL_helpers.cpp"

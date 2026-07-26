@@ -187,9 +187,9 @@ void RunVisibilityCalculatorTestImpl() {
         HG_LOG_INFO(LOG_ID, "Running calc()...");
         {
             HG_LOG_WITH_SCOPED_STOPWATCH_MS(INFO, LOG_ID, "calc() took {}ms", elapsed_time_ms);
-            visCalc.calc({CELL_COUNT_X * CELLRES * 0.5f, CELL_COUNT_Y * CELLRES * 0.5f},
-                         {CELL_COUNT_X * CELLRES, CELL_COUNT_Y * CELLRES},
-                         PositionInWorld{pos});
+            visCalc.calculate(PositionInWorld{0.0, 0.0},
+                              PositionInWorld{CELL_COUNT_X * CELLRES, CELL_COUNT_Y * CELLRES},
+                              PositionInWorld{pos});
         }
 
         HG_LOG_INFO(LOG_ID,
@@ -258,7 +258,7 @@ void RunVisibilityCalculatorTestImpl() {
 
         // clang-format off
         renderCtx.dynamic = {
-            .viewCenter = PositionInWorld{view->getAnchor() + view->getCenter().cast<double>()},
+            .viewCenter = PositionInView{view->getAnchor() + view->getCenter().cast<double>()},
             .viewSize = view->getSize(),
             .pointOfView = {},
             .flags = {}
