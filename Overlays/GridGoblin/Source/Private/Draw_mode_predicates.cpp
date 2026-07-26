@@ -1,7 +1,7 @@
 // Copyright 2026 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#include <GridGoblin/Private/Reduction_predicates.hpp>
+#include <GridGoblin/Private/Draw_mode_predicates.hpp>
 
 #include <array>
 #include <cassert>
@@ -134,110 +134,7 @@ RecommendedDrawMode AlwaysSkip(double          aCellResolution,
     return RecommendedDrawMode::NOT_DRAWN;
 }
 
-#if 0
-std::array<ReductionPredicate, 16> SELECTION_TABLE_OLD = {
-    // b0000
-    //   _
-    // _ O _
-    //   _
-    //&FullWhenPovIsCloserToCamera,
-    &X1,
-
-    // b0001
-    //   _
-    // _ O X
-    //   _
-    &FullWhenPovIsSouthOrCloserToCamera,
-
-    // b0010
-    //   X
-    // _ O _
-    //   _
-    &FullWhenPovIsWestOrCloserToCamera,
-
-    // b0011
-    //   X
-    // _ O X
-    //   _
-    &FullWhenPovIsWestOrSouth,
-
-    // b0100
-    //   _
-    // X O _
-    //   _
-    &FullWhenPovIsSouth,
-
-    // b0101
-    //   _
-    // X O X
-    //   _
-    //&FullWhenPovIsSouth,
-    &FullWhenPovIsSouth2,
-
-    // b0110
-    //   X
-    // X O _
-    //   _
-    &FullWhenPovIsSouthAndCloserToCamera,
-
-    // b0111
-    //   X
-    // X O X
-    //   _
-    &FullWhenPovIsSouth,
-
-    // b1000
-    //   _
-    // _ O _
-    //   X
-    &FullWhenPovIsWestAndCloserToCamera,
-
-    // b1001
-    //   _
-    // _ O X
-    //   X
-    &FullWhenPovIsWestAndCloserToCamera,
-
-    // b1010
-    //   X
-    // _ O _
-    //   X
-    //&FullWhenPovIsWest,
-    &FullWhenPovIsWest2,
-
-    // b1011
-    //   X
-    // _ O X
-    //   X
-    &FullWhenPovIsWest,
-
-    // b1100
-    //   _
-    // X O _
-    //   X
-    &AlwaysLowered,
-
-    // b1101
-    //   _
-    // X O X
-    //   X
-    &AlwaysLowered,
-
-    // b1110
-    //   X
-    // X O _
-    //   X
-    &AlwaysLowered,
-
-    // b1111
-    //   X
-    // X O X
-    //   X
-    &AlwaysSkip,
-};
-#endif
-
-std::array<ReductionPredicate, 16> SELECTION_TABLE = {
+std::array<RecDrawModePredicate, 16> SELECTION_TABLE = {
     // b0000
     //   _
     // _ O _
@@ -338,7 +235,7 @@ std::array<ReductionPredicate, 16> SELECTION_TABLE = {
 } // namespace
 } // namespace predicate
 
-ReductionPredicate GetReductionPredicate(cell::SpatialInfo aCellSpatialInfo) {
+RecDrawModePredicate GetRecDrawModePredicate(cell::SpatialInfo aCellSpatialInfo) {
     // clang-format off
     static constexpr auto FLAG_MASK =
         (cell::OBSTRUCTED_FULLY_BY_NORTH_NEIGHBOR |

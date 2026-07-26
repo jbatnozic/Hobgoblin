@@ -2,7 +2,7 @@
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
 #include <GridGoblin/Positional/Position_conversions.hpp>
-#include <GridGoblin/Private/Reduction_predicates.hpp>
+#include <GridGoblin/Private/Draw_mode_predicates.hpp>
 #include <GridGoblin/Rendering/Dimetric_renderer.hpp>
 #include <GridGoblin/Rendering/Drawing_order.hpp>
 
@@ -83,11 +83,7 @@ void DimetricRenderer::_diagonalTraverse(const World&       aWorld,
 // MARK: Public
 
 DimetricRenderer::DimetricRenderer(const hg::uwga::SpriteLoader& aSpriteLoader)
-    : _spriteLoader{aSpriteLoader} //
-{
-    // HG_VALIDATE_ARGUMENT(aConfig.wallReductionConfig.lowerBound <
-    //                      aConfig.wallReductionConfig.upperBound);
-}
+    : _spriteLoader{aSpriteLoader} {}
 
 void DimetricRenderer::reset(RenderContext& aRenderCtx) {
     _renderCtx = nullptr;
@@ -97,8 +93,13 @@ void DimetricRenderer::reset(RenderContext& aRenderCtx) {
 void DimetricRenderer::prepareToRender(RenderContext& aRenderCtx) {
     HG_VALIDATE_ARGUMENT(aRenderCtx.world != nullptr);
     HG_VALIDATE_ARGUMENT(aRenderCtx.impls.renderer == this);
-    // TODO: Validate others...
-    // HG_VALIDATE_ARGUMENT(!!(aRenderFlags & REDUCE_WALLS_BASED_ON_VISIBILITY) == !!aVisProv);
+
+    HG_VALIDATE_ARGUMENT(aRenderCtx.config.wallReductionConfig.lowerBound <
+                         aRenderCtx.config.wallReductionConfig.upperBound);
+
+    HG_VALIDATE_ARGUMENT(
+        !AreBitsSet(aRenderCtx.dynamic.flags, RenderFlags::REDUCE_WALLS_BASED_ON_VISIBILITY) ||
+        aRenderCtx.impls.visibilityProvider != nullptr);
 
     _renderCtx = &aRenderCtx;
 
@@ -195,19 +196,19 @@ void DimetricRenderer::_prepareCells() {
 
                 const auto cr = world.getCellResolution();
 
-                const auto drawMode = (detail::GetReductionPredicate(aCellInfo->spatialInfo))(
+                const auto recDrawMode = (detail::GetRecDrawModePredicate(aCellInfo->spatialInfo))(
                     cr,
                     {aCellInfo->gridX * cr, aCellInfo->gridY * cr},
                     _renderCtx->dynamic.pointOfView);
 
-                _updateReductionCounterOfCell(*aCellInfo, drawMode);
+                _updateReductionCounterOfCell(*aCellInfo, recDrawMode);
 
                 // Commit the edited renderer aux data back into the chunk from whence it came
                 aEditor.setCellDataAtUnchecked(aCellInfo->gridX,
                                                aCellInfo->gridY,
                                                &aCellInfo->rendererAuxData);
 
-                if (drawMode == detail::RecommendedDrawMode::NOT_DRAWN) {
+                if (recDrawMode == detail::RecommendedDrawMode::NOT_DRAWN) {
                     return;
                 }
 

@@ -6,7 +6,7 @@
 #include <GridGoblin/Model/Cell.hpp>
 #include <GridGoblin/Positional/Position_in_view.hpp>
 #include <GridGoblin/Positional/Position_in_world.hpp>
-#include <GridGoblin/Private/Reduction_predicates.hpp>
+#include <GridGoblin/Private/Draw_mode_predicates.hpp>
 #include <GridGoblin/Rendering/Rendered_object.hpp>
 #include <GridGoblin/Rendering/Renderer.hpp>
 #include <GridGoblin/Rendering/Visibility_provider.hpp>

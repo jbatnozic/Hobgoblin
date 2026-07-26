@@ -74,7 +74,8 @@ struct RenderContext {
     //! though it is not recommended to do so mid-rendering cycle).
     struct Config {
         //! Parameters controlling how much and how quickly walls are reduced (lowered or faded)
-        //! when wall reduction is enabled via the corresponding `RenderFlags`.
+        //! when wall reduction is enabled via the corresponding `RenderFlags`, and when using a
+        //! renderer which does wall reduction.
         struct WallReductionConfig {
             static constexpr std::uint16_t MIN_VALUE = 0;    //!< Minimal reduction
             static constexpr std::uint16_t MAX_VALUE = 1023; //!< Maximal reduction

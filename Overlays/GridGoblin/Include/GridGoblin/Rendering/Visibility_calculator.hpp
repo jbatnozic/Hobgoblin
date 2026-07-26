@@ -17,7 +17,7 @@ namespace hobgoblin {
 namespace uwga {
 // Forward-declare
 class Canvas;
-}
+} // namespace uwga
 } // namespace hobgoblin
 
 namespace gridgoblin {

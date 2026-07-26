@@ -92,7 +92,7 @@ void RunDimetricRenderingTestImpl() {
                     cell::SpatialInfo spatialInfo{.wallShape = Shape::FULL_SQUARE};
 
                     if (hg::util::GetRandomNumber(0, 99) > 15) {
-                        wallSprite = {.id = SPRITEID_NONE, .id_reduced = SPRITEID_NONE};
+                        wallSprite            = {.id = SPRITEID_NONE, .id_reduced = SPRITEID_NONE};
                         spatialInfo.wallShape = Shape::EMPTY;
                     }
 
