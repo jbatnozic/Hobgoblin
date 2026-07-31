@@ -23,7 +23,7 @@ using MLobbyBackend = spe::LobbyBackendManagerInterface;
 using MNetworking   = spe::NetworkingManagerInterface;
 using MWindow       = spe::WindowManagerInterface;
 
-constexpr const char* LOG_ID = "Connabar1";
+constexpr const char* LOG_ID = "Cinnabar1";
 
 // #define PRIORITY_VARMAPMGR     16
 // #define PRIORITY_NETWORKMGR    15
@@ -33,7 +33,8 @@ constexpr const char* LOG_ID = "Connabar1";
 // #define PRIORITY_GAMEPLAYMGR   10
 // #define PRIORITY_INPUTMGR       7
 // #define PRIORITY_PLAYERAVATAR   5
-#define PRIORITY_WINDOWMGR      0
+#define PRIORITY_WINDOWMGR        0
+#define PRIORITY_MAINGAMEFLOWMGR -1
 
 #define STATE_BUFFERING_LENGTH 2
 
