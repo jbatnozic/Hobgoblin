@@ -23,7 +23,7 @@ DefaultNetworkingManager::DefaultNetworkingManager(hobgoblin::QAO_InstGuard aIns
     : NonstateObject{aInstGuard,
                      hg::QAO_ExeCon::ESSENTIAL,
                      aExecutionPriority,
-                     "::jbatnozic::spempe::DefaultNetworkingManager"}
+                     QAO_STATIC_NAME("::jbatnozic::spempe::DefaultNetworkingManager")}
     , _node{hg::RN_ServerFactory::createDummyServer()}
     , _syncObjReg{*_node, aStateBufferingLength} {}
 

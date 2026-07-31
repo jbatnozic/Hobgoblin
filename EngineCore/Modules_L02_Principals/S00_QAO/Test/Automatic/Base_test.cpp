@@ -27,3 +27,17 @@ TEST(QAO_BaseTest, SetAndGetExeconThreshold) {
     d->setExeconThreshold(QAO_ExeCon::EXTRAS);
     EXPECT_EQ(d->getExeconThreshold(), QAO_ExeCon::EXTRAS);
 }
+
+TEST(QAO_BaseTest, InstanceHasRegularName) {
+    auto d = QAO_Create<Derived>(nullptr, QAO_ExeCon::META_EXECUTE_ALL, 0, "Bob");
+
+    EXPECT_EQ(d->getName().length(), 3);
+    EXPECT_EQ(d->getName(), "Bob");
+}
+
+TEST(QAO_BaseTest, InstanceHasStaticName) {
+    auto d = QAO_Create<Derived>(nullptr, QAO_ExeCon::META_EXECUTE_ALL, 0, QAO_STATIC_NAME("MrTorgue"));
+
+    EXPECT_EQ(d->getName().length(), 8);
+    EXPECT_EQ(d->getName(), "MrTorgue");
+}

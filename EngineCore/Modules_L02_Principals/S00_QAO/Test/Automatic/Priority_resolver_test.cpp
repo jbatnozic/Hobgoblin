@@ -47,7 +47,7 @@ TEST(QAO_PriorityResolverTest, BasicsWithPriorityStartAndStep) {
 }
 
 TEST(QAO_PriorityResolverTest, WithEnumClass) {
-    enum Categories {
+    enum class Categories {
         A,
         B,
         C

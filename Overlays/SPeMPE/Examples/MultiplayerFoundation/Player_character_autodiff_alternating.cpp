@@ -11,7 +11,7 @@ AutodiffAlternatingPlayerCharacter::AutodiffAlternatingPlayerCharacter(QAO_InstG
     : SyncObjSuper{aInstGuard,
                    QAO_ExeCon::GAMEPLAY,
                    PRIORITY_PLAYERAVATAR,
-                   "AutodiffAlternatingPlayerCharacter",
+                   QAO_STATIC_NAME("AutodiffAlternatingPlayerCharacter"),
                    aSyncId} //
 {
     _enableAlternatingUpdates();

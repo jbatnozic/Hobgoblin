@@ -78,7 +78,7 @@ DefaultSyncedVarmapManager::DefaultSyncedVarmapManager(hobgoblin::QAO_InstGuard 
     : NonstateObject{aInstGuard,
                      hg::QAO_ExeCon::ESSENTIAL,
                      aExecutionPriority,
-                     "::jbatnozic::spempe::DefaultSyncedVarmapManager"} {}
+                     QAO_STATIC_NAME("::jbatnozic::spempe::DefaultSyncedVarmapManager")} {}
 
 DefaultSyncedVarmapManager::~DefaultSyncedVarmapManager() = default;
 

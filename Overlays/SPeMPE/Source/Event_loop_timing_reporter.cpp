@@ -31,7 +31,7 @@ EventLoopTimingReporter::EventLoopTimingReporter(hobgoblin::QAO_InstGuard aInstG
     : NonstateObject{aInstGuard,
                      hg::QAO_ExeCon::INTERACTIVITY,
                      aExecutionPriority,
-                     "EventLoopTimingReporter"}
+                     QAO_STATIC_NAME("EventLoopTimingReporter")}
     , _cycleLength{aConfig.cycleLength}
     , _counter{0}
 {

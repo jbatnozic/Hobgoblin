@@ -7,6 +7,7 @@ find_package(GTest CONFIG REQUIRED)
 
 add_executable(${PROJECT_NAME}
     "Base_test.cpp"
+    "Name_ref_test.cpp"
     "Priority_resolver_test.cpp"
     "Reflection_test_dummy.cpp"
     "Reflection_test.cpp"

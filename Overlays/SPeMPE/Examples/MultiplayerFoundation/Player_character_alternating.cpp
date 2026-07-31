@@ -10,7 +10,7 @@ AlternatingPlayerCharacter::AlternatingPlayerCharacter(QAO_InstGuard aInstGuard,
     : SyncObjSuper{aInstGuard,
                    QAO_ExeCon::GAMEPLAY,
                    PRIORITY_PLAYERAVATAR,
-                   "AlternatingCharacterAlt",
+                   QAO_STATIC_NAME("AlternatingCharacterAlt"),
                    aSyncId} //
 {
     _enableAlternatingUpdates();

@@ -112,7 +112,7 @@ public:
     SynchronizedObjectBase(hg::QAO_InstGuard aInstGuard,
                            hg::QAO_ExeCon    aExeconThreshold,
                            int               aExecutionPriority,
-                           std::string       aName,
+                           hg::QAO_NameRef  aName,
                            SyncId            aSyncId);
 
     ~SynchronizedObjectBase() override;
@@ -344,25 +344,9 @@ protected:
     SynchronizedObject(hg::QAO_InstGuard aInstGuard,
                        hg::QAO_ExeCon    aExeconThreshold,
                        int               aExecutionPriority,
-                       std::string       aName,
+                       hg::QAO_NameRef   aName,
                        SyncId            aSyncId = SYNC_ID_NEW)
-        : SynchronizedObjectBase{aInstGuard,
-                                 aExeconThreshold,
-                                 aExecutionPriority,
-                                 std::move(aName),
-                                 aSyncId}
-        , _ssch{0} {}
-
-    [[deprecated("Use the other constructor which also accepts a QAO_ExeCon parameter.")]]
-    SynchronizedObject(hg::QAO_InstGuard aInstGuard,
-                       int               aExecutionPriority,
-                       std::string       aName,
-                       SyncId            aSyncId = SYNC_ID_NEW)
-        : SynchronizedObjectBase{aInstGuard,
-                                 hg::QAO_ExeCon::ESSENTIAL,
-                                 aExecutionPriority,
-                                 std::move(aName),
-                                 aSyncId}
+        : SynchronizedObjectBase{aInstGuard, aExeconThreshold, aExecutionPriority, aName, aSyncId}
         , _ssch{0} {}
 
     taVisibleState& _getCurrentState() {

@@ -62,7 +62,7 @@ DefaultInputSyncManager::DefaultInputSyncManager(hobgoblin::QAO_InstGuard aInstG
     : NonstateObject{aInstGuard,
                      hg::QAO_ExeCon::SYNCHRONIZATION,
                      aExecutionPriority,
-                     "::jbatnozic::spempe::DefaultInputSyncManager"}
+                     QAO_STATIC_NAME("::jbatnozic::spempe::DefaultInputSyncManager")}
 {
 }
 

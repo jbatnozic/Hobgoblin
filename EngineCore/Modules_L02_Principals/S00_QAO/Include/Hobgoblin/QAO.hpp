@@ -8,6 +8,7 @@
 #include <Hobgoblin/QAO/Functions_destroy.hpp>
 #include <Hobgoblin/QAO/Id.hpp>
 #include <Hobgoblin/QAO/Instantiation_guard.hpp>
+#include <Hobgoblin/QAO/Name_ref.hpp>
 #include <Hobgoblin/QAO/Orderer.hpp>
 #include <Hobgoblin/QAO/Priority_resolver.hpp>
 #include <Hobgoblin/QAO/Priority_resolver2.hpp>

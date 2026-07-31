@@ -21,7 +21,7 @@ NetworkingTelemetryReporter::NetworkingTelemetryReporter(hobgoblin::QAO_InstGuar
     : NonstateObject{aInstGuard,
                      hg::QAO_ExeCon::INTERACTIVITY,
                      aExecutionPriority,
-                     "NetworkingTelemetryReporter"}
+                     QAO_STATIC_NAME("NetworkingTelemetryReporter")}
     , _cycleLength{aConfig.cycleLength}
     , _counter{0}
 {

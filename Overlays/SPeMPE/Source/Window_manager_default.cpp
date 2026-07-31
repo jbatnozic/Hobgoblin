@@ -14,7 +14,7 @@ DefaultWindowManager::DefaultWindowManager(hobgoblin::QAO_InstGuard aInstGuard, 
     : NonstateObject{aInstGuard,
                      hg::QAO_ExeCon::ESSENTIAL,
                      aExecutionPriority,
-                     "::jbatnozic::spempe::DefaultWindowManager"}
+                     QAO_STATIC_NAME("::jbatnozic::spempe::DefaultWindowManager")}
     , _rmlUiContextDriver{}
     , _inputTracker{[this](const hg::uwga::View* aView) -> hg::math::Vector2d {
                         return _getViewRelativeMousePos(aView);

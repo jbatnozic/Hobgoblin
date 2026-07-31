@@ -42,9 +42,9 @@ QAO_REGISTER_CLASS(SynchronizedObjectBase, USPEMPE_SynchronizedObjectBase) {
 SynchronizedObjectBase::SynchronizedObjectBase(hg::QAO_InstGuard aInstGuard,
                                                hg::QAO_ExeCon    aExeconThreshold,
                                                int               aExecutionPriority,
-                                               std::string       aName,
+                                               hg::QAO_NameRef   aName,
                                                SyncId            aSyncId)
-    : StateObject{aInstGuard, aExeconThreshold, aExecutionPriority, std::move(aName)}
+    : StateObject{aInstGuard, aExeconThreshold, aExecutionPriority, aName}
     , _syncId(aSyncId) {}
 
 SynchronizedObjectBase::~SynchronizedObjectBase() = default;

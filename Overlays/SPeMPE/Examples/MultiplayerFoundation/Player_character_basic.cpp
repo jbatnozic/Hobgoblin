@@ -9,7 +9,7 @@ BasicPlayerCharacter::BasicPlayerCharacter(QAO_InstGuard aInstGuard, spe::SyncId
     : SyncObjSuper{aInstGuard,
                    QAO_ExeCon::GAMEPLAY,
                    PRIORITY_PLAYERAVATAR,
-                   "BasicPlayerCharacter",
+                   QAO_STATIC_NAME("BasicPlayerCharacter"),
                    aSyncId} {}
 
 void BasicPlayerCharacter::init(int aOwningPlayerIndex, float aX, float aY) {

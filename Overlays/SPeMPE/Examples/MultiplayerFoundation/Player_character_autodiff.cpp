@@ -9,7 +9,7 @@ AutodiffPlayerCharacter::AutodiffPlayerCharacter(QAO_InstGuard aInstGuard, spe::
     : SyncObjSuper{aInstGuard,
                    QAO_ExeCon::GAMEPLAY,
                    PRIORITY_PLAYERAVATAR,
-                   "AutodiffPlayerCharacter",
+                   QAO_STATIC_NAME("AutodiffPlayerCharacter"),
                    aSyncId} {}
 
 void AutodiffPlayerCharacter::_didAttach(QAO_Runtime& aRuntime) {

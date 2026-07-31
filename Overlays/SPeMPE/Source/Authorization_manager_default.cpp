@@ -116,9 +116,7 @@ DefaultAuthorizationManager::DefaultAuthorizationManager(hobgoblin::QAO_InstGuar
     : NonstateObject(aInstGuard,
                      hg::QAO_ExeCon::INTERACTIVITY,
                      aExecutionPriority,
-                     "jbatnozic::spempe::DefaultAuthorizationManager")
-{
-}
+                     QAO_STATIC_NAME("jbatnozic::spempe::DefaultAuthorizationManager")) {}
 
 DefaultAuthorizationManager::~DefaultAuthorizationManager() = default;
 

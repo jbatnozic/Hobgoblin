@@ -213,7 +213,7 @@ DefaultLobbyBackendManager::DefaultLobbyBackendManager(hobgoblin::QAO_InstGuard 
     : NonstateObject(aInstGuard,
                      hg::QAO_ExeCon::SYNCHRONIZATION,
                      aExecutionPriority,
-                     "::jbatnozic::spempe::DefaultLobbyBackendManager")
+                     QAO_STATIC_NAME("::jbatnozic::spempe::DefaultLobbyBackendManager"))
 {    
 }
 

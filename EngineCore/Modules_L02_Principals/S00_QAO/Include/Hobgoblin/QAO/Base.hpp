@@ -10,12 +10,13 @@
 #include <Hobgoblin/QAO/Handle.hpp>
 #include <Hobgoblin/QAO/Id.hpp>
 #include <Hobgoblin/QAO/Instantiation_guard.hpp>
+#include <Hobgoblin/QAO/Name_ref.hpp>
 #include <Hobgoblin/QAO/Orderer.hpp>
 #include <Hobgoblin/Utility/Any_ptr.hpp>
 #include <Hobgoblin/Utility/No_copy_no_move.hpp>
 
 #include <cstdint>
-#include <string>
+#include <string_view>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
@@ -46,10 +47,12 @@ public:
     //!                           priority get executed before those of instances with lower priority.
     //! \param aName name of the instance (it doesn't have to follow any specific pattern because the
     //!              QAO framework doesn't use it except for logging; it's up to the user to choose).
+    //!              Max 255 characters. Use `QAO_STATIC_NAME` macro to set a static name and avoid
+    //!              dynamic memory allocations (better performance).
     QAO_Base(QAO_InstGuard aInstGuard,
              QAO_ExeCon    aExeconThreshold,
              int           aExecutionPriority,
-             std::string   aName);
+             QAO_NameRef   aName);
 
     virtual ~QAO_Base() = 0;
 
@@ -61,8 +64,11 @@ public:
     void setExecutionPriority(int priority);
     int  getExecutionPriority() const noexcept;
 
-    void        setName(std::string newName);
-    std::string getName() const;
+    //! \brief set a new name for the instance.
+    //! \param aName the name to set (max 255 characters). Use `QAO_STATIC_NAME` to set a static name
+    //!              and avoid dynamic memory allocations (better performance).
+    void             setName(QAO_NameRef aName);
+    std::string_view getName() const;
 
     QAO_GenericId getId() const noexcept;
 
@@ -87,18 +93,19 @@ private:
         QAO_Runtime*        runtime = nullptr;
     };
 
-    std::string   _instanceName;
+    const char*   _instanceName = nullptr;
     Context       _context;
     std::int32_t  _executionPriority;
-    std::uint32_t _flags = 0;
+    std::uint16_t _flags           = 0;
+    std::uint8_t  _nameLength      = 0;
+    QAO_ExeCon    _execonThreshold = QAO_ExeCon::META_EXECUTE_NONE;
 
-    enum Flags : std::uint32_t {
-        SET_UP_PROPERLY_BIT    = (1u << 31u),
-        TORN_DOWN_PROPERLY_BIT = (1u << 30u),
-        ATTACHED_PROPERLY_BIT  = (1u << 29u),
-        DETACHED_PROPERLY_BIT  = (1u << 28u),
-
-        FLAGS_EXECON_BYTE_OFFSET = 2 //!< Execon threshold is stored in bits 16..23
+    enum Flags : std::uint16_t {
+        SET_UP_PROPERLY_BIT    = (1u << 15u),
+        TORN_DOWN_PROPERLY_BIT = (1u << 14u),
+        ATTACHED_PROPERLY_BIT  = (1u << 13u),
+        DETACHED_PROPERLY_BIT  = (1u << 12u),
+        NAME_IS_STATIC_BIT     = (1u << 11u),
     };
 
     // Update

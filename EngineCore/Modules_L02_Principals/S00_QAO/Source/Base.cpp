@@ -11,6 +11,7 @@
 #include <Hobgoblin/QAO/Handle.hpp>
 
 #include <cassert>
+#include <memory>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
@@ -19,13 +20,18 @@ namespace qao {
 
 static constexpr auto LOG_ID = "Hobgoblin.QAO";
 
-QAO_Base::QAO_Base(QAO_InstGuard, QAO_ExeCon aExeconThreshold, int aExecutionPriority, std::string aName)
-    : _instanceName{std::move(aName)}
-    , _executionPriority{aExecutionPriority} {
-    setExeconThreshold(aExeconThreshold);
+QAO_Base::QAO_Base(QAO_InstGuard, QAO_ExeCon aExeconThreshold, int aExecutionPriority, QAO_NameRef aName)
+    : _executionPriority{aExecutionPriority}
+    , _execonThreshold{aExeconThreshold} //
+{
+    setName(aName);
 }
 
 QAO_Base::~QAO_Base() {
+    if (_instanceName != nullptr && (_flags & NAME_IS_STATIC_BIT) == 0) {
+        delete[] _instanceName;
+    }
+
     if (HG_UNLIKELY_CONDITION((_flags & TORN_DOWN_PROPERLY_BIT) == 0)) {
         HG_UNLIKELY_BRANCH;
 
@@ -65,21 +71,19 @@ QAO_Runtime* QAO_Base::getRuntime() const noexcept {
 }
 
 void QAO_Base::setExeconThreshold(QAO_ExeCon aExeconThreshold) {
-    std::memcpy(((char*)(&_flags)) + FLAGS_EXECON_BYTE_OFFSET, &aExeconThreshold, sizeof(QAO_ExeCon));
+    _execonThreshold = aExeconThreshold;
 }
 
 QAO_ExeCon QAO_Base::getExeconThreshold() const {
-    QAO_ExeCon result;
-    std::memcpy(&result, ((const char*)(&_flags)) + FLAGS_EXECON_BYTE_OFFSET, sizeof(QAO_ExeCon));
-    return result;
+    return _execonThreshold;
 }
 
 int QAO_Base::getExecutionPriority() const noexcept {
     return _executionPriority;
 }
 
-std::string QAO_Base::getName() const {
-    return _instanceName;
+std::string_view QAO_Base::getName() const {
+    return std::string_view{_instanceName, _nameLength};
 }
 
 QAO_GenericId QAO_Base::getId() const noexcept {
@@ -97,8 +101,29 @@ void QAO_Base::setExecutionPriority(int new_priority) {
     }
 }
 
-void QAO_Base::setName(std::string newName) {
-    _instanceName = std::move(newName);
+void QAO_Base::setName(QAO_NameRef aName) {
+    HG_VALIDATE_PRECONDITION((aName.stringLength <= 255) &&
+                             "Name length must be 255 characters or less!");
+
+    // Delete current name, if any
+    if (_instanceName != nullptr && (_flags & NAME_IS_STATIC_BIT) == 0) {
+        delete[] _instanceName;
+        _instanceName = nullptr;
+        _nameLength   = 0;
+    }
+
+    // Set new name
+    if (aName.stringIsStatic) {
+        _instanceName = aName.string;
+        _nameLength   = static_cast<decltype(_nameLength)>(aName.stringLength);
+        _flags |= NAME_IS_STATIC_BIT;
+    } else {
+        char* buffer = new char[aName.stringLength + 1];
+        std::memcpy(buffer, aName.string, aName.stringLength + 1);
+        _instanceName = buffer;
+        _nameLength   = static_cast<decltype(_nameLength)>(aName.stringLength);
+        _flags &= ~NAME_IS_STATIC_BIT;
+    }
 }
 
 // Private
