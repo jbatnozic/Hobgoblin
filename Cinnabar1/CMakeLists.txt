@@ -6,6 +6,7 @@ project("Cinnabar1")
 add_executable(${PROJECT_NAME}
     "Source/Main.cpp"
     "Source/Game_context_factory.cpp"
+    "Source/Main_game_flow_manager.cpp"
 )
 
 target_link_libraries(${PROJECT_NAME}
@@ -32,6 +33,7 @@ PUBLIC
     "Hobgoblin.RmlUi"
 
     # Overlays
+    "GridGoblin"
     "SPeMPE"
 
     # External
