@@ -3,6 +3,8 @@
 
 #include <Game_context_factory.hpp>
 
+#include <Main_game_flow_manager.hpp>
+
 namespace cinnabar {
 
 namespace {
@@ -35,7 +37,19 @@ spe::WindowManagerInterface::TimingConfig TIMING_CONFIG = {
 // clang-format on
 
 std::unique_ptr<spe::GameContext> CreateBasicGameContext() {
-    return std::make_unique<spe::GameContext>(RUNTIME_CONFIG);
+    auto ctx = std::make_unique<spe::GameContext>(RUNTIME_CONFIG);
+
+    // clang-format off
+    QAO_Create<spe::EventLoopTimingReporter>(
+        ctx->getQAORuntime(),
+        0,
+        spe::EventLoopTimingReporter::Config{
+            .cycleLength = RUNTIME_CONFIG.tickRate.getValue() * 10 // Every 10 seconds
+        }
+    );
+    // clang-format on
+
+    return ctx;
 }
 
 // MARK: DEV
@@ -64,9 +78,10 @@ std::unique_ptr<spe::GameContext> CreateDevGameContext() {
 
         ctx->attachAndOwnComponent(std::move(winMgr));
     }
-    // Add ???
+    // Add MainGameFlowManager
     {
-        // TODO
+        auto mgfMgr = QAO_Create<MainGameFlowManager>(ctx->getQAORuntime().nonOwning());
+        ctx->attachAndOwnComponent(std::move(mgfMgr));
     }
     return ctx;
 }
