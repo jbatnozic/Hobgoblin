@@ -456,7 +456,7 @@ private:
 ///////////////////////////////////////////////////////////////////////////
 
 LobbyFrontendManager::LobbyFrontendManager(QAO_InstGuard aInstGuard, int aExecutionPriority)
-    : NonstateObject(aInstGuard, aExecutionPriority, "LobbyFrontendManager")
+    : NonstateObject(aInstGuard, QAO_ExeCon::INTERACTIVITY, aExecutionPriority, "LobbyFrontendManager")
     , _impl{std::make_unique<Impl>(*this)} {}
 
 LobbyFrontendManager::~LobbyFrontendManager() = default;

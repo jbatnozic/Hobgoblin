@@ -16,7 +16,7 @@ class Derived : public QAO_Base {
 } // namespace
 
 TEST(QAO_BaseTest, SetAndGetExeconThreshold) {
-    auto d = QAO_Create<Derived>(nullptr, 0, "");
+    auto d = QAO_Create<Derived>(nullptr, QAO_ExeCon::META_EXECUTE_ALL, 0, "");
 
     d->setExeconThreshold(QAO_ExeCon::ESSENTIAL);
     EXPECT_EQ(d->getExeconThreshold(), QAO_ExeCon::ESSENTIAL);

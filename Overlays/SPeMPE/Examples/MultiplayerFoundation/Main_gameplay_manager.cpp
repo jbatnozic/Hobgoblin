@@ -24,7 +24,7 @@ RN_DEFINE_RPC(SetGlobalStateBufferingLength, RN_ARGS(unsigned, aNewLength)) {
 }
 
 MainGameplayManager::MainGameplayManager(QAO_InstGuard aInstGuard, int aExecutionPriority)
-    : NonstateObject{aInstGuard, aExecutionPriority, "GameplayManager"} {}
+    : NonstateObject{aInstGuard, QAO_ExeCon::ESSENTIAL, aExecutionPriority, "GameplayManager"} {}
 
 void MainGameplayManager::_didAttach(QAO_Runtime& aRuntime) {
     NonstateObject::_didAttach(aRuntime);

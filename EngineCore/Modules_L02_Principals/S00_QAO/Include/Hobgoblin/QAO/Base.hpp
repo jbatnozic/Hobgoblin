@@ -38,17 +38,6 @@ public:
 
     //! \brief Constructor.
     //! \param aInstGuard instantiation guard to make sure the instance is created using `QAO_Create`.
-    //! \param aExecutionPriority execution priority of the instance. Events of instances with higher
-    //!                           priority get executed before those of instances with lower priority.
-    //! \param aName name of the instance (it doesn't have to follow any specific pattern because the
-    //!              QAO framework doesn't use it except for logging; it's up to the user to choose).
-    //!
-    //! \note this constructor doesn't take a QAO_ExeCon parameter, so it defaults to `ESSENTIAL`.
-    [[deprecated("Use the other constructor which also accepts a QAO_ExeCon parameter.")]]
-    QAO_Base(QAO_InstGuard aInstGuard, int aExecutionPriority, std::string aName);
-
-    //! \brief Constructor.
-    //! \param aInstGuard instantiation guard to make sure the instance is created using `QAO_Create`.
     //! \param aExeconThreshold the EXECON threshold of the instance. Essentially it is the importance
     //!                         score of the instance - events of this instance will only be executed
     //!                         while the EXECON level of the runtime is equal to or higher than this

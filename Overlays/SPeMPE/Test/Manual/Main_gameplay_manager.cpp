@@ -12,7 +12,10 @@
 static constexpr auto LOG_ID = "SPeMPE.ManualTest";
 
 MainGameplayManagerBase::MainGameplayManagerBase(QAO_InstGuard aInstGuard)
-    : spe::NonstateObject{aInstGuard, PRIORITY_GAMEPLAYMGR, "MainGameplayManager"} {}
+    : spe::NonstateObject{aInstGuard,
+                          QAO_ExeCon::ESSENTIAL,
+                          PRIORITY_GAMEPLAYMGR,
+                          "MainGameplayManager"} {}
 
 void MainGameplayManagerBase::_didAttach(QAO_Runtime& aRuntime) {
     spe::NonstateObject::_didAttach(aRuntime);

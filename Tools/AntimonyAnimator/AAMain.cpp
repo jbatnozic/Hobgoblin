@@ -151,7 +151,10 @@ private:
 class EditorDriver : public spe::NonstateObject {
 public:
     EditorDriver(hg::QAO_InstGuard aInstGuard, int aExecutionPriority)
-        : spe::NonstateObject{aInstGuard, aExecutionPriority, "EditorDriver"} {}
+        : spe::NonstateObject{aInstGuard,
+                              hg::QAO_ExeCon::INTERACTIVITY,
+                              aExecutionPriority,
+                              "EditorDriver"} {}
 
     void init(Editor& aEditor) {
         _editor = &aEditor;

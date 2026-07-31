@@ -131,7 +131,7 @@ protected:
 class AvatarDrop : public NonstateObject {
 public:
     AvatarDrop(hg::QAO_InstGuard aInstGuard)
-        : NonstateObject(aInstGuard, 0, "AvatarDrop")
+        : NonstateObject(aInstGuard, hg::QAO_ExeCon::GAMEPLAY, 0, "AvatarDrop")
     {
     }
 
