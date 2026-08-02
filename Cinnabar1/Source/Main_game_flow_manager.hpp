@@ -25,4 +25,9 @@ private:
     std::uint32_t _iterOrdinal = 0;
 };
 
+QAO_REGISTER_CLASS(MainGameFlowManager, cinnabar_MainGameFlowManager) {
+    QAO_LOCAL_ALIAS(C, klass);
+    klass.setSuperclass<spe::NonstateObject>();
+}
+
 } // namespace cinnabar

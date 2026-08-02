@@ -27,7 +27,7 @@ using MWindow       = spe::WindowManagerInterface;
 constexpr const char* LOG_ID = "Cinnabar1";
 
 // #define PRIORITY_VARMAPMGR     16
-// #define PRIORITY_NETWORKMGR    15
+#define PRIORITY_NETWORKMGR    15
 // #define PRIORITY_LOBBYBACKMGR  14
 // #define PRIORITY_LOBBYFRONTMGR 13
 // #define PRIORITY_AUTHMGR       12
