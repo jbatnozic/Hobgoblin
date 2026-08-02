@@ -3,13 +3,26 @@
 
 #include <Main_game_flow_manager.hpp>
 
+#include <Asteroid.hpp>
+#include <Ship.hpp>
+
 namespace cinnabar {
 
 MainGameFlowManager::MainGameFlowManager(QAO_InstGuard aInstGuard)
     : spe::NonstateObject{aInstGuard,
                           QAO_ExeCon::ESSENTIAL,
                           PRIORITY_MAINGAMEFLOWMGR,
-                          "cinnabar::MainGameFlowManager"} {}
+                          QAO_STATIC_NAME("cinnabar::MainGameFlowManager")} {}
+
+void MainGameFlowManager::_didAttach(QAO_Runtime& aRuntime) {
+    spe::NonstateObject::_didAttach(aRuntime);
+
+    auto ship = QAO_Create<Ship>(aRuntime);
+    ship->init(96.0, 96.0);
+
+    auto asteroid = QAO_Create<Asteroid>(aRuntime);
+    asteroid->init(256.0, 256.0);
+}
 
 void MainGameFlowManager::_eventDisplay() {
     auto& context = ctx();
