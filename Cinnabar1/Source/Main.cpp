@@ -9,8 +9,10 @@ namespace cinnabar {
 
 int MyMain() {
     hg::log::SetMinimalLogSeverity(hg::log::Severity::Info);
-    auto ctx = CreateGameContext(GameContextMode::DEV);
-    return ctx->runFor(-1);
+    const auto ctx    = CreateGameContext(GameContextMode::DEV);
+    const auto status = ctx->runFor(-1);
+    HG_LOG_INFO(LOG_ID, "Program exiting (status code {}).", status);
+    return status;
 }
 
 } // namespace cinnabar

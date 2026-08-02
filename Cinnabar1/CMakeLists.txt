@@ -4,8 +4,10 @@
 project("Cinnabar1")
 
 add_executable(${PROJECT_NAME}
+    "Source/Asteroid.cpp"
     "Source/Main.cpp"
     "Source/Game_context_factory.cpp"
+    "Source/Graphics_system_provider.cpp"
     "Source/Main_game_flow_manager.cpp"
     "Source/Ship.cpp"
 )
