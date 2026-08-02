@@ -23,6 +23,8 @@ private:
     void _eventUpdate1() override;
     void _eventDraw1() override;
 
+    void _recalculateAbsoluteVertices();
+
     hg::math::Vector2d _center = {};
 
     struct RadialVertex {
@@ -30,9 +32,16 @@ private:
         float            distance;
     };
 
-    std::vector<RadialVertex> _verts = {};
+    std::vector<RadialVertex>       _verts         = {};
+    std::vector<hg::math::Vector2d> _absoluteVerts = {};
 
     hg::math::AngleF _rotation = hg::math::AngleF::zero();
+
+    bool               _held         = false;
+    hg::math::Vector2d _cursorOffset = {};
+    
+    bool _shift = false;
+    hg::math::Vector2d _shiftCursorPos = {};
 };
 
 } // namespace cinnabar
