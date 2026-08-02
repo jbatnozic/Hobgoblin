@@ -1,10 +1,11 @@
 // Copyright 2026 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#include <Ship.hpp>
+#include <Ship_controller.hpp>
 
 #include <Graphics_system_provider.hpp>
 
+#include <GridGoblin/World/World_config.hpp>
 #include <Hobgoblin/Math.hpp>
 #include <Hobgoblin/UWGA/Circle_shape.hpp>
 #include <Hobgoblin/UWGA/Color.hpp>
@@ -16,18 +17,54 @@
 
 namespace cinnabar {
 
+// MARK: Config
+
+namespace grid = ::jbatnozic::gridgoblin;
+
+namespace {
 #define GRID_RESOLUTION 48.f
 
-Ship::Ship(QAO_InstGuard aInstGuard)
-    : spe::StateObject{aInstGuard, QAO_ExeCon::GAMEPLAY, 5, QAO_STATIC_NAME("cinnabar::Ship")} {}
+// clang-format off
+constexpr grid::ContentsConfig INTERIOR_WORLD_CONFIG = {
+    .chunkCountX     = 1024,
+    .chunkCountY     = 512,
+    .cellsPerChunkX  = 16,
+    .cellsPerChunkY  = 16,
+    .buildingBlocks  = grid::BuildingBlockMask::ALL,
+    .cellResolution  = GRID_RESOLUTION,
+    .wallHeight      = GRID_RESOLUTION,
+    .maxCellOpenness = 0,
+    .maxLoadedNonessentialChunks = 0xFFFFFF
+};
 
-void Ship::init(double aX, double aY) {
+constexpr hg::math::Vector2d INTERIOR_WORLD_ORIGIN = {
+    (INTERIOR_WORLD_CONFIG.chunkCountX / 2 * INTERIOR_WORLD_CONFIG.cellsPerChunkX) * GRID_RESOLUTION,
+    (INTERIOR_WORLD_CONFIG.chunkCountY / 2 * INTERIOR_WORLD_CONFIG.cellsPerChunkY) * GRID_RESOLUTION
+};
+// clang-format on
+} // namespace
+
+// MARK: MasterData
+
+ShipController_MasterData::ShipController_MasterData()
+    : interiorWorld{INTERIOR_WORLD_CONFIG} {}
+
+// MARK: ShipController
+
+ShipController::ShipController(QAO_InstGuard aInstGuard, spe::SyncId aSyncId)
+    : SyncObjSuper{aInstGuard,
+                   QAO_ExeCon::GAMEPLAY,
+                   5,
+                   QAO_STATIC_NAME("cinnabar::ShipController"),
+                   aSyncId} {}
+
+void ShipController::init(double aX, double aY) {
     _position = {aX, aY};
 }
 
-void Ship::drawGridOverShape(hg::math::Vector2d            aShapeCenter,
-                             std::span<hg::math::Vector2d> aShapeVertices,
-                             uwga::Canvas&                 aCanvas) {
+void ShipController::drawGridOverShape(hg::math::Vector2d            aShapeCenter,
+                                       std::span<hg::math::Vector2d> aShapeVertices,
+                                       uwga::Canvas&                 aCanvas) {
     // Recalculate all shape vertices relative to the ship
     auto                            relativeShapeCenter = (aShapeCenter - _position).cast<float>();
     std::vector<hg::math::Vector2f> relativeShapeVertices{};
@@ -40,9 +77,9 @@ void Ship::drawGridOverShape(hg::math::Vector2d            aShapeCenter,
 
     // Transform all vertices into the ship's coordinate system
     {
-        _transform->transformPoints(1, &relativeShapeCenter);
+        _masterData->transform->transformPoints(1, &relativeShapeCenter);
         for (auto& vert : relativeShapeVertices) {
-            _transform->transformPoints(1, &vert);
+            _masterData->transform->transformPoints(1, &vert);
         }
     }
 
@@ -70,12 +107,10 @@ void Ship::drawGridOverShape(hg::math::Vector2d            aShapeCenter,
     hg::math::Vector2i aabbGridTopLeft;
     hg::math::Vector2i aabbGridBottomRight;
     {
-        aabbGridTopLeft = {
-            static_cast<int>(std::floor(aabbTopLeft.x / GRID_RESOLUTION)) - 1,
-            static_cast<int>(std::floor(aabbTopLeft.y / GRID_RESOLUTION)) - 1};
-        aabbGridBottomRight = {
-            static_cast<int>(std::floor(aabbBottomRight.x / GRID_RESOLUTION)) + 1,
-            static_cast<int>(std::floor(aabbBottomRight.y / GRID_RESOLUTION)) + 1};
+        aabbGridTopLeft     = {static_cast<int>(std::floor(aabbTopLeft.x / GRID_RESOLUTION)) - 1,
+                               static_cast<int>(std::floor(aabbTopLeft.y / GRID_RESOLUTION)) - 1};
+        aabbGridBottomRight = {static_cast<int>(std::floor(aabbBottomRight.x / GRID_RESOLUTION)) + 1,
+                               static_cast<int>(std::floor(aabbBottomRight.y / GRID_RESOLUTION)) + 1};
     }
 
     // Construct lambdas for checking if a point/shape is inside of the shape
@@ -123,7 +158,7 @@ void Ship::drawGridOverShape(hg::math::Vector2d            aShapeCenter,
                 rect.setOutlineColor(uwga::COLOR_ORANGE.withAlpha(100));
             }
 
-            _transformInverse->transformPoints(1, &squareTopLeft);
+            _masterData->transformInverse->transformPoints(1, &squareTopLeft);
             const auto anchor = squareTopLeft.cast<double>() + _position;
             rect.setAnchor(anchor);
 
@@ -132,14 +167,17 @@ void Ship::drawGridOverShape(hg::math::Vector2d            aShapeCenter,
     }
 }
 
-void Ship::_didAttach(QAO_Runtime& aRuntime) {
-    StateObject::_didAttach(aRuntime);
+void ShipController::_didAttach(QAO_Runtime& aRuntime) {
+    SyncObjSuper::_didAttach(aRuntime);
 
-    _transform        = ccomp<GraphicsSystemProvider>().getSystem().createTransform();
-    _transformInverse = _transform->clone();
+    if (isMasterObject()) {
+        auto& md            = *_masterData;
+        md.transform        = ccomp<GraphicsSystemProvider>().getSystem().createTransform();
+        md.transformInverse = md.transform->clone();
+    }
 }
 
-void Ship::_eventUpdate1() {
+void ShipController::_eventUpdate1(spe::IfMaster) {
     const auto& winMgr = ccomp<MWindow>();
     const auto  input  = winMgr.getInput();
 
@@ -174,9 +212,11 @@ void Ship::_eventUpdate1() {
 
     // Set transforms
 
-    _transform->setToIdentity();
-    _transform->rotate(_rotation);
-    _transformInverse->setToInverseOf(*_transform);
+    auto& md = *_masterData;
+
+    md.transform->setToIdentity();
+    md.transform->rotate(_rotation);
+    md.transformInverse->setToInverseOf(*md.transform);
 
     // Mouse input
 
@@ -184,9 +224,10 @@ void Ship::_eventUpdate1() {
         hg::math::Vector2f relativeMousePos =
             (input.getViewRelativeMousePos() - _position).cast<float>();
 
-        _transform->transformPoints(1, &relativeMousePos);
+        md.transform->transformPoints(1, &relativeMousePos);
 
-        HG_LOG_INFO(LOG_ID, "Relative mouse pos = x: {}, y: {}", relativeMousePos.x, relativeMousePos.y);
+        // HG_LOG_INFO(LOG_ID, "Relative mouse pos = x: {}, y: {}", relativeMousePos.x,
+        // relativeMousePos.y);
 
         _mousePosInLocalCoords = relativeMousePos;
         _drawGrid              = true;
@@ -195,7 +236,7 @@ void Ship::_eventUpdate1() {
     }
 }
 
-void Ship::_eventDraw1() {
+void ShipController::_eventDraw1() {
     auto& winMgr = ccomp<MWindow>();
 
     uwga::VertexArray vArr{uwga::PrimitiveType::TRIANGLES, 3};
@@ -233,7 +274,7 @@ void Ship::_eventDraw1() {
             hg::math::Vector2f{std::floor(_mousePosInLocalCoords.x / GRID_RESOLUTION) * GRID_RESOLUTION,
                                std::floor(_mousePosInLocalCoords.y / GRID_RESOLUTION) * GRID_RESOLUTION};
 
-        _transformInverse->transformPoints(1, &flooredMousePosInLocalCoords);
+        _masterData->transformInverse->transformPoints(1, &flooredMousePosInLocalCoords);
 
         const auto anchor = flooredMousePosInLocalCoords.cast<double>() + _position;
         rect.setAnchor(anchor);
@@ -244,6 +285,20 @@ void Ship::_eventDraw1() {
 
         winMgr.getActiveCanvas().draw(rect);
     }
+}
+
+// MARK: Sync impl.
+
+void ShipController::_syncCreateImpl(spe::SyncControlDelegate& aSyncCtrl) const {
+    // TODO
+}
+
+void ShipController::_syncUpdateImpl(spe::SyncControlDelegate& aSyncCtrl) const {
+    // TODO
+}
+
+void ShipController::_syncDestroyImpl(spe::SyncControlDelegate& aSyncCtrl) const {
+    // TODO
 }
 
 } // namespace cinnabar
