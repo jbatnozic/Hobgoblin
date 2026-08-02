@@ -4,7 +4,7 @@
 #include <Main_game_flow_manager.hpp>
 
 #include <Asteroid.hpp>
-#include <Ship.hpp>
+#include <Ship_controller.hpp>
 
 namespace cinnabar {
 
@@ -17,7 +17,7 @@ MainGameFlowManager::MainGameFlowManager(QAO_InstGuard aInstGuard)
 void MainGameFlowManager::_didAttach(QAO_Runtime& aRuntime) {
     spe::NonstateObject::_didAttach(aRuntime);
 
-    auto ship = QAO_Create<Ship>(aRuntime);
+    auto ship = QAO_Create<ShipController>(aRuntime, spe::SYNC_ID_NEW);
     ship->init(96.0, 96.0);
 
     auto asteroid = QAO_Create<Asteroid>(aRuntime);

@@ -44,4 +44,9 @@ private:
     hg::math::Vector2d _shiftCursorPos = {};
 };
 
+QAO_REGISTER_CLASS(Asteroid, cinnabar_Asteroid) {
+    QAO_LOCAL_ALIAS(C, klass);
+    klass.setSuperclass<spe::StateObject>();
+}
+
 } // namespace cinnabar

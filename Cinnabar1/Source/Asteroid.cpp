@@ -3,7 +3,7 @@
 
 #include <Asteroid.hpp>
 
-#include <Ship.hpp>
+#include <Ship_controller.hpp>
 
 #include <Hobgoblin/UWGA/Vertex_array.hpp>
 #include <Hobgoblin/Utility/Randomization.hpp>
@@ -128,8 +128,8 @@ void Asteroid::_eventDraw1() {
 
     // Draw the construction grid on top
     if (_held) {
-        if (const auto ship = getRuntime()->find("cinnabar::Ship"); ship) {
-            ship.downcastCopy<Ship>()->drawGridOverShape(_center, _absoluteVerts, canvas);
+        if (const auto shipCtrl = getRuntime()->find("cinnabar::ShipController"); shipCtrl) {
+            shipCtrl.downcastCopy<ShipController>()->drawGridOverShape(_center, _absoluteVerts, canvas);
         }
     }
 }

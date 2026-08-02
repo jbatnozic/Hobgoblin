@@ -9,7 +9,7 @@ add_executable(${PROJECT_NAME}
     "Source/Game_context_factory.cpp"
     "Source/Graphics_system_provider.cpp"
     "Source/Main_game_flow_manager.cpp"
-    "Source/Ship.cpp"
+    "Source/Ship_controller.cpp"
 )
 
 target_link_libraries(${PROJECT_NAME}
