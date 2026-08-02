@@ -8,6 +8,7 @@
 #include <Hobgoblin/Logging.hpp>
 #include <Hobgoblin/QAO.hpp>
 #include <Hobgoblin/RigelNet.hpp>
+#include <Hobgoblin/UWGA/Render_window.hpp>
 #include <SPeMPE/SPeMPE.hpp>
 
 namespace cinnabar {

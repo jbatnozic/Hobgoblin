@@ -3,6 +3,7 @@
 
 #include <Game_context_factory.hpp>
 
+#include <Graphics_system_provider.hpp>
 #include <Main_game_flow_manager.hpp>
 
 namespace cinnabar {
@@ -21,7 +22,7 @@ const spe::WindowManagerInterface::WindowConfig WINDOW_CONFIG = {
 };
 
 spe::WindowManagerInterface::MainRenderTextureConfig MRT_CONFIG = {
-    .size           = {1920, 1080},
+    .size           = {1920 / 2, 1080 / 2},
     .smooth         = true,
     .batchingConfig = {
         .strategy = uwga::BatchingConfig::Strategy::FAST_N_LOOSE
@@ -49,6 +50,12 @@ std::unique_ptr<spe::GameContext> CreateBasicGameContext() {
     );
     // clang-format on
 
+    {
+        auto uwgaSystem = uwga::CreateGraphicsSystem("SFML");
+        auto graphicsSystemProvider = std::make_unique<GraphicsSystemProvider>(std::move(uwgaSystem));
+        ctx->attachAndOwnComponent(std::move(graphicsSystemProvider));
+    }
+
     return ctx;
 }
 
@@ -56,6 +63,9 @@ std::unique_ptr<spe::GameContext> CreateBasicGameContext() {
 
 std::unique_ptr<spe::GameContext> CreateDevGameContext() {
     auto ctx = CreateBasicGameContext();
+
+    auto graphicsSystemPtr = ctx->getComponent<GraphicsSystemProvider>().getSystemPtr();
+
     // Set EXECON level
     {
         constexpr auto CALLER_ID = "ctx_create";
@@ -71,10 +81,12 @@ std::unique_ptr<spe::GameContext> CreateDevGameContext() {
         auto windowConfig = WINDOW_CONFIG;
         windowConfig.title.append(" (Developer Mode)");
 
-        winMgr->setToNormalMode(uwga::CreateGraphicsSystem("SFML"),
+        winMgr->setToNormalMode(graphicsSystemPtr,
                                 windowConfig,
                                 MRT_CONFIG,
                                 TIMING_CONFIG);
+
+        winMgr->setStopIfCloseClicked(true);
 
         ctx->attachAndOwnComponent(std::move(winMgr));
     }

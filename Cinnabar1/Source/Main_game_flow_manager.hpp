@@ -18,6 +18,8 @@ public:
     MainGameFlowManager(QAO_InstGuard aInstGuard);
 
 private:
+    void _didAttach(QAO_Runtime& aRuntime) override;
+
     void _eventDisplay() override;
 
     std::uint32_t _iterOrdinal = 0;
