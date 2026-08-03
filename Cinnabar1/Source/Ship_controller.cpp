@@ -77,9 +77,40 @@ void ShipController::drawGridOverShape(hg::math::Vector2d            aShapeCente
 
     // Transform all vertices into the ship's coordinate system
     {
-        _masterData->transform->transformPoints(1, &relativeShapeCenter);
-        for (auto& vert : relativeShapeVertices) {
-            _masterData->transform->transformPoints(1, &vert);
+        const auto vertCount = relativeShapeVertices.size();
+        for (std::size_t i = 0; (i + 3) < vertCount; i += 4) {
+            _masterData->transform->transformPoints(4,
+                                                    &relativeShapeVertices[i + 0],
+                                                    &relativeShapeVertices[i + 1],
+                                                    &relativeShapeVertices[i + 2],
+                                                    &relativeShapeVertices[i + 3]);
+        }
+
+        switch (vertCount % 4) {
+        case 0:
+            _masterData->transform->transformPoints(1, &relativeShapeCenter);
+            break;
+
+        case 1:
+            _masterData->transform->transformPoints(2,
+                                                    &relativeShapeCenter,
+                                                    &relativeShapeVertices[vertCount - 1]);
+            break;
+
+        case 2:
+            _masterData->transform->transformPoints(3,
+                                                    &relativeShapeCenter,
+                                                    &relativeShapeVertices[vertCount - 3],
+                                                    &relativeShapeVertices[vertCount - 2]);
+            break;
+
+        case 3:
+            _masterData->transform->transformPoints(4,
+                                                    &relativeShapeCenter,
+                                                    &relativeShapeVertices[vertCount - 3],
+                                                    &relativeShapeVertices[vertCount - 2],
+                                                    &relativeShapeVertices[vertCount - 1]);
+            break;
         }
     }
 
