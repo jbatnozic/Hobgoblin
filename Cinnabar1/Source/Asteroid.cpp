@@ -8,6 +8,8 @@
 #include <Hobgoblin/UWGA/Vertex_array.hpp>
 #include <Hobgoblin/Utility/Randomization.hpp>
 
+#include <Hobgoblin/ChipmunkPhysics.hpp>
+
 #include <span>
 
 namespace cinnabar {
