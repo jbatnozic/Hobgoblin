@@ -23,6 +23,7 @@ namespace grid = ::jbatnozic::gridgoblin;
 
 namespace {
 #define GRID_RESOLUTION 48.f
+// #define GRID_RESOLUTION 8.f
 
 // clang-format off
 constexpr grid::ContentsConfig INTERIOR_WORLD_CONFIG = {
@@ -42,6 +43,44 @@ constexpr hg::math::Vector2d INTERIOR_WORLD_ORIGIN = {
     (INTERIOR_WORLD_CONFIG.chunkCountY / 2 * INTERIOR_WORLD_CONFIG.cellsPerChunkY) * GRID_RESOLUTION
 };
 // clang-format on
+
+void TransformPoints(hg::math::Vector2f&    aCentralPoint,
+                     hg::math::Vector2f*    aPoints,
+                     std::size_t            aPointCount,
+                     const uwga::Transform& aTransform) {
+    for (std::size_t i = 0; (i + 3) < aPointCount; i += 4) {
+        aTransform.transformPoints(4,
+                                   &aPoints[i + 0],
+                                   &aPoints[i + 1],
+                                   &aPoints[i + 2],
+                                   &aPoints[i + 3]);
+    }
+
+    switch (aPointCount % 4) {
+    case 0:
+        aTransform.transformPoints(1, &aCentralPoint);
+        break;
+
+    case 1:
+        aTransform.transformPoints(2, &aCentralPoint, &aPoints[aPointCount - 1]);
+        break;
+
+    case 2:
+        aTransform.transformPoints(3,
+                                   &aCentralPoint,
+                                   &aPoints[aPointCount - 3],
+                                   &aPoints[aPointCount - 2]);
+        break;
+
+    case 3:
+        aTransform.transformPoints(4,
+                                   &aCentralPoint,
+                                   &aPoints[aPointCount - 3],
+                                   &aPoints[aPointCount - 2],
+                                   &aPoints[aPointCount - 1]);
+        break;
+    }
+}
 } // namespace
 
 // MARK: MasterData
@@ -62,56 +101,25 @@ void ShipController::init(double aX, double aY) {
     _position = {aX, aY};
 }
 
-void ShipController::drawGridOverShape(hg::math::Vector2d            aShapeCenter,
-                                       std::span<hg::math::Vector2d> aShapeVertices,
-                                       uwga::Canvas&                 aCanvas) {
+void ShipController::drawGridOverShape(const PolyShape& aShape, uwga::Canvas& aCanvas) {
+    HG_HARD_ASSERT(aShape.getState() == PolyShape::READY_RELATIVE);
+
     // Recalculate all shape vertices relative to the ship
-    auto                            relativeShapeCenter = (aShapeCenter - _position).cast<float>();
+    auto                            relativeShapeCenter = (aShape.getAnchor() - _position).cast<float>();
     std::vector<hg::math::Vector2f> relativeShapeVertices{};
     {
-        relativeShapeVertices.reserve(aShapeVertices.size());
-        for (const auto& vert : aShapeVertices) {
-            relativeShapeVertices.push_back((vert - _position).cast<float>());
+        relativeShapeVertices.reserve(hg::pztos(aShape.getVertexCount()));
+        for (const auto& vert : aShape.getOutputVertices()) {
+            relativeShapeVertices.push_back(relativeShapeCenter + vert.cast<float>());
         }
     }
 
     // Transform all vertices into the ship's coordinate system
     {
-        const auto vertCount = relativeShapeVertices.size();
-        for (std::size_t i = 0; (i + 3) < vertCount; i += 4) {
-            _masterData->transform->transformPoints(4,
-                                                    &relativeShapeVertices[i + 0],
-                                                    &relativeShapeVertices[i + 1],
-                                                    &relativeShapeVertices[i + 2],
-                                                    &relativeShapeVertices[i + 3]);
-        }
-
-        switch (vertCount % 4) {
-        case 0:
-            _masterData->transform->transformPoints(1, &relativeShapeCenter);
-            break;
-
-        case 1:
-            _masterData->transform->transformPoints(2,
-                                                    &relativeShapeCenter,
-                                                    &relativeShapeVertices[vertCount - 1]);
-            break;
-
-        case 2:
-            _masterData->transform->transformPoints(3,
-                                                    &relativeShapeCenter,
-                                                    &relativeShapeVertices[vertCount - 3],
-                                                    &relativeShapeVertices[vertCount - 2]);
-            break;
-
-        case 3:
-            _masterData->transform->transformPoints(4,
-                                                    &relativeShapeCenter,
-                                                    &relativeShapeVertices[vertCount - 3],
-                                                    &relativeShapeVertices[vertCount - 2],
-                                                    &relativeShapeVertices[vertCount - 1]);
-            break;
-        }
+        TransformPoints(relativeShapeCenter,
+                        relativeShapeVertices.data(),
+                        relativeShapeVertices.size(),
+                        *_masterData->transform);
     }
 
     // Find the AABB of the shape in the ship's coordinate system
@@ -144,7 +152,7 @@ void ShipController::drawGridOverShape(hg::math::Vector2d            aShapeCente
                                static_cast<int>(std::floor(aabbBottomRight.y / GRID_RESOLUTION)) + 1};
     }
 
-    // Construct lambdas for checking if a point/shape is inside of the shape
+    // Construct lambdas for checking if a point is inside of the shape
     auto isPointInsideShape = [&relativeShapeCenter,
                                &relativeShapeVertices](hg::math::Vector2f aPos) -> bool {
         const auto vertCount = relativeShapeVertices.size();

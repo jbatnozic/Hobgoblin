@@ -5,6 +5,8 @@
 
 #include <Engine.hpp>
 
+#include <Poly_shape.hpp>
+
 #include <Hobgoblin/Math.hpp>
 #include <Hobgoblin/UWGA/Transform.hpp>
 #include <GridGoblin/World/World.hpp>
@@ -36,12 +38,8 @@ public:
     ShipController(QAO_InstGuard aInstGuard, spe::SyncId aSyncId);
 
     void init(double aX, double aY);
-
-    //! \param aShapeCenter center of the shape (in absolute world coordinates)
-    //! \param aShapeVertices positions of shape vertices (in absolute world coordinates)
-    void drawGridOverShape(hg::math::Vector2d            aShapeCenter,
-                           std::span<hg::math::Vector2d> aShapeVertices,
-                           uwga::Canvas&                 aCanvas);
+    
+    void drawGridOverShape(const PolyShape& aShape, uwga::Canvas& aCanvas);
 
 private:
     void _didAttach(QAO_Runtime& aRuntime) override;
