@@ -14,45 +14,30 @@
 
 namespace cinnabar {
 
-namespace {
-bool IsPointInsideShape(hg::math::Vector2d            aPos,
-                        hg::math::Vector2d            aShapeCenter,
-                        std::span<hg::math::Vector2d> aShapeVertices) {
-    const auto vertCount = aShapeVertices.size();
-    for (std::size_t i = 0; i < vertCount - 1; ++i) {
-        if (hg::math::IsPointInsideTriangle<double>(
-                aPos,
-                {.a = aShapeCenter, .b = aShapeVertices[i], .c = aShapeVertices[i + 1]})) {
-            return true;
-        }
-    }
-    return hg::math::IsPointInsideTriangle<double>(
-        aPos,
-        {.a = aShapeCenter, .b = aShapeVertices[vertCount - 1], .c = aShapeVertices[0]});
-};
-} // namespace
-
 Asteroid::Asteroid(QAO_InstGuard aInstGuard)
     : spe::StateObject{aInstGuard, QAO_ExeCon::GAMEPLAY, 0, QAO_STATIC_NAME("cinnabar::Asteroid")} {}
 
 void Asteroid::init(double aX, double aY) {
-    _center = {aX, aY};
+    _shape.setAnchor({aX, aY});
 
-    const auto vertCount = hg::util::GetRandomNumber<std::size_t>(7u, 12u);
-    _verts.resize(vertCount);
+    const auto vertCount = hg::util::GetRandomNumber<hg::PZInteger>(7, 12);
+    _shape.setVertexCount(vertCount);
 
-    for (std::size_t i = 0; i < vertCount; ++i) {
-        // clang-format off
-        _verts[i] = {
-            .relativeRotation = hg::math::AngleF::fullCircle() * (float)i / (float)vertCount,
-            .distance = hg::util::GetRandomNumber<float>(100.f, 200.f)
-        };
-        // clang-format on
+    for (hg::PZInteger i = 0; i < vertCount; ++i) {
+        const auto vec =
+            (hg::math::AngleF::fullCircle() * (float)i / (float)vertCount).asNormalizedVector() *
+            hg::util::GetRandomNumber(100.f, 200.f);
+        _shape.setRawVertexAt(i, vec);
     }
 
-    _rotation = hg::math::AngleF::fromDegrees(hg::util::GetRandomNumber<float>(0.f, 359.f));
+    const auto baricenterOffset = _shape.calculateBaricenterOffset();
+    for (hg::PZInteger i = 0; i < vertCount; ++i) {
+        _shape.setRawVertexAt(i, _shape.getRawVertexAt(i) - baricenterOffset);
+    }
 
-    _recalculateAbsoluteVertices();
+    _shape.setRotation(hg::math::AngleF::fromDegrees(hg::util::GetRandomNumber<float>(0.f, 359.f)));
+
+    _shape.recalcRel();
 }
 
 void Asteroid::_didAttach(QAO_Runtime& aRuntime) {
@@ -60,16 +45,17 @@ void Asteroid::_didAttach(QAO_Runtime& aRuntime) {
 }
 
 void Asteroid::_eventUpdate1() {
-    const auto& winMgr   = ccomp<MWindow>();
-    const auto  input    = winMgr.getInput();
-    const auto  mousePos = input.getViewRelativeMousePos();
+    const auto& winMgr      = ccomp<MWindow>();
+    const auto  input       = winMgr.getInput();
+    const auto  mousePos    = input.getViewRelativeMousePos();
+    const auto  mousePosRel = mousePos - _shape.getAnchor();
 
     if (input.checkPressed(hg::in::MB_LEFT, spe::WindowFrameInputView::Mode::Edge)) {
-        if (IsPointInsideShape(mousePos, _center, _absoluteVerts)) {
+        if (_shape.intersectsWithPointRel(mousePosRel)) {
             if (_held) {
                 _held = false;
             } else {
-                _cursorOffset = mousePos - _center;
+                _cursorOffset = mousePosRel;
                 _held         = true;
             }
         } else {
@@ -86,43 +72,54 @@ void Asteroid::_eventUpdate1() {
             }
         } else {
             if (_shift) {
-                _cursorOffset = mousePos - _center;
-                _shift = false;
+                _cursorOffset = mousePosRel;
+                _shift        = false;
             }
         }
 
-        _rotation += hg::math::AngleF::fromDegrees(input.getVerticalMouseWheelScroll());
+        bool needRecalc = false;
 
-        if (_shift) {
-            _rotation +=
-                hg::math::AngleF::fromDegrees(static_cast<float>(_shiftCursorPos.x - mousePos.x)) * 0.25;
-            _shiftCursorPos = mousePos;
-        } else {
-            _center = mousePos - _cursorOffset;
+        if (auto wheelScroll = input.getVerticalMouseWheelScroll(); wheelScroll != 0.f) {
+            _shape.setRotation(_shape.getRotation() + hg::math::AngleF::fromDeg(wheelScroll));
+            needRecalc = true;
         }
 
-        _recalculateAbsoluteVertices();
+        if (_shift) {
+            const auto shiftScroll = static_cast<float>(_shiftCursorPos.x - mousePos.x) * 0.25;
+            if (shiftScroll > 0.1f) {
+                _shape.setRotation(_shape.getRotation() + hg::math::AngleF::fromDegrees(shiftScroll));
+                _shiftCursorPos = mousePos;
+                needRecalc      = true;
+            }
+        } else {
+            _shape.setAnchor(mousePos - _cursorOffset);
+        }
+
+        _shape.recalcRel();
     }
 }
 
 void Asteroid::_eventDraw1() {
+    const auto vertCount = _shape.getVertexCount();
+
     // Draw the asteroid itself
-    uwga::VertexArray vArr{uwga::PrimitiveType::TRIANGLE_FAN, hg::stopz(_verts.size() + 2), _center};
-    uwga::VertexArray lines{uwga::PrimitiveType::LINE_STRIP, hg::stopz(_verts.size() + 1), _center};
+    uwga::VertexArray vArr{uwga::PrimitiveType::TRIANGLE_FAN, vertCount + 2, _shape.getAnchor()};
+    uwga::VertexArray lines{uwga::PrimitiveType::LINE_STRIP, vertCount + 1, _shape.getAnchor()};
 
     vArr.vertices[0].position = {};
     vArr.vertices[0].color    = uwga::COLOR_GREY;
 
-    for (std::size_t i = 0; i < _verts.size(); ++i) {
-        vArr.vertices[i + 1].position =
-            (_rotation + _verts[i].relativeRotation).asNormalizedVector() * _verts[i].distance;
-        vArr.vertices[i + 1].color = uwga::COLOR_GREY;
+    const auto outputVerts = _shape.getOutputVertices();
+
+    for (std::size_t i = 0; i < hg::pztos(vertCount); ++i) {
+        vArr.vertices[i + 1].position = outputVerts[i].cast<float>();
+        vArr.vertices[i + 1].color    = uwga::COLOR_GREY;
 
         lines.vertices[i].position = vArr.vertices[i + 1].position;
         lines.vertices[i].color    = uwga::COLOR_AQUA;
     }
-    vArr.vertices[_verts.size() + 1] = vArr.vertices[1];
-    lines.vertices[_verts.size()]    = lines.vertices[0];
+    vArr.vertices[vertCount + 1] = vArr.vertices[1];
+    lines.vertices[vertCount]    = lines.vertices[0];
 
     auto& canvas = ccomp<MWindow>().getActiveCanvas();
     canvas.draw(vArr);
@@ -131,18 +128,8 @@ void Asteroid::_eventDraw1() {
     // Draw the construction grid on top
     if (_held) {
         if (const auto shipCtrl = getRuntime()->find("cinnabar::ShipController"); shipCtrl) {
-            shipCtrl.downcastCopy<ShipController>()->drawGridOverShape(_center, _absoluteVerts, canvas);
+            shipCtrl.downcastCopy<ShipController>()->drawGridOverShape(_shape, canvas);
         }
-    }
-}
-
-void Asteroid::_recalculateAbsoluteVertices() {
-    _absoluteVerts.clear();
-    _absoluteVerts.reserve(_verts.size());
-    for (const auto& vert : _verts) {
-        _absoluteVerts.push_back(
-            _center +
-            ((_rotation + vert.relativeRotation).asNormalizedVector() * vert.distance).cast<double>());
     }
 }
 
