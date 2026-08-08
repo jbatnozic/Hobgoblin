@@ -6,10 +6,11 @@
 #include <Hobgoblin/ChipmunkPhysics.hpp>
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/Math.hpp>
+#include <Hobgoblin/UWGA/Canvas.hpp>
 #include <Hobgoblin/Utility/Compressed_small_vector.hpp>
 
-#include <vector>
 #include <span>
+#include <vector>
 
 namespace cinnabar {
 
@@ -71,8 +72,10 @@ public:
     //! TODO(add description)
     void recalcRel();
 
+#if CINNABAR_POLYSHAPE_ENABLE_ABSOLUTE
     //! TODO(add description)
     void recalcAbs();
+#endif
 
     // note: move the anchor and all output vertices, preserving current state
     void move(hg::math::Vector2d aDelta);
@@ -106,6 +109,10 @@ public:
     //! \warning the status of the poly shape must be `READY_RELATIVE`; otherwise the result of this
     //!          function call is unspecified (throws, asserts, or returns garbage values).
     bool intersectsWithPointRel(hg::math::Vector2d aPoint) const;
+
+    void debugDraw(hg::uwga::Color               aColor,
+                   hg::uwga::Canvas&             aCanvas,
+                   const hg::uwga::RenderStates& aRenderStates = hg::uwga::RENDER_STATES_DEFAULT) const;
 
 private:
     hg::math::Vector2d _anchor;

@@ -4,6 +4,7 @@
 #include <Main_game_flow_manager.hpp>
 
 #include <Asteroid.hpp>
+#include <Overworld_manager.hpp>
 #include <Ship_controller.hpp>
 
 namespace cinnabar {
@@ -16,6 +17,11 @@ MainGameFlowManager::MainGameFlowManager(QAO_InstGuard aInstGuard)
 
 void MainGameFlowManager::_didAttach(QAO_Runtime& aRuntime) {
     spe::NonstateObject::_didAttach(aRuntime);
+
+    // Init scenario (TEMPORARY)
+
+    auto ovwMgr = QAO_Create<OverworldManager>(aRuntime.nonOwning());
+    ctx().attachAndOwnComponent(std::move(ovwMgr));
 
     auto ship = QAO_Create<ShipController>(aRuntime, spe::SYNC_ID_NEW);
     ship->init(96.0, 96.0);
