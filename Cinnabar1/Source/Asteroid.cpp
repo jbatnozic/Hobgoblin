@@ -104,7 +104,6 @@ void Asteroid::_eventDraw1() {
 
     // Draw the asteroid itself
     uwga::VertexArray vArr{uwga::PrimitiveType::TRIANGLE_FAN, vertCount + 2, _shape.getAnchor()};
-    uwga::VertexArray lines{uwga::PrimitiveType::LINE_STRIP, vertCount + 1, _shape.getAnchor()};
 
     vArr.vertices[0].position = {};
     vArr.vertices[0].color    = uwga::COLOR_GREY;
@@ -114,16 +113,13 @@ void Asteroid::_eventDraw1() {
     for (std::size_t i = 0; i < hg::pztos(vertCount); ++i) {
         vArr.vertices[i + 1].position = outputVerts[i].cast<float>();
         vArr.vertices[i + 1].color    = uwga::COLOR_GREY;
-
-        lines.vertices[i].position = vArr.vertices[i + 1].position;
-        lines.vertices[i].color    = uwga::COLOR_AQUA;
     }
     vArr.vertices[vertCount + 1] = vArr.vertices[1];
-    lines.vertices[vertCount]    = lines.vertices[0];
 
     auto& canvas = ccomp<MWindow>().getActiveCanvas();
     canvas.draw(vArr);
-    canvas.draw(lines);
+    
+    _shape.debugDraw(hg::uwga::COLOR_AQUA, canvas);
 
     // Draw the construction grid on top
     if (_held) {

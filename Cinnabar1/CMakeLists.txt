@@ -6,11 +6,14 @@ project("Cinnabar1")
 add_executable(${PROJECT_NAME}
     "Source/Asteroid.cpp"
     "Source/Main.cpp"
+    "Source/Overworld_manager.cpp"
     "Source/Game_context_factory.cpp"
     "Source/Graphics_system_provider.cpp"
     "Source/Main_game_flow_manager.cpp"
     "Source/Poly_shape.cpp"
+    "Source/Ship_attachable.cpp"
     "Source/Ship_controller.cpp"
+    "Source/Ship_starting_block.cpp"
 )
 
 target_link_libraries(${PROJECT_NAME}
