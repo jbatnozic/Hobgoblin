@@ -4,6 +4,7 @@
 #include <Poly_shape.hpp>
 
 #include <Hobgoblin/HGExcept.hpp>
+#include <Hobgoblin/UWGA/Vertex_array.hpp>
 
 #include <cstddef>
 #include <new>
@@ -20,8 +21,7 @@ using OutputVertex = hg::math::Vector2d;
 
 static_assert(std::is_standard_layout_v<cpVect>, "cpVect must be a standard-layout type.");
 static_assert(std::is_standard_layout_v<OutputVertex>, "Vector2d must be a standard-layout type.");
-static_assert(sizeof(cpVect) == sizeof(OutputVertex),
-              "cpVect and Vector2d must have the same size.");
+static_assert(sizeof(cpVect) == sizeof(OutputVertex), "cpVect and Vector2d must have the same size.");
 static_assert(alignof(cpVect) == alignof(OutputVertex),
               "cpVect and Vector2d must have the same alignment.");
 static_assert(offsetof(cpVect, x) == offsetof(OutputVertex, x),
@@ -195,6 +195,7 @@ void PolyShape::recalcRel() {
     _state = READY_RELATIVE;
 }
 
+#if CINNABAR_POLYSHAPE_ENABLE_ABSOLUTE
 void PolyShape::recalcAbs() {
     if (_state == READY_ABSOLUTE) {
         return;
@@ -203,11 +204,11 @@ void PolyShape::recalcAbs() {
     const auto count = _rawVertices.size();
     _outputVertices.resize(count);
     for (std::size_t i = 0; i < count; ++i) {
-        _outputVertices[i] =
-            _anchor + hg::math::RotateVector(_rawVertices[i], _rotation).cast<double>();
+        _outputVertices[i] = _anchor + hg::math::RotateVector(_rawVertices[i], _rotation).cast<double>();
     }
     _state = READY_ABSOLUTE;
 }
+#endif
 
 void PolyShape::move(hg::math::Vector2d aDelta) {
     _anchor += aDelta;
@@ -268,6 +269,22 @@ bool PolyShape::intersectsWithPointRel(hg::math::Vector2d aPoint) const {
     return hg::math::IsPointInsideTriangle<double>(
         aPoint,
         {.a = {0.0, 0.0}, .b = _outputVertices[vertCount - 1], .c = _outputVertices[0]});
+}
+
+void PolyShape::debugDraw(hg::uwga::Color               aColor,
+                          hg::uwga::Canvas&             aCanvas,
+                          const hg::uwga::RenderStates& aRenderStates) const {
+    HG_ASSERT(_state == READY_RELATIVE);
+
+    hg::uwga::VertexArray vArr{hg::uwga::PrimitiveType::LINE_STRIP, getVertexCount() + 1, _anchor};
+
+    const auto vertCount = _outputVertices.size();
+    for (std::size_t i = 0; i < vertCount; ++i) {
+        vArr.vertices[i] = {.position = _outputVertices[i].cast<float>(), .color = aColor};
+    }
+    vArr.vertices[vertCount] = {.position = _outputVertices[0].cast<float>(), .color = aColor};
+
+    aCanvas.draw(vArr, aRenderStates);
 }
 
 } // namespace cinnabar

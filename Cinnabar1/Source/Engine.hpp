@@ -32,6 +32,7 @@ constexpr const char* LOG_ID = "Cinnabar1";
 // #define PRIORITY_LOBBYFRONTMGR 13
 // #define PRIORITY_AUTHMGR       12
 // #define PRIORITY_GAMEPLAYMGR   10
+#define PRIORITY_ENVIRONMENTMGR   10
 // #define PRIORITY_INPUTMGR       7
 // #define PRIORITY_PLAYERAVATAR   5
 #define PRIORITY_WINDOWMGR        0
