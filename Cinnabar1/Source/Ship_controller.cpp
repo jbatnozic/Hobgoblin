@@ -93,7 +93,7 @@ ShipController_MasterData::ShipController_MasterData()
 ShipController::ShipController(QAO_InstGuard aInstGuard, spe::SyncId aSyncId)
     : SyncObjSuper{aInstGuard,
                    QAO_ExeCon::GAMEPLAY,
-                   5,
+                   PRIORITY_ENTITIES,
                    QAO_STATIC_NAME("cinnabar::ShipController"),
                    aSyncId} {}
 

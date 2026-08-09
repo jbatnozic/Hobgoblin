@@ -10,12 +10,12 @@
 
 namespace cinnabar {
 
-class ShipStartingBlock
+class Asteroid2
     : public spe::StateObject
     , public UnibodyShipAttachable
     , public ovwcol::JunkEntity {
 public:
-    ShipStartingBlock(QAO_InstGuard aInstGuard);
+    Asteroid2(QAO_InstGuard aInstGuard);
 
     void init(hg::math::Vector2d aPosition);
 
@@ -29,11 +29,9 @@ private:
     void _eventUpdate1() override;
     void _eventUpdate2() override;
     void _eventDraw1() override;
-
-    void _applyPropulsion(const spe::WindowFrameInputView& aInput);
 };
 
-QAO_REGISTER_CLASS(ShipStartingBlock, cinnabar_ShipStartingBlock) {
+QAO_REGISTER_CLASS(Asteroid2, cinnabar_Asteroid2) {
     QAO_LOCAL_ALIAS(C, klass);
     klass.setSuperclass<spe::StateObject>();
 }

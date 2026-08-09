@@ -56,11 +56,11 @@ hg::PZInteger PolyShape::getVertexCount() const {
 // MARK: Inputs
 
 void PolyShape::setAnchor(hg::math::Vector2d aAnchor) {
-    if (aAnchor == _anchor) {
-        return;
-    }
+#ifdef CINNABAR_POLYSHAPE_ENABLE_ABSOLUTE
+    move(aAnchor - _anchor);
+#else
     _anchor = aAnchor;
-    _state  = DIRTY;
+#endif
 }
 
 hg::math::Vector2d PolyShape::getAnchor() const {
@@ -195,7 +195,7 @@ void PolyShape::recalcRel() {
     _state = READY_RELATIVE;
 }
 
-#if CINNABAR_POLYSHAPE_ENABLE_ABSOLUTE
+#ifdef CINNABAR_POLYSHAPE_ENABLE_ABSOLUTE
 void PolyShape::recalcAbs() {
     if (_state == READY_ABSOLUTE) {
         return;
@@ -213,11 +213,13 @@ void PolyShape::recalcAbs() {
 void PolyShape::move(hg::math::Vector2d aDelta) {
     _anchor += aDelta;
 
+#ifdef CINNABAR_POLYSHAPE_ENABLE_ABSOLUTE
     if (_state == READY_ABSOLUTE) {
         for (auto& vertex : _outputVertices) {
             vertex += aDelta;
         }
     }
+#endif
 }
 
 std::span<const hg::math::Vector2d> PolyShape::getOutputVertices() const {
@@ -229,6 +231,7 @@ const cpVect* PolyShape::getOutputVerticesAsCpVect() const {
     return std::launder(reinterpret_cast<const cpVect*>(_outputVertices.data()));
 }
 
+#ifdef CINNABAR_POLYSHAPE_ENABLE_ABSOLUTE
 bool PolyShape::intersectsWithPointAbs(hg::math::Vector2d aPoint) const {
     HG_ASSERT(_state == READY_ABSOLUTE);
 
@@ -249,6 +252,7 @@ bool PolyShape::intersectsWithPointAbs(hg::math::Vector2d aPoint) const {
         aPoint,
         {.a = _anchor, .b = _outputVertices[vertCount - 1], .c = _outputVertices[0]});
 }
+#endif
 
 bool PolyShape::intersectsWithPointRel(hg::math::Vector2d aPoint) const {
     HG_ASSERT(_state == READY_RELATIVE);

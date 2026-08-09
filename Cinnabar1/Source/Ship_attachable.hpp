@@ -46,6 +46,8 @@ protected:
     hg::alvin::Body  _alvinBodyFromPhysicalPropertiesAndPolyShape();
     hg::alvin::Shape _alvinShapeFromPolyShape();
 
+    void _syncPolyShapeWithUnibody(double aAcceptableDelta = 0.0);
+
     PolyShape          _polyShape;
     PhysicalProperties _physicalProperties;
     hg::alvin::Unibody _unibody;
