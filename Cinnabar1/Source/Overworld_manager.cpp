@@ -3,13 +3,18 @@
 
 #include <Overworld_manager.hpp>
 
+#include <Overworld_collisions.hpp>
+
 namespace cinnabar {
 
 OverworldManager::OverworldManager(QAO_InstGuard aInstGuard)
     : spe::StateObject{aInstGuard,
                        QAO_ExeCon::GAMEPLAY,
                        PRIORITY_ENVIRONMENTMGR,
-                       QAO_STATIC_NAME("cinnabar::OverworldManager")} {}
+                       QAO_STATIC_NAME("cinnabar::OverworldManager")} //
+{
+    InitOverworldCollisions(_mcd, _space);
+}
 
 hg::alvin::Space& OverworldManager::getAlvinSpace() {
     return _space;

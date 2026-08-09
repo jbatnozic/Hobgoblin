@@ -37,6 +37,11 @@ taArithmetic Sqr(taArithmetic value) {
     return value * value;
 }
 
+template <class taArithmetic>
+bool IsNearZero(taArithmetic aValue, taArithmetic aDelta) {
+    return std::abs(aValue) < aDelta;
+}
+
 //! Calculates the Euclidean distance between 2 points (aOrigin and aTarget).
 template <class taOriginVector, class taTargetVector>
 auto EuclideanDist(const taOriginVector& aOrigin, const taTargetVector& aTarget) -> decltype(aOrigin.x) {

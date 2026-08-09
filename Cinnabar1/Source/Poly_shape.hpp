@@ -63,7 +63,9 @@ public:
     enum State {
         DIRTY,          //! Output vertices needs recalculating
         READY_RELATIVE, //! Output vertices are ready to use (and have values relative to anchor)
+#ifdef CINNABAR_POLYSHAPE_ENABLE_ABSOLUTE
         READY_ABSOLUTE, //! Output vertices are ready to use (and have values in absolute coordinates)
+#endif
     };
 
     //! \brief Get the current state of the poly shape.
