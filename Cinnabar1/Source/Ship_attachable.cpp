@@ -3,6 +3,9 @@
 
 #include <Ship_attachable.hpp>
 
+#include <Hobgoblin/HGExcept.hpp>
+#include <Hobgoblin/Math/Core.hpp>
+
 namespace cinnabar {
 
 #define RADIUS (0.0)
@@ -12,14 +15,14 @@ const PolyShape& UnibodyShipAttachable::getPolyShape() const {
 }
 
 hg::alvin::Body UnibodyShipAttachable::_alvinBodyFromPhysicalPropertiesAndPolyShape() {
-    // assert(_polyShape.calculateBaricenterOffset() == hg::math::Vector2f{0.f, 0.f}); // TODO
+    HG_ASSERT(hg::math::IsNearZero(_polyShape.calculateBaricenterOffset().length(), 0.1f));
     const auto mass = _physicalProperties.mass;
-    return hg::alvin::Body::createDynamic(mass,
-                                          cpMomentForPoly(mass,
-                                                          _polyShape.getVertexCount(),
-                                                          _polyShape.getOutputVerticesAsCpVect(),
-                                                          cpvzero,
-                                                          RADIUS));
+    const auto moment = cpMomentForPoly(mass,
+                                        _polyShape.getVertexCount(),
+                                        _polyShape.getOutputVerticesAsCpVect(),
+                                        cpvzero,
+                                        RADIUS);
+    return hg::alvin::Body::createDynamic(mass, moment);
 }
 
 const ShipAttachable::PhysicalProperties& UnibodyShipAttachable::getPhysicalProperties() const {
@@ -27,12 +30,21 @@ const ShipAttachable::PhysicalProperties& UnibodyShipAttachable::getPhysicalProp
 }
 
 hg::alvin::Shape UnibodyShipAttachable::_alvinShapeFromPolyShape() {
-    _polyShape.recalcRel();
+    HG_ASSERT(_polyShape.getState() == PolyShape::READY_RELATIVE);
     return {cpPolyShapeNew(_unibody.body,
                            _polyShape.getVertexCount(),
                            _polyShape.getOutputVerticesAsCpVect(),
                            cpTransformIdentity,
                            RADIUS)};
+}
+
+void UnibodyShipAttachable::_syncPolyShapeWithUnibody(double /* aAcceptableDelta */) {
+    const auto position = cpBodyGetPosition(_unibody);
+    const auto rotation = cpBodyGetRotation(_unibody);
+
+    _polyShape.setAnchor({position.x, position.y});
+    _polyShape.setRotation(hg::math::AngleF::fromVector(rotation.x, rotation.y));
+    _polyShape.recalcRel();
 }
 
 } // namespace cinnabar

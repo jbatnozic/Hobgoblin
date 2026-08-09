@@ -3,9 +3,10 @@
 
 #include <Main_game_flow_manager.hpp>
 
-#include <Asteroid.hpp>
+#include <Asteroid2.hpp>
 #include <Overworld_manager.hpp>
 #include <Ship_controller.hpp>
+#include <Ship_starting_block.hpp>
 
 namespace cinnabar {
 
@@ -26,8 +27,11 @@ void MainGameFlowManager::_didAttach(QAO_Runtime& aRuntime) {
     auto ship = QAO_Create<ShipController>(aRuntime, spe::SYNC_ID_NEW);
     ship->init(96.0, 96.0);
 
-    auto asteroid = QAO_Create<Asteroid>(aRuntime);
-    asteroid->init(256.0, 256.0);
+    auto core = QAO_Create<ShipStartingBlock>(aRuntime);
+    core->init({100.0, 100.0});
+
+    auto asteroid = QAO_Create<Asteroid2>(aRuntime);
+    asteroid->init({256.0, 256.0});
 }
 
 void MainGameFlowManager::_eventDisplay() {

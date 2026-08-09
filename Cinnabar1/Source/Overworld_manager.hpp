@@ -5,6 +5,8 @@
 
 #include <Engine.hpp>
 
+#include <Hobgoblin/Alvin/Main_collision_dispatcher.hpp>
+
 #include <Overworld_manager_interface.hpp>
 
 namespace cinnabar {
@@ -25,6 +27,7 @@ private:
     void _eventUpdate1() override;
 
     hg::alvin::Space _space;
+    hg::alvin::MainCollisionDispatcher _mcd;
 };
 
 QAO_REGISTER_CLASS(OverworldManager, cinnabar_OverworldManager) {

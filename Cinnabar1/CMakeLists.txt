@@ -5,6 +5,7 @@ project("Cinnabar1")
 
 add_executable(${PROJECT_NAME}
     "Source/Asteroid.cpp"
+    "Source/Asteroid2.cpp"
     "Source/Main.cpp"
     "Source/Overworld_manager.cpp"
     "Source/Game_context_factory.cpp"

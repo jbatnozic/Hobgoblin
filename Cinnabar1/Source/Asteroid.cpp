@@ -15,7 +15,10 @@
 namespace cinnabar {
 
 Asteroid::Asteroid(QAO_InstGuard aInstGuard)
-    : spe::StateObject{aInstGuard, QAO_ExeCon::GAMEPLAY, 0, QAO_STATIC_NAME("cinnabar::Asteroid")} {}
+    : spe::StateObject{aInstGuard,
+                       QAO_ExeCon::GAMEPLAY,
+                       PRIORITY_ENTITIES,
+                       QAO_STATIC_NAME("cinnabar::Asteroid")} {}
 
 void Asteroid::init(double aX, double aY) {
     _shape.setAnchor({aX, aY});

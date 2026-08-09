@@ -5,40 +5,37 @@
 
 #include <Engine.hpp>
 
-#include <functional>
-
 #include <Ship_attachable.hpp>
+#include <Overworld_collisions.hpp>
 
 namespace cinnabar {
 
-class ShipStartingBlock : public spe::StateObject, public UnibodyShipAttachable {
+class ShipStartingBlock
+    : public spe::StateObject
+    , public UnibodyShipAttachable
+    , public ovwcol::JunkEntity {
 public:
     ShipStartingBlock(QAO_InstGuard aInstGuard);
+
+    void init(hg::math::Vector2d aPosition);
 
 private:
     PolyShape                    _initPolyShape();
     PhysicalProperties           _initPhysicalProperties();
     hg::alvin::CollisionDelegate _initColDelegate();
 
-    // void _event
+    void _didAttach(QAO_Runtime& aRuntime) override;
+
+    void _eventUpdate1() override;
+    void _eventUpdate2() override;
+    void _eventDraw1() override;
+
+    void _applyPropulsion(const spe::WindowFrameInputView& aInput);
 };
 
-inline ShipStartingBlock::ShipStartingBlock(QAO_InstGuard aInstGuard)
-    : spe::StateObject{aInstGuard,
-                       QAO_ExeCon::GAMEPLAY,
-                       0, /* TODO */
-                       QAO_STATIC_NAME("cinnabar::ShipStartingBlock")}
-    // clang-format off
-    , UnibodyShipAttachable{
-        std::bind(&ShipStartingBlock::_initPolyShape, this),
-        std::bind(&ShipStartingBlock::_initPhysicalProperties, this),
-        std::bind(&ShipStartingBlock::_initColDelegate, this),
-        std::bind(&ShipStartingBlock::_alvinBodyFromPhysicalPropertiesAndPolyShape, this),
-        std::bind(&ShipStartingBlock::_alvinShapeFromPolyShape, this)
-    }
-    // clang-format on
-{
-    // _unibody.bindDelegate(taEntity &aEntity)
+QAO_REGISTER_CLASS(ShipStartingBlock, cinnabar_ShipStartingBlock) {
+    QAO_LOCAL_ALIAS(C, klass);
+    klass.setSuperclass<spe::StateObject>();
 }
 
 } // namespace cinnabar
