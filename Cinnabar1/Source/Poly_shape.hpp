@@ -124,9 +124,13 @@ private:
 
     hg::math::AngleF _rotation;
 
+    std::vector<hg::math::Vector2d> _outputVertices;
+
+    float _distanceToFarthestRawVertexSquared = 0.f;
+
     State _state = DIRTY;
 
-    std::vector<hg::math::Vector2d> _outputVertices;
+    void _recalcDistanceToFarthestRawVertex();
 };
 
 } // namespace cinnabar

@@ -45,8 +45,14 @@ void PolyShape::setVertexCount(hg::PZInteger aVertexCount) {
     if (sz == _rawVertices.size()) {
         return;
     }
+    const bool shrinking = (sz < _rawVertices.size());
     _rawVertices.resize(sz);
     _outputVertices.resize(sz);
+    // Growing appends zero-length vertices, which can never be the farthest; shrinking may drop
+    // the vertex that used to be the farthest, so the cached distance must be recomputed.
+    if (shrinking) {
+        _recalcDistanceToFarthestRawVertex();
+    }
 }
 
 hg::PZInteger PolyShape::getVertexCount() const {
@@ -94,12 +100,34 @@ void PolyShape::setRawVertexAtUnchecked(hg::PZInteger aIndex, hg::math::Vector2f
     if (aVertex == vertex) {
         return;
     }
-    vertex = aVertex;
-    _state = DIRTY;
+    const float oldDistanceSquared = vertex.lengthSquared();
+    vertex                         = aVertex;
+    _state                         = DIRTY;
+
+    const float newDistanceSquared = aVertex.lengthSquared();
+    if (newDistanceSquared >= _distanceToFarthestRawVertexSquared) {
+        // The moved vertex is now (at least tied for) the farthest one.
+        _distanceToFarthestRawVertexSquared = newDistanceSquared;
+    } else if (oldDistanceSquared >= _distanceToFarthestRawVertexSquared) {
+        // The moved vertex used to be (one of) the farthest and moved closer, so the farthest
+        // distance may have decreased; recompute it from scratch.
+        _recalcDistanceToFarthestRawVertex();
+    }
 }
 
 const hg::math::Vector2f& PolyShape::getRawVertexAtUnchecked(hg::PZInteger aIndex) const {
     return _rawVertices[hg::pztos(aIndex)];
+}
+
+void PolyShape::_recalcDistanceToFarthestRawVertex() {
+    float maxLenSq = 0.f;
+    for (const auto& vertex : _rawVertices) {
+        const auto lenSq = vertex.lengthSquared();
+        if (lenSq > maxLenSq) {
+            maxLenSq = lenSq;
+        }
+    }
+    _distanceToFarthestRawVertexSquared = maxLenSq;
 }
 
 hg::math::Vector2f PolyShape::calculateBaricenterOffset() const {
@@ -259,6 +287,10 @@ bool PolyShape::intersectsWithPointRel(hg::math::Vector2d aPoint) const {
 
     const auto vertCount = _outputVertices.size();
     if (vertCount < 3) {
+        return false;
+    }
+
+    if (aPoint.lengthSquared() > _distanceToFarthestRawVertexSquared) {
         return false;
     }
 
