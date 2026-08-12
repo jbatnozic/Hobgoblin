@@ -5,36 +5,55 @@
 
 #include <Engine.hpp>
 
-#include <Poly_shape.hpp>
-
-#include <Hobgoblin/Math.hpp>
+#include <Ship_attachable.hpp>
+#include <Overworld_collisions.hpp>
+#include <QAOMessages/Downcast_to_ship_attachable.hpp>
+#include <QAOMessages/Handle_pncs_event.hpp>
 
 namespace cinnabar {
 
-class Asteroid : public spe::StateObject {
+class Asteroid
+    : public spe::StateObject
+    , public UnibodyShipAttachable
+    , public ovwcol::JunkEntity {
 public:
     Asteroid(QAO_InstGuard aInstGuard);
 
-    void init(double aX, double aY);
+    void init(hg::math::Vector2d aPosition);
+
+    void drawAsGhost(
+        const hg::math::Vector2d& aPosition,
+        hg::math::AngleF          aAngle,
+        uwga::Color               aColor,
+        uwga::Canvas&             aCanvas,
+        const uwga::RenderStates& aRenderStates = uwga::RENDER_STATES_DEFAULT) const override {}
+
+    // QAO Message Handlers
+
+    void msgDowncastToShipAttachable(DowncastToShipAttachable::PayloadPtr aPtr, bool /* aConst */);
+
+    void msgHandlePNCSEvent(HandlePNCSEvent::PayloadPtr aPayload, bool /* aConst */);
 
 private:
+    bool _leftClicked = false;
+
+    PolyShape                    _initPolyShape();
+    PhysicalProperties           _initPhysicalProperties();
+    hg::alvin::CollisionDelegate _initColDelegate();
+
     void _didAttach(QAO_Runtime& aRuntime) override;
 
+    void _eventBeginUpdate() override;
     void _eventUpdate1() override;
+    void _eventUpdate2() override;
     void _eventDraw1() override;
-
-    PolyShape _shape;
-
-    bool               _held         = false;
-    hg::math::Vector2d _cursorOffset = {};
-    
-    bool _shift = false;
-    hg::math::Vector2d _shiftCursorPos = {};
 };
 
 QAO_REGISTER_CLASS(Asteroid, cinnabar_Asteroid) {
     QAO_LOCAL_ALIAS(C, klass);
     klass.setSuperclass<spe::StateObject>();
+    klass.setMessageHandler<C, DowncastToShipAttachable, &C::msgDowncastToShipAttachable>();
+    klass.setMessageHandler<C, HandlePNCSEvent, &C::msgHandlePNCSEvent>();
 }
 
 } // namespace cinnabar
