@@ -7,6 +7,8 @@
 
 #include <QAOMessages/Handle_pncs_event.hpp>
 
+#include <algorithm>
+
 namespace cinnabar {
 
 #define MODE_EDGE spe::WindowFrameInputView::Mode::Edge
@@ -17,9 +19,23 @@ InteractivityManager::InteractivityManager(QAO_InstGuard aInstGuard)
                           PRIORITY_INTERACTIVITYMGR,
                           QAO_STATIC_NAME("cinnabar::InteractivityManager")} {}
 
-void InteractivityManager::pushClickableObject(QAO_GenericId aClickableId, std::intptr_t aUserData) {
+void InteractivityManager::pushClickableObject(
+    QAO_GenericId                           aClickableId,
+    int                                     aFinegrainedPriority,
+    std::intptr_t                           aUserData,
+    std::function<bool(hg::math::Vector2d)> aQuickMouseOverCheck,
+    std::function<bool(hg::math::Vector2d)> aFullMouseOverCheck) //
+{
     HG_ASSERT(getRuntime()->getCurrentEvent() == QAO_Event::BEGIN_UPDATE);
-    _clickablesStack.push_back({aClickableId, aUserData});
+
+    if (!aQuickMouseOverCheck(_getMouseWorldPosition())) {
+        return; // The object doesn't intersect with the mouse cursor (but no guarantee that it does!)
+    }
+
+    _clickables.push_back({.id                  = aClickableId,
+                           .finegrainedPriority = aFinegrainedPriority,
+                           .userData            = aUserData,
+                           .fullMouseOverCheck  = std::move(aFullMouseOverCheck)});
 }
 
 void InteractivityManager::_didAttach(QAO_Runtime& aRuntime) {
@@ -28,16 +44,24 @@ void InteractivityManager::_didAttach(QAO_Runtime& aRuntime) {
 }
 
 void InteractivityManager::_eventPreUpdate() {
-    _clickablesStack.clear();
+    _clickables.clear();
+    _mouseWorldPos.reset();
 }
 
 void InteractivityManager::_eventBeginUpdate() {
-    while (!_clickablesStack.empty()) {
-        auto& info = _clickablesStack.back();
+    std::stable_sort(_clickables.begin(), _clickables.end());
+
+    while (!_clickables.empty()) {
+        auto& info = _clickables.back();
 
         auto instance = getRuntime()->find(info.id);
         if (instance.isNull()) {
-            _clickablesStack.pop_back();
+            _clickables.pop_back();
+            continue;
+        }
+
+        if (!info.fullMouseOverCheck(_getMouseWorldPosition())) {
+            _clickables.pop_back(); // The object doesn't intersect with the mouse cursor
             continue;
         }
 
@@ -56,12 +80,19 @@ void InteractivityManager::_eventBeginUpdate() {
 }
 
 void InteractivityManager::_eventPreDraw() {
-    while (!_clickablesStack.empty()) {
-        auto& info = _clickablesStack.back();
+    // Here all the clickables are already sorted
+
+    while (!_clickables.empty()) {
+        auto& info = _clickables.back();
 
         auto instance = getRuntime()->find(info.id);
         if (instance.isNull()) {
-            _clickablesStack.pop_back();
+            _clickables.pop_back();
+            continue;
+        }
+
+        if (!info.fullMouseOverCheck(_getMouseWorldPosition())) {
+            _clickables.pop_back(); // The object doesn't intersect with the mouse cursor
             continue;
         }
 
@@ -75,6 +106,14 @@ void InteractivityManager::_eventPreDraw() {
 
         break; // End the loop after the "foreground-most" object receives its message
     }
+}
+
+hg::math::Vector2d InteractivityManager::_getMouseWorldPosition() {
+    if (!_mouseWorldPos.has_value()) {
+        _mouseWorldPos = _winMgr->getInput().getViewRelativeMousePos();
+    }
+
+    return *_mouseWorldPos;
 }
 
 } // namespace cinnabar
