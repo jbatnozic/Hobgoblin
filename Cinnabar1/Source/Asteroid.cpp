@@ -3,133 +3,139 @@
 
 #include <Asteroid.hpp>
 
-#include <Ship_controller.hpp>
-
+#include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/UWGA/Vertex_array.hpp>
 #include <Hobgoblin/Utility/Randomization.hpp>
 
-#include <Hobgoblin/ChipmunkPhysics.hpp>
-
-#include <span>
+#include <Attachable_ghost.hpp>
+#include <Interactivity_manager_interface.hpp>
+#include <Overworld_manager_interface.hpp>
 
 namespace cinnabar {
+
+#define SIZE 32.f
 
 Asteroid::Asteroid(QAO_InstGuard aInstGuard)
     : spe::StateObject{aInstGuard,
                        QAO_ExeCon::GAMEPLAY,
                        PRIORITY_ENTITIES,
-                       QAO_STATIC_NAME("cinnabar::Asteroid")} {}
+                       QAO_STATIC_NAME("cinnabar::Asteroid")} // clang-format off
+    , UnibodyShipAttachable{
+        std::bind(&Asteroid::_initPolyShape, this),
+        std::bind(&Asteroid::_initPhysicalProperties, this),
+        std::bind(&Asteroid::_initColDelegate, this),
+        std::bind(&Asteroid::_alvinBodyFromPhysicalPropertiesAndPolyShape, this),
+        std::bind(&Asteroid::_alvinShapeFromPolyShape, this)
+    } // clang-format on
+{
+    _unibody.bindDelegate(*this);
+}
 
-void Asteroid::init(double aX, double aY) {
-    _shape.setAnchor({aX, aY});
+void Asteroid::init(hg::math::Vector2d aPosition) {
+    cpBodySetPosition(_unibody, cpv(aPosition.x, aPosition.y));
+    cpBodySetAngle(_unibody, hg::math::PI * hg::util::GetRandomNumber(0.0, 359.9) / 180.0);
+}
 
+// MARK: QAO Message Handlers
+
+void Asteroid::msgDowncastToShipAttachable(DowncastToShipAttachable::PayloadPtr aPtr,
+                                            bool /* aConst */) {
+    (*aPtr) = static_cast<ShipAttachable*>(this);
+}
+
+void Asteroid::msgHandlePNCSEvent(HandlePNCSEvent::PayloadPtr aPayload, bool /* aConst */) {
+    HG_ASSERT(aPayload != nullptr);
+    if (aPayload->mbLeftDown) {
+        auto ghost = QAO_Create<AttachableGhost>(this->getRuntime());
+        ghost->init(this->getId());
+    }
+}
+
+// MARK: Private
+
+PolyShape Asteroid::_initPolyShape() {
     const auto vertCount = hg::util::GetRandomNumber<hg::PZInteger>(7, 12);
-    _shape.setVertexCount(vertCount);
+
+    PolyShape shape{vertCount};
 
     for (hg::PZInteger i = 0; i < vertCount; ++i) {
         const auto vec =
             (hg::math::AngleF::fullCircle() * (float)i / (float)vertCount).asNormalizedVector() *
             hg::util::GetRandomNumber(100.f, 200.f);
-        _shape.setRawVertexAt(i, vec);
+        shape.setRawVertexAt(i, vec);
     }
 
-    const auto baricenterOffset = _shape.calculateBaricenterOffset();
+    const auto baricenterOffset = shape.calculateBaricenterOffset();
     for (hg::PZInteger i = 0; i < vertCount; ++i) {
-        _shape.setRawVertexAt(i, _shape.getRawVertexAt(i) - baricenterOffset);
+        shape.setRawVertexAt(i, shape.getRawVertexAt(i) - baricenterOffset);
     }
 
-    _shape.setRotation(hg::math::AngleF::fromDegrees(hg::util::GetRandomNumber<float>(0.f, 359.f)));
+    shape.recalcRel();
 
-    _shape.recalcRel();
+    return shape;
+}
+
+Asteroid::PhysicalProperties Asteroid::_initPhysicalProperties() {
+    return {.mass = 5.0};
+}
+
+hg::alvin::CollisionDelegate Asteroid::_initColDelegate() {
+    return hg::alvin::CollisionDelegateBuilder{}
+        .setDefaultDecision(hg::alvin::Decision::ACCEPT_COLLISION)
+        .finalize();
 }
 
 void Asteroid::_didAttach(QAO_Runtime& aRuntime) {
     spe::StateObject::_didAttach(aRuntime);
+
+    _unibody.addToSpace(ccomp<MOverworld>().getAlvinSpace());
+}
+
+void Asteroid::_eventBeginUpdate() {
+    _leftClicked = false;
+
+    const auto input           = ccomp<MWindow>().getInput();
+    const auto mouseWorldPos   = input.getViewRelativeMousePos();
+    const auto mouseRelToShape = mouseWorldPos - _polyShape.getAnchor();
+
+    if (_polyShape.intersectsWithPointRel(mouseRelToShape)) {
+        ccomp<MInteractivity>().pushClickableObject(getId());
+    }
 }
 
 void Asteroid::_eventUpdate1() {
-    const auto& winMgr      = ccomp<MWindow>();
-    const auto  input       = winMgr.getInput();
-    const auto  mousePos    = input.getViewRelativeMousePos();
-    const auto  mousePosRel = mousePos - _shape.getAnchor();
+    // const auto& winMgr = ccomp<MWindow>();
+    // _applyPropulsion(winMgr.getInput());
+}
 
-    if (input.checkPressed(hg::in::MB_LEFT, spe::WindowFrameInputView::Mode::Edge)) {
-        if (_shape.intersectsWithPointRel(mousePosRel)) {
-            if (_held) {
-                _held = false;
-            } else {
-                _cursorOffset = mousePosRel;
-                _held         = true;
-            }
-        } else {
-            _held = false;
-        }
-        _shift = false;
-    }
-
-    if (_held) {
-        if (input.checkPressed(hg::in::PK_LSHIFT)) {
-            if (!_shift) {
-                _shiftCursorPos = mousePos;
-                _shift          = true;
-            }
-        } else {
-            if (_shift) {
-                _cursorOffset = mousePosRel;
-                _shift        = false;
-            }
-        }
-
-        bool needRecalc = false;
-
-        if (auto wheelScroll = input.getVerticalMouseWheelScroll(); wheelScroll != 0.f) {
-            _shape.setRotation(_shape.getRotation() + hg::math::AngleF::fromDeg(wheelScroll));
-            needRecalc = true;
-        }
-
-        if (_shift) {
-            const auto shiftScroll = static_cast<float>(_shiftCursorPos.x - mousePos.x) * 0.25;
-            if (shiftScroll > 0.1f) {
-                _shape.setRotation(_shape.getRotation() + hg::math::AngleF::fromDegrees(shiftScroll));
-                _shiftCursorPos = mousePos;
-                needRecalc      = true;
-            }
-        } else {
-            _shape.setAnchor(mousePos - _cursorOffset);
-        }
-
-        _shape.recalcRel();
-    }
+void Asteroid::_eventUpdate2() {
+    _syncPolyShapeWithUnibody();
 }
 
 void Asteroid::_eventDraw1() {
-    const auto vertCount = _shape.getVertexCount();
-
-    // Draw the asteroid itself
-    uwga::VertexArray vArr{uwga::PrimitiveType::TRIANGLE_FAN, vertCount + 2, _shape.getAnchor()};
-
-    vArr.vertices[0].position = {};
-    vArr.vertices[0].color    = uwga::COLOR_GREY;
-
-    const auto outputVerts = _shape.getOutputVertices();
-
-    for (std::size_t i = 0; i < hg::pztos(vertCount); ++i) {
-        vArr.vertices[i + 1].position = outputVerts[i].cast<float>();
-        vArr.vertices[i + 1].color    = uwga::COLOR_GREY;
-    }
-    vArr.vertices[vertCount + 1] = vArr.vertices[1];
-
     auto& canvas = ccomp<MWindow>().getActiveCanvas();
-    canvas.draw(vArr);
-    
-    _shape.debugDraw(hg::uwga::COLOR_AQUA, canvas);
 
-    // Draw the construction grid on top
-    if (_held) {
-        if (const auto shipCtrl = getRuntime()->find("cinnabar::ShipController"); shipCtrl) {
-            shipCtrl.downcastCopy<ShipController>()->drawGridOverShape(_shape, canvas);
+    const auto vertCount = _polyShape.getVertexCount();
+
+    // Draw the asteroid interior
+    {
+        uwga::VertexArray vArr{uwga::PrimitiveType::TRIANGLE_FAN, vertCount + 2, _polyShape.getAnchor()};
+
+        vArr.vertices[0].position = {};
+        vArr.vertices[0].color    = uwga::COLOR_GREY;
+
+        const auto outputVerts = _polyShape.getOutputVertices();
+
+        for (std::size_t i = 0; i < hg::pztos(vertCount); ++i) {
+            vArr.vertices[i + 1].position = outputVerts[i].cast<float>();
+            vArr.vertices[i + 1].color    = uwga::COLOR_GREY;
         }
+        vArr.vertices[vertCount + 1] = vArr.vertices[1];
+
+        canvas.draw(vArr);
     }
+
+    _polyShape.debugDraw(hg::uwga::COLOR_AQUA, canvas);
 }
 
 } // namespace cinnabar

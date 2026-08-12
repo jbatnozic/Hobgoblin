@@ -19,6 +19,13 @@ public:
 
     void init(hg::math::Vector2d aPosition);
 
+    void drawAsGhost(
+        const hg::math::Vector2d& aPosition,
+        hg::math::AngleF          aAngle,
+        uwga::Color               aColor,
+        uwga::Canvas&             aCanvas,
+        const uwga::RenderStates& aRenderStates = uwga::RENDER_STATES_DEFAULT) const override {}
+
 private:
     PolyShape                    _initPolyShape();
     PhysicalProperties           _initPhysicalProperties();

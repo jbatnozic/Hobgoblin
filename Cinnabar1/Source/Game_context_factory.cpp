@@ -17,7 +17,7 @@ const spe::GameContext::RuntimeConfig RUNTIME_CONFIG = {
 
 const spe::WindowManagerInterface::WindowConfig WINDOW_CONFIG = {
     .size  = {1280, 720},
-    .title = "Cinnamon1",
+    .title = "Cinnabar1",
     .style = uwga::WindowStyle::DEFAULT
 };
 
