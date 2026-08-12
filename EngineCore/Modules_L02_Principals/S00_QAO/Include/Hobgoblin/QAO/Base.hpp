@@ -17,6 +17,7 @@
 
 #include <cstdint>
 #include <string_view>
+#include <string>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
@@ -71,6 +72,8 @@ public:
     std::string_view getName() const;
 
     QAO_GenericId getId() const noexcept;
+
+    std::string getDebugDescription() const;
 
 protected:
     // Lifecycle callbacks

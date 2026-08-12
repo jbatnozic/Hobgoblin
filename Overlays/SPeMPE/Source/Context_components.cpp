@@ -59,8 +59,8 @@ std::string ComponentTable::toString(char aSeparator) const {
 // PRIVATE METHODS                                                       //
 ///////////////////////////////////////////////////////////////////////////
 
-void ComponentTable::_attachComponent(ContextComponent& aComponent,
-                                      std::string aTag,
+void ComponentTable::_attachComponent(ContextComponent&         aComponent,
+                                      std::string_view          aTag,
                                       ContextComponent::TagHash aTagHash) {
     for (const auto& entry : _table) {
         if (entry.tagHash == aTagHash) {
@@ -74,8 +74,8 @@ void ComponentTable::_attachComponent(ContextComponent& aComponent,
         auto& node = _table[(pos + i) % _table.size()];
         if (node.component == nullptr) {
             node.component = std::addressof(aComponent);
-            node.tagHash = aTagHash;
-            node.tag = std::move(aTag);
+            node.tagHash   = aTagHash;
+            node.tag       = aTag;
             return;
         }
     }

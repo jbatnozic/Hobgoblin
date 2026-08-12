@@ -2,16 +2,17 @@
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
 #include <Hobgoblin/Common.hpp>
+#include <Hobgoblin/Format.hpp>
 #include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/Logging.hpp>
 #include <Hobgoblin/QAO/Base.hpp>
-#include <Hobgoblin/QAO/Runtime.hpp>
-#include <Hobgoblin/Utility/Passkey.hpp>
-
 #include <Hobgoblin/QAO/Handle.hpp>
+#include <Hobgoblin/QAO/Reflection.hpp>
+#include <Hobgoblin/QAO/Runtime.hpp>
 
 #include <cassert>
 #include <memory>
+#include <typeinfo>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
@@ -36,11 +37,10 @@ QAO_Base::~QAO_Base() {
         HG_UNLIKELY_BRANCH;
 
         HG_LOG_ERROR(LOG_ID,
-                     "Object to destroy ('{}' of type '{}') wasn't torn down properly. Do all derived "
+                     "Object to destroy ({}) wasn't torn down properly. Do all derived "
                      "classes call the "
                      "_tearDown() method of their superclasses?",
-                     getName(),
-                     typeid(*this).name());
+                     getDebugDescription());
 
         assert(false && "Object to destroy wasn't torn down properly. Do all derived "
                         "classes call the "
@@ -88,6 +88,16 @@ std::string_view QAO_Base::getName() const {
 
 QAO_GenericId QAO_Base::getId() const noexcept {
     return _context.id;
+}
+
+std::string QAO_Base::getDebugDescription() const {
+    const auto& typeInfo = typeid(SELF);
+    const auto* metadata = QAO_ClassMetadata::get(typeInfo);
+    return fmt::format(FMT_STRING("[addr {:#010x}; name {}; class {}; rtti {}]"),
+                       reinterpret_cast<std::uintptr_t>(this),
+                       getName(),
+                       metadata ? metadata->getUniqueName() : "n/a",
+                       typeInfo.name());
 }
 
 void QAO_Base::setExecutionPriority(int new_priority) {

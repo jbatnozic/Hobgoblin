@@ -6,6 +6,7 @@
 #include <Engine.hpp>
 
 #include <Hobgoblin/Alvin.hpp>
+#include <Hobgoblin/UWGA/Canvas.hpp>
 
 #include <Poly_shape.hpp>
 
@@ -22,6 +23,13 @@ public:
     };
 
     virtual const PhysicalProperties& getPhysicalProperties() const = 0;
+
+    virtual void drawAsGhost(
+        const hg::math::Vector2d& aPosition,
+        hg::math::AngleF          aAngle,
+        uwga::Color               aColor,
+        uwga::Canvas&             aCanvas,
+        const uwga::RenderStates& aRenderStates = uwga::RENDER_STATES_DEFAULT) const = 0;
 };
 
 class UnibodyShipAttachable : public ShipAttachable {
