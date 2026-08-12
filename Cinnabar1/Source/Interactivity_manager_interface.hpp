@@ -5,13 +5,22 @@
 
 #include <Engine.hpp>
 
+#include <Hobgoblin/Math.hpp>
+
 #include <cstdint>
+#include <functional>
 
 namespace cinnabar {
 
 class InteractivityManagerInterface : public spe::ContextComponent {
 public:
     SPEMPE_CTXCOMP_TAG("cinnabar::InteractivityManager");
+
+    virtual void pushClickableObject(QAO_GenericId                           aClickableId,
+                                     int                                     aFinegrainedPriority,
+                                     std::intptr_t                           aUserData,
+                                     std::function<bool(hg::math::Vector2d)> aQuickMouseOverCheck,
+                                     std::function<bool(hg::math::Vector2d)> aFullMouseOverCheck) = 0;
 
     //! \brief push an object to the top of the clickable object stack.
     //!
@@ -27,7 +36,7 @@ public:
     //!                  (if the message is sent to this object).
     //!
     //! \warning DO NOT call this outside of the `QAO_Event::PRE_UPDATE` event!
-    virtual void pushClickableObject(QAO_GenericId aClickableId, std::intptr_t aUserData = 0) = 0;
+    // virtual void pushClickableObject(QAO_GenericId aClickableId, std::intptr_t aUserData = 0) = 0;
 };
 
 using MInteractivity = InteractivityManagerInterface;

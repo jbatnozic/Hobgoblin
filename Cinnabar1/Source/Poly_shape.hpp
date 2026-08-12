@@ -74,7 +74,7 @@ public:
     //! TODO(add description)
     void recalcRel();
 
-#if CINNABAR_POLYSHAPE_ENABLE_ABSOLUTE
+#ifdef CINNABAR_POLYSHAPE_ENABLE_ABSOLUTE
     //! TODO(add description)
     void recalcAbs();
 #endif
@@ -94,6 +94,7 @@ public:
     //! \note if `getState() == DIRTY`, results are unusable.
     const cpVect* getOutputVerticesAsCpVect() const;
 
+#ifdef CINNABAR_POLYSHAPE_ENABLE_ABSOLUTE
     //! \brief Check if a point intersects with the poly shape.
     //!
     //! \param aPoint the point to check. This point is interpreted as absolute coordinates
@@ -102,6 +103,7 @@ public:
     //! \warning the status of the poly shape must be `READY_ABSOLUTE`; otherwise the result of this
     //!          function call is unspecified (throws, asserts, or returns garbage values).
     bool intersectsWithPointAbs(hg::math::Vector2d aPoint) const;
+#endif
 
     //! \brief Check if a point intersects with the poly shape.
     //!
@@ -111,6 +113,10 @@ public:
     //! \warning the status of the poly shape must be `READY_RELATIVE`; otherwise the result of this
     //!          function call is unspecified (throws, asserts, or returns garbage values).
     bool intersectsWithPointRel(hg::math::Vector2d aPoint) const;
+
+     float getDistanceToFarthestRawVertexSquared() const {
+        return _distanceToFarthestRawVertexSquared;
+     }
 
     void debugDraw(hg::uwga::Color               aColor,
                    hg::uwga::Canvas&             aCanvas,

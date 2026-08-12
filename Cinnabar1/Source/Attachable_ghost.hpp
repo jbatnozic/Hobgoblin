@@ -27,6 +27,8 @@ private:
 
     PolyShape _shape;
 
+    bool _leftClicked = false;
+
     bool               _held         = false;
     hg::math::Vector2d _cursorOffset = {};
 
