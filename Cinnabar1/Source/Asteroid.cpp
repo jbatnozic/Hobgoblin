@@ -94,13 +94,19 @@ void Asteroid::_didAttach(QAO_Runtime& aRuntime) {
 void Asteroid::_eventBeginUpdate() {
     _leftClicked = false;
 
-    const auto input           = ccomp<MWindow>().getInput();
-    const auto mouseWorldPos   = input.getViewRelativeMousePos();
-    const auto mouseRelToShape = mouseWorldPos - _polyShape.getAnchor();
-
-    if (_polyShape.intersectsWithPointRel(mouseRelToShape)) {
-        ccomp<MInteractivity>().pushClickableObject(getId());
-    }
+    ccomp<MInteractivity>().pushClickableObject(
+        this->getId(),
+        0,
+        0,
+        /* quick check */
+        [this](hg::math::Vector2d aMouseWorldPos) -> bool {
+            return (aMouseWorldPos - _polyShape.getAnchor()).lengthSquared() <=
+                   _polyShape.getDistanceToFarthestRawVertexSquared();
+        },
+        /* full check */
+        [this](hg::math::Vector2d aMouseWorldPos) -> bool {
+            return _polyShape.intersectsWithPointRel(aMouseWorldPos - _polyShape.getAnchor());
+        });
 }
 
 void Asteroid::_eventUpdate1() {

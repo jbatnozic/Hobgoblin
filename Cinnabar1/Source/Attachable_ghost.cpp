@@ -41,19 +41,29 @@ void AttachableGhost::msgHandlePNCSEvent(HandlePNCSEvent::PayloadPtr aPayload, b
     HG_ASSERT(aPayload != nullptr);
     if (aPayload->mbRightDown) {
         QAO_Destroy(*this);
+        return;
+    }
+    if (aPayload->mbLeftDown) {
+        _leftClicked = true;
     }
 }
 
 void AttachableGhost::_eventBeginUpdate() {
-    // _leftClicked = false;
+    _leftClicked = false;
 
-    // const auto input           = ccomp<MWindow>().getInput();
-    // const auto mouseWorldPos   = input.getViewRelativeMousePos();
-    // const auto mouseRelToShape = mouseWorldPos - _shape.getAnchor();
-
-    // if (_shape.intersectsWithPointRel(mouseRelToShape)) {
-    //     ccomp<MInteractivity>().pushClickableObject(this->getId());
-    // }
+    ccomp<MInteractivity>().pushClickableObject(
+        this->getId(),
+        _held ? -9999 : 0,
+        0,
+        /* quick check */
+        [this](hg::math::Vector2d aMouseWorldPos) -> bool {
+            return _held || ((aMouseWorldPos - _shape.getAnchor()).lengthSquared() <=
+                             _shape.getDistanceToFarthestRawVertexSquared());
+        },
+        /* full check */
+        [this](hg::math::Vector2d aMouseWorldPos) -> bool {
+            return _held || _shape.intersectsWithPointRel(aMouseWorldPos - _shape.getAnchor());
+        });
 }
 
 void AttachableGhost::_eventUpdate1() {
@@ -70,8 +80,7 @@ void AttachableGhost::_eventUpdate1() {
     const auto  mousePos    = input.getViewRelativeMousePos();
     const auto  mousePosRel = mousePos - _shape.getAnchor();
 
-    #if 0
-    if (input.checkPressed(hg::in::MB_LEFT, spe::WindowFrameInputView::Mode::Edge)) {
+    if (_leftClicked) {
         if (_shape.intersectsWithPointRel(mousePosRel)) {
             if (_held) {
                 _held = false;
@@ -84,7 +93,6 @@ void AttachableGhost::_eventUpdate1() {
         }
         _shift = false;
     }
-    #endif
 
     if (_held) {
         if (input.checkPressed(hg::in::PK_LSHIFT)) {
