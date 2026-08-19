@@ -4,10 +4,11 @@
 #include <Ship_starting_block.hpp>
 
 #include <Overworld_manager_interface.hpp>
+#include <Ship/Constants.hpp>
 
 namespace cinnabar {
 
-#define SIZE 32.f
+#define SIZE (16.f * OVERWORLD_CELL_SIZE)
 
 ShipStartingBlock::ShipStartingBlock(QAO_InstGuard aInstGuard)
     : spe::StateObject{aInstGuard,
@@ -25,6 +26,15 @@ ShipStartingBlock::ShipStartingBlock(QAO_InstGuard aInstGuard)
     // clang-format on
 {
     _unibody.bindDelegate(*this);
+
+    _iwSliceData = std::make_unique<InteriorWorldSliceData>();
+    _iwSliceData->cells.reset(16, 16);
+    _iwSliceData->cellGridOffset =
+        hg::math::Vector2d{
+            -16 * OVERWORLD_CELL_SIZE,
+            -16 * OVERWORLD_CELL_SIZE,
+        } /
+        2.0;
 }
 
 void ShipStartingBlock::init(hg::math::Vector2d aPosition) {

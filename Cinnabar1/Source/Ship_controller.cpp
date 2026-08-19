@@ -4,8 +4,10 @@
 #include <Ship_controller.hpp>
 
 #include <Graphics_system_provider.hpp>
+#include <Ship/Constants.hpp>
 
 #include <GridGoblin/World/World_config.hpp>
+#include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/Math.hpp>
 #include <Hobgoblin/UWGA/Circle_shape.hpp>
 #include <Hobgoblin/UWGA/Color.hpp>
@@ -19,30 +21,8 @@ namespace cinnabar {
 
 // MARK: Config
 
-namespace grid = ::jbatnozic::gridgoblin;
-
 namespace {
-#define GRID_RESOLUTION 48.f
-// #define GRID_RESOLUTION 8.f
-
-// clang-format off
-constexpr grid::ContentsConfig INTERIOR_WORLD_CONFIG = {
-    .chunkCountX     = 1024,
-    .chunkCountY     = 512,
-    .cellsPerChunkX  = 16,
-    .cellsPerChunkY  = 16,
-    .buildingBlocks  = grid::BuildingBlockMask::ALL,
-    .cellResolution  = GRID_RESOLUTION,
-    .wallHeight      = GRID_RESOLUTION,
-    .maxCellOpenness = 0,
-    .maxLoadedNonessentialChunks = 0xFFFFFF
-};
-
-constexpr hg::math::Vector2d INTERIOR_WORLD_ORIGIN = {
-    (INTERIOR_WORLD_CONFIG.chunkCountX / 2 * INTERIOR_WORLD_CONFIG.cellsPerChunkX) * GRID_RESOLUTION,
-    (INTERIOR_WORLD_CONFIG.chunkCountY / 2 * INTERIOR_WORLD_CONFIG.cellsPerChunkY) * GRID_RESOLUTION
-};
-// clang-format on
+#define GRID_RESOLUTION OVERWORLD_CELL_SIZE
 
 void TransformPoints(hg::math::Vector2f&    aCentralPoint,
                      hg::math::Vector2f*    aPoints,
@@ -86,19 +66,21 @@ void TransformPoints(hg::math::Vector2f&    aCentralPoint,
 // MARK: MasterData
 
 ShipController_MasterData::ShipController_MasterData()
-    : interiorWorld{INTERIOR_WORLD_CONFIG} {}
+    : interiorWorld{} {}
 
 // MARK: ShipController
 
 ShipController::ShipController(QAO_InstGuard aInstGuard, spe::SyncId aSyncId)
     : SyncObjSuper{aInstGuard,
                    QAO_ExeCon::GAMEPLAY,
-                   PRIORITY_ENTITIES,
+                   PRIORITY_ENTITIES, // TODO: set in relation to attachables
                    QAO_STATIC_NAME("cinnabar::ShipController"),
                    aSyncId} {}
 
-void ShipController::init(double aX, double aY) {
-    _position = {aX, aY};
+void ShipController::init(ShipAttachable& aInitialShipAttachable) {
+    HG_VALIDATE_PRECONDITION(isMasterObject());
+
+    _masterData->graphOfAttachables.insert(aInitialShipAttachable);
 }
 
 void ShipController::drawGridOverShape(const PolyShape& aShape, uwga::Canvas& aCanvas) {
@@ -217,6 +199,7 @@ void ShipController::_didAttach(QAO_Runtime& aRuntime) {
 }
 
 void ShipController::_eventUpdate1(spe::IfMaster) {
+#if 0
     const auto& winMgr = ccomp<MWindow>();
     const auto  input  = winMgr.getInput();
 
@@ -273,6 +256,8 @@ void ShipController::_eventUpdate1(spe::IfMaster) {
     } else {
         _drawGrid = false;
     }
+#endif
+    // TODO: sync position & rotation to main attachable
 }
 
 void ShipController::_eventDraw1() {

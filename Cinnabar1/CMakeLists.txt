@@ -4,11 +4,14 @@
 project("Cinnabar1")
 
 add_executable(${PROJECT_NAME}
+    "Source/InteriorWorld/Interior_world.cpp"
+
     "Source/Asteroid.cpp"
     "Source/Attachable_ghost.cpp"
     "Source/Main.cpp"
     "Source/Overworld_manager.cpp"
     "Source/Game_context_factory.cpp"
+    "Source/Graph_of_attachables.cpp"
     "Source/Graphics_system_provider.cpp"
     "Source/Main_game_flow_manager.cpp"
     "Source/Poly_shape.cpp"

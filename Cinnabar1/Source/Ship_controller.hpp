@@ -5,11 +5,13 @@
 
 #include <Engine.hpp>
 
+#include <InteriorWorld/Interior_world.hpp>
+#include <Graph_of_attachables.hpp>
+#include <Ship_attachable.hpp>
 #include <Poly_shape.hpp>
 
 #include <Hobgoblin/Math.hpp>
 #include <Hobgoblin/UWGA/Transform.hpp>
-#include <GridGoblin/World/World.hpp>
 
 #include <memory>
 #include <span>
@@ -19,7 +21,7 @@ namespace cinnabar {
 SPEMPE_DEFINE_AUTODIFF_STATE(ShipController_VisibleState,
     SPEMPE_MEMBER(double, positionX, 0.0),
     SPEMPE_MEMBER(double, positionY, 0.0),
-    SPEMPE_MEMBER(double, rotation, 0.0)
+    SPEMPE_MEMBER(float, rotation, 0.0)
     // Below are ideas for members of a "ship section" object
     // SPEMPE_MEMBER(?, spriteId, SPRITEID_NONE),
     // SPEMPE_MEMBER(?, parentSyncId, ?),
@@ -37,7 +39,7 @@ class ShipController
 public:
     ShipController(QAO_InstGuard aInstGuard, spe::SyncId aSyncId);
 
-    void init(double aX, double aY);
+    void init(ShipAttachable& aInitialShipAttachable);
     
     void drawGridOverShape(const PolyShape& aShape, uwga::Canvas& aCanvas);
 
@@ -60,7 +62,9 @@ private:
 // MARK: MasterData
 
 struct ShipController_MasterData {
-    jbatnozic::gridgoblin::World interiorWorld; // Some would say: Inland empire
+    GraphOfAttachables graphOfAttachables;
+
+    InteriorWorld interiorWorld;
 
     std::unique_ptr<uwga::Transform> transform;
     std::unique_ptr<uwga::Transform> transformInverse;
