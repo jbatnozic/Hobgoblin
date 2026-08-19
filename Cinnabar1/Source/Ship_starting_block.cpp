@@ -3,7 +3,7 @@
 
 #include <Ship_starting_block.hpp>
 
-#include <Overworld_manager_interface.hpp>
+#include <Overworld_manager.hpp>
 #include <Ship/Constants.hpp>
 
 namespace cinnabar {

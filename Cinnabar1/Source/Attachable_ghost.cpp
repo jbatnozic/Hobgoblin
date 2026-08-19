@@ -3,7 +3,7 @@
 
 #include <Attachable_ghost.hpp>
 
-#include <Interactivity_manager_interface.hpp>
+#include <Interactivity_manager.hpp>
 #include <QAOMessages/Downcast_to_ship_attachable.hpp>
 #include <Ship_controller.hpp>
 

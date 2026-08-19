@@ -5,34 +5,19 @@
 
 #include <Engine.hpp>
 
-#include <Hobgoblin/Alvin/Main_collision_dispatcher.hpp>
-
-#include <Overworld_manager_interface.hpp>
+#include <Hobgoblin/Alvin/Space.hpp>
 
 namespace cinnabar {
 
-class OverworldManager
-    : public spe::StateObject
-    , public OverworldManagerInterface {
+class OverworldManager : public spe::ContextComponent {
 public:
-    OverworldManager(QAO_InstGuard aInstGuard);
+    SPEMPE_CTXCOMP_TAG("cinnabar::OverworldManager");
 
-    hg::alvin::Space& getAlvinSpace() override;
+    virtual hg::alvin::Space& getAlvinSpace() = 0;
 
-    const hg::alvin::Space& getAlvinSpace() const override;
-
-private:
-    // void _didAttach(QAO_Runtime& aRuntime) override;
-
-    void _eventUpdate1() override;
-
-    hg::alvin::Space _space;
-    hg::alvin::MainCollisionDispatcher _mcd;
+    virtual const hg::alvin::Space& getAlvinSpace() const = 0;
 };
 
-QAO_REGISTER_CLASS(OverworldManager, cinnabar_OverworldManager) {
-    QAO_LOCAL_ALIAS(C, klass);
-    klass.setSuperclass<spe::StateObject>();
-}
+using MOverworld = OverworldManager;
 
 } // namespace cinnabar
