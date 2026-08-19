@@ -8,8 +8,8 @@
 #include <Hobgoblin/Utility/Randomization.hpp>
 
 #include <Attachable_ghost.hpp>
-#include <Interactivity_manager_interface.hpp>
-#include <Overworld_manager_interface.hpp>
+#include <Interactivity_manager.hpp>
+#include <Overworld_manager.hpp>
 
 namespace cinnabar {
 

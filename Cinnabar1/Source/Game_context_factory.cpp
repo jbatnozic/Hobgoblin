@@ -4,7 +4,7 @@
 #include <Game_context_factory.hpp>
 
 #include <Graphics_system_provider.hpp>
-#include <Main_game_flow_manager.hpp>
+#include <Main_game_flow_manager_default.hpp>
 
 namespace cinnabar {
 
@@ -15,13 +15,13 @@ const spe::GameContext::RuntimeConfig RUNTIME_CONFIG = {
     .maxConsecutiveUpdates = 2
 };
 
-const spe::WindowManagerInterface::WindowConfig WINDOW_CONFIG = {
+const spe::WindowManager::WindowConfig WINDOW_CONFIG = {
     .size  = {1280, 720},
     .title = "Cinnabar1",
     .style = uwga::WindowStyle::DEFAULT
 };
 
-spe::WindowManagerInterface::MainRenderTextureConfig MRT_CONFIG = {
+spe::WindowManager::MainRenderTextureConfig MRT_CONFIG = {
     .size           = {1920, 1080},
     .smooth         = true,
     .batchingConfig = {
@@ -30,7 +30,7 @@ spe::WindowManagerInterface::MainRenderTextureConfig MRT_CONFIG = {
     .clearingColor  = uwga::COLOR_BLACK
 };
 
-spe::WindowManagerInterface::TimingConfig TIMING_CONFIG = {
+spe::WindowManager::TimingConfig TIMING_CONFIG = {
     spe::FrameRate{120},
     spe::PREVENT_BUSY_WAIT_ON,
     spe::VSYNC_OFF
@@ -153,9 +153,9 @@ std::unique_ptr<spe::GameContext> CreateDevGameContext() {
     AttachWindowManager(*ctx, GameContextMode::DEV);
     AttachNetworkingManager(*ctx, GameContextMode::DEV);
 
-    // Add MainGameFlowManager
+    // Add DefaultMainGameFlowManager
     {
-        auto mgfMgr = QAO_Create<MainGameFlowManager>(ctx->getQAORuntime().nonOwning());
+        auto mgfMgr = QAO_Create<DefaultMainGameFlowManager>(ctx->getQAORuntime().nonOwning());
         ctx->attachAndOwnComponent(std::move(mgfMgr));
     }
 

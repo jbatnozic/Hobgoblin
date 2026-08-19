@@ -1,7 +1,7 @@
 // Copyright 2026 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#include <Interactivity_manager.hpp>
+#include <Interactivity_manager_default.hpp>
 
 #include <Hobgoblin/HGExcept.hpp>
 
@@ -13,13 +13,13 @@ namespace cinnabar {
 
 #define MODE_EDGE spe::WindowFrameInputView::Mode::Edge
 
-InteractivityManager::InteractivityManager(QAO_InstGuard aInstGuard)
+DefaultInteractivityManager::DefaultInteractivityManager(QAO_InstGuard aInstGuard)
     : spe::NonstateObject{aInstGuard,
                           QAO_ExeCon::GAMEPLAY,
                           PRIORITY_INTERACTIVITYMGR,
-                          QAO_STATIC_NAME("cinnabar::InteractivityManager")} {}
+                          QAO_STATIC_NAME("cinnabar::DefaultInteractivityManager")} {}
 
-void InteractivityManager::pushClickableObject(
+void DefaultInteractivityManager::pushClickableObject(
     QAO_GenericId                           aClickableId,
     int                                     aFinegrainedPriority,
     std::intptr_t                           aUserData,
@@ -38,17 +38,17 @@ void InteractivityManager::pushClickableObject(
                            .fullMouseOverCheck  = std::move(aFullMouseOverCheck)});
 }
 
-void InteractivityManager::_didAttach(QAO_Runtime& aRuntime) {
+void DefaultInteractivityManager::_didAttach(QAO_Runtime& aRuntime) {
     spe::NonstateObject::_didAttach(aRuntime);
     _winMgr = &ccomp<MWindow>();
 }
 
-void InteractivityManager::_eventPreUpdate() {
+void DefaultInteractivityManager::_eventPreUpdate() {
     _clickables.clear();
     _mouseWorldPos.reset();
 }
 
-void InteractivityManager::_eventBeginUpdate() {
+void DefaultInteractivityManager::_eventBeginUpdate() {
     std::stable_sort(_clickables.begin(), _clickables.end());
 
     while (!_clickables.empty()) {
@@ -79,7 +79,7 @@ void InteractivityManager::_eventBeginUpdate() {
     }
 }
 
-void InteractivityManager::_eventPreDraw() {
+void DefaultInteractivityManager::_eventPreDraw() {
     // Here all the clickables are already sorted
 
     while (!_clickables.empty()) {
@@ -108,7 +108,7 @@ void InteractivityManager::_eventPreDraw() {
     }
 }
 
-hg::math::Vector2d InteractivityManager::_getMouseWorldPosition() {
+hg::math::Vector2d DefaultInteractivityManager::_getMouseWorldPosition() {
     if (!_mouseWorldPos.has_value()) {
         _mouseWorldPos = _winMgr->getInput().getViewRelativeMousePos();
     }

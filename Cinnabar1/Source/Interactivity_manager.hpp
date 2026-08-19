@@ -5,58 +5,56 @@
 
 #include <Engine.hpp>
 
-#include <Interactivity_manager_interface.hpp>
+#include <Hobgoblin/Math.hpp>
 
-#include <optional>
-#include <vector>
+#include <cstdint>
+#include <functional>
 
 namespace cinnabar {
 
-class InteractivityManager
-    : public spe::NonstateObject
-    , public InteractivityManagerInterface {
+class InteractivityManager : public spe::ContextComponent {
 public:
-    InteractivityManager(QAO_InstGuard aInstGuard);
+    SPEMPE_CTXCOMP_TAG("cinnabar::InteractivityManager");
 
-    void pushClickableObject(QAO_GenericId                           aClickableId,
-                             int                                     aFinegrainedPriority,
-                             std::intptr_t                           aUserData,
-                             std::function<bool(hg::math::Vector2d)> aQuickMouseOverCheck,
-                             std::function<bool(hg::math::Vector2d)> aFullMouseOverCheck) override;
-
-private:
-    MWindow* _winMgr = nullptr;
-
-    struct ClickableInfo {
-        QAO_GenericId                           id;
-        int                                     finegrainedPriority;
-        std::intptr_t                           userData;
-        std::function<bool(hg::math::Vector2d)> fullMouseOverCheck;
-
-        bool operator<(const ClickableInfo& aOther) const {
-            // the inverted > operator is intentional!
-            // objects with higher priorities must be pushed towards the start of the vector
-            // (they are more obscured by other objects)
-            return finegrainedPriority > aOther.finegrainedPriority;
-        }
-    };
-
-    std::vector<ClickableInfo> _clickables;
-
-    std::optional<hg::math::Vector2d> _mouseWorldPos;
-
-    void _didAttach(QAO_Runtime& aRuntime) override;
-
-    void _eventPreUpdate() override;
-    void _eventBeginUpdate() override;
-    void _eventPreDraw() override;
-
-    hg::math::Vector2d _getMouseWorldPosition();
+    //! \brief Register an object as a candidate to receive mouse-over and click events this frame.
+    //!
+    //! During the `QAO_Event::BEGIN_UPDATE` event, every clickable object that's in view's frustum 
+    //! should call this function to enter itself into the interactivity manager's per-frame candidate
+    //! list. Once all candidates have registered, the manager selects a single "foreground-most" object
+    //! and forwards a `HandlePNCSEvent` message to it, carrying the current mouse button state
+    //! (down/up for the left and right buttons) alongside its `aUserData`.
+    //!
+    //! Selection works in two stages:
+    //! -# Candidates are ranked by `aFinegrainedPriority`: the object with the lowest priority value is
+    //!    considered to be drawn on top (least obscured) and is therefore preferred.
+    //! -# Starting from the top candidate, the manager evaluates `aFullMouseOverCheck` and picks the
+    //!    first object for which it returns `true`. This lets objects supply a cheap approximate test up
+    //!    front and defer the exact (and possibly expensive) hit test until it is actually needed.
+    //!
+    //! The candidate list is rebuilt from scratch every frame, so this must be called on every frame in
+    //! which the object wants to be interactive.
+    //!
+    //! \param aClickableId QAO ID of the clickable object; this is the object that will receive the
+    //!                     `HandlePNCSEvent` message if it is selected.
+    //! \param aFinegrainedPriority tie-breaking priority used to determine which overlapping object is in
+    //!                             the foreground. Lower values are treated as being closer to the front.
+    //! \param aUserData arbitrary user data passed back verbatim through the `HandlePNCSEvent` message
+    //!                  (if the message is sent to this object).
+    //! \param aQuickMouseOverCheck cheap, possibly approximate hit test evaluated immediately; if it
+    //!                             returns `false` for the current mouse position the call is a no-op
+    //!                             and the object is not registered. May report false positives.
+    //! \param aFullMouseOverCheck exact hit test evaluated lazily during selection; only the candidate
+    //!                            ultimately chosen is required to pass this check. Both callbacks receive
+    //!                            the mouse position in world coordinates.
+    //!
+    //! \warning DO NOT call this outside of the `QAO_Event::BEGIN_UPDATE` event!
+    virtual void pushClickableObject(QAO_GenericId                           aClickableId,
+                                     int                                     aFinegrainedPriority,
+                                     std::intptr_t                           aUserData,
+                                     std::function<bool(hg::math::Vector2d)> aQuickMouseOverCheck,
+                                     std::function<bool(hg::math::Vector2d)> aFullMouseOverCheck) = 0;
 };
 
-QAO_REGISTER_CLASS(InteractivityManager, cinnabar_InteractivityManager) {
-    QAO_LOCAL_ALIAS(C, klass);
-    klass.setSuperclass<spe::NonstateObject>();
-}
+using MInteractivity = InteractivityManager;
 
 } // namespace cinnabar
