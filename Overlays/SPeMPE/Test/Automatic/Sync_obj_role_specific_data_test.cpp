@@ -110,7 +110,7 @@ void AvatarWithHeapRSData::_syncDestroyImpl(SyncControlDelegate& aSyncCtrl) cons
 
 // MARK: Fixture
 
-using MNetworking = NetworkingManagerInterface;
+using MNetworking = NetworkingManager;
 
 class SPeMPE_SyncObjRoleSpecificDataTest : public ::testing::Test {
 protected:

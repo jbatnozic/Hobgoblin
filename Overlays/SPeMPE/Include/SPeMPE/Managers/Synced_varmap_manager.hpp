@@ -3,8 +3,8 @@
 
 // clang-format off
 
-#ifndef SPEMPE_MANAGERS_SYNCED_VARMAP_MANAGER_INTERFACE_HPP
-#define SPEMPE_MANAGERS_SYNCED_VARMAP_MANAGER_INTERFACE_HPP
+#ifndef SPEMPE_MANAGERS_SYNCED_VARMAP_MANAGER_HPP
+#define SPEMPE_MANAGERS_SYNCED_VARMAP_MANAGER_HPP
 
 #include <Hobgoblin/Common/Positive_or_zero_integer.hpp>
 #include <SPeMPE/GameContext/Context_components.hpp>
@@ -18,9 +18,9 @@ namespace spempe {
 
 namespace hg = ::jbatnozic::hobgoblin;
 
-class SyncedVarmapManagerInterface : public ContextComponent {
+class SyncedVarmapManager : public ContextComponent {
 public:
-    virtual ~SyncedVarmapManagerInterface() override = default;
+    virtual ~SyncedVarmapManager() override = default;
 
     enum class Mode {
         Uninitialized,
@@ -75,12 +75,12 @@ public:
     // TODO
 
 private:
-    SPEMPE_CTXCOMP_TAG("jbatnozic::spempe::SyncedVarmapManagerInterface");
+    SPEMPE_CTXCOMP_TAG("jbatnozic::spempe::SyncedVarmapManager");
 };
 
 } // namespace spempe
 } // namespace jbatnozic
 
-#endif // !SPEMPE_MANAGERS_SYNCED_VARMAP_MANAGER_INTERFACE_HPP
+#endif // !SPEMPE_MANAGERS_SYNCED_VARMAP_MANAGER_HPP
 
 // clang-format on

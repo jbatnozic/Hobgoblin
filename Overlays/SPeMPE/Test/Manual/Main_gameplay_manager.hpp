@@ -5,47 +5,22 @@
 
 #pragma once
 
-#include "Config.hpp"
 #include "Engine.hpp"
-
-#include "Main_gameplay_manager_interface.hpp"
-
-class MainGameplayManagerBase
-    : public spe::NonstateObject {
-public:
-    MainGameplayManagerBase(QAO_InstGuard aInstGuard);
-
-protected:
-    void _didAttach(QAO_Runtime&) override;
-
-private:    
-    void _eventPreUpdate() override;
-};
 
 namespace singleplayer {
 
-class MainGameplayManager
-    : public MainGameplayManagerInterface
-    , public MainGameplayManagerBase {
-public:
-    MainGameplayManager(QAO_InstGuard aInstGuard);
-
-protected:
-    void _didAttach(QAO_Runtime&) override;
+class MainGameplayManager : public spe::ContextComponent {
+private:
+    SPEMPE_CTXCOMP_TAG("SPMainGameplayManager");
 };
 
 } // namespace singleplayer
 
 namespace multiplayer {
 
-class MainGameplayManager
-    : public MainGameplayManagerInterface
-    , public MainGameplayManagerBase {
-public:
-    MainGameplayManager(QAO_InstGuard aInstGuard);
-
-protected:
-    void _didAttach(QAO_Runtime&) override;
+class MainGameplayManager : public spe::ContextComponent {
+private:
+    SPEMPE_CTXCOMP_TAG("MPMainGameplayManager");
 };
 
 } // namespace multiplayer

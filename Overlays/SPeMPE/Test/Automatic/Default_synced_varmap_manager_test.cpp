@@ -49,10 +49,10 @@ public:
 
         // Add varmap managers
         _svmMgr1 = QAO_Create<DefaultSyncedVarmapManager>(_ctx1->getQAORuntime().nonOwning(), PRIORITY_SVMMGR);
-        _svmMgr1->setToMode(SyncedVarmapManagerInterface::Mode::Host);
+        _svmMgr1->setToMode(SyncedVarmapManager::Mode::Host);
 
         _svmMgr2 = QAO_Create<DefaultSyncedVarmapManager>(_ctx2->getQAORuntime().nonOwning(), PRIORITY_SVMMGR);
-        _svmMgr2->setToMode(SyncedVarmapManagerInterface::Mode::Client);
+        _svmMgr2->setToMode(SyncedVarmapManager::Mode::Client);
 
         _ctx1->attachComponent(*_svmMgr1);
         _ctx2->attachComponent(*_svmMgr2);
@@ -73,13 +73,13 @@ public:
         _netMgr1->getServer().stop();
 
         DetachStatus detachStatus;
-        _ctx1->detachComponent<NetworkingManagerInterface>(&detachStatus);
+        _ctx1->detachComponent<NetworkingManager>(&detachStatus);
         ASSERT_EQ(detachStatus, DetachStatus::NOT_OWNED_BY_CONTEXT);
-        _ctx1->detachComponent<SyncedVarmapManagerInterface>(&detachStatus);
+        _ctx1->detachComponent<SyncedVarmapManager>(&detachStatus);
         ASSERT_EQ(detachStatus, DetachStatus::NOT_OWNED_BY_CONTEXT);
-        _ctx2->detachComponent<NetworkingManagerInterface>(&detachStatus);
+        _ctx2->detachComponent<NetworkingManager>(&detachStatus);
         ASSERT_EQ(detachStatus, DetachStatus::NOT_OWNED_BY_CONTEXT);
-        _ctx2->detachComponent<SyncedVarmapManagerInterface>(&detachStatus);
+        _ctx2->detachComponent<SyncedVarmapManager>(&detachStatus);
         ASSERT_EQ(detachStatus, DetachStatus::NOT_OWNED_BY_CONTEXT);
 
         _svmMgr1.reset();

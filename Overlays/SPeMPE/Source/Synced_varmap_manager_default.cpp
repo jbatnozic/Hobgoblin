@@ -2,7 +2,7 @@
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
 #include "SPeMPE/GameObjectFramework/Game_object_bases.hpp"
-#include <SPeMPE/Managers/Networking_manager_interface.hpp>
+#include <SPeMPE/Managers/Networking_manager.hpp>
 #include <SPeMPE/Managers/Synced_varmap_manager_default.hpp>
 #include <SPeMPE/Utility/Rpc_receiver_context_template.hpp>
 
@@ -45,13 +45,13 @@ RN_DEFINE_RPC(USPEMPE_DefaultSyncedVarmapManager_SetValues, RN_ARGS(hobgoblin::u
     RN_NODE_IN_HANDLER().callIfServer([&](RN_ServerInterface& aServer) {
         const auto rc     = SPEMPE_GET_RPC_RECEIVER_CONTEXT(aServer);
         auto&      svmMgr = dynamic_cast<DefaultSyncedVarmapManager&>(
-            rc.gameContext.getComponent<SyncedVarmapManagerInterface>());
+            rc.gameContext.getComponent<SyncedVarmapManager>());
         USPEMPE_DefaultSyncedVarmapManager_SetValues(svmMgr, aPacket);
     });
     RN_NODE_IN_HANDLER().callIfClient([&](RN_ClientInterface& aClient) {
         const auto rc     = SPEMPE_GET_RPC_RECEIVER_CONTEXT(aClient);
         auto&      svmMgr = dynamic_cast<DefaultSyncedVarmapManager&>(
-            rc.gameContext.getComponent<SyncedVarmapManagerInterface>());
+            rc.gameContext.getComponent<SyncedVarmapManager>());
         USPEMPE_DefaultSyncedVarmapManager_SetValues(svmMgr, aPacket);
     });
 }
@@ -61,13 +61,13 @@ RN_DEFINE_RPC(USPEMPE_DefaultSyncedVarmapManager_RequestToSet,
     RN_NODE_IN_HANDLER().callIfServer([&](RN_ServerInterface& aServer) {
         const auto rc     = SPEMPE_GET_RPC_RECEIVER_CONTEXT(aServer);
         auto&      svmMgr = dynamic_cast<DefaultSyncedVarmapManager&>(
-            rc.gameContext.getComponent<SyncedVarmapManagerInterface>());
+            rc.gameContext.getComponent<SyncedVarmapManager>());
         USPEMPE_DefaultSyncedVarmapManager_SetValueRequested(svmMgr, rc.senderIndex + 1, aPacket);
     });
     RN_NODE_IN_HANDLER().callIfClient([&](RN_ClientInterface& aClient) {
         const auto rc     = SPEMPE_GET_RPC_RECEIVER_CONTEXT(aClient);
         auto&      svmMgr = dynamic_cast<DefaultSyncedVarmapManager&>(
-            rc.gameContext.getComponent<SyncedVarmapManagerInterface>());
+            rc.gameContext.getComponent<SyncedVarmapManager>());
         USPEMPE_DefaultSyncedVarmapManager_SetValueRequested(svmMgr, 0, aPacket);
     });
 }
@@ -84,7 +84,7 @@ DefaultSyncedVarmapManager::~DefaultSyncedVarmapManager() = default;
 
 void DefaultSyncedVarmapManager::_didAttach(hobgoblin::QAO_Runtime& aRuntime) {
     NonstateObject::_didAttach(aRuntime);
-    _netMgr = &ccomp<NetworkingManagerInterface>();
+    _netMgr = &ccomp<NetworkingManager>();
     _netMgr->addEventListener(this);
 }
 

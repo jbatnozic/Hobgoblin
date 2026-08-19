@@ -8,9 +8,9 @@
 
 #include <Hobgoblin/QAO.hpp>
 #include <SPeMPE/GameObjectFramework/Game_object_bases.hpp>
-#include <SPeMPE/Managers/Authorization_manager_interface.hpp>
-#include <SPeMPE/Managers/Networking_manager_interface.hpp>
-#include <SPeMPE/Managers/Synced_varmap_manager_interface.hpp>
+#include <SPeMPE/Managers/Authorization_manager.hpp>
+#include <SPeMPE/Managers/Networking_manager.hpp>
+#include <SPeMPE/Managers/Synced_varmap_manager.hpp>
 
 #include <functional>
 
@@ -31,7 +31,7 @@ struct PlayerInfoWithIndex {
 } // namespace detail
 
 class DefaultAuthorizationManager
-    : public AuthorizationManagerInterface
+    : public AuthorizationManager
     , public NonstateObject
 {
 public:
@@ -57,8 +57,8 @@ private:
     bool _hasCurrentlyAuthorizedPlayer() const;
     void _authorizePlayer(
         const detail::PlayerInfoWithIndex& aPlayerToAuthorize,
-        NetworkingManagerInterface& aNetMgr,
-        SyncedVarmapManagerInterface& aSvmMgr
+        NetworkingManager& aNetMgr,
+        SyncedVarmapManager& aSvmMgr
     );
 
     friend void USPEMPE_DefaultAuthorizationManager_SetLocalAuthToken(

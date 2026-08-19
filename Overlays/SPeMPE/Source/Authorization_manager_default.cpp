@@ -6,8 +6,8 @@
 
 #include <SPeMPE/Managers/Authorization_manager_default.hpp>
 
-#include <SPeMPE/Managers/Lobby_backend_manager_interface.hpp>
-#include <SPeMPE/Managers/Networking_manager_interface.hpp>
+#include <SPeMPE/Managers/Lobby_backend_manager.hpp>
+#include <SPeMPE/Managers/Networking_manager.hpp>
 #include <SPeMPE/Utility/Rpc_receiver_context_template.hpp>
 
 #include <Hobgoblin/Logging.hpp>
@@ -69,7 +69,7 @@ namespace {
 
 using PlayerInfoWISet = std::unordered_set<detail::PlayerInfoWithIndex>;
 
-PlayerInfoWISet ScanLobbyManagerForAllCurrentlyConnectedPlayers(LobbyBackendManagerInterface& aLobbyMgr) {
+PlayerInfoWISet ScanLobbyManagerForAllCurrentlyConnectedPlayers(LobbyBackendManager& aLobbyMgr) {
     PlayerInfoWISet result;
     for (hg::PZInteger i = 0; i < aLobbyMgr.getSize(); i += 1) {
         const auto& playerInfo = aLobbyMgr.getPendingPlayerInfo(i);
@@ -99,7 +99,7 @@ RN_DEFINE_RPC(SetLocalAuthToken, RN_ARGS(AuthToken&, aToken)) {
         [&](RN_ClientInterface& aClient) {
             const auto rc = SPEMPE_GET_RPC_RECEIVER_CONTEXT(aClient);
             auto& authMgr = dynamic_cast<DefaultAuthorizationManager&>(
-                rc.gameContext.getComponent<AuthorizationManagerInterface>()
+                rc.gameContext.getComponent<AuthorizationManager>()
             );
             USPEMPE_DefaultAuthorizationManager_SetLocalAuthToken(authMgr, aToken);
         });
@@ -146,7 +146,7 @@ void DefaultAuthorizationManager::_eventBeginUpdate() {
         return;
     }
 
-    auto& aLobbyMgr = ccomp<LobbyBackendManagerInterface>();
+    auto& aLobbyMgr = ccomp<LobbyBackendManager>();
     const auto players = ScanLobbyManagerForAllCurrentlyConnectedPlayers(aLobbyMgr);
 
     if (_hasCurrentlyAuthorizedPlayer()) {
@@ -161,8 +161,8 @@ void DefaultAuthorizationManager::_eventBeginUpdate() {
                     _localAuthToken = GenerateRandomString(AUTH_TOKEN_LENGTH);
                     _authorizePlayer(
                         player,
-                        ccomp<NetworkingManagerInterface>(),
-                        ccomp<SyncedVarmapManagerInterface>()
+                        ccomp<NetworkingManager>(),
+                        ccomp<SyncedVarmapManager>()
                     );
                     break;
                 }
@@ -178,8 +178,8 @@ void DefaultAuthorizationManager::_eventBeginUpdate() {
                     _localAuthToken = GenerateRandomString(AUTH_TOKEN_LENGTH);
                     _authorizePlayer(
                         player,
-                        ccomp<NetworkingManagerInterface>(),
-                        ccomp<SyncedVarmapManagerInterface>()
+                        ccomp<NetworkingManager>(),
+                        ccomp<SyncedVarmapManager>()
                     );
                     break;
                 }
@@ -194,8 +194,8 @@ bool DefaultAuthorizationManager::_hasCurrentlyAuthorizedPlayer() const {
 
 void DefaultAuthorizationManager::_authorizePlayer(
     const detail::PlayerInfoWithIndex& aPlayerToAuthorize,
-    NetworkingManagerInterface& aNetMgr,
-    SyncedVarmapManagerInterface& aSvmMgr
+    NetworkingManager& aNetMgr,
+    SyncedVarmapManager& aSvmMgr
 ) {
     _currentAuthorizedPlayer = aPlayerToAuthorize;
     Compose_SetLocalAuthToken(aNetMgr.getNode(), aPlayerToAuthorize.clientIndex, *_localAuthToken);

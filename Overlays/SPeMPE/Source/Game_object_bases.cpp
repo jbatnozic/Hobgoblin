@@ -8,7 +8,7 @@
 #include <SPeMPE/GameContext/Game_context.hpp>
 #include <SPeMPE/GameObjectFramework/Game_object_bases.hpp>
 #include <SPeMPE/GameObjectFramework/Synchronized_object_registry.hpp>
-#include <SPeMPE/Managers/Networking_manager_interface.hpp>
+#include <SPeMPE/Managers/Networking_manager.hpp>
 
 #include <algorithm>
 
@@ -53,7 +53,7 @@ void SynchronizedObjectBase::_didAttach(hg::QAO_Runtime& aRuntime) {
     StateObject::_didAttach(aRuntime);
 
     auto& context = *aRuntime.getUserData<GameContext>();
-    auto& netMgr  = context.getComponent<NetworkingManagerInterface>();
+    auto& netMgr  = context.getComponent<NetworkingManager>();
 
     _syncObjReg = static_cast<detail::SynchronizedObjectRegistry*>(
         netMgr.__spempeimpl_getRegistryAddress().copy());

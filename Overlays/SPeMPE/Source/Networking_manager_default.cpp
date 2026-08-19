@@ -77,7 +77,7 @@ void DefaultNetworkingManager::setToClientMode(hg::RN_Protocol        aProtocol,
     _mode = Mode::Client;
 }
 
-NetworkingManagerInterface::Mode DefaultNetworkingManager::getMode() const {
+NetworkingManager::Mode DefaultNetworkingManager::getMode() const {
     return _mode;
 }
 
@@ -97,16 +97,16 @@ bool DefaultNetworkingManager::isClient() const {
 // NODE ACCESS                                                           //
 ///////////////////////////////////////////////////////////////////////////
 
-NetworkingManagerInterface::NodeType& DefaultNetworkingManager::getNode() const {
+NetworkingManager::NodeType& DefaultNetworkingManager::getNode() const {
     return *_node;
 }
 
-NetworkingManagerInterface::ServerType& DefaultNetworkingManager::getServer() const {
+NetworkingManager::ServerType& DefaultNetworkingManager::getServer() const {
     assert(isServer());
     return static_cast<ServerType&>(getNode());
 }
 
-NetworkingManagerInterface::ClientType& DefaultNetworkingManager::getClient() const {
+NetworkingManager::ClientType& DefaultNetworkingManager::getClient() const {
     assert(isClient());
     return static_cast<ClientType&>(getNode());
 }

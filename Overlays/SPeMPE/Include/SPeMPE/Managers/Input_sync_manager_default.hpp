@@ -9,7 +9,7 @@
 #include <Hobgoblin/Utility/Packet.hpp>
 #include <Hobgoblin/Utility/State_scheduler_simple.hpp>
 #include <SPeMPE/GameObjectFramework/Game_object_bases.hpp>
-#include <SPeMPE/Managers/Input_sync_manager_interface.hpp>
+#include <SPeMPE/Managers/Input_sync_manager.hpp>
 
 #include <unordered_map>
 #include <variant>
@@ -18,7 +18,7 @@ namespace jbatnozic {
 namespace spempe {
 
 class DefaultInputSyncManager 
-    : public InputSyncManagerInterface
+    : public InputSyncManager
     , public NonstateObject {
 public:
     DefaultInputSyncManager(hobgoblin::QAO_InstGuard aInstGuard, int aExecutionPriority);

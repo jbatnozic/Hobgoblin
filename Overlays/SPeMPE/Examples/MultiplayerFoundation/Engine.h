@@ -14,10 +14,10 @@ namespace spe = ::jbatnozic::spempe;
 using namespace hg::qao; // All names from QAO are prefixed with QAO_
 using namespace hg::rn;  // All names from RigelNet are prefixed with RN_
 
-using MInput        = spe::InputSyncManagerInterface;
-using MLobbyBackend = spe::LobbyBackendManagerInterface;
-using MNetworking   = spe::NetworkingManagerInterface;
-using MWindow       = spe::WindowManagerInterface;
+using MInput        = spe::InputSyncManager;
+using MLobbyBackend = spe::LobbyBackendManager;
+using MNetworking   = spe::NetworkingManager;
+using MWindow       = spe::WindowManager;
 
 #define PRIORITY_VARMAPMGR     16
 #define PRIORITY_NETWORKMGR    15

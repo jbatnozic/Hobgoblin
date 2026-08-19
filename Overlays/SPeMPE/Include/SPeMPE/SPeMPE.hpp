@@ -23,18 +23,18 @@
 
 // Managers
 
+#include <SPeMPE/Managers/Authorization_manager.hpp>
 #include <SPeMPE/Managers/Authorization_manager_default.hpp>
-#include <SPeMPE/Managers/Authorization_manager_interface.hpp>
+#include <SPeMPE/Managers/Input_sync_manager.hpp>
 #include <SPeMPE/Managers/Input_sync_manager_default.hpp>
-#include <SPeMPE/Managers/Input_sync_manager_interface.hpp>
+#include <SPeMPE/Managers/Lobby_backend_manager.hpp>
 #include <SPeMPE/Managers/Lobby_backend_manager_default.hpp>
-#include <SPeMPE/Managers/Lobby_backend_manager_interface.hpp>
+#include <SPeMPE/Managers/Networking_manager.hpp>
 #include <SPeMPE/Managers/Networking_manager_default.hpp>
-#include <SPeMPE/Managers/Networking_manager_interface.hpp>
+#include <SPeMPE/Managers/Synced_varmap_manager.hpp>
 #include <SPeMPE/Managers/Synced_varmap_manager_default.hpp>
-#include <SPeMPE/Managers/Synced_varmap_manager_interface.hpp>
+#include <SPeMPE/Managers/Window_manager.hpp>
 #include <SPeMPE/Managers/Window_manager_default.hpp>
-#include <SPeMPE/Managers/Window_manager_interface.hpp>
 
 // Utility
 

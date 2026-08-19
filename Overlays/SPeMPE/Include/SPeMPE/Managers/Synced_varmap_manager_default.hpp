@@ -9,8 +9,8 @@
 #include <Hobgoblin/Utility/Dynamic_bitset.hpp>
 #include <Hobgoblin/Utility/Packet.hpp>
 #include <SPeMPE/GameObjectFramework/Game_object_bases.hpp>
-#include <SPeMPE/Managers/Networking_manager_interface.hpp>
-#include <SPeMPE/Managers/Synced_varmap_manager_interface.hpp>
+#include <SPeMPE/Managers/Networking_manager.hpp>
+#include <SPeMPE/Managers/Synced_varmap_manager.hpp>
 
 #include <unordered_map>
 
@@ -21,7 +21,7 @@ namespace spempe {
  * Needs: Networking manager
  */
 class DefaultSyncedVarmapManager 
-    : public SyncedVarmapManagerInterface
+    : public SyncedVarmapManager
     , public NonstateObject
     , private NetworkingEventListener {
 public:
@@ -87,7 +87,7 @@ private:
         hobgoblin::util::DynamicBitset permissions = {};
     };
 
-    NetworkingManagerInterface* _netMgr = nullptr;
+    NetworkingManager* _netMgr = nullptr;
 
     Mode _mode = Mode::Uninitialized;
 
