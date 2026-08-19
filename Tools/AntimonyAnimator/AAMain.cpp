@@ -127,9 +127,7 @@ private:
     int _stage    = 0;
     int _substage = 0;
 
-    void _drawCrosshairs(spe::WindowManager& aWinMgr,
-                         hg::math::Vector2d           aCenter,
-                         uwga::Color                  aColor) {
+    void _drawCrosshairs(spe::WindowManager& aWinMgr, hg::math::Vector2d aCenter, uwga::Color aColor) {
         auto&      canvas    = aWinMgr.getActiveCanvas();
         const auto screenPos = aWinMgr.mapCoordsToPixel({aCenter.x, aCenter.y});
 

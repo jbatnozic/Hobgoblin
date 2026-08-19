@@ -186,8 +186,8 @@ std::unique_ptr<spe::GameContext> MakeGameContext(GameMode      aGameMode,
     context->attachAndOwnComponent(std::move(lobbyMgr));
 
     // Create and attach a lobby frontend manager
-    auto lobbyFrontendMgr =
-        QAO_Create<DefaultLobbyFrontendManager>(context->getQAORuntime().nonOwning(), PRIORITY_LOBBYFRONTMGR);
+    auto lobbyFrontendMgr = QAO_Create<DefaultLobbyFrontendManager>(context->getQAORuntime().nonOwning(),
+                                                                    PRIORITY_LOBBYFRONTMGR);
 
     if (aGameMode == GameMode::Server) {
         lobbyFrontendMgr->setToHeadlessHostMode();
@@ -213,8 +213,8 @@ std::unique_ptr<spe::GameContext> MakeGameContext(GameMode      aGameMode,
     context->attachAndOwnComponent(std::move(authMgr));
 
     // Create and attach a Gameplay manager
-    auto gpMgr =
-        QAO_Create<DefaultMainGameplayManager>(context->getQAORuntime().nonOwning(), PRIORITY_GAMEPLAYMGR);
+    auto gpMgr = QAO_Create<DefaultMainGameplayManager>(context->getQAORuntime().nonOwning(),
+                                                        PRIORITY_GAMEPLAYMGR);
     context->attachAndOwnComponent(std::move(gpMgr));
 
     // Create player "characters"

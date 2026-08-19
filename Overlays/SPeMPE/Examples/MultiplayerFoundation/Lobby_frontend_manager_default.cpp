@@ -141,7 +141,7 @@ namespace {
 RN_DEFINE_RPC(LobbyFrontendManager_LockInLobby, RN_ARGS(std::string&, aAuthToken)) {
     RN_NODE_IN_HANDLER().callIfServer([&](RN_ServerInterface& aServer) {
         const spe::RPCReceiverContext rc{aServer};
-        auto& authMgr = rc.gameContext.getComponent<spe::AuthorizationManager>();
+        auto&                         authMgr = rc.gameContext.getComponent<spe::AuthorizationManager>();
         if (aAuthToken != *authMgr.getLocalAuthToken()) {
             throw RN_IllegalMessage();
         }
@@ -158,7 +158,7 @@ RN_DEFINE_RPC(LobbyFrontendManager_LockInLobby, RN_ARGS(std::string&, aAuthToken
 RN_DEFINE_RPC(LobbyFrontendManager_ResetLobby, RN_ARGS(std::string&, aAuthToken)) {
     RN_NODE_IN_HANDLER().callIfServer([&](RN_ServerInterface& aServer) {
         const spe::RPCReceiverContext rc{aServer};
-        auto& authMgr = rc.gameContext.getComponent<spe::AuthorizationManager>();
+        auto&                         authMgr = rc.gameContext.getComponent<spe::AuthorizationManager>();
         if (aAuthToken != *authMgr.getLocalAuthToken()) {
             throw RN_IllegalMessage();
         }
@@ -176,7 +176,7 @@ RN_DEFINE_RPC(LobbyFrontendManager_MoveUp,
               RN_ARGS(std::string&, aAuthToken, hg::PZInteger, aSlotIndex)) {
     RN_NODE_IN_HANDLER().callIfServer([&](RN_ServerInterface& aServer) {
         const spe::RPCReceiverContext rc{aServer};
-        auto& authMgr = rc.gameContext.getComponent<spe::AuthorizationManager>();
+        auto&                         authMgr = rc.gameContext.getComponent<spe::AuthorizationManager>();
         if (aAuthToken != *authMgr.getLocalAuthToken()) {
             throw RN_IllegalMessage();
         }
@@ -194,7 +194,7 @@ RN_DEFINE_RPC(LobbyFrontendManager_MoveDown,
               RN_ARGS(std::string&, aAuthToken, hg::PZInteger, aSlotIndex)) {
     RN_NODE_IN_HANDLER().callIfServer([&](RN_ServerInterface& aServer) {
         const spe::RPCReceiverContext rc{aServer};
-        auto& authMgr = rc.gameContext.getComponent<spe::AuthorizationManager>();
+        auto&                         authMgr = rc.gameContext.getComponent<spe::AuthorizationManager>();
         if (aAuthToken != *authMgr.getLocalAuthToken()) {
             throw RN_IllegalMessage();
         }
@@ -211,7 +211,7 @@ RN_DEFINE_RPC(LobbyFrontendManager_MoveDown,
 RN_DEFINE_RPC(LobbyFrontendManager_Kick, RN_ARGS(std::string&, aAuthToken, hg::PZInteger, aSlotIndex)) {
     RN_NODE_IN_HANDLER().callIfServer([&](RN_ServerInterface& aServer) {
         const spe::RPCReceiverContext rc{aServer};
-        auto& authMgr = rc.gameContext.getComponent<spe::AuthorizationManager>();
+        auto&                         authMgr = rc.gameContext.getComponent<spe::AuthorizationManager>();
         if (aAuthToken != *authMgr.getLocalAuthToken()) {
             throw RN_IllegalMessage();
         }
@@ -348,9 +348,8 @@ public:
             }
         }
 
-        _lobbyModel.localName = lobbyBackendMgr.getLocalName();
-        _lobbyModel.isAuthorized =
-            CCOMP<spe::AuthorizationManager>().getLocalAuthToken().has_value();
+        _lobbyModel.localName    = lobbyBackendMgr.getLocalName();
+        _lobbyModel.isAuthorized = CCOMP<spe::AuthorizationManager>().getLocalAuthToken().has_value();
 
         _dataModelHandle.DirtyAllVariables();
     }
@@ -455,7 +454,8 @@ private:
 // LOBBY FRONTEND MANAGER                                                //
 ///////////////////////////////////////////////////////////////////////////
 
-DefaultLobbyFrontendManager::DefaultLobbyFrontendManager(QAO_InstGuard aInstGuard, int aExecutionPriority)
+DefaultLobbyFrontendManager::DefaultLobbyFrontendManager(QAO_InstGuard aInstGuard,
+                                                         int           aExecutionPriority)
     : NonstateObject(aInstGuard,
                      QAO_ExeCon::INTERACTIVITY,
                      aExecutionPriority,
@@ -468,7 +468,8 @@ void DefaultLobbyFrontendManager::setToHeadlessHostMode() {
     _impl->setToHeadlessHostMode();
 }
 
-void DefaultLobbyFrontendManager::setToClientMode(const std::string& aName, const std::string& aUniqueId) {
+void DefaultLobbyFrontendManager::setToClientMode(const std::string& aName,
+                                                  const std::string& aUniqueId) {
     _impl->setToClientMode(aName, aUniqueId);
 }
 

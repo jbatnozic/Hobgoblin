@@ -212,16 +212,16 @@ private:
 };
 
 inline WindowManager::TimingConfig::TimingConfig(FrameRate aFrameRateLimit,
-                                                          bool      aBusyWaitPreventionEnabled,
-                                                          bool      aVerticalSyncEnabled)
+                                                 bool      aBusyWaitPreventionEnabled,
+                                                 bool      aVerticalSyncEnabled)
     : framerateLimit{aFrameRateLimit}
     , lowLevelFramerateLimiter{0}
     , busyWaitPreventionEnabled{aBusyWaitPreventionEnabled}
     , verticalSyncEnabled{aVerticalSyncEnabled} {}
 
 inline WindowManager::TimingConfig::TimingConfig(hg::PZInteger aLowLevelFramerateLimiter,
-                                                          bool          aBusyWaitPreventionEnabled,
-                                                          bool          aVerticalSyncEnabled)
+                                                 bool          aBusyWaitPreventionEnabled,
+                                                 bool          aVerticalSyncEnabled)
     : framerateLimit{std::nullopt}
     , lowLevelFramerateLimiter{aLowLevelFramerateLimiter}
     , busyWaitPreventionEnabled{aBusyWaitPreventionEnabled}
