@@ -1,31 +1,31 @@
 // Copyright 2026 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#include <Main_game_flow_manager.hpp>
+#include <Main_game_flow_manager_default.hpp>
 
 #include <Asteroid.hpp>
-#include <Interactivity_manager.hpp>
-#include <Overworld_manager.hpp>
+#include <Interactivity_manager_default.hpp>
+#include <Overworld_manager_default.hpp>
 #include <Ship_controller.hpp>
 #include <Ship_starting_block.hpp>
 
 namespace cinnabar {
 
-MainGameFlowManager::MainGameFlowManager(QAO_InstGuard aInstGuard)
+DefaultMainGameFlowManager::DefaultMainGameFlowManager(QAO_InstGuard aInstGuard)
     : spe::NonstateObject{aInstGuard,
                           QAO_ExeCon::ESSENTIAL,
                           PRIORITY_MAINGAMEFLOWMGR,
-                          QAO_STATIC_NAME("cinnabar::MainGameFlowManager")} {}
+                          QAO_STATIC_NAME("cinnabar::DefaultMainGameFlowManager")} {}
 
-void MainGameFlowManager::_didAttach(QAO_Runtime& aRuntime) {
+void DefaultMainGameFlowManager::_didAttach(QAO_Runtime& aRuntime) {
     spe::NonstateObject::_didAttach(aRuntime);
 
     // Init scenario (TEMPORARY)
 
-    auto ovwMgr = QAO_Create<OverworldManager>(aRuntime.nonOwning());
+    auto ovwMgr = QAO_Create<DefaultOverworldManager>(aRuntime.nonOwning());
     ctx().attachAndOwnComponent(std::move(ovwMgr));
 
-    auto interactivityMgr = QAO_Create<InteractivityManager>(aRuntime.nonOwning());
+    auto interactivityMgr = QAO_Create<DefaultInteractivityManager>(aRuntime.nonOwning());
     ctx().attachAndOwnComponent(std::move(interactivityMgr));
 
     auto core = QAO_Create<ShipStartingBlock>(aRuntime);
@@ -38,7 +38,7 @@ void MainGameFlowManager::_didAttach(QAO_Runtime& aRuntime) {
     asteroid->init({256.0, 256.0});
 }
 
-void MainGameFlowManager::_eventDisplay() {
+void DefaultMainGameFlowManager::_eventDisplay() {
     auto& context = ctx();
     auto& gs = context.getGameState();
     

@@ -9,16 +9,16 @@ add_executable(${PROJECT_NAME}
     "Source/Asteroid.cpp"
     "Source/Attachable_ghost.cpp"
     "Source/Main.cpp"
-    "Source/Overworld_manager.cpp"
+    "Source/Overworld_manager_default.cpp"
     "Source/Game_context_factory.cpp"
     "Source/Graph_of_attachables.cpp"
     "Source/Graphics_system_provider.cpp"
-    "Source/Main_game_flow_manager.cpp"
+    "Source/Main_game_flow_manager_default.cpp"
     "Source/Poly_shape.cpp"
     "Source/Ship_attachable.cpp"
     "Source/Ship_controller.cpp"
     "Source/Ship_starting_block.cpp"
-    "Source/Interactivity_manager.cpp"
+    "Source/Interactivity_manager_default.cpp"
 )
 
 target_link_libraries(${PROJECT_NAME}
