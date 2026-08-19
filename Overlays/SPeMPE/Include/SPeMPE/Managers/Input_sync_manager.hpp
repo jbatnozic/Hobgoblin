@@ -3,8 +3,8 @@
 
 // clang-format off
 
-#ifndef SPEMPE_MANAGERS_INPUT_SYNC_MANAGER_INTERFACE_HPP
-#define SPEMPE_MANAGERS_INPUT_SYNC_MANAGER_INTERFACE_HPP
+#ifndef SPEMPE_MANAGERS_INPUT_SYNC_MANAGER_HPP
+#define SPEMPE_MANAGERS_INPUT_SYNC_MANAGER_HPP
 
 #include <Hobgoblin/Utility/Packet.hpp>
 #include <SPeMPE/GameContext/Context_components.hpp>
@@ -24,9 +24,9 @@ Update:
 PostUpdate:                                          [c] uploads input
 */
 
-class InputSyncManagerInterface : public ContextComponent {
+class InputSyncManager : public ContextComponent {
 public:
-    ~InputSyncManagerInterface() override = default;
+    ~InputSyncManager() override = default;
 
     //! Initializes the manager as the host for up to 'aClientCount' clients. Note: if 'aClientCount'
     //! is 0, the manager will be able only to echo the inputs of the local player.
@@ -106,14 +106,14 @@ private:
     SPEMPE_CTXCOMP_TAG("jbatnozic::spempe::InputSyncManager");
 };
 
-//! The bare InputSyncManagerInterface has very unwieldy methods which are difficult to use, so
+//! The bare InputSyncManager has very unwieldy methods which are difficult to use, so
 //! in any place where you want to define, set or get inputs, you can construct an instance of
 //! 'InputSyncManagerWrapper' instead and use its templated methods which are must more ergonomic.
 //! This wrapper is very lightweight to construct so there isn't much overhead (if any) when using
 //! it, and you don't have to keep the instance around - just construct a new one when needed.
 class InputSyncManagerWrapper {
 public:
-    InputSyncManagerWrapper(InputSyncManagerInterface& aMgr)
+    InputSyncManagerWrapper(InputSyncManager& aMgr)
         : _mgr{aMgr}
     {
     }
@@ -314,13 +314,13 @@ public:
     }
 
 private:
-    InputSyncManagerInterface& _mgr;
+    InputSyncManager& _mgr;
     mutable hg::util::Packet _helperPacket;
 };
 
 } // namespace spempe
 } // namespace jbatnozic
 
-#endif // !SPEMPE_MANAGERS_INPUT_SYNC_MANAGER_INTERFACE_HPP
+#endif // !SPEMPE_MANAGERS_INPUT_SYNC_MANAGER_HPP
 
 // clang-format on

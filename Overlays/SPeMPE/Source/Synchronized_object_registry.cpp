@@ -6,7 +6,7 @@
 #include <SPeMPE/GameContext/Game_context.hpp>
 #include <SPeMPE/GameObjectFramework/Game_object_bases.hpp>
 #include <SPeMPE/GameObjectFramework/Synchronized_object_registry.hpp>
-#include <SPeMPE/Managers/Networking_manager_interface.hpp>
+#include <SPeMPE/Managers/Networking_manager.hpp>
 #include <SPeMPE/Utility/Rpc_receiver_context_template.hpp>
 
 #include <Hobgoblin/Common/Build_type.hpp>
@@ -41,8 +41,8 @@ RN_DEFINE_RPC(USPEMPE_DeactivateObject, RN_ARGS(SyncId, aSyncId)) {
         });
 }
 
-bool IsFilteredOut(NetworkingManagerInterface::ExeCon aExeconThreshold,
-                   NetworkingManagerInterface::ExeConSyncFilter aFilter) {
+bool IsFilteredOut(NetworkingManager::ExeCon aExeconThreshold,
+                   NetworkingManager::ExeConSyncFilter aFilter) {
     return aExeconThreshold < aFilter.min || aExeconThreshold > aFilter.max;
 }
 } // namespace

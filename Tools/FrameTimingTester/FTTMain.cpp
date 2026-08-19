@@ -79,16 +79,16 @@ std::unique_ptr<spe::GameContext> CreateContex() {
     auto winMgr = hg::QAO_Create<spe::DefaultWindowManager>(ctx->getQAORuntime().nonOwning(),
                                                             PRIORITY_WINDOW_MANAGER);
     // clang-format off
-    spe::WindowManagerInterface::WindowConfig windowConfig{
+    spe::WindowManager::WindowConfig windowConfig{
         .size = {800, 800},
         .title = "FTT (SPeMPE)",
         .style = hg::uwga::WindowStyle::DEFAULT
     };
-    spe::WindowManagerInterface::MainRenderTextureConfig mrtConfig{
+    spe::WindowManager::MainRenderTextureConfig mrtConfig{
         .size = {1024, 1024},
         .smooth = true
     };
-    spe::WindowManagerInterface::TimingConfig timingConfig{
+    spe::WindowManager::TimingConfig timingConfig{
     #ifdef _MSC_VER
         spe::FrameRate{FRAME_RATE},
         spe::PREVENT_BUSY_WAIT_ON,
@@ -101,7 +101,7 @@ std::unique_ptr<spe::GameContext> CreateContex() {
     };
     // clang-format on
     winMgr->setToNormalMode(uwgaSystem, windowConfig, mrtConfig, timingConfig);
-    winMgr->setMainRenderTextureDrawPosition(spe::WindowManagerInterface::DrawPosition::FIT);
+    winMgr->setMainRenderTextureDrawPosition(spe::WindowManager::DrawPosition::FIT);
     winMgr->setStopIfCloseClicked(true);
 
     auto view = winMgr->getActiveCanvas().getView().clone();
@@ -119,7 +119,7 @@ public:
         : spe::NonstateObject{aInstGuard, hg::QAO_ExeCon::INTERACTIVITY, aExecutionPriority, "Driver"} {}
 
     void _eventUpdate1() override {
-        auto&       winMgr = ccomp<spe::WindowManagerInterface>();
+        auto&       winMgr = ccomp<spe::WindowManager>();
         const auto& input  = winMgr.getInput();
 
         const auto lr         = (float)input.checkPressed(PK_D) - (float)input.checkPressed(PK_A);
@@ -132,7 +132,7 @@ public:
     }
 
     void _eventDraw1() override {
-        auto& winMgr = ccomp<spe::WindowManagerInterface>();
+        auto& winMgr = ccomp<spe::WindowManager>();
         auto& canvas = winMgr.getActiveCanvas();
 
         uwga::CircleShape circle{canvas.getSystem(), 32.f};

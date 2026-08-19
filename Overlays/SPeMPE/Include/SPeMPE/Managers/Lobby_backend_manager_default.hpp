@@ -6,7 +6,7 @@
 #ifndef SPEMPE_MANAGERS_LOBBY_BACKEND_MANAGER_DEFAULT_HPP
 #define SPEMPE_MANAGERS_LOBBY_BACKEND_MANAGER_DEFAULT_HPP
 
-#include <SPeMPE/Managers/Lobby_backend_manager_interface.hpp>
+#include <SPeMPE/Managers/Lobby_backend_manager.hpp>
 
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/RigelNet.hpp>
@@ -16,7 +16,7 @@
 #include <vector>
 
 #include <SPeMPE/GameObjectFramework/Game_object_bases.hpp>
-#include <SPeMPE/Managers/Networking_manager_interface.hpp>
+#include <SPeMPE/Managers/Networking_manager.hpp>
 
 namespace jbatnozic {
 namespace spempe {
@@ -25,7 +25,7 @@ namespace spempe {
  * Needs: Networking manager, Synced varmap manager, [opt] Window manager
  */
 class DefaultLobbyBackendManager
-    : public LobbyBackendManagerInterface
+    : public LobbyBackendManager
     , public NonstateObject
     , private NetworkingEventListener
 {

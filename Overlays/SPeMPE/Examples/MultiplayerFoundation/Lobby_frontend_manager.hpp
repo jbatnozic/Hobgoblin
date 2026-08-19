@@ -1,39 +1,34 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
+// clang-format off
+
 #pragma once
 
 #include "Engine.h"
-#include "Lobby_frontend_manager_interface.hpp"
 
-#include <memory>
+#include <string>
 
 class LobbyFrontendManager
-    : public LobbyFrontendManagerInterface
-    , public spe::NonstateObject {
+    : public spe::ContextComponent
+{
 public:
-    LobbyFrontendManager(QAO_InstGuard aInstGuard, int aExecutionPriority);
-    ~LobbyFrontendManager() override;
+    enum class Mode {
+        Uninitialized,
+        HeadlessHost,
+        Client,
+    };
 
-    void setToHeadlessHostMode() override;
-    void setToClientMode(const std::string& aName, const std::string& aUniqueId) override;
-    Mode getMode() const override;
+    ~LobbyFrontendManager() override = default;
+
+    virtual void setToHeadlessHostMode() = 0;
+    //virtual void setToHostMode() = 0;
+    virtual void setToClientMode(const std::string& aName, const std::string& aUniqueId) = 0;
+    
+    virtual Mode getMode() const = 0;
 
 private:
-    class Impl;
-    friend Impl;
-    std::unique_ptr<Impl> _impl;
-
-    void _willDetach(QAO_Runtime& aRuntime) override;
-
-    void _eventBeginUpdate() override;
-    void _eventUpdate1() override;
-    void _eventDrawGUI() override;
-
-    friend void ActivateCommand(LobbyFrontendManager& aMgr, int aCommand, void* aArgs);
+    SPEMPE_CTXCOMP_TAG("LobbyFrontendManager");
 };
 
-QAO_REGISTER_CLASS(LobbyFrontendManager, Example_LobbyFrontendManager) {
-    QAO_LOCAL_ALIAS(C, clazz);
-    clazz.setSuperclass<spe::NonstateObject>();
-}
+// clang-format on

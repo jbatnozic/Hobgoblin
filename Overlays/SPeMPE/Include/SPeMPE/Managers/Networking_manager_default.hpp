@@ -5,7 +5,7 @@
 #define SPEMPE_MANAGERS_NETWORKING_MANAGER_DEFAULT_HPP
 
 #include <SPeMPE/GameObjectFramework/Game_object_bases.hpp>
-#include <SPeMPE/Managers/Networking_manager_interface.hpp>
+#include <SPeMPE/Managers/Networking_manager.hpp>
 
 #include <deque>
 #include <memory>
@@ -14,10 +14,10 @@
 namespace jbatnozic {
 namespace spempe {
 
-//! One concrete implementation of NetworkingManagerInterface.
+//! One concrete implementation of NetworkingManager.
 //! TODO: Tip on setting execution priority?
 class DefaultNetworkingManager
-    : public NetworkingManagerInterface
+    : public NetworkingManager
     , public NonstateObject
     , private hg::RN_EventListener {
 public:

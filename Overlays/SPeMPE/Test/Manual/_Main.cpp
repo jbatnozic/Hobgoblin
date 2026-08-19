@@ -36,7 +36,7 @@ int main(int argc, char* argv[]) {
       {
           auto context = multiplayer::CreateHostGameContext();
           const auto serverPort =
-              context->getComponent<spe::NetworkingManagerInterface>().getServer().getLocalPort();
+              context->getComponent<spe::NetworkingManager>().getServer().getLocalPort();
           HG_LOG_INFO(LOG_ID, "Server started on port {}.", serverPort);
           auto result = context->runFor(-1);
           HG_LOG_INFO(LOG_ID, "Host exited with status {}.", result);

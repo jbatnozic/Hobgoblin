@@ -15,9 +15,9 @@
 #include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/Logging.hpp>
 #include <Hobgoblin/RigelNet_macros.hpp>
-#include <SPeMPE/Managers/Synced_varmap_manager_interface.hpp>
-#include <SPeMPE/Managers/Window_manager_interface.hpp>
-#include <SPeMPE/Managers/Networking_manager_interface.hpp>
+#include <SPeMPE/Managers/Synced_varmap_manager.hpp>
+#include <SPeMPE/Managers/Window_manager.hpp>
+#include <SPeMPE/Managers/Networking_manager.hpp>
 #include <SPeMPE/Utility/Rpc_receiver_context_template.hpp>
 #include <SFML/Graphics.hpp>
 
@@ -146,7 +146,7 @@ RN_DEFINE_RPC(USPEMPE_DefaultLobbyBackendManager_SetPlayerInfo,
             const auto rc = SPEMPE_GET_RPC_RECEIVER_CONTEXT(aServer);
             USPEMPE_DefaultLobbyBackendManager_SetPlayerInfo_Impl(
                 dynamic_cast<DefaultLobbyBackendManager&>(
-                    rc.gameContext.getComponent<LobbyBackendManagerInterface>()
+                    rc.gameContext.getComponent<LobbyBackendManager>()
                 ),
                 rc.senderIndex,
                 aName,
@@ -184,7 +184,7 @@ RN_DEFINE_RPC(USPEMPE_DefaultLobbyBackendManager_SetPlayerIndex,
         [=](RN_ClientInterface& aClient) {
             const auto rc = SPEMPE_GET_RPC_RECEIVER_CONTEXT(aClient);
             USPEMPE_DefaultLobbyBackendManager_SetPlayerIndex_Impl(
-                dynamic_cast<DefaultLobbyBackendManager&>(rc.gameContext.getComponent<LobbyBackendManagerInterface>()),
+                dynamic_cast<DefaultLobbyBackendManager&>(rc.gameContext.getComponent<LobbyBackendManager>()),
                 aPlayerIndex
             );
         });
@@ -221,7 +221,7 @@ DefaultLobbyBackendManager::~DefaultLobbyBackendManager() = default;
 
 void DefaultLobbyBackendManager::_willDetach(hobgoblin::QAO_Runtime& aRuntime) {
     if (_mode == Mode::Host) {
-        ccomp<NetworkingManagerInterface>().removeEventListener(this);
+        ccomp<NetworkingManager>().removeEventListener(this);
     }
     NonstateObject::_willDetach(aRuntime);
 }
@@ -233,7 +233,7 @@ void DefaultLobbyBackendManager::setToHostMode(hobgoblin::PZInteger aLobbySize) 
     
     resize(aLobbySize);
 
-    ccomp<SyncedVarmapManagerInterface>().setInt64(
+    ccomp<SyncedVarmapManager>().setInt64(
         MakeVarmapKey_LobbySize(),
         aLobbySize
     );
@@ -253,7 +253,7 @@ void DefaultLobbyBackendManager::setToHostMode(hobgoblin::PZInteger aLobbySize) 
     _updateVarmapForLockedInEntry(0);
     _updateVarmapForDesiredEntry(0);
 
-    ccomp<NetworkingManagerInterface>().addEventListener(this);
+    ccomp<NetworkingManager>().addEventListener(this);
 }
 
 void DefaultLobbyBackendManager::setToClientMode(hobgoblin::PZInteger aLobbySize) {
@@ -343,7 +343,7 @@ bool DefaultLobbyBackendManager::lockInPendingChanges() {
 
         _updateVarmapForLockedInEntry(slotIndex);
 
-        auto& netMgr = ccomp<NetworkingManagerInterface>();
+        auto& netMgr = ccomp<NetworkingManager>();
         if (clientIndex >= 0) {
             Compose_USPEMPE_DefaultLobbyBackendManager_SetPlayerIndex(
                 netMgr.getNode(),
@@ -395,7 +395,7 @@ void DefaultLobbyBackendManager::uploadLocalInfo() const {
                         "This method can only be called while in Client mode!");
     }
 
-    auto& netMgr = ccomp<NetworkingManagerInterface>();
+    auto& netMgr = ccomp<NetworkingManager>();
     Compose_USPEMPE_DefaultLobbyBackendManager_SetPlayerInfo(
         netMgr.getNode(),
         RN_COMPOSE_FOR_ALL,
@@ -416,7 +416,7 @@ void DefaultLobbyBackendManager::setLocalName(const std::string& aName) {
     _localPlayerInfo.name = aName;
 
     if (_mode == Mode::Host) {
-        auto& varmap = ccomp<SyncedVarmapManagerInterface>();
+        auto& varmap = ccomp<SyncedVarmapManager>();
         {
             const auto localSlot =
                 std::find_if(_lockedIn.begin(), _lockedIn.end(),
@@ -444,7 +444,7 @@ void DefaultLobbyBackendManager::setLocalUniqueId(const std::string& aUniqueId) 
     _localPlayerInfo.uniqueId = aUniqueId;
 
     if (_mode == Mode::Host) {
-        auto& varmap = ccomp<SyncedVarmapManagerInterface>();
+        auto& varmap = ccomp<SyncedVarmapManager>();
         {
             const auto localSlot =
                 std::find_if(_lockedIn.begin(), _lockedIn.end(),
@@ -473,7 +473,7 @@ void DefaultLobbyBackendManager::setLocalCustomData(hobgoblin::PZInteger aIndex,
     _localPlayerInfo.customData.at(hg::pztos(aIndex)) = aCustomData;
 
     if (_mode == Mode::Host) {
-        auto& varmap = ccomp<SyncedVarmapManagerInterface>();
+        auto& varmap = ccomp<SyncedVarmapManager>();
         {
             const auto localSlot =
                 std::find_if(_lockedIn.begin(), _lockedIn.end(),
@@ -517,7 +517,7 @@ void DefaultLobbyBackendManager::resize(hobgoblin::PZInteger aNewLobbySize) {
     _desired.resize(hg::pztos(aNewLobbySize));
 
     if (_mode == Mode::Host) {
-        ccomp<SyncedVarmapManagerInterface>().setInt64(
+        ccomp<SyncedVarmapManager>().setInt64(
             MakeVarmapKey_LobbySize(),
             aNewLobbySize
         );
@@ -603,7 +603,7 @@ void DefaultLobbyBackendManager::_eventBeginUpdate_Host() {
 }
 
 void DefaultLobbyBackendManager::_eventBeginUpdate_Client() {
-    const auto& varmap = ccomp<SyncedVarmapManagerInterface>();
+    const auto& varmap = ccomp<SyncedVarmapManager>();
 
     // Check that size is correct and adjust if needed
     const auto& size = varmap.getInt64(MakeVarmapKey_LobbySize());
@@ -667,7 +667,7 @@ hg::PZInteger DefaultLobbyBackendManager::_getSize() const {
 }
 
 void DefaultLobbyBackendManager::_scanForNewPlayers() {
-    auto& netMgr = ccomp<NetworkingManagerInterface>();
+    auto& netMgr = ccomp<NetworkingManager>();
     auto& server = netMgr.getServer();
 
     // Check if all connected clients are represented in _desired. If not, add them.
@@ -732,7 +732,7 @@ hg::PZInteger DefaultLobbyBackendManager::_findOptimalPositionForClient(const RN
 }
 
 void DefaultLobbyBackendManager::_removeDesiredEntriesForDisconnectedPlayers() {
-    const auto& server = ccomp<NetworkingManagerInterface>().getServer();
+    const auto& server = ccomp<NetworkingManager>().getServer();
 
     for (std::size_t i = 0; i < hg::pztos(_getSize()); i += 1) {
         auto& player = _desired[i];
@@ -759,7 +759,7 @@ void DefaultLobbyBackendManager::_removeDesiredEntriesForDisconnectedPlayers() {
 
 void DefaultLobbyBackendManager::_updateVarmapForLockedInEntry(hobgoblin::PZInteger aSlotIndex) const {
     const auto& entry = _lockedIn[hg::pztos(aSlotIndex)];
-    auto& varmap = ccomp<SyncedVarmapManagerInterface>();
+    auto& varmap = ccomp<SyncedVarmapManager>();
 
     varmap.setString(MakeVarmapKey_LockedIn_Name(aSlotIndex), entry.name);
     varmap.setString(MakeVarmapKey_LockedIn_IpAddr(aSlotIndex), entry.ipAddress);
@@ -772,7 +772,7 @@ void DefaultLobbyBackendManager::_updateVarmapForLockedInEntry(hobgoblin::PZInte
 
 void DefaultLobbyBackendManager::_updateVarmapForDesiredEntry(hobgoblin::PZInteger aSlotIndex) const {
     const auto& entry = _desired[hg::pztos(aSlotIndex)];
-    auto& varmap = ccomp<SyncedVarmapManagerInterface>();
+    auto& varmap = ccomp<SyncedVarmapManager>();
 
     varmap.setString(MakeVarmapKey_Desired_Name(aSlotIndex), entry.name);
     varmap.setString(MakeVarmapKey_Desired_IpAddr(aSlotIndex), entry.ipAddress);

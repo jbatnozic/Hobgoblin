@@ -1,7 +1,7 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#include "Main_gameplay_manager.hpp"
+#include "Main_gameplay_manager_default.hpp"
 
 #include "Player_controls.hpp"
 
@@ -23,25 +23,25 @@ RN_DEFINE_RPC(SetGlobalStateBufferingLength, RN_ARGS(unsigned, aNewLength)) {
     });
 }
 
-MainGameplayManager::MainGameplayManager(QAO_InstGuard aInstGuard, int aExecutionPriority)
+DefaultMainGameplayManager::DefaultMainGameplayManager(QAO_InstGuard aInstGuard, int aExecutionPriority)
     : NonstateObject{aInstGuard,
                      QAO_ExeCon::ESSENTIAL,
                      aExecutionPriority,
                      QAO_STATIC_NAME("GameplayManager")} {}
 
-void MainGameplayManager::_didAttach(QAO_Runtime& aRuntime) {
+void DefaultMainGameplayManager::_didAttach(QAO_Runtime& aRuntime) {
     NonstateObject::_didAttach(aRuntime);
     auto& netMgr = ccomp<MNetworking>();
     netMgr.addEventListener(this);
     stateBufferingLength = netMgr.getStateBufferingLength();
 }
 
-void MainGameplayManager::_willDetach(QAO_Runtime& aRuntime) {
+void DefaultMainGameplayManager::_willDetach(QAO_Runtime& aRuntime) {
     ccomp<MNetworking>().removeEventListener(this);
     NonstateObject::_willDetach(aRuntime);
 }
 
-void MainGameplayManager::_eventUpdate1() {
+void DefaultMainGameplayManager::_eventUpdate1() {
     if (ctx().isPrivileged()) {
         auto& winMgr = ccomp<MWindow>();
 
@@ -89,11 +89,11 @@ void MainGameplayManager::_eventUpdate1() {
     }
 }
 
-void MainGameplayManager::_eventDrawGUI() {
+void DefaultMainGameplayManager::_eventDrawGUI() {
     // Do nothing
 }
 
-void MainGameplayManager::_eventPostUpdate() {
+void DefaultMainGameplayManager::_eventPostUpdate() {
     const auto input = ccomp<MWindow>().getInput();
     if (input.checkPressed(hg::in::PK_F9, spe::WindowFrameInputView::Mode::Direct)) {
         // Stopping the context will delete:
@@ -114,7 +114,7 @@ void MainGameplayManager::_eventPostUpdate() {
     }
 }
 
-void MainGameplayManager::onNetworkingEvent(const hg::RN_Event& aEvent) {
+void DefaultMainGameplayManager::onNetworkingEvent(const hg::RN_Event& aEvent) {
     if (ccomp<MNetworking>().isClient()) {
         // CLIENT
         aEvent.visit([this](const RN_Event::Connected& ev) {

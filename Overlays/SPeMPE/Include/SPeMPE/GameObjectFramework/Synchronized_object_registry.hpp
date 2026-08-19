@@ -6,7 +6,7 @@
 
 #include <SPeMPE/GameObjectFramework/Sync_control_delegate.hpp>
 #include <SPeMPE/GameObjectFramework/Sync_id.hpp>
-#include <SPeMPE/Managers/Networking_manager_interface.hpp>
+#include <SPeMPE/Managers/Networking_manager.hpp>
 
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/RigelNet.hpp>
@@ -41,7 +41,7 @@ public:
 
     void destroyAllRegisteredObjects();
 
-    using ExeConSyncFilter = NetworkingManagerInterface::ExeConSyncFilter;
+    using ExeConSyncFilter = NetworkingManager::ExeConSyncFilter;
 
     void setSyncCreateExeconFilter(ExeConSyncFilter aFilter);
     void setSyncUpdateExeconFilter(ExeConSyncFilter aFilter);

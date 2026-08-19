@@ -13,7 +13,7 @@
 #include <Hobgoblin/Utility/Time_utils.hpp>
 
 #include <SPeMPE/GameObjectFramework/Game_object_bases.hpp>
-#include <SPeMPE/Managers/Window_manager_interface.hpp>
+#include <SPeMPE/Managers/Window_manager.hpp>
 #include <SPeMPE/Utility/Timing.hpp>
 #include <SPeMPE/Utility/Window_frame_input_view.hpp>
 #include <SPeMPE/Utility/Window_input_tracker.hpp>
@@ -26,7 +26,7 @@ namespace spempe {
 namespace hg = ::jbatnozic::hobgoblin;
 
 class DefaultWindowManager
-    : public WindowManagerInterface
+    : public WindowManager
     , public NonstateObject {
 public:
     DefaultWindowManager(hobgoblin::QAO_InstGuard aInstGuard, int aExecutionPriority);

@@ -22,7 +22,7 @@ constexpr auto CTRLNAME_DOWN  = "down";
 constexpr auto CTRLNAME_JUMP  = "jump";
 
 inline
-void SetUpPlayerControlsDefinitions(spe::InputSyncManagerInterface& aInputSyncManager) {
+void SetUpPlayerControlsDefinitions(spe::InputSyncManager& aInputSyncManager) {
     spe::InputSyncManagerWrapper wrapper{aInputSyncManager};
     wrapper.defineSignal<bool>(CTRLNAME_LEFT,  false);
     wrapper.defineSignal<bool>(CTRLNAME_RIGHT, false);

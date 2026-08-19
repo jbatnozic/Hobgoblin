@@ -25,7 +25,7 @@ struct RPCReceiverContextTemplate {
     //! Reference to game context.
     GameContext& gameContext;
 
-    //! Reference to instance of spempe::NetworkingManagerInterface.
+    //! Reference to instance of spempe::NetworkingManager.
     taNetwMgr& netwMgr;
 
     //! Index of the sender (always -1000 on client).
@@ -118,11 +118,11 @@ RPCReceiverContextTemplate<taNetwMgr> GetRPCReceiverContext(hg::RN_ServerInterfa
 //! RN_ServerInterface or a RN_ClientInterface.
 //! 
 //! Note: This macro is intended for use by the engine itself (and when you use it, make sure
-//! to #include <SPeMPE/Managers/Networking_manager_interface.hpp>). In user code, it's 
+//! to #include <SPeMPE/Managers/Networking_manager.hpp>). In user code, it's 
 //! recommended to use the non-templated class `RPCReceiverContext` from
 //! <SPeMPE/Utility/Rpc_receiver_context_user.hpp>.
 #define SPEMPE_GET_RPC_RECEIVER_CONTEXT(_node_) \
-    (::jbatnozic::spempe::detail::GetRPCReceiverContext<::jbatnozic::spempe::NetworkingManagerInterface>(_node_))
+    (::jbatnozic::spempe::detail::GetRPCReceiverContext<::jbatnozic::spempe::NetworkingManager>(_node_))
 
 } // namespace spempe
 } // namespace jbatnozic
