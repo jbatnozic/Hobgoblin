@@ -4,7 +4,7 @@
 // clang-format off
 
 
-#include <SPeMPE/Managers/Networking_manager_interface.hpp>
+#include <SPeMPE/Managers/Networking_manager.hpp>
 #include <SPeMPE/Utility/Networking_telemetry_reporter.hpp>
 
 #include <Hobgoblin/HGExcept.hpp>
@@ -34,7 +34,7 @@ void NetworkingTelemetryReporter::_eventPostUpdate() {
         return;
     }
 
-    const auto& netMgr    = ccomp<NetworkingManagerInterface>();
+    const auto& netMgr    = ccomp<NetworkingManager>();
     const auto& telemetry = netMgr.getTelemetry(_cycleLength);
     HG_LOG_INFO(
         LOG_ID,

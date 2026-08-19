@@ -184,7 +184,7 @@ void Avatar::_syncDestroyImpl(SyncControlDelegate& aSyncCtrl) const {
     SPEMPE_SYNC_DESTROY_DEFAULT_IMPL(Avatar, aSyncCtrl);
 }
 
-using MNetworking = NetworkingManagerInterface;
+using MNetworking = NetworkingManager;
 
 } // namespace
 

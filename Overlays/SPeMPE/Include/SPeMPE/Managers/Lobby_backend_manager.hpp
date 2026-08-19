@@ -3,8 +3,8 @@
 
 // clang-format off
 
-#ifndef SPEMPE_MANAGERS_LOBBY_BACKEND_MANAGER_INTERFACE_HPP
-#define SPEMPE_MANAGERS_LOBBY_BACKEND_MANAGER_INTERFACE_HPP
+#ifndef SPEMPE_MANAGERS_LOBBY_BACKEND_MANAGER_HPP
+#define SPEMPE_MANAGERS_LOBBY_BACKEND_MANAGER_HPP
 
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/Utility/Visitor.hpp>
@@ -61,9 +61,9 @@ struct LobbyBackendEvent; // Forward-declare
 //! Represents a non-existing or undefined player.
 constexpr int PLAYER_INDEX_UNKNOWN = -1;
 
-class LobbyBackendManagerInterface : public ContextComponent {
+class LobbyBackendManager : public ContextComponent {
 public:
-    ~LobbyBackendManagerInterface() override = default;
+    ~LobbyBackendManager() override = default;
 
     enum class Mode {
         Uninitialized,
@@ -259,6 +259,6 @@ bool operator!=(const PlayerInfo& aLhs, const PlayerInfo& aRhs) {
 } // namespace spempe
 } // namespace jbatnozic
 
-#endif // !SPEMPE_MANAGERS_LOBBY_BACKEND_MANAGER_INTERFACE_HPP
+#endif // !SPEMPE_MANAGERS_LOBBY_BACKEND_MANAGER_HPP
 
 // clang-format on

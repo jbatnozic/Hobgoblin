@@ -66,7 +66,7 @@ public:
         _origin = aWorldPosition;
     }
 
-    void draw(spe::WindowManagerInterface& aWinMgr) {
+    void draw(spe::WindowManager& aWinMgr) {
         auto& canvas = aWinMgr.getActiveCanvas();
 
         // Draw master
@@ -77,7 +77,7 @@ public:
         // Draw origin
     }
 
-    void drawGui(spe::WindowManagerInterface& aWinMgr) {
+    void drawGui(spe::WindowManager& aWinMgr) {
         auto& grSystem = aWinMgr.getGraphicsSystem();
         auto& canvas   = aWinMgr.getActiveCanvas();
 
@@ -127,7 +127,7 @@ private:
     int _stage    = 0;
     int _substage = 0;
 
-    void _drawCrosshairs(spe::WindowManagerInterface& aWinMgr,
+    void _drawCrosshairs(spe::WindowManager& aWinMgr,
                          hg::math::Vector2d           aCenter,
                          uwga::Color                  aColor) {
         auto&      canvas    = aWinMgr.getActiveCanvas();
@@ -163,7 +163,7 @@ public:
     void _eventUpdate1() override {
         HG_HARD_ASSERT(_editor != nullptr);
 
-        auto&       winMgr = ccomp<spe::WindowManagerInterface>();
+        auto&       winMgr = ccomp<spe::WindowManager>();
         const auto& input  = winMgr.getInput();
 
         _editorZoom -= input.getVerticalMouseWheelScroll() * 0.1f;
@@ -189,14 +189,14 @@ public:
     void _eventDraw1() override {
         HG_HARD_ASSERT(_editor != nullptr);
 
-        auto& winMgr = ccomp<spe::WindowManagerInterface>();
+        auto& winMgr = ccomp<spe::WindowManager>();
         _editor->draw(winMgr);
     }
 
     void _eventDrawGUI() override {
         HG_HARD_ASSERT(_editor != nullptr);
 
-        auto& winMgr = ccomp<spe::WindowManagerInterface>();
+        auto& winMgr = ccomp<spe::WindowManager>();
         _editor->drawGui(winMgr);
     }
 
@@ -227,16 +227,16 @@ std::unique_ptr<spe::GameContext> CreateContex() {
     auto winMgr = hg::QAO_Create<spe::DefaultWindowManager>(ctx->getQAORuntime().nonOwning(),
                                                             PRIORITY_WINDOW_MANAGER);
     // clang-format off
-    spe::WindowManagerInterface::WindowConfig windowConfig{
+    spe::WindowManager::WindowConfig windowConfig{
         .size  = {1200, 800},
         .title = "Antimony Animator",
         .style = hg::uwga::WindowStyle::DEFAULT
     };
-    spe::WindowManagerInterface::MainRenderTextureConfig mrtConfig{
+    spe::WindowManager::MainRenderTextureConfig mrtConfig{
         .size   = {800, 600},
         .smooth = true
     };
-    spe::WindowManagerInterface::TimingConfig timingConfig{
+    spe::WindowManager::TimingConfig timingConfig{
     #ifdef _MSC_VER
         spe::FrameRate{FRAME_RATE},
         spe::PREVENT_BUSY_WAIT_ON,
@@ -249,7 +249,7 @@ std::unique_ptr<spe::GameContext> CreateContex() {
     };
     // clang-format on
     winMgr->setToNormalMode(uwgaSystem, windowConfig, mrtConfig, timingConfig);
-    winMgr->setMainRenderTextureDrawPosition(spe::WindowManagerInterface::DrawPosition::FIT);
+    winMgr->setMainRenderTextureDrawPosition(spe::WindowManager::DrawPosition::FIT);
     winMgr->setStopIfCloseClicked(true);
 
     ctx->attachAndOwnComponent(std::move(winMgr));
@@ -275,7 +275,7 @@ int main(int argc, char* argv[]) try {
 
     auto context = CreateContex();
 
-    MasterLoader loader{context->getComponent<spe::WindowManagerInterface>().getGraphicsSystem(),
+    MasterLoader loader{context->getComponent<spe::WindowManager>().getGraphicsSystem(),
                         spriteDir,
                         spriteBaseName,
                         masterCount};

@@ -3,8 +3,8 @@
 
 // clang-format off
 
-#ifndef SPEMPE_MANAGERS_AUTHORIZATION_MANAGER_INTERFACE_HPP
-#define SPEMPE_MANAGERS_AUTHORIZATION_MANAGER_INTERFACE_HPP
+#ifndef SPEMPE_MANAGERS_AUTHORIZATION_MANAGER_HPP
+#define SPEMPE_MANAGERS_AUTHORIZATION_MANAGER_HPP
 
 #include <SPeMPE/GameContext/Context_components.hpp>
 
@@ -22,9 +22,9 @@ namespace spempe {
 
 using AuthToken = std::string;
 
-class AuthorizationManagerInterface : public ContextComponent {
+class AuthorizationManager : public ContextComponent {
 public:
-    ~AuthorizationManagerInterface() override = default;
+    ~AuthorizationManager() override = default;
 
     enum class Mode {
         Uninitialized,
@@ -41,13 +41,13 @@ public:
     virtual std::optional<AuthToken> getLocalAuthToken() = 0;
 
 private:
-    SPEMPE_CTXCOMP_TAG("jbatnozic::spempe::AuthorizationManagerInterface");
+    SPEMPE_CTXCOMP_TAG("jbatnozic::spempe::AuthorizationManager");
 };
 
 
 } // namespace spempe
 } // namespace jbatnozic
 
-#endif // !SPEMPE_MANAGERS_AUTHORIZATION_MANAGER_INTERFACE_HPP
+#endif // !SPEMPE_MANAGERS_AUTHORIZATION_MANAGER_HPP
 
 // clang-format on

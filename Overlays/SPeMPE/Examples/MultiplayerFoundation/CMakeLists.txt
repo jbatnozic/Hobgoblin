@@ -4,8 +4,8 @@
 
 add_executable("multiplayer-foundation"
     "_Main.cpp"
-    "Lobby_frontend_manager.cpp"
-    "Main_gameplay_manager.cpp"
+    "Lobby_frontend_manager_default.cpp"
+    "Main_gameplay_manager_default.cpp"
     "Player_character_autodiff.cpp"
     "Player_character_autodiff_alternating.cpp"
     "Player_character_alternating.cpp"

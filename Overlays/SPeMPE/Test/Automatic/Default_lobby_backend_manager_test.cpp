@@ -40,7 +40,7 @@ public:
 
         // Add varmap manager
         _svmMgr[HOST] = QAO_Create<DefaultSyncedVarmapManager>(_ctx[HOST]->getQAORuntime().nonOwning(), PRIORITY_SVMMGR);
-        _svmMgr[HOST]->setToMode(SyncedVarmapManagerInterface::Mode::Host);
+        _svmMgr[HOST]->setToMode(SyncedVarmapManager::Mode::Host);
 
         _ctx[HOST]->attachComponent(*_svmMgr[HOST]);
 
@@ -85,7 +85,7 @@ protected:
 
         // Add varmap manager
         _svmMgr[pos] = QAO_Create<DefaultSyncedVarmapManager>(_ctx[pos]->getQAORuntime().nonOwning(), PRIORITY_SVMMGR);
-        _svmMgr[pos]->setToMode(SyncedVarmapManagerInterface::Mode::Client);
+        _svmMgr[pos]->setToMode(SyncedVarmapManager::Mode::Client);
 
         _ctx[pos]->attachComponent(*_svmMgr[pos]);
 
@@ -106,19 +106,19 @@ protected:
         DetachStatus detachStatus;
 
         if (_lobbyMgr[pos]) {
-            _ctx[pos]->detachComponent<LobbyBackendManagerInterface>(&detachStatus);
+            _ctx[pos]->detachComponent<LobbyBackendManager>(&detachStatus);
             ASSERT_EQ(detachStatus, DetachStatus::NOT_OWNED_BY_CONTEXT);
             _lobbyMgr[pos].reset();
         }
 
         if (_svmMgr[pos]) {
-            _ctx[pos]->detachComponent<SyncedVarmapManagerInterface>(&detachStatus);
+            _ctx[pos]->detachComponent<SyncedVarmapManager>(&detachStatus);
             ASSERT_EQ(detachStatus, DetachStatus::NOT_OWNED_BY_CONTEXT);
             _svmMgr[pos].reset();
         }
 
         if (_netMgr[pos]) {
-            _ctx[pos]->detachComponent<NetworkingManagerInterface>(&detachStatus);
+            _ctx[pos]->detachComponent<NetworkingManager>(&detachStatus);
             ASSERT_EQ(detachStatus, DetachStatus::NOT_OWNED_BY_CONTEXT);
             _netMgr[pos].reset();
         }

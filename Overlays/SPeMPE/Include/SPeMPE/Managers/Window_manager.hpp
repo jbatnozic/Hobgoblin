@@ -1,8 +1,8 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#ifndef SPEMPE_MANAGERS_WINDOW_MANAGER_INTERFACE_HPP
-#define SPEMPE_MANAGERS_WINDOW_MANAGER_INTERFACE_HPP
+#ifndef SPEMPE_MANAGERS_WINDOW_MANAGER_HPP
+#define SPEMPE_MANAGERS_WINDOW_MANAGER_HPP
 
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/Math/Vector.hpp>
@@ -31,9 +31,9 @@ constexpr bool PREVENT_BUSY_WAIT_OFF = false;
 constexpr bool VSYNC_ON  = true;
 constexpr bool VSYNC_OFF = false;
 
-class WindowManagerInterface : public ContextComponent {
+class WindowManager : public ContextComponent {
 public:
-    virtual ~WindowManagerInterface() = default;
+    virtual ~WindowManager() = default;
 
     ///////////////////////////////////////////////////////////////////////////
     // CONFIGURATION                                                         //
@@ -208,10 +208,10 @@ public:
     virtual WindowFrameInputView getInput() const = 0;
 
 private:
-    SPEMPE_CTXCOMP_TAG("jbatnozic::spempe::WindowManagerInterface");
+    SPEMPE_CTXCOMP_TAG("jbatnozic::spempe::WindowManager");
 };
 
-inline WindowManagerInterface::TimingConfig::TimingConfig(FrameRate aFrameRateLimit,
+inline WindowManager::TimingConfig::TimingConfig(FrameRate aFrameRateLimit,
                                                           bool      aBusyWaitPreventionEnabled,
                                                           bool      aVerticalSyncEnabled)
     : framerateLimit{aFrameRateLimit}
@@ -219,7 +219,7 @@ inline WindowManagerInterface::TimingConfig::TimingConfig(FrameRate aFrameRateLi
     , busyWaitPreventionEnabled{aBusyWaitPreventionEnabled}
     , verticalSyncEnabled{aVerticalSyncEnabled} {}
 
-inline WindowManagerInterface::TimingConfig::TimingConfig(hg::PZInteger aLowLevelFramerateLimiter,
+inline WindowManager::TimingConfig::TimingConfig(hg::PZInteger aLowLevelFramerateLimiter,
                                                           bool          aBusyWaitPreventionEnabled,
                                                           bool          aVerticalSyncEnabled)
     : framerateLimit{std::nullopt}
@@ -230,4 +230,4 @@ inline WindowManagerInterface::TimingConfig::TimingConfig(hg::PZInteger aLowLeve
 } // namespace spempe
 } // namespace jbatnozic
 
-#endif // !SPEMPE_MANAGERS_WINDOW_MANAGER_INTERFACE_HPP
+#endif // !SPEMPE_MANAGERS_WINDOW_MANAGER_HPP

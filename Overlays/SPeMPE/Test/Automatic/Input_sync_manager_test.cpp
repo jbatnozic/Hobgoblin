@@ -26,13 +26,13 @@ public:
         _netMgr1->getServer().stop();
 
         DetachStatus detachStatus;
-        _ctx1->detachComponent<NetworkingManagerInterface>(&detachStatus);
+        _ctx1->detachComponent<NetworkingManager>(&detachStatus);
         ASSERT_EQ(detachStatus, DetachStatus::NOT_OWNED_BY_CONTEXT);
-        _ctx1->detachComponent<InputSyncManagerInterface>(&detachStatus);
+        _ctx1->detachComponent<InputSyncManager>(&detachStatus);
         ASSERT_EQ(detachStatus, DetachStatus::NOT_OWNED_BY_CONTEXT);
-        _ctx2->detachComponent<NetworkingManagerInterface>(&detachStatus);
+        _ctx2->detachComponent<NetworkingManager>(&detachStatus);
         ASSERT_EQ(detachStatus, DetachStatus::NOT_OWNED_BY_CONTEXT);
-        _ctx2->detachComponent<InputSyncManagerInterface>(&detachStatus);
+        _ctx2->detachComponent<InputSyncManager>(&detachStatus);
         ASSERT_EQ(detachStatus, DetachStatus::NOT_OWNED_BY_CONTEXT);
 
         _netMgr1.reset();
@@ -113,7 +113,7 @@ protected:
         _ctx1->runFor(1);
     }
 
-    void _defineInputs(InputSyncManagerInterface& aInputSyncManager) {
+    void _defineInputs(InputSyncManager& aInputSyncManager) {
         const InputSyncManagerWrapper wrap{aInputSyncManager};
 
         wrap.defineSignal<int>(SIGNAL_NAME, SIGNAL_INIT);

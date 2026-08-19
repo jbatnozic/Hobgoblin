@@ -1,7 +1,7 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#include "Main_gameplay_manager.hpp"
+#include "Main_gameplay_manager_default.hpp"
 
 #include <Hobgoblin/Input.hpp>
 #include <Hobgoblin/Logging.hpp>
@@ -15,7 +15,7 @@ MainGameplayManagerBase::MainGameplayManagerBase(QAO_InstGuard aInstGuard)
     : spe::NonstateObject{aInstGuard,
                           QAO_ExeCon::ESSENTIAL,
                           PRIORITY_GAMEPLAYMGR,
-                          "MainGameplayManager"} {}
+                          "DefaultMainGameplayManager"} {}
 
 void MainGameplayManagerBase::_didAttach(QAO_Runtime& aRuntime) {
     spe::NonstateObject::_didAttach(aRuntime);
@@ -30,7 +30,7 @@ void MainGameplayManagerBase::_didAttach(QAO_Runtime& aRuntime) {
         const auto config = spe::NetworkingTelemetryReporter::Config{cycleLength};
         QAO_Create<spe::NetworkingTelemetryReporter>(ctx().getQAORuntime(), execPriority, config);
 
-        ccomp<spe::NetworkingManagerInterface>().setTelemetryCycleLimit(cycleLength);
+        ccomp<spe::NetworkingManager>().setTelemetryCycleLimit(cycleLength);
     }
 }
 
@@ -42,10 +42,10 @@ void MainGameplayManagerBase::_eventPreUpdate() {
 
 namespace singleplayer {
 
-MainGameplayManager::MainGameplayManager(QAO_InstGuard aInstGuard)
+DefaultMainGameplayManager::DefaultMainGameplayManager(QAO_InstGuard aInstGuard)
     : MainGameplayManagerBase{aInstGuard} {}
 
-void MainGameplayManager::_didAttach(QAO_Runtime& aRuntime) {
+void DefaultMainGameplayManager::_didAttach(QAO_Runtime& aRuntime) {
     MainGameplayManagerBase::_didAttach(aRuntime);
 
     auto p = QAO_Create<BasicActor>(aRuntime);
@@ -56,10 +56,10 @@ void MainGameplayManager::_didAttach(QAO_Runtime& aRuntime) {
 
 namespace multiplayer {
 
-MainGameplayManager::MainGameplayManager(QAO_InstGuard aInstGuard)
+DefaultMainGameplayManager::DefaultMainGameplayManager(QAO_InstGuard aInstGuard)
     : MainGameplayManagerBase{aInstGuard} {}
 
-void MainGameplayManager::_didAttach(QAO_Runtime& aRuntime) {
+void DefaultMainGameplayManager::_didAttach(QAO_Runtime& aRuntime) {
     MainGameplayManagerBase::_didAttach(aRuntime);
 
     if (ctx().isPrivileged()) {

@@ -5,7 +5,7 @@
 
 #include "Config.hpp"
 #include "Engine.hpp"
-#include "Main_gameplay_manager.hpp"
+#include "Main_gameplay_manager_default.hpp"
 
 #include <SPeMPE/Managers/Networking_manager_default.hpp>
 
@@ -36,13 +36,13 @@ inline std::unique_ptr<spe::GameContext> CreateHostGameContext() {
     // clang-format off
     winMgr->setToNormalMode(
         hg::uwga::CreateGraphicsSystem("SFML"),
-        spe::WindowManagerInterface::WindowConfig{
+        spe::WindowManager::WindowConfig{
             .size  = {WINDOW_WIDTH, WINDOW_HEIGHT},
             .title = "SPeMPE Manual Test (Multiplayer - Host)",
             .style = hg::uwga::WindowStyle::DEFAULT
     },
-        spe::WindowManagerInterface::MainRenderTextureConfig{{WINDOW_WIDTH, WINDOW_HEIGHT}},
-        spe::WindowManagerInterface::TimingConfig{spe::FrameRate{FRAME_RATE},
+        spe::WindowManager::MainRenderTextureConfig{{WINDOW_WIDTH, WINDOW_HEIGHT}},
+        spe::WindowManager::TimingConfig{spe::FrameRate{FRAME_RATE},
                                                   spe::PREVENT_BUSY_WAIT_ON,
                                                   spe::VSYNC_OFF});
     // clang-format on
@@ -50,7 +50,7 @@ inline std::unique_ptr<spe::GameContext> CreateHostGameContext() {
     context->attachAndOwnComponent(std::move(winMgr));
 
     // Create and attach a Main gameplay manager
-    auto mainGameplayMgr = QAO_Create<MainGameplayManager>(context->getQAORuntime().nonOwning());
+    auto mainGameplayMgr = QAO_Create<DefaultMainGameplayManager>(context->getQAORuntime().nonOwning());
 
     context->attachAndOwnComponent(std::move(mainGameplayMgr));
 
@@ -79,20 +79,20 @@ inline std::unique_ptr<spe::GameContext> CreateClientGameContext(std::uint16_t a
     // clang-format off
     winMgr->setToNormalMode(
         hg::uwga::CreateGraphicsSystem("SFML"),
-        spe::WindowManagerInterface::WindowConfig{
+        spe::WindowManager::WindowConfig{
             .size  = {WINDOW_WIDTH, WINDOW_HEIGHT},
             .title = "SPeMPE Manual Test (Multiplayer - Client)",
             .style = hg::uwga::WindowStyle::DEFAULT
     },
-        spe::WindowManagerInterface::MainRenderTextureConfig{{WINDOW_WIDTH, WINDOW_HEIGHT}},
-        spe::WindowManagerInterface::TimingConfig{spe::FrameRate{FRAME_RATE},
+        spe::WindowManager::MainRenderTextureConfig{{WINDOW_WIDTH, WINDOW_HEIGHT}},
+        spe::WindowManager::TimingConfig{spe::FrameRate{FRAME_RATE},
                                                   spe::PREVENT_BUSY_WAIT_ON,
                                                   spe::VSYNC_OFF});
     // clang-format on
     context->attachAndOwnComponent(std::move(winMgr));
 
     // Create and attach a Main gameplay manager
-    auto mainGameplayMgr = QAO_Create<MainGameplayManager>(context->getQAORuntime().nonOwning());
+    auto mainGameplayMgr = QAO_Create<DefaultMainGameplayManager>(context->getQAORuntime().nonOwning());
 
     context->attachAndOwnComponent(std::move(mainGameplayMgr));
 

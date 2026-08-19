@@ -11,7 +11,7 @@
 #include <Hobgoblin/Logging.hpp>
 #include <Hobgoblin/RigelNet_macros.hpp>
 #include <SPeMPE/GameObjectFramework/Game_object_bases.hpp>
-#include <SPeMPE/Managers/Networking_manager_interface.hpp>
+#include <SPeMPE/Managers/Networking_manager.hpp>
 #include <SPeMPE/Utility/Rpc_receiver_context_template.hpp>
 
 #include <cassert>
@@ -43,7 +43,7 @@ RN_DEFINE_RPC(USPEMPE_DefaultInputSyncManager_SendInput, RN_ARGS(hg::util::Packe
     RN_NODE_IN_HANDLER().callIfServer(
         [&](RN_ServerInterface& aServer) {
             const auto rc = SPEMPE_GET_RPC_RECEIVER_CONTEXT(aServer);
-            auto& inputSyncMgr = rc.gameContext.getComponent<InputSyncManagerInterface>();
+            auto& inputSyncMgr = rc.gameContext.getComponent<InputSyncManager>();
             USPEMPE_DefaultInputSyncManager_PutNewState(
                 dynamic_cast<DefaultInputSyncManager&>(inputSyncMgr),
                 rc.senderIndex,
@@ -489,7 +489,7 @@ void DefaultInputSyncManager::_eventUpdate1() {
         _packSingleState(0, _helperPacket);
         _clearAllEvents(0);
 
-        auto& node = ccomp<NetworkingManagerInterface>().getNode(); // TODO Temp.
+        auto& node = ccomp<NetworkingManager>().getNode(); // TODO Temp.
 
         Compose_USPEMPE_DefaultInputSyncManager_SendInput(node,
                                                           RN_COMPOSE_FOR_ALL,

@@ -1,8 +1,8 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#ifndef SPEMPE_MANAGERS_NETWORKING_MANAGER_INTERFACE_HPP
-#define SPEMPE_MANAGERS_NETWORKING_MANAGER_INTERFACE_HPP
+#ifndef SPEMPE_MANAGERS_NETWORKING_MANAGER_HPP
+#define SPEMPE_MANAGERS_NETWORKING_MANAGER_HPP
 
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/QAO/Execon.hpp>
@@ -20,9 +20,9 @@ using NetworkingEventListener = hg::RN_EventListener;
 constexpr int CLIENT_INDEX_UNKNOWN = -2; //! Client index not yet received from Server.
 constexpr int CLIENT_INDEX_LOCAL   = -1; //! Denotes the same machine/process that's also the host.
 
-class NetworkingManagerInterface : public ContextComponent {
+class NetworkingManager : public ContextComponent {
 public:
-    virtual ~NetworkingManagerInterface() = default;
+    virtual ~NetworkingManager() = default;
 
     using NodeType   = hg::RN_NodeInterface;
     using ServerType = hg::RN_ServerInterface;
@@ -188,10 +188,10 @@ public:
     virtual hg::NeverNull<void*> __spempeimpl_getRegistryAddress() = 0;
 
 private:
-    SPEMPE_CTXCOMP_TAG("jbatnozic::spempe::NetworkingManagerInterface");
+    SPEMPE_CTXCOMP_TAG("jbatnozic::spempe::NetworkingManager");
 };
 
 } // namespace spempe
 } // namespace jbatnozic
 
-#endif // !SPEMPE_MANAGERS_NETWORKING_MANAGER_INTERFACE_HPP
+#endif // !SPEMPE_MANAGERS_NETWORKING_MANAGER_HPP

@@ -7,7 +7,7 @@
 
 #include "Config.hpp"
 #include "Engine.hpp"
-#include "Main_gameplay_manager.hpp"
+#include "Main_gameplay_manager_default.hpp"
 
 #include <Hobgoblin/UWGA.hpp>
 
@@ -36,13 +36,13 @@ std::unique_ptr<spe::GameContext> CreateGameContext() {
                                                         PRIORITY_WINDOWMGR);
     winMgr->setToNormalMode(
         hg::uwga::CreateGraphicsSystem("SFML"),
-        spe::WindowManagerInterface::WindowConfig{
+        spe::WindowManager::WindowConfig{
             .size = {WINDOW_WIDTH, WINDOW_HEIGHT},
             .title = "SPeMPE Manual Test (Singleplayer)",
             .style = hg::uwga::WindowStyle::DEFAULT
         },
-        spe::WindowManagerInterface::MainRenderTextureConfig{{WINDOW_WIDTH, WINDOW_HEIGHT}},
-        spe::WindowManagerInterface::TimingConfig{
+        spe::WindowManager::MainRenderTextureConfig{{WINDOW_WIDTH, WINDOW_HEIGHT}},
+        spe::WindowManager::TimingConfig{
             spe::FrameRate{FRAME_RATE},
             spe::PREVENT_BUSY_WAIT_ON,
             spe::VSYNC_OFF
@@ -52,7 +52,7 @@ std::unique_ptr<spe::GameContext> CreateGameContext() {
     context->attachAndOwnComponent(std::move(winMgr));
 
     // Create and attach a Main gameplay manager
-    auto mainGameplayMgr = QAO_Create<MainGameplayManager>(
+    auto mainGameplayMgr = QAO_Create<DefaultMainGameplayManager>(
         context->getQAORuntime().nonOwning());
 
     context->attachAndOwnComponent(std::move(mainGameplayMgr));

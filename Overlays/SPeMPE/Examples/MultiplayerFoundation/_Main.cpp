@@ -2,8 +2,8 @@
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
 #include "Engine.h"
-#include "Lobby_frontend_manager.hpp"
-#include "Main_gameplay_manager.hpp"
+#include "Lobby_frontend_manager_default.hpp"
+#include "Main_gameplay_manager_default.hpp"
 
 #include "Player_character_alternating.hpp"
 #include "Player_character_autodiff.hpp"
@@ -54,7 +54,7 @@ std::unique_ptr<spe::GameContext> MakeGameContext(GameMode      aGameMode,
     // Create and attach a Window manager
     auto winMgr =
         QAO_Create<spe::DefaultWindowManager>(context->getQAORuntime().nonOwning(), PRIORITY_WINDOWMGR);
-    spe::WindowManagerInterface::TimingConfig timingConfig{
+    spe::WindowManager::TimingConfig timingConfig{
 #ifdef _MSC_VER
         spe::FrameRate{FRAME_RATE},
         spe::PREVENT_BUSY_WAIT_ON,
@@ -70,12 +70,12 @@ std::unique_ptr<spe::GameContext> MakeGameContext(GameMode      aGameMode,
     } else {
         winMgr->setToNormalMode(
             hg::uwga::CreateGraphicsSystem("SFML"),
-            spe::WindowManagerInterface::WindowConfig{
+            spe::WindowManager::WindowConfig{
                 .size  = {WINDOW_WIDTH, WINDOW_HEIGHT},
                 .title = "SPeMPE Multiplayer Foundation",
                 .style = hg::uwga::WindowStyle::DEFAULT
         },
-            spe::WindowManagerInterface::MainRenderTextureConfig{{WINDOW_WIDTH, WINDOW_HEIGHT}},
+            spe::WindowManager::MainRenderTextureConfig{{WINDOW_WIDTH, WINDOW_HEIGHT}},
             timingConfig);
 
         struct FontFace {
@@ -163,12 +163,12 @@ std::unique_ptr<spe::GameContext> MakeGameContext(GameMode      aGameMode,
     auto svmMgr = QAO_Create<spe::DefaultSyncedVarmapManager>(context->getQAORuntime().nonOwning(),
                                                               PRIORITY_VARMAPMGR);
     if (aGameMode == GameMode::Server) {
-        svmMgr->setToMode(spe::SyncedVarmapManagerInterface::Mode::Host);
+        svmMgr->setToMode(spe::SyncedVarmapManager::Mode::Host);
         for (hg::PZInteger i = 0; i < aPlayerCount; i += 1) {
             svmMgr->int64SetClientWritePermission("val" + std::to_string(i), i, true);
         }
     } else {
-        svmMgr->setToMode(spe::SyncedVarmapManagerInterface::Mode::Client);
+        svmMgr->setToMode(spe::SyncedVarmapManager::Mode::Client);
     }
 
     context->attachAndOwnComponent(std::move(svmMgr));
@@ -187,7 +187,7 @@ std::unique_ptr<spe::GameContext> MakeGameContext(GameMode      aGameMode,
 
     // Create and attach a lobby frontend manager
     auto lobbyFrontendMgr =
-        QAO_Create<LobbyFrontendManager>(context->getQAORuntime().nonOwning(), PRIORITY_LOBBYFRONTMGR);
+        QAO_Create<DefaultLobbyFrontendManager>(context->getQAORuntime().nonOwning(), PRIORITY_LOBBYFRONTMGR);
 
     if (aGameMode == GameMode::Server) {
         lobbyFrontendMgr->setToHeadlessHostMode();
@@ -214,7 +214,7 @@ std::unique_ptr<spe::GameContext> MakeGameContext(GameMode      aGameMode,
 
     // Create and attach a Gameplay manager
     auto gpMgr =
-        QAO_Create<MainGameplayManager>(context->getQAORuntime().nonOwning(), PRIORITY_GAMEPLAYMGR);
+        QAO_Create<DefaultMainGameplayManager>(context->getQAORuntime().nonOwning(), PRIORITY_GAMEPLAYMGR);
     context->attachAndOwnComponent(std::move(gpMgr));
 
     // Create player "characters"

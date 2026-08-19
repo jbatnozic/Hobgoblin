@@ -14,7 +14,7 @@
 #include <SPeMPE/GameObjectFramework/Synchronized_object_registry.hpp>
 #include <SPeMPE/GameObjectFramework/Sync_control_delegate.hpp>
 #include <SPeMPE/GameObjectFramework/Sync_id.hpp>
-#include <SPeMPE/Managers/Networking_manager_interface.hpp>
+#include <SPeMPE/Managers/Networking_manager.hpp>
 #include <SPeMPE/Utility/Rpc_receiver_context_template.hpp>
 
 #include <type_traits>
@@ -230,7 +230,7 @@ T& StripConstFromRef(const T& aRef) {
     RN_DEFINE_RPC(USPEMPE_Create##_class_name_, \
                   RN_ARGS(::jbatnozic::spempe::SyncId, syncId)) { \
         ::jbatnozic::spempe::detail::DefaultSyncCreateHandler<_class_name_, \
-                                                              ::jbatnozic::spempe::NetworkingManagerInterface>( \
+                                                              ::jbatnozic::spempe::NetworkingManager>( \
             RN_NODE_IN_HANDLER(), syncId); \
     }
 
@@ -240,7 +240,7 @@ T& StripConstFromRef(const T& aRef) {
                           ::jbatnozic::spempe::SyncFlags, flags, \
                           _class_name_::VisibleState&, state)) { \
         ::jbatnozic::spempe::detail::DefaultSyncUpdateHandler<_class_name_, \
-                                                              ::jbatnozic::spempe::NetworkingManagerInterface>( \
+                                                              ::jbatnozic::spempe::NetworkingManager>( \
             RN_NODE_IN_HANDLER(), syncId, flags, state); \
     }
 
@@ -248,7 +248,7 @@ T& StripConstFromRef(const T& aRef) {
     RN_DEFINE_RPC(USPEMPE_Destroy##_class_name_, \
                   RN_ARGS(::jbatnozic::spempe::SyncId, syncId)) { \
         ::jbatnozic::spempe::detail::DefaultSyncDestroyHandler<_class_name_, \
-                                                               ::jbatnozic::spempe::NetworkingManagerInterface>( \
+                                                               ::jbatnozic::spempe::NetworkingManager>( \
             RN_NODE_IN_HANDLER(), syncId); \
     }
 
