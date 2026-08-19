@@ -8,6 +8,18 @@
 
 namespace cinnabar {
 
+// MARK: ShipAttachable
+
+ShipAttachable::~ShipAttachable() {
+    _detachFromGraph();
+}
+
+void ShipAttachable::_detachFromGraph() {
+    // TODO
+}
+
+// MARK: UnibodyShipAttachable
+
 #define RADIUS (0.0)
 
 const PolyShape& UnibodyShipAttachable::getPolyShape() const {
@@ -27,6 +39,10 @@ hg::alvin::Body UnibodyShipAttachable::_alvinBodyFromPhysicalPropertiesAndPolySh
 
 const ShipAttachable::PhysicalProperties& UnibodyShipAttachable::getPhysicalProperties() const {
     return _physicalProperties;
+}
+
+const ShipAttachable::InteriorWorldSliceData* UnibodyShipAttachable::getInteriorWorldSliceData() const {
+    return _iwSliceData.get();
 }
 
 hg::alvin::Shape UnibodyShipAttachable::_alvinShapeFromPolyShape() {
