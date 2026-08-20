@@ -19,6 +19,10 @@ public:
 
     void init(/* TODO: ship controller of origin, */ QAO_GenericId aAttachableId);
 
+    ShipAttachable* getAssociatedAttachable() const;
+
+    // QAO Message Handlers
+
     void msgHandlePNCSEvent(HandlePNCSEvent::PayloadPtr aPayload, bool /* aConst */);
 
 private:
