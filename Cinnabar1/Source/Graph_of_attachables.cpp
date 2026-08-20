@@ -13,12 +13,13 @@ GraphOfAttachables::Node::Node(GraphOfAttachables& aParentGraph, ShipAttachable&
     : parentGraph{aParentGraph}
     , associatedAttachable{aAssociatedAttachable} {}
 
-void GraphOfAttachables::insert(ShipAttachable& aAttachable) {
+hg::PZInteger GraphOfAttachables::insert(ShipAttachable& aAttachable) {
     HG_VALIDATE_PRECONDITION(aAttachable._myNode == nullptr);
 
     if (_nodes.empty()) {
         _nodes.push_back(std::make_unique<Node>(*this, aAttachable));
         aAttachable._myNode = _nodes[0].get();
+        return 0;
     } else {
         HG_NOT_IMPLEMENTED("TODO");
     }
