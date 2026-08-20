@@ -27,7 +27,8 @@ public:
         Node(GraphOfAttachables& aParentGraph, ShipAttachable& aAssociatedAttachable);
     };
 
-    void insert(ShipAttachable& aAttachable);
+    //! returns the index of the inserted attachable
+    hg::PZInteger insert(ShipAttachable& aAttachable);
 
 private:
     friend class ShipAttachable;
