@@ -37,6 +37,10 @@ void AttachableGhost::init(QAO_GenericId aAttachableId) {
     _cursorOffset = mousePosRel;
 }
 
+ShipAttachable* AttachableGhost::getAssociatedAttachable() const {
+    return _attachablePtr;
+}
+
 void AttachableGhost::msgHandlePNCSEvent(HandlePNCSEvent::PayloadPtr aPayload, bool /* aConst */) {
     HG_ASSERT(aPayload != nullptr);
     if (aPayload->mbRightDown) {

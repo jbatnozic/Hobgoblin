@@ -29,6 +29,7 @@ SPEMPE_DEFINE_AUTODIFF_STATE(ShipController_VisibleState,
     // SPEMPE_MEMBER(?, parentYOffset, 0),
 ) {};
 
+class AttachableGhost;
 struct ShipController_MasterData;
 
 //! \brief The main controller of a complex, modular ship or station with a player-interactible
@@ -40,7 +41,17 @@ public:
     ShipController(QAO_InstGuard aInstGuard, spe::SyncId aSyncId);
 
     void init(ShipAttachable& aInitialShipAttachable);
+
+    //! \param aAnchorOffset X/Y offset of the attachable's anchor IN THE SHIP CONTROLLER'S COORDINATE SYSTEM
+    //! \param aRotationOffset angle difference
+    void attach(ShipAttachable&    aShipAttachable,
+                hg::math::Vector2f aAnchorOffset,
+                hg::math::AngleF   aRotationOffset);
+
+    void attach(AttachableGhost& aAttachableGhost);
+
     
+
     void drawGridOverShape(const PolyShape& aShape, uwga::Canvas& aCanvas);
 
 private:

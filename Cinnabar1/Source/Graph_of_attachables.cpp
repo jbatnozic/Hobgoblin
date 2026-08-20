@@ -25,4 +25,12 @@ hg::PZInteger GraphOfAttachables::insert(ShipAttachable& aAttachable) {
     }
 }
 
+const GraphOfAttachables::Node* GraphOfAttachables::getNode(hg::PZInteger aIndex) const {
+    const auto szIdx = hg::pztos(aIndex);
+    if (szIdx >= _nodes.size()) {
+        return nullptr;
+    }
+    return _nodes[szIdx].get();
+}
+
 } // namespace cinnabar
