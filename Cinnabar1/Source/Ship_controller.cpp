@@ -19,10 +19,13 @@
 
 namespace cinnabar {
 
-// MARK: Config
+using hg::math::AngleF;
+using hg::math::IsNearZero;
 
 namespace {
 #define GRID_RESOLUTION OVERWORLD_CELL_SIZE
+
+constexpr float ONE_DEG_AS_RAD = hg::math::DegToRad(1.f);
 
 void TransformPoints(hg::math::Vector2f&    aCentralPoint,
                      hg::math::Vector2f*    aPoints,
@@ -81,6 +84,29 @@ void ShipController::init(ShipAttachable& aInitialShipAttachable) {
     HG_VALIDATE_PRECONDITION(isMasterObject());
 
     _masterData->graphOfAttachables.insert(aInitialShipAttachable);
+}
+
+void ShipController::attach(ShipAttachable&    aShipAttachable,
+                            hg::math::Vector2f aAnchorOffset,
+                            hg::math::AngleF   aRotationOffset) {
+    const auto* iwSliceData = aShipAttachable.getInteriorWorldSliceData();
+    if (iwSliceData != nullptr) {
+        if (IsNearZero(aRotationOffset.asRad(), ONE_DEG_AS_RAD)) {
+
+        } else if (IsNearZero((aRotationOffset - AngleF::halfCircle() * 0.5f).asRad(),
+                                        ONE_DEG_AS_RAD)) {
+
+        } else if (IsNearZero((aRotationOffset - AngleF::halfCircle()).asRad(),
+                                        ONE_DEG_AS_RAD)) {
+
+        } else if (IsNearZero((aRotationOffset - AngleF::halfCircle() * 1.5f).asRad(),
+                                        ONE_DEG_AS_RAD)) {
+        } else {
+            // TODO - MUST NOT HAPPEN!
+        }
+    } else {
+        HG_NOT_IMPLEMENTED("TODO - cell generator func");
+    }
 }
 
 void ShipController::drawGridOverShape(const PolyShape& aShape, uwga::Canvas& aCanvas) {
@@ -212,7 +238,7 @@ void ShipController::_eventUpdate1(spe::IfMaster) {
     if (input.checkPressed(hg::in::PK_E)) {
         rotationDir -= 1.f;
     }
-    _rotation += hg::math::AngleF::fromDegrees(rotationDir * 3.f);
+    _rotation += AngleF::fromDegrees(rotationDir * 3.f);
 
     double xx = 0.0;
     if (input.checkPressed(hg::in::PK_A)) {
@@ -257,7 +283,15 @@ void ShipController::_eventUpdate1(spe::IfMaster) {
         _drawGrid = false;
     }
 #endif
-    // TODO: sync position & rotation to main attachable
+    auto&       md      = *_masterData;
+    const auto& mainAtt = md.graphOfAttachables.getNode(0)->associatedAttachable;
+
+    _position = mainAtt.getPolyShape().getAnchor();
+    _rotation = mainAtt.getPolyShape().getRotation();
+
+    md.transform->setToIdentity();
+    md.transform->rotate(_rotation);
+    md.transformInverse->setToInverseOf(*md.transform);
 }
 
 void ShipController::_eventDraw1() {
@@ -268,7 +302,7 @@ void ShipController::_eventDraw1() {
 
     for (std::size_t i = 0; i < vArr.vertices.size(); ++i) {
         const auto relativePos =
-            (_rotation + hg::math::AngleF::fromDegrees(120.f * i)).asNormalizedVector() * 48.f;
+            (_rotation + AngleF::fromDegrees(120.f * i)).asNormalizedVector() * 48.f;
 
         auto& vert    = vArr.vertices[i];
         vert.position = relativePos;

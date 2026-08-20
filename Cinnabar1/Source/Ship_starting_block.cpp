@@ -30,11 +30,11 @@ ShipStartingBlock::ShipStartingBlock(QAO_InstGuard aInstGuard)
     _iwSliceData = std::make_unique<InteriorWorldSliceData>();
     _iwSliceData->cells.reset(16, 16);
     _iwSliceData->cellGridOffset =
-        hg::math::Vector2d{
+        hg::math::Vector2f{
             -16 * OVERWORLD_CELL_SIZE,
             -16 * OVERWORLD_CELL_SIZE,
         } /
-        2.0;
+        2.f;
 }
 
 void ShipStartingBlock::init(hg::math::Vector2d aPosition) {

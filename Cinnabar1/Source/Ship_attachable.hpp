@@ -47,7 +47,8 @@ public:
 
         //! X/Y offset of the top-left corner of the interior cell grid (relative to the anchor of the
         //! attachable's PolyShape) when ([attachable's rotation] + `rotationOffset` == 0).
-        hg::math::Vector2d cellGridOffset = {};
+        //! TBD/TODO: offset of the center of the top-left cell instead?
+        hg::math::Vector2f cellGridOffset = {};
     };
 
     //! \brief return data about a slice of an InteriorWorld contained within this attachable (if any).

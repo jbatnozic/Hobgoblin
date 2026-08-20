@@ -30,6 +30,9 @@ public:
     //! returns the index of the inserted attachable
     hg::PZInteger insert(ShipAttachable& aAttachable);
 
+    //! get node by index
+    const Node* getNode(hg::PZInteger aIndex) const;
+
 private:
     friend class ShipAttachable;
 
