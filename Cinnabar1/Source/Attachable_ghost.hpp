@@ -5,19 +5,27 @@
 
 #include <Engine.hpp>
 
+#include <Hobgoblin/Utility/Grids.hpp>
+
 #include <Poly_shape.hpp>
-#include <Ship_attachable.hpp>
 #include <QAOMessages/Handle_pncs_event.hpp>
+#include <Ship_attachable.hpp>
 
 #include <Hobgoblin/Math.hpp>
 
 namespace cinnabar {
 
+class ShipController;
+
 class AttachableGhost : public spe::StateObject {
 public:
     AttachableGhost(QAO_InstGuard aInstGuard);
 
-    void init(/* TODO: ship controller of origin, */ QAO_GenericId aAttachableId);
+    void init(QAO_GenericId aAssociatedShipController, QAO_GenericId aAssociatedAttachableId);
+
+    // const ProjectedCellPositions& getProjectedCellPositions();
+
+    // QAO Message Handlers
 
     ShipAttachable* getAssociatedAttachable() const;
 
@@ -26,6 +34,9 @@ public:
     void msgHandlePNCSEvent(HandlePNCSEvent::PayloadPtr aPayload, bool /* aConst */);
 
 private:
+    QAO_GenericId   _controllerId  = nullptr;
+    ShipController* _controllerPtr = nullptr;
+
     QAO_GenericId   _attachableId  = nullptr;
     ShipAttachable* _attachablePtr = nullptr;
 
@@ -44,6 +55,7 @@ private:
     void _eventDraw1() override;
 
     ShipAttachable* _findAttachableById(QAO_GenericId aAttachableId) const;
+    ShipController* _findControllerById(QAO_GenericId aAttachableId) const;
 };
 
 QAO_REGISTER_CLASS(AttachableGhost, cinnabar_AttachableGhost) {

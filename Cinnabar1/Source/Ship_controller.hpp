@@ -9,6 +9,8 @@
 #include <Graph_of_attachables.hpp>
 #include <Ship_attachable.hpp>
 #include <Poly_shape.hpp>
+#include <Projected_cell_positions.hpp>
+#include <QAOMessages/Downcast_to_ship_controller.hpp>
 
 #include <Hobgoblin/Math.hpp>
 #include <Hobgoblin/UWGA/Transform.hpp>
@@ -54,6 +56,15 @@ public:
 
     void drawGridOverShape(const PolyShape& aShape, uwga::Canvas& aCanvas);
 
+    //! calculates projected cell positions of a poly shape in the ship's interior world
+    //! \param aShape[in] 
+    //! \param aProjectedCellPositions[out] 
+    void projectCellPositions(const PolyShape& aShape, ProjectedCellPositions& aProjectedCellPositions);
+
+    // QAO Message Handlers
+
+    void msgDowncastToShipController(DowncastToShipController::PayloadPtr aPtr, bool /* aConst */);
+
 private:
     void _didAttach(QAO_Runtime& aRuntime) override;
 
@@ -88,6 +99,7 @@ struct ShipController_MasterData {
 QAO_REGISTER_CLASS(ShipController, cinnabar_ShipController) {
     QAO_LOCAL_ALIAS(C, klass);
     klass.setSuperclass<spe::SynchronizedObjectBase>();
+    klass.setMessageHandler<C, DowncastToShipController, &C::msgDowncastToShipController>();
 }
 
 } // namespace cinnabar

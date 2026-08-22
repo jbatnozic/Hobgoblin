@@ -5,9 +5,9 @@
 
 #include <Hobgoblin/QAO.hpp>
 
-#include <Ship_attachable.hpp>
-
 namespace cinnabar {
+
+class ShipAttachable;
 
 QAO_DEFINE_MESSAGE(DowncastToShipAttachable, ShipAttachable**);
 

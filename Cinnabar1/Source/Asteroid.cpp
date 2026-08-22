@@ -46,8 +46,10 @@ void Asteroid::msgDowncastToShipAttachable(DowncastToShipAttachable::PayloadPtr 
 void Asteroid::msgHandlePNCSEvent(HandlePNCSEvent::PayloadPtr aPayload, bool /* aConst */) {
     HG_ASSERT(aPayload != nullptr);
     if (aPayload->mbLeftDown) {
-        auto ghost = QAO_Create<AttachableGhost>(this->getRuntime());
-        ghost->init(this->getId());
+        auto* runtime  = this->getRuntime();
+        auto  shipCtrl = runtime->find("cinnabar::ShipController"); // TODO: temporary
+        auto  ghost    = QAO_Create<AttachableGhost>(runtime);
+        ghost->init(shipCtrl->getId(), this->getId());
     }
 }
 
