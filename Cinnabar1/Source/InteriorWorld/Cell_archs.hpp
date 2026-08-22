@@ -18,7 +18,7 @@ using ::jbatnozic::gridgoblin::SPRITEID_NONE;
 
 //! Enumeration of all cell archetypes (kinds).
 enum class CellArchE : std::uint16_t {
-    EMPTY_SPACE,
+    SOLID_VOID,
     METALLIC_FLOOR,
     METALLIC_WALL,
 };
@@ -37,15 +37,15 @@ struct CellArchProperties {
 
 namespace cell_archetype {
 
-constexpr CellArchProperties EMPTY_SPACE = {
-    .cellKindId  = {.value = ToU16(CellArchE::EMPTY_SPACE)},
+constexpr CellArchProperties SOLID_VOID = {
+    .cellKindId  = {.value = ToU16(CellArchE::SOLID_VOID)},
     .floorSprite = {.id = SPRITEID_NONE},
     .wallSprite  = {.id = SPRITEID_NONE, .id_reduced = SPRITEID_NONE},
     .spatialInfo = {.wallShape = Shape::FULL_SQUARE},
 };
 
 constexpr CellArchProperties METALLIC_FLOOR = {
-    .cellKindId  = {.value = ToU16(CellArchE::EMPTY_SPACE)},
+    .cellKindId  = {.value = ToU16(CellArchE::SOLID_VOID)},
     .floorSprite = {.id = SPRITEID_NONE},
     .wallSprite  = {.id = SPRITEID_NONE, .id_reduced = SPRITEID_NONE},
     .spatialInfo = {.wallShape = Shape::EMPTY},

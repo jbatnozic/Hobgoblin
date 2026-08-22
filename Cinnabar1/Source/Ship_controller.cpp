@@ -4,6 +4,7 @@
 #include <Ship_controller.hpp>
 
 #include <Graphics_system_provider.hpp>
+#include <InteriorWorld/Cell_archs.hpp>
 #include <Ship/Constants.hpp>
 
 #include <GridGoblin/World/World_config.hpp>
@@ -212,6 +213,118 @@ void ShipController::drawGridOverShape(const PolyShape& aShape, uwga::Canvas& aC
             aCanvas.draw(rect);
         }
     }
+}
+
+void ShipController::projectCellPositions(const PolyShape&        aShape,
+                                          ProjectedCellPositions& aProjectedCellPositions) {
+    HG_HARD_ASSERT(aShape.getState() == PolyShape::READY_RELATIVE);
+
+    // Recalculate all shape vertices relative to the ship
+    auto                            relativeShapeCenter = (aShape.getAnchor() - _position).cast<float>();
+    std::vector<hg::math::Vector2f> relativeShapeVertices{};
+    {
+        relativeShapeVertices.reserve(hg::pztos(aShape.getVertexCount()));
+        for (const auto& vert : aShape.getOutputVertices()) {
+            relativeShapeVertices.push_back(relativeShapeCenter + vert.cast<float>());
+        }
+    }
+
+    // Transform all vertices into the ship's coordinate system
+    {
+        TransformPoints(relativeShapeCenter,
+                        relativeShapeVertices.data(),
+                        relativeShapeVertices.size(),
+                        *_masterData->transform);
+    }
+
+    // Find the AABB of the shape in the ship's coordinate system
+    hg::math::Vector2f aabbTopLeft     = relativeShapeCenter;
+    hg::math::Vector2f aabbBottomRight = relativeShapeCenter;
+    {
+        for (const auto vert : relativeShapeVertices) {
+            if (vert.x < aabbTopLeft.x) {
+                aabbTopLeft.x = vert.x;
+            }
+            if (vert.x > aabbBottomRight.x) {
+                aabbBottomRight.x = vert.x;
+            }
+            if (vert.y < aabbTopLeft.y) {
+                aabbTopLeft.y = vert.y;
+            }
+            if (vert.y > aabbBottomRight.y) {
+                aabbBottomRight.y = vert.y;
+            }
+        }
+    }
+
+    // Find grid coordinates of the AABB
+    hg::math::Vector2i aabbGridTopLeft;
+    hg::math::Vector2i aabbGridBottomRight;
+    {
+        aabbGridTopLeft     = {static_cast<int>(std::floor(aabbTopLeft.x / GRID_RESOLUTION)) - 1,
+                               static_cast<int>(std::floor(aabbTopLeft.y / GRID_RESOLUTION)) - 1};
+        aabbGridBottomRight = {static_cast<int>(std::floor(aabbBottomRight.x / GRID_RESOLUTION)) + 1,
+                               static_cast<int>(std::floor(aabbBottomRight.y / GRID_RESOLUTION)) + 1};
+    }
+
+    // Construct lambdas for checking if a point is inside of the shape
+    auto isPointInsideShape = [&relativeShapeCenter,
+                               &relativeShapeVertices](hg::math::Vector2f aPos) -> bool {
+        const auto vertCount = relativeShapeVertices.size();
+        for (std::size_t i = 0; i < vertCount - 1; ++i) {
+            if (hg::math::IsPointInsideTriangle(
+                    aPos,
+                    hg::math::Triangle<float>{.a = relativeShapeCenter,
+                                              .b = relativeShapeVertices[i],
+                                              .c = relativeShapeVertices[i + 1]})) {
+                return true;
+            }
+        }
+        return hg::math::IsPointInsideTriangle(
+            aPos,
+            hg::math::Triangle<float>{.a = relativeShapeCenter,
+                                      .b = relativeShapeVertices[vertCount - 1],
+                                      .c = relativeShapeVertices[0]});
+    };
+
+    // Output
+    aProjectedCellPositions.topLeftPos = aabbGridTopLeft;
+    aProjectedCellPositions.cells.reset(aabbGridBottomRight.x - aabbTopLeft.x + 1,
+                                        aabbBottomRight.y - aabbTopLeft.y + 1);
+    aProjectedCellPositions.totalBitmask = ProjectedCellPositions::EMPTY;
+
+    const auto&                             ggwld = _masterData->interiorWorld.getUnderlying();
+    jbatnozic::gridgoblin::cell::CellKindId cellKindId;
+    for (int yy = aabbGridTopLeft.y; yy <= aabbGridBottomRight.y; ++yy) {
+        for (int xx = aabbGridTopLeft.x; xx <= aabbGridBottomRight.x; ++xx) {
+            const bool isSquareInsideShape =
+                isPointInsideShape({(xx + 0) * GRID_RESOLUTION, (yy + 0) * GRID_RESOLUTION}) &&
+                isPointInsideShape({(xx + 1) * GRID_RESOLUTION, (yy + 0) * GRID_RESOLUTION}) &&
+                isPointInsideShape({(xx + 0) * GRID_RESOLUTION, (yy + 1) * GRID_RESOLUTION}) &&
+                isPointInsideShape({(xx + 1) * GRID_RESOLUTION, (yy + 1) * GRID_RESOLUTION});
+
+            std::int8_t cellValue = ProjectedCellPositions::EMPTY;
+            if (isSquareInsideShape) {
+                cellValue |= ProjectedCellPositions::INSIDE_SHAPE;
+            }
+            if (xx < 0 || xx >= ggwld.getCellCountX() || yy < 0 || yy >= ggwld.getCellCountY()) {
+                cellValue |= ProjectedCellPositions::OUT_OF_BOUNDS;
+            } else if (ggwld.getCellDataAt(xx, yy, &cellKindId) &&
+                       cellKindId.value != ToU16(interior::CellArchE::SOLID_VOID)) {
+                cellValue |= ProjectedCellPositions::COLLIDES_WITH_IW;
+            }
+
+            aProjectedCellPositions.totalBitmask |= cellValue;
+            aProjectedCellPositions.cells[yy - aabbGridTopLeft.y][xx - aabbGridTopLeft.y] = cellValue;
+        }
+    }
+}
+
+// QAO Message Handlers
+
+void ShipController::msgDowncastToShipController(DowncastToShipController::PayloadPtr aPtr,
+                                                 bool /* aConst */) {
+    (*aPtr) = this;
 }
 
 void ShipController::_didAttach(QAO_Runtime& aRuntime) {

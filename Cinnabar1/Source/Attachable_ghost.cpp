@@ -22,9 +22,13 @@ AttachableGhost::AttachableGhost(QAO_InstGuard aInstGuard)
                        PRIORITY_ENTITIES,
                        QAO_STATIC_NAME("cinnabar::AttachableGhost")} {}
 
-void AttachableGhost::init(QAO_GenericId aAttachableId) {
-    _attachablePtr = _findAttachableById(aAttachableId);
-    _attachableId  = aAttachableId;
+void AttachableGhost::init(QAO_GenericId aAssociatedShipController,
+                           QAO_GenericId aAssociatedAttachableId) {
+    _controllerPtr = _findControllerById(aAssociatedShipController);
+    _controllerId  = aAssociatedShipController;
+
+    _attachablePtr = _findAttachableById(aAssociatedAttachableId);
+    _attachableId  = aAssociatedAttachableId;
 
     _shape = _attachablePtr->getPolyShape();
 
@@ -72,7 +76,7 @@ void AttachableGhost::_eventBeginUpdate() {
 
 void AttachableGhost::_eventUpdate1() {
     auto* runtime = getRuntime();
-    if (runtime->find(_attachableId).isNull()) {
+    if (runtime->find(_controllerId).isNull() || runtime->find(_attachableId).isNull()) {
         auto handle = hg::MoveToUnderlying(runtime->detachObject(getId()));
         HG_ASSERT(handle.isOwning());
         handle.reset(); // Destroy self
@@ -120,7 +124,7 @@ void AttachableGhost::_eventUpdate1() {
 
         if (_shift) {
             const auto shiftScroll = static_cast<float>(_shiftCursorPos.x - mousePos.x) * 0.25;
-            if (shiftScroll > 0.1f) {
+            if (std::abs(shiftScroll) > 0.1f) {
                 _shape.setRotation(_shape.getRotation() + hg::math::AngleF::fromDegrees(shiftScroll));
                 _shiftCursorPos = mousePos;
                 needRecalc      = true;
@@ -174,6 +178,25 @@ ShipAttachable* AttachableGhost::_findAttachableById(QAO_GenericId aAttachableId
         HG_THROW_TRACED(hg::TracedLogicError,
                         0,
                         "Object {} did not answer to message 'DowncastToShipAttachable'.",
+                        handle->getDebugDescription());
+    }
+
+    HG_ASSERT(ptr != nullptr);
+
+    return ptr;
+}
+
+ShipController* AttachableGhost::_findControllerById(QAO_GenericId aAttachableId) const {
+    HG_ASSERT(getRuntime() != nullptr);
+
+    auto handle = getRuntime()->find(aAttachableId);
+    HG_ASSERT(!handle.isNull());
+
+    ShipController* ptr = nullptr;
+    if (!QAO_SendMessage<DowncastToShipController>(*handle, &ptr)) {
+        HG_THROW_TRACED(hg::TracedLogicError,
+                        0,
+                        "Object {} did not answer to message 'DowncastToShipController'.",
                         handle->getDebugDescription());
     }
 

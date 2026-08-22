@@ -7,8 +7,8 @@
 
 namespace cinnabar {
 
-class ShipAttachable;
+class ShipController;
 
-QAO_DEFINE_MESSAGE(DowncastToShipAttachable, ShipAttachable**);
+QAO_DEFINE_MESSAGE(DowncastToShipController, ShipController**);
 
 } // namespace cinnabar

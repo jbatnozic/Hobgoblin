@@ -19,6 +19,9 @@ public:
 
     InteriorWorld();
 
+    //! \brief return a read-only reference to the underlying GridGoblin world instance.
+    const jbatnozic::gridgoblin::World& getUnderlying() const;
+
 private:
     jbatnozic::gridgoblin::World _world;
 

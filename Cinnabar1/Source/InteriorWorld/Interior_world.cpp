@@ -37,6 +37,10 @@ static_assert(InteriorWorld::CENTER_OFFSET.y == WORLD_CONFIG.chunkCountY * GRID_
 InteriorWorld::InteriorWorld()
     : _world{WORLD_CONFIG} {}
 
+const jbatnozic::gridgoblin::World& InteriorWorld::getUnderlying() const {
+    return _world;
+}
+
 // MARK: GridGoblin Binder
 
 void InteriorWorld::didPrepareChunk(grid::ChunkId aChunkId) { /* No implementation needed */ }
@@ -45,10 +49,10 @@ void InteriorWorld::willIntegrateNewChunk(grid::ChunkId                      aId
                                           grid::Chunk&                       aChunk,
                                           const grid::ChunkMemoryLayoutInfo& aChunkMemLayout) {
     const grid::FatCell fatCell = {
-        .cellKindId = interior::cell_archetype::EMPTY_SPACE.cellKindId,
-        .floorSprite = interior::cell_archetype::EMPTY_SPACE.floorSprite,
-        .wallSprite = interior::cell_archetype::EMPTY_SPACE.wallSprite,
-        .spatialInfo = interior::cell_archetype::EMPTY_SPACE.spatialInfo
+        .cellKindId = interior::cell_archetype::SOLID_VOID.cellKindId,
+        .floorSprite = interior::cell_archetype::SOLID_VOID.floorSprite,
+        .wallSprite = interior::cell_archetype::SOLID_VOID.wallSprite,
+        .spatialInfo = interior::cell_archetype::SOLID_VOID.spatialInfo
     };
     aChunk.setAll(aChunkMemLayout, fatCell);
 
