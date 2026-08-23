@@ -50,11 +50,14 @@ public:
                 hg::math::Vector2f aAnchorOffset,
                 hg::math::AngleF   aRotationOffset);
 
-    void attach(AttachableGhost& aAttachableGhost);
+    void attach(AttachableGhost& aAttachableGhost);    
 
-    
+    void drawGridOverShape(const PolyShape& aShape, uwga::Canvas& aCanvas) const;
 
-    void drawGridOverShape(const PolyShape& aShape, uwga::Canvas& aCanvas);
+    void drawGridOverProjection(const ProjectedCellPositions& aProjectedCellPositions,
+                                uwga::Canvas&                 aCanvas) const;
+
+    void drawGridOverGhost(const AttachableGhost& aAttachableGhost, uwga::Canvas& aCanvas) const;
 
     //! calculates projected cell positions of a poly shape in the ship's interior world
     //! \param aShape[in] 

@@ -15,7 +15,10 @@ namespace cinnabar {
 
 class InteriorWorld /* a.k.a. Inland Empire :D */ : private jbatnozic::gridgoblin::Binder {
 public:
-    constexpr static hg::math::Vector2d CENTER_OFFSET = {1536.0, 3072.0};
+    constexpr static double             CELL_RESOLUTION = 48.0;
+    constexpr static hg::PZInteger      CELL_COUNT_X    = 1024;
+    constexpr static hg::PZInteger      CELL_COUNT_Y    = 2048;
+    constexpr static hg::math::Vector2d CENTER_OFFSET   = {1536.0, 3072.0};
 
     InteriorWorld();
 

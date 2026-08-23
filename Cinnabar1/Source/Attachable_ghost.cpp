@@ -45,6 +45,10 @@ ShipAttachable* AttachableGhost::getAssociatedAttachable() const {
     return _attachablePtr;
 }
 
+const ProjectedCellPositions& AttachableGhost::getProjectedCellPositions() const {
+    return _projectedCellPositions;
+}
+
 void AttachableGhost::msgHandlePNCSEvent(HandlePNCSEvent::PayloadPtr aPayload, bool /* aConst */) {
     HG_ASSERT(aPayload != nullptr);
     if (aPayload->mbRightDown) {
@@ -133,7 +137,10 @@ void AttachableGhost::_eventUpdate1() {
             _shape.setAnchor(mousePos - _cursorOffset);
         }
 
-        _shape.recalcRel();
+        // if (needRecalc) {
+            _shape.recalcRel();
+            _controllerPtr->projectCellPositions(_shape, _projectedCellPositions);
+        // }
     }
 }
 
@@ -162,7 +169,8 @@ void AttachableGhost::_eventDraw1() {
     // Draw the construction grid on top
     if (_held) {
         if (const auto shipCtrl = getRuntime()->find("cinnabar::ShipController"); shipCtrl) {
-            shipCtrl.downcastCopy<ShipController>()->drawGridOverShape(_shape, canvas);
+            // shipCtrl.downcastCopy<ShipController>()->drawGridOverShape(_shape, canvas);
+            shipCtrl.downcastCopy<ShipController>()->drawGridOverGhost(*this, canvas);
         }
     }
 }
