@@ -3,6 +3,7 @@
 
 #include <Ship_controller.hpp>
 
+#include <Attachable_ghost.hpp>
 #include <Graphics_system_provider.hpp>
 #include <InteriorWorld/Cell_archs.hpp>
 #include <Ship/Constants.hpp>
@@ -72,7 +73,7 @@ void TransformPoints(hg::math::Vector2f&    aCentralPoint,
 ShipController_MasterData::ShipController_MasterData()
     : interiorWorld{} {}
 
-// MARK: ShipController
+// MARK: ShipController PUBLIC
 
 ShipController::ShipController(QAO_InstGuard aInstGuard, spe::SyncId aSyncId)
     : SyncObjSuper{aInstGuard,
@@ -110,7 +111,7 @@ void ShipController::attach(ShipAttachable&    aShipAttachable,
     }
 }
 
-void ShipController::drawGridOverShape(const PolyShape& aShape, uwga::Canvas& aCanvas) {
+void ShipController::drawGridOverShape(const PolyShape& aShape, uwga::Canvas& aCanvas) const {
     HG_HARD_ASSERT(aShape.getState() == PolyShape::READY_RELATIVE);
 
     // Recalculate all shape vertices relative to the ship
@@ -215,11 +216,54 @@ void ShipController::drawGridOverShape(const PolyShape& aShape, uwga::Canvas& aC
     }
 }
 
+void ShipController::drawGridOverProjection(const ProjectedCellPositions& aProjectedCellPositions,
+                                            uwga::Canvas&                 aCanvas) const {
+    uwga::RectangleShape rect{
+        aCanvas.getSystem(),
+        {GRID_RESOLUTION - 2.f, GRID_RESOLUTION - 2.f}
+    };
+    rect.setOrigin(-1.f, -1.f);
+    rect.setRotation(-_rotation);
+    rect.setOutlineThickness(2.f);
+    rect.setFillColor(uwga::COLOR_TRANSPARENT);
+
+    for (int y = 0; y < aProjectedCellPositions.cells.getHeight(); ++y) {
+        for (int x = 0; x < aProjectedCellPositions.cells.getWidth(); ++x) {
+            const auto squareTopLeft =
+                hg::math::Vector2f{(x + aProjectedCellPositions.topLeftPos.x) * GRID_RESOLUTION,
+                                   (y + aProjectedCellPositions.topLeftPos.y) * GRID_RESOLUTION};
+            const auto mask          = aProjectedCellPositions.cells[y][x];
+
+            if (mask == ProjectedCellPositions::EMPTY) {
+                continue;
+            }
+
+            if ((mask &
+                 (ProjectedCellPositions::COLLIDES_WITH_IW | ProjectedCellPositions::OUT_OF_BOUNDS))) {
+                rect.setOutlineColor(uwga::COLOR_ORANGE.withAlpha(100));
+            } else {
+                rect.setOutlineColor(uwga::COLOR_LIME.withAlpha(175));
+            }
+
+            _masterData->transformInverse->transformPoints(1, &squareTopLeft);
+            const auto anchor = squareTopLeft.cast<double>() + _position;
+            rect.setAnchor(anchor);
+
+            aCanvas.draw(rect);
+        }
+    }
+}
+
+void ShipController::drawGridOverGhost(const AttachableGhost& aAttachableGhost,
+                                       uwga::Canvas&          aCanvas) const {
+    drawGridOverProjection(aAttachableGhost.getProjectedCellPositions(), aCanvas);
+}
+
 void ShipController::projectCellPositions(const PolyShape&        aShape,
                                           ProjectedCellPositions& aProjectedCellPositions) {
     HG_HARD_ASSERT(aShape.getState() == PolyShape::READY_RELATIVE);
 
-    // Recalculate all shape vertices relative to the ship
+    // Recalculate all shape vertices relative to the ship's center
     auto                            relativeShapeCenter = (aShape.getAnchor() - _position).cast<float>();
     std::vector<hg::math::Vector2f> relativeShapeVertices{};
     {
@@ -229,7 +273,7 @@ void ShipController::projectCellPositions(const PolyShape&        aShape,
         }
     }
 
-    // Transform all vertices into the ship's coordinate system
+    // Transform all vertices into the ship's coordinate system (center-relative)
     {
         TransformPoints(relativeShapeCenter,
                         relativeShapeVertices.data(),
@@ -237,7 +281,7 @@ void ShipController::projectCellPositions(const PolyShape&        aShape,
                         *_masterData->transform);
     }
 
-    // Find the AABB of the shape in the ship's coordinate system
+    // Find the AABB of the shape in the ship's coordinate system (center-relative)
     hg::math::Vector2f aabbTopLeft     = relativeShapeCenter;
     hg::math::Vector2f aabbBottomRight = relativeShapeCenter;
     {
@@ -289,33 +333,39 @@ void ShipController::projectCellPositions(const PolyShape&        aShape,
 
     // Output
     aProjectedCellPositions.topLeftPos = aabbGridTopLeft;
-    aProjectedCellPositions.cells.reset(aabbGridBottomRight.x - aabbTopLeft.x + 1,
-                                        aabbBottomRight.y - aabbTopLeft.y + 1);
+    aProjectedCellPositions.cells.reset(aabbGridBottomRight.x - aabbGridTopLeft.x + 1,
+                                        aabbGridBottomRight.y - aabbGridTopLeft.y + 1);
     aProjectedCellPositions.totalBitmask = ProjectedCellPositions::EMPTY;
 
     const auto&                             ggwld = _masterData->interiorWorld.getUnderlying();
     jbatnozic::gridgoblin::cell::CellKindId cellKindId;
-    for (int yy = aabbGridTopLeft.y; yy <= aabbGridBottomRight.y; ++yy) {
-        for (int xx = aabbGridTopLeft.x; xx <= aabbGridBottomRight.x; ++xx) {
+    for (int y = aabbGridTopLeft.y; y <= aabbGridBottomRight.y; ++y) {
+        for (int x = aabbGridTopLeft.x; x <= aabbGridBottomRight.x; ++x) {
             const bool isSquareInsideShape =
-                isPointInsideShape({(xx + 0) * GRID_RESOLUTION, (yy + 0) * GRID_RESOLUTION}) &&
-                isPointInsideShape({(xx + 1) * GRID_RESOLUTION, (yy + 0) * GRID_RESOLUTION}) &&
-                isPointInsideShape({(xx + 0) * GRID_RESOLUTION, (yy + 1) * GRID_RESOLUTION}) &&
-                isPointInsideShape({(xx + 1) * GRID_RESOLUTION, (yy + 1) * GRID_RESOLUTION});
+                isPointInsideShape({(x + 0) * GRID_RESOLUTION, (y + 0) * GRID_RESOLUTION}) &&
+                isPointInsideShape({(x + 1) * GRID_RESOLUTION, (y + 0) * GRID_RESOLUTION}) &&
+                isPointInsideShape({(x + 0) * GRID_RESOLUTION, (y + 1) * GRID_RESOLUTION}) &&
+                isPointInsideShape({(x + 1) * GRID_RESOLUTION, (y + 1) * GRID_RESOLUTION});
 
             std::int8_t cellValue = ProjectedCellPositions::EMPTY;
             if (isSquareInsideShape) {
                 cellValue |= ProjectedCellPositions::INSIDE_SHAPE;
             }
-            if (xx < 0 || xx >= ggwld.getCellCountX() || yy < 0 || yy >= ggwld.getCellCountY()) {
+
+            // Since the origin of the ship's coordinate system is in the center of the ship, but the
+            // origin of the interior world's coordinate system is in its top-left corner, we must
+            // offset the X and Y values in order to target the correct IW cells.
+            const int iwX = x + (InteriorWorld::CELL_COUNT_X / 2);
+            const int iwY = y + (InteriorWorld::CELL_COUNT_Y / 2);
+            if (iwX < 0 || iwX >= ggwld.getCellCountX() || iwY < 0 || iwY >= ggwld.getCellCountY()) {
                 cellValue |= ProjectedCellPositions::OUT_OF_BOUNDS;
-            } else if (ggwld.getCellDataAt(xx, yy, &cellKindId) &&
+            } else if (ggwld.getCellDataAt(iwX, iwY, &cellKindId) &&
                        cellKindId.value != ToU16(interior::CellArchE::SOLID_VOID)) {
                 cellValue |= ProjectedCellPositions::COLLIDES_WITH_IW;
             }
 
             aProjectedCellPositions.totalBitmask |= cellValue;
-            aProjectedCellPositions.cells[yy - aabbGridTopLeft.y][xx - aabbGridTopLeft.y] = cellValue;
+            aProjectedCellPositions.cells[y - aabbGridTopLeft.y][x - aabbGridTopLeft.x] = cellValue;
         }
     }
 }
@@ -336,6 +386,8 @@ void ShipController::_didAttach(QAO_Runtime& aRuntime) {
         md.transformInverse = md.transform->clone();
     }
 }
+
+// MARK: ShipController PRIVATE
 
 void ShipController::_eventUpdate1(spe::IfMaster) {
 #if 0

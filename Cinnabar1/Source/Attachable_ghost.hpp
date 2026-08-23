@@ -9,6 +9,7 @@
 
 #include <Poly_shape.hpp>
 #include <QAOMessages/Handle_pncs_event.hpp>
+#include <Projected_cell_positions.hpp>
 #include <Ship_attachable.hpp>
 
 #include <Hobgoblin/Math.hpp>
@@ -23,11 +24,9 @@ public:
 
     void init(QAO_GenericId aAssociatedShipController, QAO_GenericId aAssociatedAttachableId);
 
-    // const ProjectedCellPositions& getProjectedCellPositions();
-
-    // QAO Message Handlers
-
     ShipAttachable* getAssociatedAttachable() const;
+
+    const ProjectedCellPositions& getProjectedCellPositions() const;
 
     // QAO Message Handlers
 
@@ -40,7 +39,8 @@ private:
     QAO_GenericId   _attachableId  = nullptr;
     ShipAttachable* _attachablePtr = nullptr;
 
-    PolyShape _shape;
+    PolyShape              _shape;
+    ProjectedCellPositions _projectedCellPositions;
 
     bool _leftClicked = false;
 

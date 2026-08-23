@@ -10,7 +10,7 @@ namespace cinnabar {
 namespace grid = ::jbatnozic::gridgoblin;
 
 namespace {
-#define GRID_RESOLUTION 48.f
+#define GRID_RESOLUTION InteriorWorld::CELL_RESOLUTION
 
 // clang-format off
 constexpr grid::ContentsConfig WORLD_CONFIG = {
@@ -28,6 +28,9 @@ constexpr grid::ContentsConfig WORLD_CONFIG = {
 
 constexpr hg::PZInteger CELLS_PER_CHUNK_X = WORLD_CONFIG.cellsPerChunkX;
 constexpr hg::PZInteger CELLS_PER_CHUNK_Y = WORLD_CONFIG.cellsPerChunkY;
+
+static_assert(InteriorWorld::CELL_COUNT_X == WORLD_CONFIG.chunkCountX * CELLS_PER_CHUNK_X);
+static_assert(InteriorWorld::CELL_COUNT_Y == WORLD_CONFIG.chunkCountY * CELLS_PER_CHUNK_Y);
 
 static_assert(InteriorWorld::CENTER_OFFSET.x == WORLD_CONFIG.chunkCountX * GRID_RESOLUTION / 2.0);
 static_assert(InteriorWorld::CENTER_OFFSET.y == WORLD_CONFIG.chunkCountY * GRID_RESOLUTION / 2.0);
