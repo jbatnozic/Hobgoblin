@@ -29,13 +29,13 @@ void DefaultMainGameFlowManager::_didAttach(QAO_Runtime& aRuntime) {
     ctx().attachAndOwnComponent(std::move(interactivityMgr));
 
     auto core = QAO_Create<ShipStartingBlock>(aRuntime);
-    core->init({100.0, 100.0});
+    core->init({150.0, 150.0});
 
     auto ship = QAO_Create<ShipController>(aRuntime, spe::SYNC_ID_NEW);
     ship->init(*core);
 
     auto asteroid = QAO_Create<Asteroid>(aRuntime);
-    asteroid->init({256.0, 256.0});
+    asteroid->init({512.0, 712.0});
 }
 
 void DefaultMainGameFlowManager::_eventDisplay() {

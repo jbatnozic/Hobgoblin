@@ -22,23 +22,23 @@ namespace math {
 //! of the argument.
 template <class taArithmetic,
           T_ENABLE_IF(std::is_arithmetic_v<taArithmetic>)>
-int Sign(const taArithmetic& val) {
-    static constexpr auto ZERO = static_cast<taArithmetic>(0);
+constexpr int Sign(const taArithmetic& val) {
+    constexpr auto ZERO = static_cast<taArithmetic>(0);
     return static_cast<int>(ZERO < val) - static_cast<int>(val < ZERO);
 }
 
 template <class taArithmetic>
-taArithmetic Clamp(const taArithmetic& value, const taArithmetic& low, const taArithmetic& high) {
+constexpr taArithmetic Clamp(const taArithmetic& value, const taArithmetic& low, const taArithmetic& high) {
     return std::min(high, std::max(value, low));
 }
 
 template <class taArithmetic>
-taArithmetic Sqr(taArithmetic value) {
+constexpr taArithmetic Sqr(taArithmetic value) {
     return value * value;
 }
 
 template <class taArithmetic>
-bool IsNearZero(taArithmetic aValue, taArithmetic aDelta) {
+constexpr bool IsNearZero(taArithmetic aValue, taArithmetic aDelta) {
     return std::abs(aValue) < aDelta;
 }
 

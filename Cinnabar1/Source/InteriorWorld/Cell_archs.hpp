@@ -45,7 +45,7 @@ constexpr CellArchProperties SOLID_VOID = {
 };
 
 constexpr CellArchProperties METALLIC_FLOOR = {
-    .cellKindId  = {.value = ToU16(CellArchE::SOLID_VOID)},
+    .cellKindId  = {.value = ToU16(CellArchE::METALLIC_FLOOR)},
     .floorSprite = {.id = SPRITEID_NONE},
     .wallSprite  = {.id = SPRITEID_NONE, .id_reduced = SPRITEID_NONE},
     .spatialInfo = {.wallShape = Shape::EMPTY},

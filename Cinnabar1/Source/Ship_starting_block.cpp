@@ -3,6 +3,7 @@
 
 #include <Ship_starting_block.hpp>
 
+#include <InteriorWorld/Cell_archs.hpp>
 #include <Overworld_manager.hpp>
 #include <Ship/Constants.hpp>
 
@@ -29,12 +30,25 @@ ShipStartingBlock::ShipStartingBlock(QAO_InstGuard aInstGuard)
 
     _iwSliceData = std::make_unique<InteriorWorldSliceData>();
     _iwSliceData->cells.reset(16, 16);
-    _iwSliceData->cellGridOffset =
-        hg::math::Vector2f{
-            -16 * OVERWORLD_CELL_SIZE,
-            -16 * OVERWORLD_CELL_SIZE,
-        } /
-        2.f;
+    _iwSliceData->cellGridOffset = hg::math::Vector2f{
+        -7.5f * OVERWORLD_CELL_SIZE,
+        -7.5f * OVERWORLD_CELL_SIZE,
+    };
+    _iwSliceData->rotationOffset = -hg::math::AngleF::halfCircle() * 0.5f;
+
+    for (int y = 0; y < _iwSliceData->cells.getHeight(); ++y) {
+        for (int x = 0; x < _iwSliceData->cells.getHeight(); ++x) {
+            _iwSliceData->cells[y][x].cellKindId  = interior::cell_archetype::METALLIC_FLOOR.cellKindId;
+            _iwSliceData->cells[y][x].floorSprite = interior::cell_archetype::METALLIC_FLOOR.floorSprite;
+            _iwSliceData->cells[y][x].wallSprite  = interior::cell_archetype::METALLIC_FLOOR.wallSprite;
+            _iwSliceData->cells[y][x].spatialInfo = interior::cell_archetype::METALLIC_FLOOR.spatialInfo;
+            _iwSliceData->cells[y][x].userData.i64 = 0;
+        }
+    }
+
+    _iwSliceData->cells[0][0].cellKindId = interior::cell_archetype::SOLID_VOID.cellKindId;
+    _iwSliceData->cells[0][3].cellKindId = interior::cell_archetype::SOLID_VOID.cellKindId;
+    _iwSliceData->cells[0][5].cellKindId = interior::cell_archetype::SOLID_VOID.cellKindId;
 }
 
 void ShipStartingBlock::init(hg::math::Vector2d aPosition) {
@@ -82,6 +96,7 @@ void ShipStartingBlock::_eventUpdate1() {
 
 void ShipStartingBlock::_eventUpdate2() {
     _syncPolyShapeWithUnibody();
+    HG_LOG_WARN(LOG_ID, "ShipStartingBlock rot = {} deg", _polyShape.getRotation().asDegrees());
 }
 
 void ShipStartingBlock::_eventDraw1() {
