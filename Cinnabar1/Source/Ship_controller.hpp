@@ -5,31 +5,31 @@
 
 #include <Engine.hpp>
 
-#include <InteriorWorld/Interior_world.hpp>
 #include <Graph_of_attachables.hpp>
-#include <Ship_attachable.hpp>
+#include <InteriorWorld/Interior_world.hpp>
 #include <Poly_shape.hpp>
 #include <Projected_cell_positions.hpp>
 #include <QAOMessages/Downcast_to_ship_controller.hpp>
+#include <Ship_attachable.hpp>
 
 #include <Hobgoblin/Math.hpp>
 #include <Hobgoblin/UWGA/Transform.hpp>
 
 #include <memory>
-#include <span>
+#include <optional>
 
 namespace cinnabar {
 
 SPEMPE_DEFINE_AUTODIFF_STATE(ShipController_VisibleState,
-    SPEMPE_MEMBER(double, positionX, 0.0),
-    SPEMPE_MEMBER(double, positionY, 0.0),
-    SPEMPE_MEMBER(float, rotation, 0.0)
-    // Below are ideas for members of a "ship section" object
-    // SPEMPE_MEMBER(?, spriteId, SPRITEID_NONE),
-    // SPEMPE_MEMBER(?, parentSyncId, ?),
-    // SPEMPE_MEMBER(?, parentXOffset, 0),
-    // SPEMPE_MEMBER(?, parentYOffset, 0),
-) {};
+                             SPEMPE_MEMBER(double, positionX, 0.0),
+                             SPEMPE_MEMBER(double, positionY, 0.0),
+                             SPEMPE_MEMBER(float, rotation, 0.0)
+                             // Below are ideas for members of a "ship section" object
+                             // SPEMPE_MEMBER(?, spriteId, SPRITEID_NONE),
+                             // SPEMPE_MEMBER(?, parentSyncId, ?),
+                             // SPEMPE_MEMBER(?, parentXOffset, 0),
+                             // SPEMPE_MEMBER(?, parentYOffset, 0),
+){};
 
 class AttachableGhost;
 struct ShipController_MasterData;
@@ -44,13 +44,17 @@ public:
 
     void init(ShipAttachable& aInitialShipAttachable);
 
-    //! \param aAnchorOffset X/Y offset of the attachable's anchor IN THE SHIP CONTROLLER'S COORDINATE SYSTEM
+    //! ignore the attachable's actual position and attach it as if it were at (aAnchorOffset,
+    //! aRotationOffset)
+    //! - though it will get moved there!
+    //! \param aAnchorOffset X/Y offset of the attachable's anchor IN THE SHIP CONTROLLER'S COORDINATE
+    //! SYSTEM
     //! \param aRotationOffset angle difference
     void attach(ShipAttachable&    aShipAttachable,
                 hg::math::Vector2f aAnchorOffset,
                 hg::math::AngleF   aRotationOffset);
 
-    void attach(AttachableGhost& aAttachableGhost);    
+    void attach(AttachableGhost& aAttachableGhost);
 
     void drawGridOverShape(const PolyShape& aShape, uwga::Canvas& aCanvas) const;
 
@@ -60,8 +64,8 @@ public:
     void drawGridOverGhost(const AttachableGhost& aAttachableGhost, uwga::Canvas& aCanvas) const;
 
     //! calculates projected cell positions of a poly shape in the ship's interior world
-    //! \param aShape[in] 
-    //! \param aProjectedCellPositions[out] 
+    //! \param aShape[in]
+    //! \param aProjectedCellPositions[out]
     void projectCellPositions(const PolyShape& aShape, ProjectedCellPositions& aProjectedCellPositions);
 
     // QAO Message Handlers
@@ -77,6 +81,32 @@ private:
     void _syncCreateImpl(spe::SyncControlDelegate& aSyncCtrl) const override;
     void _syncUpdateImpl(spe::SyncControlDelegate& aSyncCtrl) const override;
     void _syncDestroyImpl(spe::SyncControlDelegate& aSyncCtrl) const override;
+
+    //! \param aSlice slice to check
+    //! \param aRelativeRotation rotation of the slice relative to the ship's current rotation
+    //!
+    //! \returns   0: axis-aligned
+    //!            1: slice is rotated 90 degrees counter-clockwise
+    //!            2: slice is rotated 180 degrees counter-clockwise
+    //!            3: slice is rotated 180 degrees counter-clockwise
+    //!      nullopt: invalid
+    static std::optional<int> _checkIWSliceOrientation(
+        const ShipAttachable::InteriorWorldSliceData& aSlice,
+        hg::math::AngleF                              aRelativeRotation);
+
+    static std::optional<hg::math::Vector2i> _checkIWSliceCornerOffset(
+        const ShipAttachable::InteriorWorldSliceData& aSlice,
+        hg::math::Vector2f                            aAnchorOffset,
+        int                                           aOrientation);
+
+    void _copySliceDataToInteriorWorld_rot000(const ShipAttachable::InteriorWorldSliceData& aSlice,
+                                              hg::math::Vector2pz aStartingCorner);
+    void _copySliceDataToInteriorWorld_rot090(const ShipAttachable::InteriorWorldSliceData& aSlice,
+                                              hg::math::Vector2pz aStartingCorner);
+    void _copySliceDataToInteriorWorld_rot180(const ShipAttachable::InteriorWorldSliceData& aSlice,
+                                              hg::math::Vector2pz aStartingCorner);
+    void _copySliceDataToInteriorWorld_rot270(const ShipAttachable::InteriorWorldSliceData& aSlice,
+                                              hg::math::Vector2pz aStartingCorner);
 
     hg::math::Vector2d _position              = {};
     hg::math::Vector2f _mousePosInLocalCoords = {};

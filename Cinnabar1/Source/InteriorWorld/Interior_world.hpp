@@ -25,6 +25,9 @@ public:
     //! \brief return a read-only reference to the underlying GridGoblin world instance.
     const jbatnozic::gridgoblin::World& getUnderlying() const;
 
+    template <class taCallable>
+    void editWorld(taCallable&& aCallable);
+
 private:
     jbatnozic::gridgoblin::World _world;
 
@@ -60,5 +63,10 @@ private:
 
     std::unique_ptr<jbatnozic::gridgoblin::ChunkExtensionInterface> createChunkExtension() override;
 };
+
+template <class taCallable>
+void InteriorWorld::editWorld(taCallable&& aCallable) {
+    _world.edit(*_world.getPermissionToEdit(), std::forward<taCallable>(aCallable));
+}
 
 } // namespace cinnabar

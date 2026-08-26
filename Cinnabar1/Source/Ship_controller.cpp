@@ -25,8 +25,6 @@ using hg::math::AngleF;
 using hg::math::IsNearZero;
 
 namespace {
-#define GRID_RESOLUTION OVERWORLD_CELL_SIZE
-
 constexpr float ONE_DEG_AS_RAD = hg::math::DegToRad(1.f);
 
 void TransformPoints(hg::math::Vector2f&    aCentralPoint,
@@ -85,7 +83,7 @@ ShipController::ShipController(QAO_InstGuard aInstGuard, spe::SyncId aSyncId)
 void ShipController::init(ShipAttachable& aInitialShipAttachable) {
     HG_VALIDATE_PRECONDITION(isMasterObject());
 
-    _masterData->graphOfAttachables.insert(aInitialShipAttachable);
+    attach(aInitialShipAttachable, {}, {});
 }
 
 void ShipController::attach(ShipAttachable&    aShipAttachable,
@@ -93,19 +91,39 @@ void ShipController::attach(ShipAttachable&    aShipAttachable,
                             hg::math::AngleF   aRotationOffset) {
     const auto* iwSliceData = aShipAttachable.getInteriorWorldSliceData();
     if (iwSliceData != nullptr) {
-        if (IsNearZero(aRotationOffset.asRad(), ONE_DEG_AS_RAD)) {
+        // Since the attachable already has a defined interior world slice and we use a square grid,
+        // there are only four valid relative rotations: exactly 0, exactly 90, exactly 180, and exactly
+        // 270 (though we check with a small delta due to floating point math). The anchor offset must
+        // also be a multiple of the cell resolution.
 
-        } else if (IsNearZero((aRotationOffset - AngleF::halfCircle() * 0.5f).asRad(),
-                                        ONE_DEG_AS_RAD)) {
+        const auto orientation = _checkIWSliceOrientation(*iwSliceData, aRotationOffset);
+        HG_HARD_ASSERT(orientation.has_value());
 
-        } else if (IsNearZero((aRotationOffset - AngleF::halfCircle()).asRad(),
-                                        ONE_DEG_AS_RAD)) {
+        const auto cornerOffset = _checkIWSliceCornerOffset(*iwSliceData, aAnchorOffset, *orientation);
+        HG_HARD_ASSERT(cornerOffset.has_value());
 
-        } else if (IsNearZero((aRotationOffset - AngleF::halfCircle() * 1.5f).asRad(),
-                                        ONE_DEG_AS_RAD)) {
-        } else {
-            // TODO - MUST NOT HAPPEN!
+        const auto cornerCellPosInIW =
+            *cornerOffset +
+            hg::math::Vector2pz{InteriorWorld::CELL_COUNT_X / 2, InteriorWorld::CELL_COUNT_Y / 2};
+
+        switch (*orientation) {
+        case 0:
+            _copySliceDataToInteriorWorld_rot000(*iwSliceData, cornerCellPosInIW);
+            break;
+        case 1:
+            _copySliceDataToInteriorWorld_rot090(*iwSliceData, cornerCellPosInIW);
+            break;
+        case 2:
+            _copySliceDataToInteriorWorld_rot180(*iwSliceData, cornerCellPosInIW);
+            break;
+        case 3:
+            _copySliceDataToInteriorWorld_rot270(*iwSliceData, cornerCellPosInIW);
+            break;
+        default:
+            HG_UNREACHABLE("Invalid slice orientation! ({})", *orientation);
         }
+
+        _masterData->graphOfAttachables.insert(aShipAttachable);
     } else {
         HG_NOT_IMPLEMENTED("TODO - cell generator func");
     }
@@ -156,10 +174,11 @@ void ShipController::drawGridOverShape(const PolyShape& aShape, uwga::Canvas& aC
     hg::math::Vector2i aabbGridTopLeft;
     hg::math::Vector2i aabbGridBottomRight;
     {
-        aabbGridTopLeft     = {static_cast<int>(std::floor(aabbTopLeft.x / GRID_RESOLUTION)) - 1,
-                               static_cast<int>(std::floor(aabbTopLeft.y / GRID_RESOLUTION)) - 1};
-        aabbGridBottomRight = {static_cast<int>(std::floor(aabbBottomRight.x / GRID_RESOLUTION)) + 1,
-                               static_cast<int>(std::floor(aabbBottomRight.y / GRID_RESOLUTION)) + 1};
+        aabbGridTopLeft     = {static_cast<int>(std::floor(aabbTopLeft.x / OVERWORLD_CELL_SIZE)) - 1,
+                               static_cast<int>(std::floor(aabbTopLeft.y / OVERWORLD_CELL_SIZE)) - 1};
+        aabbGridBottomRight = {static_cast<int>(std::floor(aabbBottomRight.x / OVERWORLD_CELL_SIZE)) + 1,
+                               static_cast<int>(std::floor(aabbBottomRight.y / OVERWORLD_CELL_SIZE)) +
+                                   1};
     }
 
     // Construct lambdas for checking if a point is inside of the shape
@@ -185,7 +204,7 @@ void ShipController::drawGridOverShape(const PolyShape& aShape, uwga::Canvas& aC
     // Draw the grid
     uwga::RectangleShape rect{
         aCanvas.getSystem(),
-        {GRID_RESOLUTION - 2.f, GRID_RESOLUTION - 2.f}
+        {OVERWORLD_CELL_SIZE - 2.f, OVERWORLD_CELL_SIZE - 2.f}
     };
     rect.setOrigin(-1.f, -1.f);
     rect.setRotation(-_rotation);
@@ -194,12 +213,12 @@ void ShipController::drawGridOverShape(const PolyShape& aShape, uwga::Canvas& aC
 
     for (int yy = aabbGridTopLeft.y; yy <= aabbGridBottomRight.y; ++yy) {
         for (int xx = aabbGridTopLeft.x; xx <= aabbGridBottomRight.x; ++xx) {
-            auto       squareTopLeft = hg::math::Vector2f{xx * GRID_RESOLUTION, yy * GRID_RESOLUTION};
+            auto squareTopLeft = hg::math::Vector2f{xx * OVERWORLD_CELL_SIZE, yy * OVERWORLD_CELL_SIZE};
             const bool isSquareInsideShape =
                 isPointInsideShape(squareTopLeft) &&
-                isPointInsideShape({(xx + 1) * GRID_RESOLUTION, (yy + 0) * GRID_RESOLUTION}) &&
-                isPointInsideShape({(xx + 0) * GRID_RESOLUTION, (yy + 1) * GRID_RESOLUTION}) &&
-                isPointInsideShape({(xx + 1) * GRID_RESOLUTION, (yy + 1) * GRID_RESOLUTION});
+                isPointInsideShape({(xx + 1) * OVERWORLD_CELL_SIZE, (yy + 0) * OVERWORLD_CELL_SIZE}) &&
+                isPointInsideShape({(xx + 0) * OVERWORLD_CELL_SIZE, (yy + 1) * OVERWORLD_CELL_SIZE}) &&
+                isPointInsideShape({(xx + 1) * OVERWORLD_CELL_SIZE, (yy + 1) * OVERWORLD_CELL_SIZE});
 
             if (isSquareInsideShape) {
                 rect.setOutlineColor(uwga::COLOR_LIME.withAlpha(175));
@@ -220,7 +239,7 @@ void ShipController::drawGridOverProjection(const ProjectedCellPositions& aProje
                                             uwga::Canvas&                 aCanvas) const {
     uwga::RectangleShape rect{
         aCanvas.getSystem(),
-        {GRID_RESOLUTION - 2.f, GRID_RESOLUTION - 2.f}
+        {OVERWORLD_CELL_SIZE - 2.f, OVERWORLD_CELL_SIZE - 2.f}
     };
     rect.setOrigin(-1.f, -1.f);
     rect.setRotation(-_rotation);
@@ -230,9 +249,9 @@ void ShipController::drawGridOverProjection(const ProjectedCellPositions& aProje
     for (int y = 0; y < aProjectedCellPositions.cells.getHeight(); ++y) {
         for (int x = 0; x < aProjectedCellPositions.cells.getWidth(); ++x) {
             const auto squareTopLeft =
-                hg::math::Vector2f{(x + aProjectedCellPositions.topLeftPos.x) * GRID_RESOLUTION,
-                                   (y + aProjectedCellPositions.topLeftPos.y) * GRID_RESOLUTION};
-            const auto mask          = aProjectedCellPositions.cells[y][x];
+                hg::math::Vector2f{(x + aProjectedCellPositions.topLeftPos.x) * OVERWORLD_CELL_SIZE,
+                                   (y + aProjectedCellPositions.topLeftPos.y) * OVERWORLD_CELL_SIZE};
+            const auto mask = aProjectedCellPositions.cells[y][x];
 
             if (mask == ProjectedCellPositions::EMPTY) {
                 continue;
@@ -305,10 +324,11 @@ void ShipController::projectCellPositions(const PolyShape&        aShape,
     hg::math::Vector2i aabbGridTopLeft;
     hg::math::Vector2i aabbGridBottomRight;
     {
-        aabbGridTopLeft     = {static_cast<int>(std::floor(aabbTopLeft.x / GRID_RESOLUTION)) - 1,
-                               static_cast<int>(std::floor(aabbTopLeft.y / GRID_RESOLUTION)) - 1};
-        aabbGridBottomRight = {static_cast<int>(std::floor(aabbBottomRight.x / GRID_RESOLUTION)) + 1,
-                               static_cast<int>(std::floor(aabbBottomRight.y / GRID_RESOLUTION)) + 1};
+        aabbGridTopLeft     = {static_cast<int>(std::floor(aabbTopLeft.x / OVERWORLD_CELL_SIZE)) - 1,
+                               static_cast<int>(std::floor(aabbTopLeft.y / OVERWORLD_CELL_SIZE)) - 1};
+        aabbGridBottomRight = {static_cast<int>(std::floor(aabbBottomRight.x / OVERWORLD_CELL_SIZE)) + 1,
+                               static_cast<int>(std::floor(aabbBottomRight.y / OVERWORLD_CELL_SIZE)) +
+                                   1};
     }
 
     // Construct lambdas for checking if a point is inside of the shape
@@ -342,10 +362,10 @@ void ShipController::projectCellPositions(const PolyShape&        aShape,
     for (int y = aabbGridTopLeft.y; y <= aabbGridBottomRight.y; ++y) {
         for (int x = aabbGridTopLeft.x; x <= aabbGridBottomRight.x; ++x) {
             const bool isSquareInsideShape =
-                isPointInsideShape({(x + 0) * GRID_RESOLUTION, (y + 0) * GRID_RESOLUTION}) &&
-                isPointInsideShape({(x + 1) * GRID_RESOLUTION, (y + 0) * GRID_RESOLUTION}) &&
-                isPointInsideShape({(x + 0) * GRID_RESOLUTION, (y + 1) * GRID_RESOLUTION}) &&
-                isPointInsideShape({(x + 1) * GRID_RESOLUTION, (y + 1) * GRID_RESOLUTION});
+                isPointInsideShape({(x + 0) * OVERWORLD_CELL_SIZE, (y + 0) * OVERWORLD_CELL_SIZE}) &&
+                isPointInsideShape({(x + 1) * OVERWORLD_CELL_SIZE, (y + 0) * OVERWORLD_CELL_SIZE}) &&
+                isPointInsideShape({(x + 0) * OVERWORLD_CELL_SIZE, (y + 1) * OVERWORLD_CELL_SIZE}) &&
+                isPointInsideShape({(x + 1) * OVERWORLD_CELL_SIZE, (y + 1) * OVERWORLD_CELL_SIZE});
 
             std::int8_t cellValue = ProjectedCellPositions::EMPTY;
             if (isSquareInsideShape) {
@@ -489,13 +509,13 @@ void ShipController::_eventDraw1() {
     if (_drawGrid) {
         uwga::RectangleShape rect{
             winMgr.getGraphicsSystem(),
-            {GRID_RESOLUTION, GRID_RESOLUTION}
+            {OVERWORLD_CELL_SIZE, OVERWORLD_CELL_SIZE}
         };
         rect.setRotation(-_rotation);
 
-        auto flooredMousePosInLocalCoords =
-            hg::math::Vector2f{std::floor(_mousePosInLocalCoords.x / GRID_RESOLUTION) * GRID_RESOLUTION,
-                               std::floor(_mousePosInLocalCoords.y / GRID_RESOLUTION) * GRID_RESOLUTION};
+        auto flooredMousePosInLocalCoords = hg::math::Vector2f{
+            std::floor(_mousePosInLocalCoords.x / OVERWORLD_CELL_SIZE) * OVERWORLD_CELL_SIZE,
+            std::floor(_mousePosInLocalCoords.y / OVERWORLD_CELL_SIZE) * OVERWORLD_CELL_SIZE};
 
         _masterData->transformInverse->transformPoints(1, &flooredMousePosInLocalCoords);
 
@@ -510,7 +530,161 @@ void ShipController::_eventDraw1() {
     }
 }
 
-// MARK: Sync impl.
+std::optional<int> ShipController::_checkIWSliceOrientation(
+    const ShipAttachable::InteriorWorldSliceData& aSlice,
+    hg::math::AngleF                              aRelativeRotation) //
+{
+    constexpr auto delta = ONE_DEG_AS_RAD;
+
+    // If this is 0, the attachable and the ship are axis-aligned.
+    const auto lz = (aRelativeRotation + aSlice.rotationOffset).normalize();
+
+    if (IsNearZero(lz.asRad(), delta)) {
+        return 0;
+    }
+    if (IsNearZero((lz - AngleF::halfCircle() * 0.5f).asRad(), delta)) {
+        return 1;
+    }
+    if (IsNearZero((lz - AngleF::halfCircle()).asRad(), delta)) {
+        return 2;
+    }
+    if (IsNearZero((lz - AngleF::halfCircle() * 1.5f).asRad(), delta)) {
+        return 3;
+    }
+
+    return std::nullopt;
+}
+
+std::optional<hg::math::Vector2i> ShipController::_checkIWSliceCornerOffset(
+    const ShipAttachable::InteriorWorldSliceData& aSlice,
+    hg::math::Vector2f                            aAnchorOffset,
+    int                                           aOrientation) //
+{
+    // Note: remember that aSlice.cellGridOffset gives offset from the center of the attachable
+    //       to the CENTER of its top-left cell!
+
+    hg::math::Vector2d actualCornerOffset; // Offset when orientation is taken into account
+    switch (aOrientation) {
+    case 0:
+        actualCornerOffset = aAnchorOffset + aSlice.cellGridOffset;
+        break;
+
+    case 1:
+        actualCornerOffset =
+            aAnchorOffset + hg::math::Vector2f{aSlice.cellGridOffset.y, -aSlice.cellGridOffset.x};
+        break;
+
+    case 2:
+        actualCornerOffset = aAnchorOffset - aSlice.cellGridOffset;
+        break;
+
+    case 3:
+        actualCornerOffset =
+            aAnchorOffset + hg::math::Vector2f{-aSlice.cellGridOffset.y, aSlice.cellGridOffset.x};
+        break;
+
+    default:
+        HG_UNREACHABLE("Invalid slice orientation! ({})", aOrientation);
+    }
+
+    // Count in cells rather than pixels
+    const hg::math::Vector2d ratio = {actualCornerOffset.x / OVERWORLD_CELL_SIZE,
+                                      actualCornerOffset.y / OVERWORLD_CELL_SIZE};
+
+    const hg::math::Vector2d floored = {std::floor(ratio.x), std::floor(ratio.y)};
+
+    constexpr double delta = 1.0 / OVERWORLD_CELL_SIZE;
+
+    if (!IsNearZero((ratio.x - floored.x) - 0.5, delta)) {
+        return std::nullopt;
+    }
+    if (!IsNearZero((ratio.y - floored.y) - 0.5, delta)) {
+        return std::nullopt;
+    }
+
+    return floored.cast<int>();
+}
+
+namespace {
+using WorldEditor = jbatnozic::gridgoblin::World::Editor;
+
+//! Copies every cell of `aSlice` into `aWorld`. `aMapCell` maps a slice-local cell coordinate
+//! (x, y) to its destination cell coordinate in the interior world, thereby accounting for the
+//! slice's orientation. Note: only the cell POSITIONS are rotated; the cell contents themselves
+//! (e.g. directional wall sprites) are copied verbatim.
+template <class taMapCell>
+void CopySliceDataToInteriorWorld(InteriorWorld&                                aWorld,
+                                  const ShipAttachable::InteriorWorldSliceData& aSlice,
+                                  taMapCell&&                                   aMapCell) {
+    aWorld.editWorld([&](WorldEditor& aEditor) {
+        for (hg::PZInteger y = 0; y < aSlice.cells.getHeight(); ++y) {
+            for (hg::PZInteger x = 0; x < aSlice.cells.getWidth(); ++x) {
+                if (aSlice.cells[y][x].cellKindId.value == ToU16(interior::CellArchE::SOLID_VOID)) {
+                    continue;
+                }
+                const hg::math::Vector2pz dst = aMapCell(x, y);
+                aEditor.setCellDataAt(dst.x,
+                                      dst.y,
+                                      &aSlice.cells[y][x].cellKindId,
+                                      &aSlice.cells[y][x].floorSprite,
+                                      &aSlice.cells[y][x].wallSprite,
+                                      &aSlice.cells[y][x].spatialInfo,
+                                      &aSlice.cells[y][x].userData);
+            }
+        }
+    });
+}
+} // namespace
+
+void ShipController::_copySliceDataToInteriorWorld_rot000(
+    const ShipAttachable::InteriorWorldSliceData& aSlice,
+    hg::math::Vector2pz                           aStartingCorner) //
+{
+    CopySliceDataToInteriorWorld(
+        _masterData->interiorWorld,
+        aSlice,
+        [aStartingCorner](hg::PZInteger x, hg::PZInteger y) -> hg::math::Vector2pz {
+            return {aStartingCorner.x + x, aStartingCorner.y + y};
+        });
+}
+
+void ShipController::_copySliceDataToInteriorWorld_rot090(
+    const ShipAttachable::InteriorWorldSliceData& aSlice,
+    hg::math::Vector2pz                           aStartingCorner) //
+{
+    CopySliceDataToInteriorWorld(
+        _masterData->interiorWorld,
+        aSlice,
+        [aStartingCorner](hg::PZInteger x, hg::PZInteger y) -> hg::math::Vector2pz {
+            return {aStartingCorner.x + y, aStartingCorner.y - x};
+        });
+}
+
+void ShipController::_copySliceDataToInteriorWorld_rot180(
+    const ShipAttachable::InteriorWorldSliceData& aSlice,
+    hg::math::Vector2pz                           aStartingCorner) //
+{
+    CopySliceDataToInteriorWorld(
+        _masterData->interiorWorld,
+        aSlice,
+        [aStartingCorner](hg::PZInteger x, hg::PZInteger y) -> hg::math::Vector2pz {
+            return {aStartingCorner.x - x, aStartingCorner.y - y};
+        });
+}
+
+void ShipController::_copySliceDataToInteriorWorld_rot270(
+    const ShipAttachable::InteriorWorldSliceData& aSlice,
+    hg::math::Vector2pz                           aStartingCorner) //
+{
+    CopySliceDataToInteriorWorld(
+        _masterData->interiorWorld,
+        aSlice,
+        [aStartingCorner](hg::PZInteger x, hg::PZInteger y) -> hg::math::Vector2pz {
+            return {aStartingCorner.x - y, aStartingCorner.y + x};
+        });
+}
+
+// MARK: ShipController SYNC
 
 void ShipController::_syncCreateImpl(spe::SyncControlDelegate& aSyncCtrl) const {
     // TODO
