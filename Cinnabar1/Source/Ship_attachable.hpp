@@ -45,9 +45,9 @@ public:
         //! cell grid is axis-aligned with the overworld.
         hg::math::AngleF rotationOffset = hg::math::AngleF::zero();
 
-        //! X/Y offset of the top-left corner of the interior cell grid (relative to the anchor of the
-        //! attachable's PolyShape) when ([attachable's rotation] + `rotationOffset` == 0).
-        //! TBD/TODO: offset of the center of the top-left cell instead?
+        //! X/Y offset of the center of the cell which sits in the top-left corner of the interior
+        //! cell grid (relative to the anchor of the attachable's PolyShape) when 
+        //! ([attachable's rotation] + `rotationOffset` == 0).
         hg::math::Vector2f cellGridOffset = {};
     };
 
