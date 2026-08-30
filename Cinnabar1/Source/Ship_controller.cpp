@@ -86,6 +86,47 @@ void ShipController::init(ShipAttachable& aInitialShipAttachable) {
     attach(aInitialShipAttachable, {}, {});
 }
 
+AttachmentEvaluation ShipController::evalAttachment(const AttachableGhost& aGhost) {
+    HG_VALIDATE_ARGUMENT(
+        aGhost.getAssociatedAttachable().getInteriorWorldSliceData() == nullptr,
+        "This overload of evalAttachment() is only valid for AttachableGhosts that carry no IW slice!");
+
+    AttachmentEvaluation result;
+    return result;
+}
+
+AttachmentEvaluation ShipController::evalAttachment(
+    const AttachableGhost&        aGhost,
+    const ProjectedCellPositions& aProjectedCellPositions) //
+{
+    const auto* iwSliceData =  aGhost.getAssociatedAttachable().getInteriorWorldSliceData();
+    HG_VALIDATE_ARGUMENT(
+        iwSliceData != nullptr,
+        "This overload of evalAttachment() is only valid for AttachableGhosts that carry an IW slice!");
+
+    AttachmentEvaluation result;
+
+    const auto orientation = _checkIWSliceOrientation(
+        *iwSliceData,
+        _rotation.shortestDistanceTo(aGhost.getAssociatedAttachable().getPolyShape().getRotation()));
+    if (orientation == RelativeIWSliceOrientation::INVALID) {
+        result.status = AttachmentEvaluation::INVALID_ORIENTATION | AttachmentEvaluation::INVALID_POS;
+        return result;
+    } else {
+        result.orientation = orientation;
+    }
+
+    const auto cornerOffset = _checkIWSliceCornerOffset(*iwSliceData, {/*TODO*/}, orientation);
+    if (!cornerOffset.has_value()) {
+        result.status = AttachmentEvaluation::INVALID_POS;
+        return result;
+    } else {
+        // result.cornerPos = *cornerOffset;
+    }
+
+    return result;
+}
+
 void ShipController::attach(ShipAttachable&    aShipAttachable,
                             hg::math::Vector2f aAnchorOffset,
                             hg::math::AngleF   aRotationOffset) {
@@ -97,30 +138,30 @@ void ShipController::attach(ShipAttachable&    aShipAttachable,
         // also be a multiple of the cell resolution.
 
         const auto orientation = _checkIWSliceOrientation(*iwSliceData, aRotationOffset);
-        HG_HARD_ASSERT(orientation.has_value());
+        HG_HARD_ASSERT(orientation != RelativeIWSliceOrientation::INVALID);
 
-        const auto cornerOffset = _checkIWSliceCornerOffset(*iwSliceData, aAnchorOffset, *orientation);
+        const auto cornerOffset = _checkIWSliceCornerOffset(*iwSliceData, aAnchorOffset, orientation);
         HG_HARD_ASSERT(cornerOffset.has_value());
 
         const auto cornerCellPosInIW =
             *cornerOffset +
             hg::math::Vector2pz{InteriorWorld::CELL_COUNT_X / 2, InteriorWorld::CELL_COUNT_Y / 2};
 
-        switch (*orientation) {
-        case 0:
+        switch (orientation) {
+        case RelativeIWSliceOrientation::ROT_ALIGNED:
             _copySliceDataToInteriorWorld_rot000(*iwSliceData, cornerCellPosInIW);
             break;
-        case 1:
+        case RelativeIWSliceOrientation::ROT_90DEG_CCW:
             _copySliceDataToInteriorWorld_rot090(*iwSliceData, cornerCellPosInIW);
             break;
-        case 2:
+        case RelativeIWSliceOrientation::ROT_180DEG_CCW:
             _copySliceDataToInteriorWorld_rot180(*iwSliceData, cornerCellPosInIW);
             break;
-        case 3:
+        case RelativeIWSliceOrientation::ROT_270DEG_CCW:
             _copySliceDataToInteriorWorld_rot270(*iwSliceData, cornerCellPosInIW);
             break;
         default:
-            HG_UNREACHABLE("Invalid slice orientation! ({})", *orientation);
+            HG_UNREACHABLE("Invalid slice orientation! ({})", (int)orientation);
         }
 
         _masterData->graphOfAttachables.insert(aShipAttachable);
@@ -530,7 +571,7 @@ void ShipController::_eventDraw1() {
     }
 }
 
-std::optional<int> ShipController::_checkIWSliceOrientation(
+RelativeIWSliceOrientation ShipController::_checkIWSliceOrientation(
     const ShipAttachable::InteriorWorldSliceData& aSlice,
     hg::math::AngleF                              aRelativeRotation) //
 {
@@ -540,51 +581,51 @@ std::optional<int> ShipController::_checkIWSliceOrientation(
     const auto lz = (aRelativeRotation + aSlice.rotationOffset).normalize();
 
     if (IsNearZero(lz.asRad(), delta)) {
-        return 0;
+        return RelativeIWSliceOrientation::ROT_ALIGNED;
     }
     if (IsNearZero((lz - AngleF::halfCircle() * 0.5f).asRad(), delta)) {
-        return 1;
+        return RelativeIWSliceOrientation::ROT_90DEG_CCW;
     }
     if (IsNearZero((lz - AngleF::halfCircle()).asRad(), delta)) {
-        return 2;
+        return RelativeIWSliceOrientation::ROT_180DEG_CCW;
     }
     if (IsNearZero((lz - AngleF::halfCircle() * 1.5f).asRad(), delta)) {
-        return 3;
+        return RelativeIWSliceOrientation::ROT_270DEG_CCW;
     }
 
-    return std::nullopt;
+    return RelativeIWSliceOrientation::INVALID;
 }
 
 std::optional<hg::math::Vector2i> ShipController::_checkIWSliceCornerOffset(
     const ShipAttachable::InteriorWorldSliceData& aSlice,
     hg::math::Vector2f                            aAnchorOffset,
-    int                                           aOrientation) //
+    RelativeIWSliceOrientation                    aOrientation) //
 {
     // Note: remember that aSlice.cellGridOffset gives offset from the center of the attachable
     //       to the CENTER of its top-left cell!
 
     hg::math::Vector2d actualCornerOffset; // Offset when orientation is taken into account
     switch (aOrientation) {
-    case 0:
+    case RelativeIWSliceOrientation::ROT_ALIGNED:
         actualCornerOffset = aAnchorOffset + aSlice.cellGridOffset;
         break;
 
-    case 1:
+    case RelativeIWSliceOrientation::ROT_90DEG_CCW:
         actualCornerOffset =
             aAnchorOffset + hg::math::Vector2f{aSlice.cellGridOffset.y, -aSlice.cellGridOffset.x};
         break;
 
-    case 2:
+    case RelativeIWSliceOrientation::ROT_180DEG_CCW:
         actualCornerOffset = aAnchorOffset - aSlice.cellGridOffset;
         break;
 
-    case 3:
+    case RelativeIWSliceOrientation::ROT_270DEG_CCW:
         actualCornerOffset =
             aAnchorOffset + hg::math::Vector2f{-aSlice.cellGridOffset.y, aSlice.cellGridOffset.x};
         break;
 
     default:
-        HG_UNREACHABLE("Invalid slice orientation! ({})", aOrientation);
+        HG_UNREACHABLE("Invalid slice orientation! ({})", (int)aOrientation);
     }
 
     // Count in cells rather than pixels
