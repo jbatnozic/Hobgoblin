@@ -41,8 +41,8 @@ void AttachableGhost::init(QAO_GenericId aAssociatedShipController,
     _cursorOffset = mousePosRel;
 }
 
-ShipAttachable* AttachableGhost::getAssociatedAttachable() const {
-    return _attachablePtr;
+const ShipAttachable& AttachableGhost::getAssociatedAttachable() const {
+    return *_attachablePtr;
 }
 
 const ProjectedCellPositions& AttachableGhost::getProjectedCellPositions() const {
