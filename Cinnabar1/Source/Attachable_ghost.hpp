@@ -24,7 +24,7 @@ public:
 
     void init(QAO_GenericId aAssociatedShipController, QAO_GenericId aAssociatedAttachableId);
 
-    ShipAttachable* getAssociatedAttachable() const;
+    const ShipAttachable& getAssociatedAttachable() const;
 
     const ProjectedCellPositions& getProjectedCellPositions() const;
 

@@ -5,6 +5,7 @@
 
 #include <Engine.hpp>
 
+#include <Attachment_evaluation.hpp>
 #include <Graph_of_attachables.hpp>
 #include <InteriorWorld/Interior_world.hpp>
 #include <Poly_shape.hpp>
@@ -44,6 +45,11 @@ public:
 
     void init(ShipAttachable& aInitialShipAttachable);
 
+    AttachmentEvaluation evalAttachment(const AttachableGhost& aGhost);
+
+    AttachmentEvaluation evalAttachment(const AttachableGhost&        aGhost,
+                                        const ProjectedCellPositions& aProjectedCellPositions);
+
     //! ignore the attachable's actual position and attach it as if it were at (aAnchorOffset,
     //! aRotationOffset)
     //! - though it will get moved there!
@@ -82,22 +88,14 @@ private:
     void _syncUpdateImpl(spe::SyncControlDelegate& aSyncCtrl) const override;
     void _syncDestroyImpl(spe::SyncControlDelegate& aSyncCtrl) const override;
 
-    //! \param aSlice slice to check
-    //! \param aRelativeRotation rotation of the slice relative to the ship's current rotation
-    //!
-    //! \returns   0: axis-aligned
-    //!            1: slice is rotated 90 degrees counter-clockwise
-    //!            2: slice is rotated 180 degrees counter-clockwise
-    //!            3: slice is rotated 180 degrees counter-clockwise
-    //!      nullopt: invalid
-    static std::optional<int> _checkIWSliceOrientation(
+    static RelativeIWSliceOrientation _checkIWSliceOrientation(
         const ShipAttachable::InteriorWorldSliceData& aSlice,
         hg::math::AngleF                              aRelativeRotation);
 
     static std::optional<hg::math::Vector2i> _checkIWSliceCornerOffset(
         const ShipAttachable::InteriorWorldSliceData& aSlice,
         hg::math::Vector2f                            aAnchorOffset,
-        int                                           aOrientation);
+        RelativeIWSliceOrientation                    aOrientation);
 
     void _copySliceDataToInteriorWorld_rot000(const ShipAttachable::InteriorWorldSliceData& aSlice,
                                               hg::math::Vector2pz aStartingCorner);
