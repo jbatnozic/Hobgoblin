@@ -17,7 +17,7 @@
 #include <Hobgoblin/UWGA/Transform.hpp>
 
 #include <memory>
-#include <optional>
+#include <variant>
 
 namespace cinnabar {
 
@@ -45,8 +45,10 @@ public:
 
     void init(ShipAttachable& aInitialShipAttachable);
 
+    //! \brief evaluate a potential attachment of a ghost of an attachable carrying an IW slice
     AttachmentEvaluation evalAttachment(const AttachableGhost& aGhost);
 
+    //! \brief evaluate a potential attachment of a ghost of an attachable carrying no IW slice
     AttachmentEvaluation evalAttachment(const AttachableGhost&        aGhost,
                                         const ProjectedCellPositions& aProjectedCellPositions);
 
@@ -74,6 +76,8 @@ public:
     //! \param aProjectedCellPositions[out]
     void projectCellPositions(const PolyShape& aShape, ProjectedCellPositions& aProjectedCellPositions);
 
+    const ShipAttachable* getAttachableWithIndex(std::int16_t aIndex) const;
+
     // QAO Message Handlers
 
     void msgDowncastToShipController(DowncastToShipController::PayloadPtr aPtr, bool /* aConst */);
@@ -88,14 +92,32 @@ private:
     void _syncUpdateImpl(spe::SyncControlDelegate& aSyncCtrl) const override;
     void _syncDestroyImpl(spe::SyncControlDelegate& aSyncCtrl) const override;
 
-    static RelativeIWSliceOrientation _checkIWSliceOrientation(
+    //! Returns a non-INVALID rotation, if able, and a rotation hint otherwise.
+    static std::variant<RelativeIWSliceOrientation, hg::math::AngleF> _checkIWSliceOrientation(
         const ShipAttachable::InteriorWorldSliceData& aSlice,
         hg::math::AngleF                              aRelativeRotation);
 
-    static std::optional<hg::math::Vector2i> _checkIWSliceCornerOffset(
+    static std::variant<hg::math::Vector2i, hg::math::Vector2f> _checkIWTopLeftCellMapping(
         const ShipAttachable::InteriorWorldSliceData& aSlice,
-        hg::math::Vector2f                            aAnchorOffset,
+        hg::math::Vector2f                            aAnchorDiff,
         RelativeIWSliceOrientation                    aOrientation);
+
+    char _checkSliceDataToIWIntegration_rot000(
+        const ShipAttachable::InteriorWorldSliceData&    aSlice,
+        hg::math::Vector2pz                              aStartingCorner,
+        std::vector<AttachmentEvaluation::BondStrength>& aOutBonds);
+    char _checkSliceDataToIWIntegration_rot090(
+        const ShipAttachable::InteriorWorldSliceData&    aSlice,
+        hg::math::Vector2pz                              aStartingCorner,
+        std::vector<AttachmentEvaluation::BondStrength>& aOutBonds);
+    char _checkSliceDataToIWIntegration_rot180(
+        const ShipAttachable::InteriorWorldSliceData&    aSlice,
+        hg::math::Vector2pz                              aStartingCorner,
+        std::vector<AttachmentEvaluation::BondStrength>& aOutBonds);
+    char _checkSliceDataToIWIntegration_rot270(
+        const ShipAttachable::InteriorWorldSliceData&    aSlice,
+        hg::math::Vector2pz                              aStartingCorner,
+        std::vector<AttachmentEvaluation::BondStrength>& aOutBonds);
 
     void _copySliceDataToInteriorWorld_rot000(const ShipAttachable::InteriorWorldSliceData& aSlice,
                                               hg::math::Vector2pz aStartingCorner);
@@ -119,8 +141,8 @@ struct ShipController_MasterData {
 
     InteriorWorld interiorWorld;
 
-    std::unique_ptr<uwga::Transform> transform;
-    std::unique_ptr<uwga::Transform> transformInverse;
+    std::unique_ptr<uwga::Transform> transformGlobalToShip;
+    std::unique_ptr<uwga::Transform> transformShipToGlobal;
 
     ShipController_MasterData();
 };
