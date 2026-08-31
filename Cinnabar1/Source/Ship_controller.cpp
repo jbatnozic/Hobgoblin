@@ -6,6 +6,7 @@
 #include <Attachable_ghost.hpp>
 #include <Graphics_system_provider.hpp>
 #include <InteriorWorld/Cell_archs.hpp>
+#include <InteriorWorld/Cell_props.hpp>
 #include <Ship/Constants.hpp>
 
 #include <GridGoblin/World/World_config.hpp>
@@ -16,6 +17,7 @@
 #include <Hobgoblin/UWGA/Rectangle_shape.hpp>
 #include <Hobgoblin/UWGA/Vertex_array.hpp>
 
+#include <algorithm>
 #include <cmath>
 #include <vector>
 
@@ -86,12 +88,75 @@ void ShipController::init(ShipAttachable& aInitialShipAttachable) {
     attach(aInitialShipAttachable, {}, {});
 }
 
+#define HOLDS_ANGLE(_variant_)     std::holds_alternative<hg::math::AngleF>(_variant_)
+#define HOLDS_VECTOR2F(_variant_)  std::holds_alternative<hg::math::Vector2f>(_variant_)
+#define GET_ANGLE(_variant_)       std::get<hg::math::AngleF>(_variant_)
+#define GET_ORIENTATION(_variant_) std::get<RelativeIWSliceOrientation>(_variant_)
+#define GET_VECTOR2I(_variant_)    std::get<hg::math::Vector2i>(_variant_)
+#define GET_VECTOR2F(_variant_)    std::get<hg::math::Vector2f>(_variant_)
+
 AttachmentEvaluation ShipController::evalAttachment(const AttachableGhost& aGhost) {
+    const auto& attachable  = aGhost.getAssociatedAttachable();
+    const auto* iwSliceData = attachable.getInteriorWorldSliceData();
     HG_VALIDATE_ARGUMENT(
-        aGhost.getAssociatedAttachable().getInteriorWorldSliceData() == nullptr,
-        "This overload of evalAttachment() is only valid for AttachableGhosts that carry no IW slice!");
+        iwSliceData != nullptr,
+        "This overload of evalAttachment() is only valid for AttachableGhosts that carry an IW slice!");
 
     AttachmentEvaluation result;
+    auto&                status = result.status;
+
+    // *** STEP 1: Analyze orientation ***
+
+    const auto relativeRotation = _rotation.shortestDistanceTo(attachable.getPolyShape().getRotation());
+
+    const auto orientationVariant = _checkIWSliceOrientation(*iwSliceData, relativeRotation);
+    if (HOLDS_ANGLE(orientationVariant)) {
+        status = AttachmentEvaluation::INVALID_ORIENTATION | AttachmentEvaluation::INVALID_POS;
+        result.rotationHint = GET_ANGLE(orientationVariant);
+        return result;
+    } else {
+        result.orientation = GET_ORIENTATION(orientationVariant);
+    }
+
+    // *** STEP 2: Analyze anchor offset ***
+
+    const auto anchorDiff = _masterData->transformGlobalToShip->transformPoint(
+        (attachable.getPolyShape().getAnchor() - _position).cast<float>());
+
+    const auto tlCellMappingVariant =
+        _checkIWTopLeftCellMapping(*iwSliceData, anchorDiff, result.orientation);
+    if (HOLDS_VECTOR2F(tlCellMappingVariant)) {
+        status = AttachmentEvaluation::INVALID_POS;
+        result.anchorAdjustmentHint =
+            _masterData->transformShipToGlobal->transformPoint(GET_VECTOR2F(tlCellMappingVariant));
+        return result;
+    } else {
+        result.topLeftCellMapping = GET_VECTOR2I(tlCellMappingVariant);
+    }
+
+    // *** STEP 3: Analyze cell integration ***
+
+    const auto cornerCellPosInIW =
+        result.topLeftCellMapping +
+        hg::math::Vector2pz{InteriorWorld::CELL_COUNT_X / 2, InteriorWorld::CELL_COUNT_Y / 2};
+
+    switch (result.orientation) {
+    case RelativeIWSliceOrientation::ROT_ALIGNED:
+        status |= _checkSliceDataToIWIntegration_rot000(*iwSliceData, cornerCellPosInIW, result.bonds);
+        break;
+    case RelativeIWSliceOrientation::ROT_90DEG_CCW:
+        status |= _checkSliceDataToIWIntegration_rot090(*iwSliceData, cornerCellPosInIW, result.bonds);
+        break;
+    case RelativeIWSliceOrientation::ROT_180DEG_CCW:
+        status |= _checkSliceDataToIWIntegration_rot180(*iwSliceData, cornerCellPosInIW, result.bonds);
+        break;
+    case RelativeIWSliceOrientation::ROT_270DEG_CCW:
+        status |= _checkSliceDataToIWIntegration_rot270(*iwSliceData, cornerCellPosInIW, result.bonds);
+        break;
+    default:
+        HG_UNREACHABLE("Invalid slice orientation! ({})", (int)result.orientation);
+    }
+
     return result;
 }
 
@@ -99,30 +164,13 @@ AttachmentEvaluation ShipController::evalAttachment(
     const AttachableGhost&        aGhost,
     const ProjectedCellPositions& aProjectedCellPositions) //
 {
-    const auto* iwSliceData =  aGhost.getAssociatedAttachable().getInteriorWorldSliceData();
     HG_VALIDATE_ARGUMENT(
-        iwSliceData != nullptr,
-        "This overload of evalAttachment() is only valid for AttachableGhosts that carry an IW slice!");
+        aGhost.getAssociatedAttachable().getInteriorWorldSliceData() == nullptr,
+        "This overload of evalAttachment() is only valid for AttachableGhosts that carry no IW slice!");
 
     AttachmentEvaluation result;
 
-    const auto orientation = _checkIWSliceOrientation(
-        *iwSliceData,
-        _rotation.shortestDistanceTo(aGhost.getAssociatedAttachable().getPolyShape().getRotation()));
-    if (orientation == RelativeIWSliceOrientation::INVALID) {
-        result.status = AttachmentEvaluation::INVALID_ORIENTATION | AttachmentEvaluation::INVALID_POS;
-        return result;
-    } else {
-        result.orientation = orientation;
-    }
-
-    const auto cornerOffset = _checkIWSliceCornerOffset(*iwSliceData, {/*TODO*/}, orientation);
-    if (!cornerOffset.has_value()) {
-        result.status = AttachmentEvaluation::INVALID_POS;
-        return result;
-    } else {
-        // result.cornerPos = *cornerOffset;
-    }
+    result.orientation = RelativeIWSliceOrientation::NOT_RELEVANT;
 
     return result;
 }
@@ -188,7 +236,7 @@ void ShipController::drawGridOverShape(const PolyShape& aShape, uwga::Canvas& aC
         TransformPoints(relativeShapeCenter,
                         relativeShapeVertices.data(),
                         relativeShapeVertices.size(),
-                        *_masterData->transform);
+                        *_masterData->transformGlobalToShip);
     }
 
     // Find the AABB of the shape in the ship's coordinate system
@@ -267,7 +315,7 @@ void ShipController::drawGridOverShape(const PolyShape& aShape, uwga::Canvas& aC
                 rect.setOutlineColor(uwga::COLOR_ORANGE.withAlpha(100));
             }
 
-            _masterData->transformInverse->transformPoints(1, &squareTopLeft);
+            _masterData->transformShipToGlobal->transformPoints(1, &squareTopLeft);
             const auto anchor = squareTopLeft.cast<double>() + _position;
             rect.setAnchor(anchor);
 
@@ -305,7 +353,7 @@ void ShipController::drawGridOverProjection(const ProjectedCellPositions& aProje
                 rect.setOutlineColor(uwga::COLOR_LIME.withAlpha(175));
             }
 
-            _masterData->transformInverse->transformPoints(1, &squareTopLeft);
+            _masterData->transformShipToGlobal->transformPoints(1, &squareTopLeft);
             const auto anchor = squareTopLeft.cast<double>() + _position;
             rect.setAnchor(anchor);
 
@@ -338,7 +386,7 @@ void ShipController::projectCellPositions(const PolyShape&        aShape,
         TransformPoints(relativeShapeCenter,
                         relativeShapeVertices.data(),
                         relativeShapeVertices.size(),
-                        *_masterData->transform);
+                        *_masterData->transformGlobalToShip);
     }
 
     // Find the AABB of the shape in the ship's coordinate system (center-relative)
@@ -442,9 +490,9 @@ void ShipController::_didAttach(QAO_Runtime& aRuntime) {
     SyncObjSuper::_didAttach(aRuntime);
 
     if (isMasterObject()) {
-        auto& md            = *_masterData;
-        md.transform        = ccomp<GraphicsSystemProvider>().getSystem().createTransform();
-        md.transformInverse = md.transform->clone();
+        auto& md                 = *_masterData;
+        md.transformGlobalToShip = ccomp<GraphicsSystemProvider>().getSystem().createTransform();
+        md.transformShipToGlobal = md.transformGlobalToShip->clone();
     }
 }
 
@@ -515,9 +563,9 @@ void ShipController::_eventUpdate1(spe::IfMaster) {
     _position = mainAtt.getPolyShape().getAnchor();
     _rotation = mainAtt.getPolyShape().getRotation();
 
-    md.transform->setToIdentity();
-    md.transform->rotate(_rotation);
-    md.transformInverse->setToInverseOf(*md.transform);
+    md.transformGlobalToShip->setToIdentity();
+    md.transformGlobalToShip->rotate(_rotation);
+    md.transformShipToGlobal->setToInverseOf(*md.transformGlobalToShip);
 }
 
 void ShipController::_eventDraw1() {
@@ -558,7 +606,7 @@ void ShipController::_eventDraw1() {
             std::floor(_mousePosInLocalCoords.x / OVERWORLD_CELL_SIZE) * OVERWORLD_CELL_SIZE,
             std::floor(_mousePosInLocalCoords.y / OVERWORLD_CELL_SIZE) * OVERWORLD_CELL_SIZE};
 
-        _masterData->transformInverse->transformPoints(1, &flooredMousePosInLocalCoords);
+        _masterData->transformShipToGlobal->transformPoints(1, &flooredMousePosInLocalCoords);
 
         const auto anchor = flooredMousePosInLocalCoords.cast<double>() + _position;
         rect.setAnchor(anchor);
@@ -571,7 +619,7 @@ void ShipController::_eventDraw1() {
     }
 }
 
-RelativeIWSliceOrientation ShipController::_checkIWSliceOrientation(
+std::variant<RelativeIWSliceOrientation, hg::math::AngleF> ShipController::_checkIWSliceOrientation(
     const ShipAttachable::InteriorWorldSliceData& aSlice,
     hg::math::AngleF                              aRelativeRotation) //
 {
@@ -593,12 +641,26 @@ RelativeIWSliceOrientation ShipController::_checkIWSliceOrientation(
         return RelativeIWSliceOrientation::ROT_270DEG_CCW;
     }
 
-    return RelativeIWSliceOrientation::INVALID;
+    constexpr hg::math::AngleF angles[] = {hg::math::AngleF::zero(),
+                                           hg::math::AngleF::halfCircle() * 0.5f,
+                                           hg::math::AngleF::halfCircle(),
+                                           hg::math::AngleF::halfCircle() * 1.5f};
+
+    hg::math::AngleF hint = angles[1]; // 90deg clockwise
+
+    for (const auto angle : angles) {
+        const auto diff = lz.shortestDistanceTo(angle);
+        if (std::abs(diff.asRad()) < std::abs(hint.asRad())) {
+            hint = diff;
+        }
+    }
+
+    return hint;
 }
 
-std::optional<hg::math::Vector2i> ShipController::_checkIWSliceCornerOffset(
+std::variant<hg::math::Vector2i, hg::math::Vector2f> ShipController::_checkIWTopLeftCellMapping(
     const ShipAttachable::InteriorWorldSliceData& aSlice,
-    hg::math::Vector2f                            aAnchorOffset,
+    hg::math::Vector2f                            aAnchorDiff,
     RelativeIWSliceOrientation                    aOrientation) //
 {
     // Note: remember that aSlice.cellGridOffset gives offset from the center of the attachable
@@ -607,21 +669,21 @@ std::optional<hg::math::Vector2i> ShipController::_checkIWSliceCornerOffset(
     hg::math::Vector2d actualCornerOffset; // Offset when orientation is taken into account
     switch (aOrientation) {
     case RelativeIWSliceOrientation::ROT_ALIGNED:
-        actualCornerOffset = aAnchorOffset + aSlice.cellGridOffset;
+        actualCornerOffset = aAnchorDiff + aSlice.cellGridOffset;
         break;
 
     case RelativeIWSliceOrientation::ROT_90DEG_CCW:
         actualCornerOffset =
-            aAnchorOffset + hg::math::Vector2f{aSlice.cellGridOffset.y, -aSlice.cellGridOffset.x};
+            aAnchorDiff + hg::math::Vector2f{aSlice.cellGridOffset.y, -aSlice.cellGridOffset.x};
         break;
 
     case RelativeIWSliceOrientation::ROT_180DEG_CCW:
-        actualCornerOffset = aAnchorOffset - aSlice.cellGridOffset;
+        actualCornerOffset = aAnchorDiff - aSlice.cellGridOffset;
         break;
 
     case RelativeIWSliceOrientation::ROT_270DEG_CCW:
         actualCornerOffset =
-            aAnchorOffset + hg::math::Vector2f{-aSlice.cellGridOffset.y, aSlice.cellGridOffset.x};
+            aAnchorDiff + hg::math::Vector2f{-aSlice.cellGridOffset.y, aSlice.cellGridOffset.x};
         break;
 
     default:
@@ -634,19 +696,111 @@ std::optional<hg::math::Vector2i> ShipController::_checkIWSliceCornerOffset(
 
     const hg::math::Vector2d floored = {std::floor(ratio.x), std::floor(ratio.y)};
 
+    const auto rfdiff = ratio - floored;
+
     constexpr double delta = 1.0 / OVERWORLD_CELL_SIZE;
 
-    if (!IsNearZero((ratio.x - floored.x) - 0.5, delta)) {
-        return std::nullopt;
+    if (!IsNearZero(rfdiff.x - 0.5, delta)) {
+        goto assemble_and_return_hint;
     }
-    if (!IsNearZero((ratio.y - floored.y) - 0.5, delta)) {
-        return std::nullopt;
+    if (!IsNearZero(rfdiff.y - 0.5, delta)) {
+        goto assemble_and_return_hint;
     }
 
     return floored.cast<int>();
+
+assemble_and_return_hint:
+    // clang-format off
+    return (hg::math::Vector2d{
+        (rfdiff.x <= 0.5) ? (-rfdiff.x) : (1.0 -rfdiff.x),
+        (rfdiff.y <= 0.5) ? (-rfdiff.y) : (1.0 -rfdiff.y)
+    }.cast<float>()) * OVERWORLD_CELL_SIZE;
+    // clang-format on
 }
 
 namespace {
+template <class taMapCell>
+char CheckSliceDataToIWIntegration(
+    const InteriorWorld&                                       aWorld,
+    const ShipAttachable::InteriorWorldSliceData&              aSlice,
+    taMapCell&&                                                aMapCell,
+    std::vector<AttachmentEvaluation::BondStrength>& /* out */ aOutBonds) //
+{
+    char rv = 0;
+
+    for (hg::PZInteger y = 0; y < aSlice.cells.getHeight(); ++y) {
+        for (hg::PZInteger x = 0; x < aSlice.cells.getWidth(); ++x) {
+            if (aSlice.cells[y][x].cellKindId.value == ToU16(interior::CellArchE::SOLID_VOID)) {
+                continue;
+            }
+
+            const hg::math::Vector2i dst = aMapCell(x, y);
+
+            // Check for out-of-bounds:
+
+            if (dst.x < 0 || dst.y < 0 || dst.x >= InteriorWorld::CELL_COUNT_X ||
+                dst.y >= InteriorWorld::CELL_COUNT_Y) //
+            {
+                rv |= AttachmentEvaluation::OUT_OF_BOUNDS;
+                continue;
+            }
+
+            // Check for overlap:
+
+            jbatnozic::gridgoblin::cell::CellKindId cellKindId;
+            if (aWorld.getUnderlying().getCellDataAtUnchecked(dst, &cellKindId) &&
+                cellKindId.value != ToU16(interior::CellArchE::SOLID_VOID)) //
+            {
+                rv |= AttachmentEvaluation::OVERLAP;
+                continue;
+            }
+
+            // Check neighbours for bond strength:
+
+            for (int yOff = -1; yOff <= +1; ++yOff) {
+                for (int xOff = -1; xOff <= +1; ++xOff) {
+                    if ((yOff == 0 && xOff == 0) || (xOff * yOff != 0)) { // skip self and diagonals
+                        continue;
+                    }
+
+                    const auto dst2 = hg::math::Vector2i{dst.x + xOff, dst.y + yOff};
+                    if (dst2.x < 0 || dst2.y < 0 || dst2.x >= InteriorWorld::CELL_COUNT_X ||
+                        dst2.y >= InteriorWorld::CELL_COUNT_Y) //
+                    {
+                        continue;
+                    }
+
+                    jbatnozic::gridgoblin::cell::CellKindId cellKindId2;
+                    jbatnozic::gridgoblin::cell::UserData   userData2;
+                    if (aWorld.getUnderlying().getCellDataAtUnchecked(dst2, &cellKindId2, &userData2) &&
+                        cellKindId2.value != ToU16(interior::CellArchE::SOLID_VOID)) //
+                    {
+                        const auto p = interior::UserData_GetParentAttachableId(userData2);
+                        if (auto iter =
+                                std::find_if(aOutBonds.begin(),
+                                             aOutBonds.end(),
+                                             [p](AttachmentEvaluation::BondStrength aBondStrength) {
+                                                 return aBondStrength.attachableId == p;
+                                             });
+                            iter != aOutBonds.end()) //
+                        {
+                            iter->attachmentPointCount++;
+                        } else {
+                            aOutBonds.push_back(AttachmentEvaluation::BondStrength{p, 1});
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (aOutBonds.empty()) {
+        rv |= AttachmentEvaluation::NO_CONTACT;
+    }
+
+    return rv;
+}
+
 using WorldEditor = jbatnozic::gridgoblin::World::Editor;
 
 //! Copies every cell of `aSlice` into `aWorld`. `aMapCell` maps a slice-local cell coordinate
@@ -676,6 +830,62 @@ void CopySliceDataToInteriorWorld(InteriorWorld&                                
     });
 }
 } // namespace
+
+char ShipController::_checkSliceDataToIWIntegration_rot000(
+    const ShipAttachable::InteriorWorldSliceData&    aSlice,
+    hg::math::Vector2pz                              aStartingCorner,
+    std::vector<AttachmentEvaluation::BondStrength>& aOutBonds) //
+{
+    return CheckSliceDataToIWIntegration(
+        _masterData->interiorWorld,
+        aSlice,
+        [aStartingCorner](hg::PZInteger x, hg::PZInteger y) -> hg::math::Vector2i {
+            return {aStartingCorner.x + x, aStartingCorner.y + y};
+        },
+        aOutBonds);
+}
+
+char ShipController::_checkSliceDataToIWIntegration_rot090(
+    const ShipAttachable::InteriorWorldSliceData&    aSlice,
+    hg::math::Vector2pz                              aStartingCorner,
+    std::vector<AttachmentEvaluation::BondStrength>& aOutBonds) //
+{
+    return CheckSliceDataToIWIntegration(
+        _masterData->interiorWorld,
+        aSlice,
+        [aStartingCorner](hg::PZInteger x, hg::PZInteger y) -> hg::math::Vector2i {
+            return {aStartingCorner.x + y, aStartingCorner.y - x};
+        },
+        aOutBonds);
+}
+
+char ShipController::_checkSliceDataToIWIntegration_rot180(
+    const ShipAttachable::InteriorWorldSliceData&    aSlice,
+    hg::math::Vector2pz                              aStartingCorner,
+    std::vector<AttachmentEvaluation::BondStrength>& aOutBonds) //
+{
+    return CheckSliceDataToIWIntegration(
+        _masterData->interiorWorld,
+        aSlice,
+        [aStartingCorner](hg::PZInteger x, hg::PZInteger y) -> hg::math::Vector2i {
+            return {aStartingCorner.x - x, aStartingCorner.y - y};
+        },
+        aOutBonds);
+}
+
+char ShipController::_checkSliceDataToIWIntegration_rot270(
+    const ShipAttachable::InteriorWorldSliceData&    aSlice,
+    hg::math::Vector2pz                              aStartingCorner,
+    std::vector<AttachmentEvaluation::BondStrength>& aOutBonds) //
+{
+    return CheckSliceDataToIWIntegration(
+        _masterData->interiorWorld,
+        aSlice,
+        [aStartingCorner](hg::PZInteger x, hg::PZInteger y) -> hg::math::Vector2i {
+            return {aStartingCorner.x - y, aStartingCorner.y + x};
+        },
+        aOutBonds);
+}
 
 void ShipController::_copySliceDataToInteriorWorld_rot000(
     const ShipAttachable::InteriorWorldSliceData& aSlice,

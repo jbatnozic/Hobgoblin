@@ -35,10 +35,12 @@ enum class RelativeIWSliceOrientation : char {
 struct AttachmentEvaluation {
     enum StatusBits : char {
         ALL_VALID           = 0x00,
+
         INVALID_ORIENTATION = 0x01,
         INVALID_POS         = 0x02,
-        TOO_FAR_AWAY        = 0x04,
-        OUT_OF_BOUNDS       = 0x08,
+        OVERLAP             = 0x04,
+        NO_CONTACT          = 0x08,
+        OUT_OF_BOUNDS       = 0x10,
     };
 
     char status;
@@ -57,8 +59,11 @@ struct AttachmentEvaluation {
     //! top-left cell of the attachable's interior world slice maps.
     //! \warning the coordinates are relative to the ship controller's center! To map to cell positions
     //!          in the ship's interior world, offset the value by `ShipController::CELL_COUNT_X/Y / 2`.
+    //! \warning if `INVALID_POS` bit is set in the `status` word, the value of this field is undefined
+    //!          and should not be used.
     hg::math::Vector2i topLeftCellMapping;
-    // TODO: hint if cornerPos isn't valid
+
+    hg::math::Vector2f anchorAdjustmentHint;
 
     struct BondStrength {
         std::int16_t attachableId;
