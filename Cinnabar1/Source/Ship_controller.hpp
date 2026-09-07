@@ -6,10 +6,10 @@
 #include <Engine.hpp>
 
 #include <Attachment_evaluation.hpp>
+#include <Cell_footprint.hpp>
 #include <Graph_of_attachables.hpp>
 #include <InteriorWorld/Interior_world.hpp>
 #include <Poly_shape.hpp>
-#include <Projected_cell_positions.hpp>
 #include <QAOMessages/Downcast_to_ship_controller.hpp>
 #include <Ship_attachable.hpp>
 
@@ -49,8 +49,16 @@ public:
     AttachmentEvaluation evalAttachment(const AttachableGhost& aGhost);
 
     //! \brief evaluate a potential attachment of a ghost of an attachable carrying no IW slice
-    AttachmentEvaluation evalAttachment(const AttachableGhost&        aGhost,
-                                        const ProjectedCellPositions& aProjectedCellPositions);
+    AttachmentEvaluation evalAttachment(const AttachableGhost& aGhost,
+                                        const CellFootprint&   aCellFootprint);
+
+    //! TODO(add desc.)
+    void attach(AttachableGhost& aGhost, const AttachmentEvaluation& aAttachmentEval);
+
+    //! TODO(add desc.)
+    void attach(AttachableGhost&            aGhost,
+                const CellFootprint&        aCellFootprint,
+                const AttachmentEvaluation& aAttachmentEval);
 
     //! ignore the attachable's actual position and attach it as if it were at (aAnchorOffset,
     //! aRotationOffset)
@@ -66,17 +74,20 @@ public:
 
     void drawGridOverShape(const PolyShape& aShape, uwga::Canvas& aCanvas) const;
 
-    void drawGridOverProjection(const ProjectedCellPositions& aProjectedCellPositions,
-                                uwga::Canvas&                 aCanvas) const;
+    void drawGridOverProjection(const CellFootprint& aCellFootprint, uwga::Canvas& aCanvas) const;
 
     void drawGridOverGhost(const AttachableGhost& aAttachableGhost, uwga::Canvas& aCanvas) const;
 
     //! calculates projected cell positions of a poly shape in the ship's interior world
     //! \param aShape[in]
-    //! \param aProjectedCellPositions[out]
-    void projectCellPositions(const PolyShape& aShape, ProjectedCellPositions& aProjectedCellPositions);
+    //! \param aCellFootprint[out]
+    void calcFootprint(const PolyShape& aShape, CellFootprint& aCellFootprint);
 
     const ShipAttachable* getAttachableWithIndex(std::int16_t aIndex) const;
+
+    hg::math::Vector2d getAnchor() const;
+
+    hg::math::AngleF getRotation() const;
 
     // QAO Message Handlers
 
