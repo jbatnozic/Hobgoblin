@@ -7,9 +7,9 @@
 
 #include <Hobgoblin/Utility/Grids.hpp>
 
+#include <Cell_footprint.hpp>
 #include <Poly_shape.hpp>
 #include <QAOMessages/Handle_pncs_event.hpp>
-#include <Projected_cell_positions.hpp>
 #include <Ship_attachable.hpp>
 
 #include <Hobgoblin/Math.hpp>
@@ -26,7 +26,9 @@ public:
 
     const ShipAttachable& getAssociatedAttachable() const;
 
-    const ProjectedCellPositions& getProjectedCellPositions() const;
+    ShipAttachable& getAssociatedAttachable();
+
+    const CellFootprint& getCellFootprint() const;
 
     // QAO Message Handlers
 
@@ -36,11 +38,14 @@ private:
     QAO_GenericId   _controllerId  = nullptr;
     ShipController* _controllerPtr = nullptr;
 
+    hg::math::Vector2d _controllerAnchorOffset;
+    hg::math::AngleF   _controllerAngleOffset;
+
     QAO_GenericId   _attachableId  = nullptr;
     ShipAttachable* _attachablePtr = nullptr;
 
-    PolyShape              _shape;
-    ProjectedCellPositions _projectedCellPositions;
+    PolyShape     _shape;
+    CellFootprint _cellFootprint;
 
     bool _leftClicked = false;
 
@@ -56,6 +61,8 @@ private:
 
     ShipAttachable* _findAttachableById(QAO_GenericId aAttachableId) const;
     ShipController* _findControllerById(QAO_GenericId aAttachableId) const;
+
+    bool _attachIfPositionIsRight();
 };
 
 QAO_REGISTER_CLASS(AttachableGhost, cinnabar_AttachableGhost) {

@@ -21,7 +21,10 @@ hg::PZInteger GraphOfAttachables::insert(ShipAttachable& aAttachable) {
         aAttachable._myNode = _nodes[0].get();
         return 0;
     } else {
-        HG_NOT_IMPLEMENTED("TODO");
+        // TODO: temporary implementation!!! (needs to find first empty spot instead and put it there)
+        _nodes.push_back(std::make_unique<Node>(*this, aAttachable));
+        aAttachable._myNode = _nodes.back().get();
+        return _nodes.size() - 1;
     }
 }
 

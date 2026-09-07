@@ -45,8 +45,12 @@ const ShipAttachable& AttachableGhost::getAssociatedAttachable() const {
     return *_attachablePtr;
 }
 
-const ProjectedCellPositions& AttachableGhost::getProjectedCellPositions() const {
-    return _projectedCellPositions;
+ShipAttachable& AttachableGhost::getAssociatedAttachable() {
+    return *_attachablePtr;
+}
+
+const CellFootprint& AttachableGhost::getCellFootprint() const {
+    return _cellFootprint;
 }
 
 void AttachableGhost::msgHandlePNCSEvent(HandlePNCSEvent::PayloadPtr aPayload, bool /* aConst */) {
@@ -87,6 +91,11 @@ void AttachableGhost::_eventUpdate1() {
         return;
     }
 
+    if (_attachIfPositionIsRight()) {
+        QAO_Destroy(*this);
+        return;
+    }
+
     const auto& winMgr      = ccomp<MWindow>();
     const auto  input       = winMgr.getInput();
     const auto  mousePos    = input.getViewRelativeMousePos();
@@ -95,12 +104,22 @@ void AttachableGhost::_eventUpdate1() {
     if (_leftClicked) {
         if (_shape.intersectsWithPointRel(mousePosRel)) {
             if (_held) {
+                _controllerAnchorOffset =
+                    hg::math::RotateVector(_shape.getAnchor() - _controllerPtr->getAnchor(),
+                                           -_controllerPtr->getRotation());
+                _controllerAngleOffset =
+                    _controllerPtr->getRotation().shortestDistanceTo(_shape.getRotation());
                 _held = false;
             } else {
                 _cursorOffset = mousePosRel;
                 _held         = true;
             }
         } else {
+            _controllerAnchorOffset =
+                hg::math::RotateVector(_shape.getAnchor() - _controllerPtr->getAnchor(),
+                                       _controllerPtr->getRotation());
+            _controllerAngleOffset =
+                _controllerPtr->getRotation().shortestDistanceTo(_shape.getRotation());
             _held = false;
         }
         _shift = false;
@@ -138,9 +157,22 @@ void AttachableGhost::_eventUpdate1() {
         }
 
         // if (needRecalc) {
-            _shape.recalcRel();
-            _controllerPtr->projectCellPositions(_shape, _projectedCellPositions);
+        _shape.recalcRel();
+        _controllerPtr->calcFootprint(_shape, _cellFootprint);
+        
+        const auto eval = _controllerPtr->evalAttachment(*this, _cellFootprint);
+        HG_LOG_INFO(LOG_ID, "Eval status = {}", (int)eval.status);
         // }
+    } else {
+        _shape.setRotation(_controllerPtr->getRotation() + _controllerAngleOffset);
+
+        const auto ctrlAnchor = _controllerPtr->getAnchor();
+        const auto ctrlRot    = _controllerPtr->getRotation();
+        const auto rotOffset  = hg::math::RotateVector(_controllerAnchorOffset, ctrlRot);
+        _shape.setAnchor(ctrlAnchor + rotOffset);
+
+        _shape.recalcRel();
+        _controllerPtr->calcFootprint(_shape, _cellFootprint);
     }
 }
 
@@ -211,6 +243,50 @@ ShipController* AttachableGhost::_findControllerById(QAO_GenericId aAttachableId
     HG_ASSERT(ptr != nullptr);
 
     return ptr;
+}
+
+bool AttachableGhost::_attachIfPositionIsRight() {
+    if (_held) {
+        return false;
+    }
+
+    const auto centerDistance =
+        hg::math::EuclideanDist(_shape.getAnchor(), _attachablePtr->getPolyShape().getAnchor());
+    if (centerDistance > 32.0 /* TODO: magic number */) {
+        HG_LOG_INFO(LOG_ID, "Distance {} is over the allowed {}", centerDistance, 32.0);
+        return false;
+    }
+
+    const auto rotationDistance =
+        _shape.getRotation().shortestDistanceTo(_attachablePtr->getPolyShape().getRotation());
+    if (std::abs(rotationDistance.asRad()) > hg::math::DegToRad(10.f) /* TODO: magic number */) {
+        HG_LOG_INFO(LOG_ID,
+                    "RotDiff {} is over the allowed {}",
+                    std::abs(rotationDistance.asRad()),
+                    hg::math::DegToRad(10.f));
+        return false;
+    }
+
+    const auto* iwSliceData = _attachablePtr->getInteriorWorldSliceData();
+    if (iwSliceData == nullptr) {
+        _controllerPtr->calcFootprint(_shape, _cellFootprint);
+        const auto attachmentEval = _controllerPtr->evalAttachment(*this, _cellFootprint);
+        if (attachmentEval.status == AttachmentEvaluation::ALL_VALID) {
+            _controllerPtr->attach(*this, _cellFootprint, attachmentEval);
+            return true;
+        } else {
+            // TODO
+        }
+    } else {
+        const auto attachmentEval = _controllerPtr->evalAttachment(*this);
+        if (attachmentEval.status == AttachmentEvaluation::ALL_VALID) {
+            HG_NOT_IMPLEMENTED("TODO");
+        } else {
+            // TODO
+        }
+    }
+
+    return false;
 }
 
 } // namespace cinnabar

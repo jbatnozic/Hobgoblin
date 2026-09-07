@@ -12,7 +12,7 @@ namespace hg = ::jbatnozic::hobgoblin;
 
 //! Structure which tells us which cells of the origin ship controller's interior world are
 //! covered by this attachable ghost.
-struct ProjectedCellPositions {
+struct CellFootprint {
     enum CellBits : std::int8_t {
         EMPTY            = 0x0,
         INSIDE_SHAPE     = 0x1,
@@ -27,6 +27,8 @@ struct ProjectedCellPositions {
 
     //! X/Y position of the cell in the ship controller's interior world to which `cell[0][0]`
     //! of this projection corresponds.
+    //! \warning the coordinates are relative to the ship controller's center! To map to cell positions
+    //!          in the ship's interior world, offset the value by `ShipController::CELL_COUNT_X/Y / 2`.
     hg::math::Vector2i topLeftPos;
 };
 
