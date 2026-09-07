@@ -61,10 +61,10 @@ PolyShape ShipStartingBlock::_initPolyShape() {
     PolyShape shape{4};
 
     // Clockwise (I think clockwise is correct)
-    shape.setRawVertexAtUnchecked(0, {-SIZE, -SIZE});
-    shape.setRawVertexAtUnchecked(1, {+SIZE, -SIZE});
-    shape.setRawVertexAtUnchecked(2, {+SIZE, +SIZE});
-    shape.setRawVertexAtUnchecked(3, {-SIZE, +SIZE});
+    shape.setRawVertexAtUnchecked(0, {-SIZE / 2, -SIZE / 2});
+    shape.setRawVertexAtUnchecked(1, {+SIZE / 2, -SIZE / 2});
+    shape.setRawVertexAtUnchecked(2, {+SIZE / 2, +SIZE / 2});
+    shape.setRawVertexAtUnchecked(3, {-SIZE / 2, +SIZE / 2});
 
     // Note: baricenter offset is guaranteed 0,0 because the shape is completely symmetrical
 
@@ -96,7 +96,6 @@ void ShipStartingBlock::_eventUpdate1() {
 
 void ShipStartingBlock::_eventUpdate2() {
     _syncPolyShapeWithUnibody();
-    HG_LOG_WARN(LOG_ID, "ShipStartingBlock rot = {} deg", _polyShape.getRotation().asDegrees());
 }
 
 void ShipStartingBlock::_eventDraw1() {
@@ -138,10 +137,10 @@ void ShipStartingBlock::_applyPropulsion(const spe::WindowFrameInputView& aInput
     auto rotForce = cpv(0.0, 0.0);
 
     if (aInput.checkPressed(hg::in::PK_E)) {
-        rotForce.y += 100.0;
+        rotForce.y += 2000.0;
     }
     if (aInput.checkPressed(hg::in::PK_Q)) {
-        rotForce.y -= 100.0;
+        rotForce.y -= 2000.0;
     }
 
     cpBodyApplyForceAtLocalPoint(_unibody, rotForce, cpv(16.0, 0.0));

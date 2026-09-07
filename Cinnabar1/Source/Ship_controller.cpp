@@ -26,8 +26,15 @@ namespace cinnabar {
 using hg::math::AngleF;
 using hg::math::IsNearZero;
 
+using WorldEditor = jbatnozic::gridgoblin::World::Editor;
+
 namespace {
 constexpr float ONE_DEG_AS_RAD = hg::math::DegToRad(1.f);
+
+// Defined further below; forward-declared here because `evalAttachment` (above its definition) uses it.
+char CheckProjectionBondStrength(const InteriorWorld&                             aWorld,
+                                 const CellFootprint&                             aCellFootprint,
+                                 std::vector<AttachmentEvaluation::BondStrength>& aOutBonds);
 
 void TransformPoints(hg::math::Vector2f&    aCentralPoint,
                      hg::math::Vector2f*    aPoints,
@@ -75,6 +82,13 @@ ShipController_MasterData::ShipController_MasterData()
 
 // MARK: ShipController PUBLIC
 
+#define HOLDS_ANGLE(_variant_)     std::holds_alternative<hg::math::AngleF>(_variant_)
+#define HOLDS_VECTOR2F(_variant_)  std::holds_alternative<hg::math::Vector2f>(_variant_)
+#define GET_ANGLE(_variant_)       std::get<hg::math::AngleF>(_variant_)
+#define GET_ORIENTATION(_variant_) std::get<RelativeIWSliceOrientation>(_variant_)
+#define GET_VECTOR2I(_variant_)    std::get<hg::math::Vector2i>(_variant_)
+#define GET_VECTOR2F(_variant_)    std::get<hg::math::Vector2f>(_variant_)
+
 ShipController::ShipController(QAO_InstGuard aInstGuard, spe::SyncId aSyncId)
     : SyncObjSuper{aInstGuard,
                    QAO_ExeCon::GAMEPLAY,
@@ -85,15 +99,25 @@ ShipController::ShipController(QAO_InstGuard aInstGuard, spe::SyncId aSyncId)
 void ShipController::init(ShipAttachable& aInitialShipAttachable) {
     HG_VALIDATE_PRECONDITION(isMasterObject());
 
-    attach(aInitialShipAttachable, {}, {});
-}
+    const auto* iwSliceData = aInitialShipAttachable.getInteriorWorldSliceData();
+    HG_VALIDATE_ARGUMENT(
+        iwSliceData != nullptr,
+        "A ShipController can only be initialized with an attachable that contains an IW slice!");
 
-#define HOLDS_ANGLE(_variant_)     std::holds_alternative<hg::math::AngleF>(_variant_)
-#define HOLDS_VECTOR2F(_variant_)  std::holds_alternative<hg::math::Vector2f>(_variant_)
-#define GET_ANGLE(_variant_)       std::get<hg::math::AngleF>(_variant_)
-#define GET_ORIENTATION(_variant_) std::get<RelativeIWSliceOrientation>(_variant_)
-#define GET_VECTOR2I(_variant_)    std::get<hg::math::Vector2i>(_variant_)
-#define GET_VECTOR2F(_variant_)    std::get<hg::math::Vector2f>(_variant_)
+    const auto tlCellMappingVariant =
+        _checkIWTopLeftCellMapping(*iwSliceData, {}, RelativeIWSliceOrientation::ROT_ALIGNED);
+    HG_ASSERT(!HOLDS_VECTOR2F(tlCellMappingVariant));
+
+    const auto tlCellPosInIW =
+        GET_VECTOR2I(tlCellMappingVariant) +
+        hg::math::Vector2pz{InteriorWorld::CELL_COUNT_X / 2, InteriorWorld::CELL_COUNT_Y / 2};
+
+    _copySliceDataToInteriorWorld_rot000(*iwSliceData, tlCellPosInIW);
+
+    _masterData->graphOfAttachables.insert(aInitialShipAttachable);
+
+    // TODO: missing cell attachable index
+}
 
 AttachmentEvaluation ShipController::evalAttachment(const AttachableGhost& aGhost) {
     const auto& attachable  = aGhost.getAssociatedAttachable();
@@ -160,9 +184,8 @@ AttachmentEvaluation ShipController::evalAttachment(const AttachableGhost& aGhos
     return result;
 }
 
-AttachmentEvaluation ShipController::evalAttachment(
-    const AttachableGhost&        aGhost,
-    const ProjectedCellPositions& aProjectedCellPositions) //
+AttachmentEvaluation ShipController::evalAttachment(const AttachableGhost& aGhost,
+                                                    const CellFootprint&   aCellFootprint) //
 {
     HG_VALIDATE_ARGUMENT(
         aGhost.getAssociatedAttachable().getInteriorWorldSliceData() == nullptr,
@@ -170,14 +193,108 @@ AttachmentEvaluation ShipController::evalAttachment(
 
     AttachmentEvaluation result;
 
+    // An attachable that carries no interior world slice does not occupy any IW cells of its own, so
+    // it can be attached at any position and rotation. The sole requirement is that its footprint
+    // makes contact with at least one existing attachable, so only bond strength has to be analyzed.
     result.orientation = RelativeIWSliceOrientation::NOT_RELEVANT;
 
+    result.status =
+        CheckProjectionBondStrength(_masterData->interiorWorld, aCellFootprint, result.bonds);
+
+    if (aCellFootprint.totalBitmask & CellFootprint::COLLIDES_WITH_IW) {
+        result.status |= AttachmentEvaluation::OVERLAP;
+    }
+
+    if (aCellFootprint.totalBitmask & CellFootprint::OUT_OF_BOUNDS) {
+        result.status |= AttachmentEvaluation::OUT_OF_BOUNDS;
+    }
+
     return result;
+}
+
+void ShipController::attach(AttachableGhost& aGhost, const AttachmentEvaluation& aAttachmentEval) {
+    auto& attachable  = aGhost.getAssociatedAttachable();
+    auto* iwSliceData = attachable.getInteriorWorldSliceData();
+
+    HG_VALIDATE_ARGUMENT(
+        iwSliceData != nullptr,
+        "This overload of attach() is only valid for AttachableGhosts that carry an IW slice!");
+
+    HG_VALIDATE_ARGUMENT(aAttachmentEval.status == AttachmentEvaluation::ALL_VALID);
+
+#if 0
+    const auto tlCellInIW =
+        aAttachmentEval.topLeftCellMapping +
+        hg::math::Vector2i{InteriorWorld::CELL_COUNT_X / 2, InteriorWorld::CELL_COUNT_Y / 2};
+
+    const auto id = _masterData->graphOfAttachables.insert(attachable);
+
+    switch (aAttachmentEval.orientation) {
+    case RelativeIWSliceOrientation::ROT_ALIGNED:
+        _copySliceDataToInteriorWorld_rot000(*iwSliceData, tlCellInIW);
+        break;
+    case RelativeIWSliceOrientation::ROT_90DEG_CCW:
+        _copySliceDataToInteriorWorld_rot090(*iwSliceData, tlCellInIW);
+        break;
+    case RelativeIWSliceOrientation::ROT_180DEG_CCW:
+        _copySliceDataToInteriorWorld_rot180(*iwSliceData, tlCellInIW);
+        break;
+    case RelativeIWSliceOrientation::ROT_270DEG_CCW:
+        _copySliceDataToInteriorWorld_rot270(*iwSliceData, tlCellInIW);
+        break;
+    default:
+        HG_UNREACHABLE("Invalid slice orientation! ({})", (int)aAttachmentEval.orientation);
+    } 
+#endif   
+}
+
+void ShipController::attach(AttachableGhost&            aGhost,
+                            const CellFootprint&        aCellFootprint,
+                            const AttachmentEvaluation& aAttachmentEval) {
+    auto& attachable = aGhost.getAssociatedAttachable();
+
+    HG_VALIDATE_ARGUMENT(
+        aGhost.getAssociatedAttachable().getInteriorWorldSliceData() == nullptr,
+        "This overload of attach() is only valid for AttachableGhosts that carry no IW slice!");
+
+    HG_VALIDATE_ARGUMENT(aAttachmentEval.status == AttachmentEvaluation::ALL_VALID);
+
+    HG_ASSERT(aAttachmentEval.orientation == RelativeIWSliceOrientation::NOT_RELEVANT);
+
+    const auto index = _masterData->graphOfAttachables.insert(attachable);
+    const auto& grid = aCellFootprint.cells;
+
+    _masterData->interiorWorld.editWorld([&](WorldEditor& aEditor) {
+        for (hg::PZInteger y = 0; y < grid.getHeight(); ++y) {
+            for (hg::PZInteger x = 0; x < grid.getWidth(); ++x) {
+                const auto cell = grid[y][x];
+                if (cell == CellFootprint::EMPTY) {
+                    continue;
+                }
+                HG_ASSERT(cell == CellFootprint::INSIDE_SHAPE);
+
+                const auto iwXY = hg::math::Vector2pz{x + InteriorWorld::CELL_COUNT_X / 2,
+                                                      y + InteriorWorld::CELL_COUNT_Y / 2};
+
+                // TODO: temp.
+                // (implement generator function instead)
+
+                jbatnozic::gridgoblin::cell::CellKindId cellKindId =
+                    interior::cell_archetype::METALLIC_FLOOR.cellKindId;
+
+                jbatnozic::gridgoblin::cell::UserData userData;
+                interior::UserData_SetParentAttachableId(userData, index);
+                
+                aEditor.setCellDataAt(iwXY, &cellKindId);
+            }
+        }
+    });
 }
 
 void ShipController::attach(ShipAttachable&    aShipAttachable,
                             hg::math::Vector2f aAnchorOffset,
                             hg::math::AngleF   aRotationOffset) {
+#if 0
     const auto* iwSliceData = aShipAttachable.getInteriorWorldSliceData();
     if (iwSliceData != nullptr) {
         // Since the attachable already has a defined interior world slice and we use a square grid,
@@ -216,6 +333,7 @@ void ShipController::attach(ShipAttachable&    aShipAttachable,
     } else {
         HG_NOT_IMPLEMENTED("TODO - cell generator func");
     }
+#endif
 }
 
 void ShipController::drawGridOverShape(const PolyShape& aShape, uwga::Canvas& aCanvas) const {
@@ -324,8 +442,8 @@ void ShipController::drawGridOverShape(const PolyShape& aShape, uwga::Canvas& aC
     }
 }
 
-void ShipController::drawGridOverProjection(const ProjectedCellPositions& aProjectedCellPositions,
-                                            uwga::Canvas&                 aCanvas) const {
+void ShipController::drawGridOverProjection(const CellFootprint& aCellFootprint,
+                                            uwga::Canvas&        aCanvas) const {
     uwga::RectangleShape rect{
         aCanvas.getSystem(),
         {OVERWORLD_CELL_SIZE - 2.f, OVERWORLD_CELL_SIZE - 2.f}
@@ -335,19 +453,18 @@ void ShipController::drawGridOverProjection(const ProjectedCellPositions& aProje
     rect.setOutlineThickness(2.f);
     rect.setFillColor(uwga::COLOR_TRANSPARENT);
 
-    for (int y = 0; y < aProjectedCellPositions.cells.getHeight(); ++y) {
-        for (int x = 0; x < aProjectedCellPositions.cells.getWidth(); ++x) {
+    for (int y = 0; y < aCellFootprint.cells.getHeight(); ++y) {
+        for (int x = 0; x < aCellFootprint.cells.getWidth(); ++x) {
             const auto squareTopLeft =
-                hg::math::Vector2f{(x + aProjectedCellPositions.topLeftPos.x) * OVERWORLD_CELL_SIZE,
-                                   (y + aProjectedCellPositions.topLeftPos.y) * OVERWORLD_CELL_SIZE};
-            const auto mask = aProjectedCellPositions.cells[y][x];
+                hg::math::Vector2f{(x + aCellFootprint.topLeftPos.x) * OVERWORLD_CELL_SIZE,
+                                   (y + aCellFootprint.topLeftPos.y) * OVERWORLD_CELL_SIZE};
+            const auto mask = aCellFootprint.cells[y][x];
 
-            if (mask == ProjectedCellPositions::EMPTY) {
+            if (mask == CellFootprint::EMPTY) {
                 continue;
             }
 
-            if ((mask &
-                 (ProjectedCellPositions::COLLIDES_WITH_IW | ProjectedCellPositions::OUT_OF_BOUNDS))) {
+            if ((mask & (CellFootprint::COLLIDES_WITH_IW | CellFootprint::OUT_OF_BOUNDS))) {
                 rect.setOutlineColor(uwga::COLOR_ORANGE.withAlpha(100));
             } else {
                 rect.setOutlineColor(uwga::COLOR_LIME.withAlpha(175));
@@ -364,11 +481,10 @@ void ShipController::drawGridOverProjection(const ProjectedCellPositions& aProje
 
 void ShipController::drawGridOverGhost(const AttachableGhost& aAttachableGhost,
                                        uwga::Canvas&          aCanvas) const {
-    drawGridOverProjection(aAttachableGhost.getProjectedCellPositions(), aCanvas);
+    drawGridOverProjection(aAttachableGhost.getCellFootprint(), aCanvas);
 }
 
-void ShipController::projectCellPositions(const PolyShape&        aShape,
-                                          ProjectedCellPositions& aProjectedCellPositions) {
+void ShipController::calcFootprint(const PolyShape& aShape, CellFootprint& aCellFootprint) {
     HG_HARD_ASSERT(aShape.getState() == PolyShape::READY_RELATIVE);
 
     // Recalculate all shape vertices relative to the ship's center
@@ -441,10 +557,10 @@ void ShipController::projectCellPositions(const PolyShape&        aShape,
     };
 
     // Output
-    aProjectedCellPositions.topLeftPos = aabbGridTopLeft;
-    aProjectedCellPositions.cells.reset(aabbGridBottomRight.x - aabbGridTopLeft.x + 1,
-                                        aabbGridBottomRight.y - aabbGridTopLeft.y + 1);
-    aProjectedCellPositions.totalBitmask = ProjectedCellPositions::EMPTY;
+    aCellFootprint.topLeftPos = aabbGridTopLeft;
+    aCellFootprint.cells.reset(aabbGridBottomRight.x - aabbGridTopLeft.x + 1,
+                               aabbGridBottomRight.y - aabbGridTopLeft.y + 1);
+    aCellFootprint.totalBitmask = CellFootprint::EMPTY;
 
     const auto&                             ggwld = _masterData->interiorWorld.getUnderlying();
     jbatnozic::gridgoblin::cell::CellKindId cellKindId;
@@ -456,10 +572,13 @@ void ShipController::projectCellPositions(const PolyShape&        aShape,
                 isPointInsideShape({(x + 0) * OVERWORLD_CELL_SIZE, (y + 1) * OVERWORLD_CELL_SIZE}) &&
                 isPointInsideShape({(x + 1) * OVERWORLD_CELL_SIZE, (y + 1) * OVERWORLD_CELL_SIZE});
 
-            std::int8_t cellValue = ProjectedCellPositions::EMPTY;
-            if (isSquareInsideShape) {
-                cellValue |= ProjectedCellPositions::INSIDE_SHAPE;
+            if (!isSquareInsideShape) {
+                aCellFootprint.cells[y - aabbGridTopLeft.y][x - aabbGridTopLeft.x] =
+                    CellFootprint::EMPTY;
+                continue;
             }
+
+            std::int8_t cellValue = CellFootprint::INSIDE_SHAPE;
 
             // Since the origin of the ship's coordinate system is in the center of the ship, but the
             // origin of the interior world's coordinate system is in its top-left corner, we must
@@ -467,16 +586,31 @@ void ShipController::projectCellPositions(const PolyShape&        aShape,
             const int iwX = x + (InteriorWorld::CELL_COUNT_X / 2);
             const int iwY = y + (InteriorWorld::CELL_COUNT_Y / 2);
             if (iwX < 0 || iwX >= ggwld.getCellCountX() || iwY < 0 || iwY >= ggwld.getCellCountY()) {
-                cellValue |= ProjectedCellPositions::OUT_OF_BOUNDS;
+                cellValue |= CellFootprint::OUT_OF_BOUNDS;
             } else if (ggwld.getCellDataAt(iwX, iwY, &cellKindId) &&
                        cellKindId.value != ToU16(interior::CellArchE::SOLID_VOID)) {
-                cellValue |= ProjectedCellPositions::COLLIDES_WITH_IW;
+                cellValue |= CellFootprint::COLLIDES_WITH_IW;
             }
 
-            aProjectedCellPositions.totalBitmask |= cellValue;
-            aProjectedCellPositions.cells[y - aabbGridTopLeft.y][x - aabbGridTopLeft.x] = cellValue;
+            aCellFootprint.totalBitmask |= cellValue;
+            aCellFootprint.cells[y - aabbGridTopLeft.y][x - aabbGridTopLeft.x] = cellValue;
         }
     }
+}
+
+const ShipAttachable* ShipController::getAttachableWithIndex(std::int16_t aIndex) const {
+    // TODO: temporary implementation
+    return &(_masterData->graphOfAttachables.getNode(aIndex)->associatedAttachable);
+}
+
+hg::math::Vector2d ShipController::getAnchor() const {
+    // TODO: temporary implementation
+    return getAttachableWithIndex(0)->getPolyShape().getAnchor();
+}
+
+hg::math::AngleF ShipController::getRotation() const {
+    // TODO: temporary implementation
+    return getAttachableWithIndex(0)->getPolyShape().getRotation();
 }
 
 // QAO Message Handlers
@@ -719,6 +853,51 @@ assemble_and_return_hint:
 }
 
 namespace {
+//! Examines the four orthogonal neighbours of the interior-world cell `aCell` and, for every
+//! neighbour that belongs to an existing (non-void) attachable, records a bond or increments the
+//! attachment point count of an existing bond in `aOutBonds`.
+void AccumulateBondsAroundCell(const InteriorWorld&                             aWorld,
+                               hg::math::Vector2i                               aCell,
+                               std::vector<AttachmentEvaluation::BondStrength>& aOutBonds) {
+    constexpr static hg::math::Vector2i CORNER_OFFSETS[4] = {
+        {-1, -1},
+        {-1, +1},
+        {+1, -1},
+        {+1, +1}
+    };
+
+    for (const auto offsetPack : CORNER_OFFSETS) {
+        const auto xOff = offsetPack.x;
+        const auto yOff = offsetPack.y;
+
+        const auto dst2 = hg::math::Vector2i{aCell.x + xOff, aCell.y + yOff};
+        if (dst2.x < 0 || dst2.y < 0 || dst2.x >= InteriorWorld::CELL_COUNT_X ||
+            dst2.y >= InteriorWorld::CELL_COUNT_Y) //
+        {
+            continue;
+        }
+
+        jbatnozic::gridgoblin::cell::CellKindId cellKindId2;
+        jbatnozic::gridgoblin::cell::UserData   userData2;
+        if (aWorld.getUnderlying().getCellDataAtUnchecked(dst2, &cellKindId2, &userData2) &&
+            cellKindId2.value != ToU16(interior::CellArchE::SOLID_VOID)) //
+        {
+            const auto p = interior::UserData_GetParentAttachableId(userData2);
+            if (auto iter = std::find_if(aOutBonds.begin(),
+                                         aOutBonds.end(),
+                                         [p](AttachmentEvaluation::BondStrength aBondStrength) {
+                                             return aBondStrength.attachableId == p;
+                                         });
+                iter != aOutBonds.end()) //
+            {
+                iter->attachmentPointCount++;
+            } else {
+                aOutBonds.push_back(AttachmentEvaluation::BondStrength{p, 1});
+            }
+        }
+    }
+}
+
 template <class taMapCell>
 char CheckSliceDataToIWIntegration(
     const InteriorWorld&                                       aWorld,
@@ -757,40 +936,7 @@ char CheckSliceDataToIWIntegration(
 
             // Check neighbours for bond strength:
 
-            for (int yOff = -1; yOff <= +1; ++yOff) {
-                for (int xOff = -1; xOff <= +1; ++xOff) {
-                    if ((yOff == 0 && xOff == 0) || (xOff * yOff != 0)) { // skip self and diagonals
-                        continue;
-                    }
-
-                    const auto dst2 = hg::math::Vector2i{dst.x + xOff, dst.y + yOff};
-                    if (dst2.x < 0 || dst2.y < 0 || dst2.x >= InteriorWorld::CELL_COUNT_X ||
-                        dst2.y >= InteriorWorld::CELL_COUNT_Y) //
-                    {
-                        continue;
-                    }
-
-                    jbatnozic::gridgoblin::cell::CellKindId cellKindId2;
-                    jbatnozic::gridgoblin::cell::UserData   userData2;
-                    if (aWorld.getUnderlying().getCellDataAtUnchecked(dst2, &cellKindId2, &userData2) &&
-                        cellKindId2.value != ToU16(interior::CellArchE::SOLID_VOID)) //
-                    {
-                        const auto p = interior::UserData_GetParentAttachableId(userData2);
-                        if (auto iter =
-                                std::find_if(aOutBonds.begin(),
-                                             aOutBonds.end(),
-                                             [p](AttachmentEvaluation::BondStrength aBondStrength) {
-                                                 return aBondStrength.attachableId == p;
-                                             });
-                            iter != aOutBonds.end()) //
-                        {
-                            iter->attachmentPointCount++;
-                        } else {
-                            aOutBonds.push_back(AttachmentEvaluation::BondStrength{p, 1});
-                        }
-                    }
-                }
-            }
+            AccumulateBondsAroundCell(aWorld, dst, aOutBonds);
         }
     }
 
@@ -801,7 +947,38 @@ char CheckSliceDataToIWIntegration(
     return rv;
 }
 
-using WorldEditor = jbatnozic::gridgoblin::World::Editor;
+//! Analyzes the bond strength of an attachable that carries no IW slice, described by its projected
+//! cell positions. For every projected cell that lies inside the attachable's shape, the neighbouring
+//! interior-world cells are examined and bonds to existing attachables are recorded in `aOutBonds`.
+//! Returns `NO_CONTACT` if not a single bond was found, or `ALL_VALID` otherwise.
+char CheckProjectionBondStrength(const InteriorWorld&                             aWorld,
+                                 const CellFootprint&                             aProjection,
+                                 std::vector<AttachmentEvaluation::BondStrength>& aOutBonds) {
+    // The projection's coordinates are relative to the ship's center, whereas interior-world cell
+    // coordinates originate in its top-left corner, so we must offset by half the world dimensions.
+    static constexpr hg::math::Vector2i IW_CENTER = {InteriorWorld::CELL_COUNT_X / 2,
+                                                     InteriorWorld::CELL_COUNT_Y / 2};
+
+    for (hg::PZInteger y = 0; y < aProjection.cells.getHeight(); ++y) {
+        for (hg::PZInteger x = 0; x < aProjection.cells.getWidth(); ++x) {
+            if (!(aProjection.cells[y][x] & CellFootprint::INSIDE_SHAPE)) {
+                continue;
+            }
+
+            const auto dst = hg::math::Vector2i{aProjection.topLeftPos.x + x + IW_CENTER.x,
+                                                aProjection.topLeftPos.y + y + IW_CENTER.y};
+            if (dst.x < 0 || dst.y < 0 || dst.x >= InteriorWorld::CELL_COUNT_X ||
+                dst.y >= InteriorWorld::CELL_COUNT_Y) //
+            {
+                continue;
+            }
+
+            AccumulateBondsAroundCell(aWorld, dst, aOutBonds);
+        }
+    }
+
+    return aOutBonds.empty() ? AttachmentEvaluation::NO_CONTACT : AttachmentEvaluation::ALL_VALID;
+}
 
 //! Copies every cell of `aSlice` into `aWorld`. `aMapCell` maps a slice-local cell coordinate
 //! (x, y) to its destination cell coordinate in the interior world, thereby accounting for the
