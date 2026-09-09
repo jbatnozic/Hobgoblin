@@ -45,6 +45,15 @@ public:
 
     void init(ShipAttachable& aInitialShipAttachable);
 
+    ///////////////////////////////////////////////////////////////////////////
+    // ATTACHING                                                             //
+    ///////////////////////////////////////////////////////////////////////////
+
+    //! calculates projected cell positions of a poly shape in the ship's interior world
+    //! \param aShape[in]
+    //! \param aCellFootprint[out]
+    void calcFootprint(const PolyShape& aShape, CellFootprint& aCellFootprint);
+
     //! \brief evaluate a potential attachment of a ghost of an attachable carrying an IW slice
     AttachmentEvaluation evalAttachment(const AttachableGhost& aGhost);
 
@@ -60,17 +69,21 @@ public:
                 const CellFootprint&        aCellFootprint,
                 const AttachmentEvaluation& aAttachmentEval);
 
-    //! ignore the attachable's actual position and attach it as if it were at (aAnchorOffset,
-    //! aRotationOffset)
-    //! - though it will get moved there!
-    //! \param aAnchorOffset X/Y offset of the attachable's anchor IN THE SHIP CONTROLLER'S COORDINATE
-    //! SYSTEM
-    //! \param aRotationOffset angle difference
-    void attach(ShipAttachable&    aShipAttachable,
-                hg::math::Vector2f aAnchorOffset,
-                hg::math::AngleF   aRotationOffset);
+    ///////////////////////////////////////////////////////////////////////////
+    // DETACHING                                                             //
+    ///////////////////////////////////////////////////////////////////////////
 
-    void attach(AttachableGhost& aAttachableGhost);
+    void detach(ShipAttachable& aAttachable);
+
+    ///////////////////////////////////////////////////////////////////////////
+    // UTILITY                                                               //
+    ///////////////////////////////////////////////////////////////////////////
+
+    hg::math::Vector2d getAnchor() const;
+
+    hg::math::AngleF getRotation() const;
+
+    const ShipAttachable* getAttachableWithIndex(std::int16_t aIndex) const;
 
     void drawGridOverShape(const PolyShape& aShape, uwga::Canvas& aCanvas) const;
 
@@ -78,30 +91,18 @@ public:
 
     void drawGridOverGhost(const AttachableGhost& aAttachableGhost, uwga::Canvas& aCanvas) const;
 
-    //! calculates projected cell positions of a poly shape in the ship's interior world
-    //! \param aShape[in]
-    //! \param aCellFootprint[out]
-    void calcFootprint(const PolyShape& aShape, CellFootprint& aCellFootprint);
-
-    const ShipAttachable* getAttachableWithIndex(std::int16_t aIndex) const;
-
-    hg::math::Vector2d getAnchor() const;
-
-    hg::math::AngleF getRotation() const;
-
-    // QAO Message Handlers
+    ///////////////////////////////////////////////////////////////////////////
+    // QAO Message Handlers                                                  //
+    ///////////////////////////////////////////////////////////////////////////
 
     void msgDowncastToShipController(DowncastToShipController::PayloadPtr aPtr, bool /* aConst */);
 
 private:
     void _didAttach(QAO_Runtime& aRuntime) override;
+    void _willDetach(QAO_Runtime& aRuntime) override;
 
     void _eventUpdate1(spe::IfMaster) override;
     void _eventDraw1() override;
-
-    void _syncCreateImpl(spe::SyncControlDelegate& aSyncCtrl) const override;
-    void _syncUpdateImpl(spe::SyncControlDelegate& aSyncCtrl) const override;
-    void _syncDestroyImpl(spe::SyncControlDelegate& aSyncCtrl) const override;
 
     //! Returns a non-INVALID rotation, if able, and a rotation hint otherwise.
     static std::variant<RelativeIWSliceOrientation, hg::math::AngleF> _checkIWSliceOrientation(
@@ -146,6 +147,10 @@ private:
     void _createConstraintsUponAttach(AttachableGhost& aGhost,
                                       std::int16_t     aAttachableId,
                                       const std::vector<AttachmentEvaluation::BondStrength>& aBonds);
+
+    void _syncCreateImpl(spe::SyncControlDelegate& aSyncCtrl) const override;
+    void _syncUpdateImpl(spe::SyncControlDelegate& aSyncCtrl) const override;
+    void _syncDestroyImpl(spe::SyncControlDelegate& aSyncCtrl) const override;
 
     hg::math::Vector2d _position              = {};
     hg::math::Vector2f _mousePosInLocalCoords = {};
