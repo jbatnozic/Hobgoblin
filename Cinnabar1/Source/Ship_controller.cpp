@@ -8,6 +8,7 @@
 #include <InteriorWorld/Cell_archs.hpp>
 #include <InteriorWorld/Cell_props.hpp>
 #include <Ship/Constants.hpp>
+#include <Overworld_manager.hpp>
 
 #include <GridGoblin/World/World_config.hpp>
 #include <Hobgoblin/HGExcept.hpp>
@@ -16,6 +17,7 @@
 #include <Hobgoblin/UWGA/Color.hpp>
 #include <Hobgoblin/UWGA/Rectangle_shape.hpp>
 #include <Hobgoblin/UWGA/Vertex_array.hpp>
+#include <Hobgoblin/Alvin/Constraint.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -75,11 +77,6 @@ void TransformPoints(hg::math::Vector2f&    aCentralPoint,
 }
 } // namespace
 
-// MARK: MasterData
-
-ShipController_MasterData::ShipController_MasterData()
-    : interiorWorld{} {}
-
 // MARK: ShipController PUBLIC
 
 #define HOLDS_ANGLE(_variant_)     std::holds_alternative<hg::math::AngleF>(_variant_)
@@ -94,7 +91,12 @@ ShipController::ShipController(QAO_InstGuard aInstGuard, spe::SyncId aSyncId)
                    QAO_ExeCon::GAMEPLAY,
                    PRIORITY_ENTITIES, // TODO: set in relation to attachables
                    QAO_STATIC_NAME("cinnabar::ShipController"),
-                   aSyncId} {}
+                   aSyncId} //
+{
+    if (isMasterObject()) {
+        _masterData->graphOfAttachables.init(*this);
+    }
+}
 
 void ShipController::init(ShipAttachable& aInitialShipAttachable) {
     HG_VALIDATE_PRECONDITION(isMasterObject());
@@ -112,11 +114,9 @@ void ShipController::init(ShipAttachable& aInitialShipAttachable) {
         GET_VECTOR2I(tlCellMappingVariant) +
         hg::math::Vector2pz{InteriorWorld::CELL_COUNT_X / 2, InteriorWorld::CELL_COUNT_Y / 2};
 
-    _copySliceDataToInteriorWorld_rot000(*iwSliceData, tlCellPosInIW);
+    const auto id = _masterData->graphOfAttachables.insertInitialAttachable(aInitialShipAttachable);
 
-    _masterData->graphOfAttachables.insert(aInitialShipAttachable);
-
-    // TODO: missing cell attachable index
+    _copySliceDataToInteriorWorld_rot000(*iwSliceData, tlCellPosInIW, id);
 }
 
 AttachmentEvaluation ShipController::evalAttachment(const AttachableGhost& aGhost) {
@@ -244,8 +244,8 @@ void ShipController::attach(AttachableGhost& aGhost, const AttachmentEvaluation&
         break;
     default:
         HG_UNREACHABLE("Invalid slice orientation! ({})", (int)aAttachmentEval.orientation);
-    } 
-#endif   
+    }
+#endif
 }
 
 void ShipController::attach(AttachableGhost&            aGhost,
@@ -261,8 +261,21 @@ void ShipController::attach(AttachableGhost&            aGhost,
 
     HG_ASSERT(aAttachmentEval.orientation == RelativeIWSliceOrientation::NOT_RELEVANT);
 
-    const auto index = _masterData->graphOfAttachables.insert(attachable);
-    const auto& grid = aCellFootprint.cells;
+    // Align the attachable perfectly with its ghost
+    {
+        const auto poly = aGhost.getPolyShape();
+        auto       body = attachable.getPhysicsBody();
+        cpBodySetPosition(body, {poly.getAnchor().x, poly.getAnchor().y});
+        // Note: chipmunk physics uses an inverted Y axis compared to the rest of the code,
+        //       so we must flip the angle.
+        cpBodySetAngle(body, -poly.getRotation().asRadians());
+    }
+
+    const auto index =
+        _masterData->graphOfAttachables.insertAttachable(attachable,
+                                                         aAttachmentEval.bonds,
+                                                         ccomp<MOverworld>().getAlvinSpace());
+    const auto& grid  = aCellFootprint.cells;
 
     _masterData->interiorWorld.editWorld([&](WorldEditor& aEditor) {
         for (hg::PZInteger y = 0; y < grid.getHeight(); ++y) {
@@ -273,8 +286,9 @@ void ShipController::attach(AttachableGhost&            aGhost,
                 }
                 HG_ASSERT(cell == CellFootprint::INSIDE_SHAPE);
 
-                const auto iwXY = hg::math::Vector2pz{x + InteriorWorld::CELL_COUNT_X / 2,
-                                                      y + InteriorWorld::CELL_COUNT_Y / 2};
+                const auto iwXY = hg::math::Vector2pz{
+                    x + aCellFootprint.topLeftPos.x + InteriorWorld::CELL_COUNT_X / 2,
+                    y + aCellFootprint.topLeftPos.y + InteriorWorld::CELL_COUNT_Y / 2};
 
                 // TODO: temp.
                 // (implement generator function instead)
@@ -284,11 +298,13 @@ void ShipController::attach(AttachableGhost&            aGhost,
 
                 jbatnozic::gridgoblin::cell::UserData userData;
                 interior::UserData_SetParentAttachableId(userData, index);
-                
+
                 aEditor.setCellDataAt(iwXY, &cellKindId);
             }
         }
     });
+
+    // _createConstraintsUponAttach(aGhost, index, aAttachmentEval.bonds);
 }
 
 void ShipController::attach(ShipAttachable&    aShipAttachable,
@@ -633,64 +649,6 @@ void ShipController::_didAttach(QAO_Runtime& aRuntime) {
 // MARK: ShipController PRIVATE
 
 void ShipController::_eventUpdate1(spe::IfMaster) {
-#if 0
-    const auto& winMgr = ccomp<MWindow>();
-    const auto  input  = winMgr.getInput();
-
-    // Keyboard inputs
-
-    float rotationDir = 0.f;
-    if (input.checkPressed(hg::in::PK_Q)) {
-        rotationDir += 1.f;
-    }
-    if (input.checkPressed(hg::in::PK_E)) {
-        rotationDir -= 1.f;
-    }
-    _rotation += AngleF::fromDegrees(rotationDir * 3.f);
-
-    double xx = 0.0;
-    if (input.checkPressed(hg::in::PK_A)) {
-        xx -= 1.0;
-    }
-    if (input.checkPressed(hg::in::PK_D)) {
-        xx += 1.0;
-    }
-    _position.x += xx * 6.0;
-
-    double yy = 0.0;
-    if (input.checkPressed(hg::in::PK_W)) {
-        yy -= 1.0;
-    }
-    if (input.checkPressed(hg::in::PK_S)) {
-        yy += 1.0;
-    }
-    _position.y += yy * 6.0;
-
-    // Set transforms
-
-    auto& md = *_masterData;
-
-    md.transform->setToIdentity();
-    md.transform->rotate(_rotation);
-    md.transformInverse->setToInverseOf(*md.transform);
-
-    // Mouse input
-
-    if (input.checkPressed(hg::in::MB_LEFT)) {
-        hg::math::Vector2f relativeMousePos =
-            (input.getViewRelativeMousePos() - _position).cast<float>();
-
-        md.transform->transformPoints(1, &relativeMousePos);
-
-        // HG_LOG_INFO(LOG_ID, "Relative mouse pos = x: {}, y: {}", relativeMousePos.x,
-        // relativeMousePos.y);
-
-        _mousePosInLocalCoords = relativeMousePos;
-        _drawGrid              = true;
-    } else {
-        _drawGrid = false;
-    }
-#endif
     auto&       md      = *_masterData;
     const auto& mainAtt = md.graphOfAttachables.getNode(0)->associatedAttachable;
 
@@ -987,6 +945,7 @@ char CheckProjectionBondStrength(const InteriorWorld&                           
 template <class taMapCell>
 void CopySliceDataToInteriorWorld(InteriorWorld&                                aWorld,
                                   const ShipAttachable::InteriorWorldSliceData& aSlice,
+                                  std::int16_t                                  aAttachableId,
                                   taMapCell&&                                   aMapCell) {
     aWorld.editWorld([&](WorldEditor& aEditor) {
         for (hg::PZInteger y = 0; y < aSlice.cells.getHeight(); ++y) {
@@ -994,14 +953,19 @@ void CopySliceDataToInteriorWorld(InteriorWorld&                                
                 if (aSlice.cells[y][x].cellKindId.value == ToU16(interior::CellArchE::SOLID_VOID)) {
                     continue;
                 }
+
                 const hg::math::Vector2pz dst = aMapCell(x, y);
+
+                const auto& cell     = aSlice.cells[y][x];
+                auto        userData = cell.userData;
+                interior::UserData_SetParentAttachableId(userData, aAttachableId);
                 aEditor.setCellDataAt(dst.x,
                                       dst.y,
-                                      &aSlice.cells[y][x].cellKindId,
-                                      &aSlice.cells[y][x].floorSprite,
-                                      &aSlice.cells[y][x].wallSprite,
-                                      &aSlice.cells[y][x].spatialInfo,
-                                      &aSlice.cells[y][x].userData);
+                                      &cell.cellKindId,
+                                      &cell.floorSprite,
+                                      &cell.wallSprite,
+                                      &cell.spatialInfo,
+                                      &cell.userData);
             }
         }
     });
@@ -1066,11 +1030,13 @@ char ShipController::_checkSliceDataToIWIntegration_rot270(
 
 void ShipController::_copySliceDataToInteriorWorld_rot000(
     const ShipAttachable::InteriorWorldSliceData& aSlice,
-    hg::math::Vector2pz                           aStartingCorner) //
+    hg::math::Vector2pz                           aStartingCorner,
+    std::int16_t                                  aAttachableId) //
 {
     CopySliceDataToInteriorWorld(
         _masterData->interiorWorld,
         aSlice,
+        aAttachableId,
         [aStartingCorner](hg::PZInteger x, hg::PZInteger y) -> hg::math::Vector2pz {
             return {aStartingCorner.x + x, aStartingCorner.y + y};
         });
@@ -1078,11 +1044,13 @@ void ShipController::_copySliceDataToInteriorWorld_rot000(
 
 void ShipController::_copySliceDataToInteriorWorld_rot090(
     const ShipAttachable::InteriorWorldSliceData& aSlice,
-    hg::math::Vector2pz                           aStartingCorner) //
+    hg::math::Vector2pz                           aStartingCorner,
+    std::int16_t                                  aAttachableId) //
 {
     CopySliceDataToInteriorWorld(
         _masterData->interiorWorld,
         aSlice,
+        aAttachableId,
         [aStartingCorner](hg::PZInteger x, hg::PZInteger y) -> hg::math::Vector2pz {
             return {aStartingCorner.x + y, aStartingCorner.y - x};
         });
@@ -1090,11 +1058,13 @@ void ShipController::_copySliceDataToInteriorWorld_rot090(
 
 void ShipController::_copySliceDataToInteriorWorld_rot180(
     const ShipAttachable::InteriorWorldSliceData& aSlice,
-    hg::math::Vector2pz                           aStartingCorner) //
+    hg::math::Vector2pz                           aStartingCorner,
+    std::int16_t                                  aAttachableId) //
 {
     CopySliceDataToInteriorWorld(
         _masterData->interiorWorld,
         aSlice,
+        aAttachableId,
         [aStartingCorner](hg::PZInteger x, hg::PZInteger y) -> hg::math::Vector2pz {
             return {aStartingCorner.x - x, aStartingCorner.y - y};
         });
@@ -1102,14 +1072,57 @@ void ShipController::_copySliceDataToInteriorWorld_rot180(
 
 void ShipController::_copySliceDataToInteriorWorld_rot270(
     const ShipAttachable::InteriorWorldSliceData& aSlice,
-    hg::math::Vector2pz                           aStartingCorner) //
+    hg::math::Vector2pz                           aStartingCorner,
+    std::int16_t                                  aAttachableId) //
 {
     CopySliceDataToInteriorWorld(
         _masterData->interiorWorld,
         aSlice,
+        aAttachableId,
         [aStartingCorner](hg::PZInteger x, hg::PZInteger y) -> hg::math::Vector2pz {
             return {aStartingCorner.x - y, aStartingCorner.y + x};
         });
+}
+
+void ShipController::_createConstraintsUponAttach(
+    AttachableGhost&                                       aGhost,
+    std::int16_t                                           aAttachableId,
+    const std::vector<AttachmentEvaluation::BondStrength>& aBonds) //
+{
+    auto& space = ccomp<MOverworld>().getAlvinSpace();
+    auto  body1 = aGhost.getAssociatedAttachable().getPhysicsBody();
+
+    // Align the attachable perfectly with its ghost
+    {
+        const auto poly = aGhost.getPolyShape();
+        cpBodySetPosition(body1, cpv(poly.getAnchor().x, poly.getAnchor().y));
+        // Note: chipmunk physics uses an inverted Y axis compared to the rest of the code,
+        //       so we must flip the angle.
+        cpBodySetAngle(body1, -poly.getRotation().asRadians());
+    }
+
+    for (const auto bond : aBonds) {
+        const auto* node = _masterData->graphOfAttachables.getNode(bond.attachableId);
+        HG_ASSERT(node != nullptr);
+
+        auto body2 = node->associatedAttachable.getPhysicsBody();
+
+        auto* pivot =
+            cpPivotJointNew(body1,
+                            body2,
+                            cpvmult(cpvadd(cpBodyGetPosition(body1), cpBodyGetPosition(body2)), 0.5));
+
+        cpConstraintSetCollideBodies(pivot, cpFalse); // TODO: temporary
+
+        cpFloat       phase = cpBodyGetAngle(body2) - cpBodyGetAngle(body1);
+        cpFloat       ratio = 1.0f; // 1:1 angular lock
+        cpConstraint* gear  = cpGearJointNew(body1, body2, phase, ratio);
+
+        cpConstraintSetCollideBodies(gear, cpFalse); // TODO: temporary
+
+        space.add(pivot);
+        space.add(gear);
+    }
 }
 
 // MARK: ShipController SYNC
