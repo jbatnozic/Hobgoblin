@@ -30,6 +30,10 @@ public:
 
     const CellFootprint& getCellFootprint() const;
 
+    const PolyShape& getPolyShape() const {
+        return _shape;
+    }
+
     // QAO Message Handlers
 
     void msgHandlePNCSEvent(HandlePNCSEvent::PayloadPtr aPayload, bool /* aConst */);

@@ -253,17 +253,12 @@ bool AttachableGhost::_attachIfPositionIsRight() {
     const auto centerDistance =
         hg::math::EuclideanDist(_shape.getAnchor(), _attachablePtr->getPolyShape().getAnchor());
     if (centerDistance > 32.0 /* TODO: magic number */) {
-        HG_LOG_INFO(LOG_ID, "Distance {} is over the allowed {}", centerDistance, 32.0);
         return false;
     }
 
     const auto rotationDistance =
         _shape.getRotation().shortestDistanceTo(_attachablePtr->getPolyShape().getRotation());
     if (std::abs(rotationDistance.asRad()) > hg::math::DegToRad(10.f) /* TODO: magic number */) {
-        HG_LOG_INFO(LOG_ID,
-                    "RotDiff {} is over the allowed {}",
-                    std::abs(rotationDistance.asRad()),
-                    hg::math::DegToRad(10.f));
         return false;
     }
 

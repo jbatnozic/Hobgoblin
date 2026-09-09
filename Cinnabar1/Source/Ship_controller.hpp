@@ -131,13 +131,21 @@ private:
         std::vector<AttachmentEvaluation::BondStrength>& aOutBonds);
 
     void _copySliceDataToInteriorWorld_rot000(const ShipAttachable::InteriorWorldSliceData& aSlice,
-                                              hg::math::Vector2pz aStartingCorner);
+                                              hg::math::Vector2pz aStartingCorner,
+                                              std::int16_t        aAttachableId);
     void _copySliceDataToInteriorWorld_rot090(const ShipAttachable::InteriorWorldSliceData& aSlice,
-                                              hg::math::Vector2pz aStartingCorner);
+                                              hg::math::Vector2pz aStartingCorner,
+                                              std::int16_t        aAttachableId);
     void _copySliceDataToInteriorWorld_rot180(const ShipAttachable::InteriorWorldSliceData& aSlice,
-                                              hg::math::Vector2pz aStartingCorner);
+                                              hg::math::Vector2pz aStartingCorner,
+                                              std::int16_t        aAttachableId);
     void _copySliceDataToInteriorWorld_rot270(const ShipAttachable::InteriorWorldSliceData& aSlice,
-                                              hg::math::Vector2pz aStartingCorner);
+                                              hg::math::Vector2pz aStartingCorner,
+                                              std::int16_t        aAttachableId);
+
+    void _createConstraintsUponAttach(AttachableGhost& aGhost,
+                                      std::int16_t     aAttachableId,
+                                      const std::vector<AttachmentEvaluation::BondStrength>& aBonds);
 
     hg::math::Vector2d _position              = {};
     hg::math::Vector2f _mousePosInLocalCoords = {};
@@ -154,8 +162,6 @@ struct ShipController_MasterData {
 
     std::unique_ptr<uwga::Transform> transformGlobalToShip;
     std::unique_ptr<uwga::Transform> transformShipToGlobal;
-
-    ShipController_MasterData();
 };
 
 // MARK: Register class
