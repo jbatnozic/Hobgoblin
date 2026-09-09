@@ -15,6 +15,9 @@ ShipAttachable::~ShipAttachable() {
 }
 
 void ShipAttachable::_detachFromGraph() {
+    if (!_assocComps.has_value()) {
+        return;
+    }
     // TODO
 }
 
@@ -24,6 +27,10 @@ void ShipAttachable::_detachFromGraph() {
 
 const PolyShape& UnibodyShipAttachable::getPolyShape() const {
     return _polyShape;
+}
+
+hg::NeverNull<cpBody*> UnibodyShipAttachable::getPhysicsBody() {
+    return _unibody.body;
 }
 
 hg::alvin::Body UnibodyShipAttachable::_alvinBodyFromPhysicalPropertiesAndPolyShape() {

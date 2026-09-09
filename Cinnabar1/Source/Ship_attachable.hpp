@@ -5,6 +5,7 @@
 
 #include <Engine.hpp>
 
+#include <Hobgoblin/Common/Nullability.hpp>
 #include <Hobgoblin/Alvin.hpp>
 #include <Hobgoblin/UWGA/Canvas.hpp>
 
@@ -13,14 +14,19 @@
 #include <Poly_shape.hpp>
 
 #include <memory>
+#include <optional>
 
 namespace cinnabar {
+
+class ShipController;
 
 class ShipAttachable {
 public:
     virtual ~ShipAttachable();
 
     virtual const PolyShape& getPolyShape() const = 0;
+
+    virtual hg::NeverNull<cpBody*> getPhysicsBody() = 0;
 
     struct PhysicalProperties {
         double mass;
@@ -60,7 +66,16 @@ public:
 private:
     friend class GraphOfAttachables;
 
-    GraphOfAttachables::Node* _myNode = nullptr;
+    struct AssociatedComponents {
+        ShipController&           controller;
+        GraphOfAttachables::Node& node;
+
+        AssociatedComponents(ShipController& aController, GraphOfAttachables::Node& aNode)
+            : controller{aController}
+            , node{aNode} {}
+    };
+
+    std::optional<AssociatedComponents> _assocComps;
 
     void _detachFromGraph();
 };
@@ -81,6 +96,8 @@ public:
                           taUnibodyShapeFactory&&             aUnibodyShapeFactory);
 
     const PolyShape& getPolyShape() const override;
+
+    hg::NeverNull<cpBody*> getPhysicsBody() override final;
 
     const PhysicalProperties& getPhysicalProperties() const override;
 
