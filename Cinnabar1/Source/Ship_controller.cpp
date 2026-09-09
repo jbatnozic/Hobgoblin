@@ -91,15 +91,12 @@ ShipController::ShipController(QAO_InstGuard aInstGuard, spe::SyncId aSyncId)
                    QAO_ExeCon::GAMEPLAY,
                    PRIORITY_ENTITIES, // TODO: set in relation to attachables
                    QAO_STATIC_NAME("cinnabar::ShipController"),
-                   aSyncId} //
-{
-    if (isMasterObject()) {
-        _masterData->graphOfAttachables.init(*this);
-    }
-}
+                   aSyncId} {}
 
 void ShipController::init(ShipAttachable& aInitialShipAttachable) {
     HG_VALIDATE_PRECONDITION(isMasterObject());
+
+    _masterData->graphOfAttachables.init(*this);
 
     const auto* iwSliceData = aInitialShipAttachable.getInteriorWorldSliceData();
     HG_VALIDATE_ARGUMENT(
@@ -117,6 +114,124 @@ void ShipController::init(ShipAttachable& aInitialShipAttachable) {
     const auto id = _masterData->graphOfAttachables.insertInitialAttachable(aInitialShipAttachable);
 
     _copySliceDataToInteriorWorld_rot000(*iwSliceData, tlCellPosInIW, id);
+}
+
+///////////////////////////////////////////////////////////////////////////
+// MARK: ATTACHING                                                       //
+///////////////////////////////////////////////////////////////////////////
+
+void ShipController::calcFootprint(const PolyShape& aShape, CellFootprint& aCellFootprint) {
+    HG_HARD_ASSERT(aShape.getState() == PolyShape::READY_RELATIVE);
+
+    // Recalculate all shape vertices relative to the ship's center
+    auto                            relativeShapeCenter = (aShape.getAnchor() - _position).cast<float>();
+    std::vector<hg::math::Vector2f> relativeShapeVertices{};
+    {
+        relativeShapeVertices.reserve(hg::pztos(aShape.getVertexCount()));
+        for (const auto& vert : aShape.getOutputVertices()) {
+            relativeShapeVertices.push_back(relativeShapeCenter + vert.cast<float>());
+        }
+    }
+
+    // Transform all vertices into the ship's coordinate system (center-relative)
+    {
+        TransformPoints(relativeShapeCenter,
+                        relativeShapeVertices.data(),
+                        relativeShapeVertices.size(),
+                        *_masterData->transformGlobalToShip);
+    }
+
+    // Find the AABB of the shape in the ship's coordinate system (center-relative)
+    hg::math::Vector2f aabbTopLeft     = relativeShapeCenter;
+    hg::math::Vector2f aabbBottomRight = relativeShapeCenter;
+    {
+        for (const auto vert : relativeShapeVertices) {
+            if (vert.x < aabbTopLeft.x) {
+                aabbTopLeft.x = vert.x;
+            }
+            if (vert.x > aabbBottomRight.x) {
+                aabbBottomRight.x = vert.x;
+            }
+            if (vert.y < aabbTopLeft.y) {
+                aabbTopLeft.y = vert.y;
+            }
+            if (vert.y > aabbBottomRight.y) {
+                aabbBottomRight.y = vert.y;
+            }
+        }
+    }
+
+    // Find grid coordinates of the AABB
+    hg::math::Vector2i aabbGridTopLeft;
+    hg::math::Vector2i aabbGridBottomRight;
+    {
+        aabbGridTopLeft     = {static_cast<int>(std::floor(aabbTopLeft.x / OVERWORLD_CELL_SIZE)) - 1,
+                               static_cast<int>(std::floor(aabbTopLeft.y / OVERWORLD_CELL_SIZE)) - 1};
+        aabbGridBottomRight = {static_cast<int>(std::floor(aabbBottomRight.x / OVERWORLD_CELL_SIZE)) + 1,
+                               static_cast<int>(std::floor(aabbBottomRight.y / OVERWORLD_CELL_SIZE)) +
+                                   1};
+    }
+
+    // Construct lambdas for checking if a point is inside of the shape
+    auto isPointInsideShape = [&relativeShapeCenter,
+                               &relativeShapeVertices](hg::math::Vector2f aPos) -> bool {
+        const auto vertCount = relativeShapeVertices.size();
+        for (std::size_t i = 0; i < vertCount - 1; ++i) {
+            if (hg::math::IsPointInsideTriangle(
+                    aPos,
+                    hg::math::Triangle<float>{.a = relativeShapeCenter,
+                                              .b = relativeShapeVertices[i],
+                                              .c = relativeShapeVertices[i + 1]})) {
+                return true;
+            }
+        }
+        return hg::math::IsPointInsideTriangle(
+            aPos,
+            hg::math::Triangle<float>{.a = relativeShapeCenter,
+                                      .b = relativeShapeVertices[vertCount - 1],
+                                      .c = relativeShapeVertices[0]});
+    };
+
+    // Output
+    aCellFootprint.topLeftPos = aabbGridTopLeft;
+    aCellFootprint.cells.reset(aabbGridBottomRight.x - aabbGridTopLeft.x + 1,
+                               aabbGridBottomRight.y - aabbGridTopLeft.y + 1);
+    aCellFootprint.totalBitmask = CellFootprint::EMPTY;
+
+    const auto&                             ggwld = _masterData->interiorWorld.getUnderlying();
+    jbatnozic::gridgoblin::cell::CellKindId cellKindId;
+    for (int y = aabbGridTopLeft.y; y <= aabbGridBottomRight.y; ++y) {
+        for (int x = aabbGridTopLeft.x; x <= aabbGridBottomRight.x; ++x) {
+            const bool isSquareInsideShape =
+                isPointInsideShape({(x + 0) * OVERWORLD_CELL_SIZE, (y + 0) * OVERWORLD_CELL_SIZE}) &&
+                isPointInsideShape({(x + 1) * OVERWORLD_CELL_SIZE, (y + 0) * OVERWORLD_CELL_SIZE}) &&
+                isPointInsideShape({(x + 0) * OVERWORLD_CELL_SIZE, (y + 1) * OVERWORLD_CELL_SIZE}) &&
+                isPointInsideShape({(x + 1) * OVERWORLD_CELL_SIZE, (y + 1) * OVERWORLD_CELL_SIZE});
+
+            if (!isSquareInsideShape) {
+                aCellFootprint.cells[y - aabbGridTopLeft.y][x - aabbGridTopLeft.x] =
+                    CellFootprint::EMPTY;
+                continue;
+            }
+
+            std::int8_t cellValue = CellFootprint::INSIDE_SHAPE;
+
+            // Since the origin of the ship's coordinate system is in the center of the ship, but the
+            // origin of the interior world's coordinate system is in its top-left corner, we must
+            // offset the X and Y values in order to target the correct IW cells.
+            const int iwX = x + (InteriorWorld::CELL_COUNT_X / 2);
+            const int iwY = y + (InteriorWorld::CELL_COUNT_Y / 2);
+            if (iwX < 0 || iwX >= ggwld.getCellCountX() || iwY < 0 || iwY >= ggwld.getCellCountY()) {
+                cellValue |= CellFootprint::OUT_OF_BOUNDS;
+            } else if (ggwld.getCellDataAt(iwX, iwY, &cellKindId) &&
+                       cellKindId.value != ToU16(interior::CellArchE::SOLID_VOID)) {
+                cellValue |= CellFootprint::COLLIDES_WITH_IW;
+            }
+
+            aCellFootprint.totalBitmask |= cellValue;
+            aCellFootprint.cells[y - aabbGridTopLeft.y][x - aabbGridTopLeft.x] = cellValue;
+        }
+    }
 }
 
 AttachmentEvaluation ShipController::evalAttachment(const AttachableGhost& aGhost) {
@@ -307,49 +422,38 @@ void ShipController::attach(AttachableGhost&            aGhost,
     // _createConstraintsUponAttach(aGhost, index, aAttachmentEval.bonds);
 }
 
-void ShipController::attach(ShipAttachable&    aShipAttachable,
-                            hg::math::Vector2f aAnchorOffset,
-                            hg::math::AngleF   aRotationOffset) {
-#if 0
-    const auto* iwSliceData = aShipAttachable.getInteriorWorldSliceData();
-    if (iwSliceData != nullptr) {
-        // Since the attachable already has a defined interior world slice and we use a square grid,
-        // there are only four valid relative rotations: exactly 0, exactly 90, exactly 180, and exactly
-        // 270 (though we check with a small delta due to floating point math). The anchor offset must
-        // also be a multiple of the cell resolution.
+///////////////////////////////////////////////////////////////////////////
+// MARK: DETACHING                                                       //
+///////////////////////////////////////////////////////////////////////////
 
-        const auto orientation = _checkIWSliceOrientation(*iwSliceData, aRotationOffset);
-        HG_HARD_ASSERT(orientation != RelativeIWSliceOrientation::INVALID);
+void ShipController::detach(ShipAttachable& aAttachable) {
+    HG_VALIDATE_PRECONDITION(aAttachable._assocComps.has_value() &&
+                             &(aAttachable._assocComps->controller) == this);
 
-        const auto cornerOffset = _checkIWSliceCornerOffset(*iwSliceData, aAnchorOffset, orientation);
-        HG_HARD_ASSERT(cornerOffset.has_value());
+    // TODO: see what to do with IW cells
 
-        const auto cornerCellPosInIW =
-            *cornerOffset +
-            hg::math::Vector2pz{InteriorWorld::CELL_COUNT_X / 2, InteriorWorld::CELL_COUNT_Y / 2};
+    _masterData->graphOfAttachables.eraseAttachable(aAttachable);
 
-        switch (orientation) {
-        case RelativeIWSliceOrientation::ROT_ALIGNED:
-            _copySliceDataToInteriorWorld_rot000(*iwSliceData, cornerCellPosInIW);
-            break;
-        case RelativeIWSliceOrientation::ROT_90DEG_CCW:
-            _copySliceDataToInteriorWorld_rot090(*iwSliceData, cornerCellPosInIW);
-            break;
-        case RelativeIWSliceOrientation::ROT_180DEG_CCW:
-            _copySliceDataToInteriorWorld_rot180(*iwSliceData, cornerCellPosInIW);
-            break;
-        case RelativeIWSliceOrientation::ROT_270DEG_CCW:
-            _copySliceDataToInteriorWorld_rot270(*iwSliceData, cornerCellPosInIW);
-            break;
-        default:
-            HG_UNREACHABLE("Invalid slice orientation! ({})", (int)orientation);
-        }
+    HG_ASSERT(!aAttachable._assocComps.has_value());
+}
 
-        _masterData->graphOfAttachables.insert(aShipAttachable);
-    } else {
-        HG_NOT_IMPLEMENTED("TODO - cell generator func");
-    }
-#endif
+///////////////////////////////////////////////////////////////////////////
+// MARK: UTILITY                                                         //
+///////////////////////////////////////////////////////////////////////////
+
+hg::math::Vector2d ShipController::getAnchor() const {
+    // TODO: temporary implementation
+    return getAttachableWithIndex(0)->getPolyShape().getAnchor();
+}
+
+hg::math::AngleF ShipController::getRotation() const {
+    // TODO: temporary implementation
+    return getAttachableWithIndex(0)->getPolyShape().getRotation();
+}
+
+const ShipAttachable* ShipController::getAttachableWithIndex(std::int16_t aIndex) const {
+    // TODO: temporary implementation
+    return &(_masterData->graphOfAttachables.getNode(aIndex)->associatedAttachable);
 }
 
 void ShipController::drawGridOverShape(const PolyShape& aShape, uwga::Canvas& aCanvas) const {
@@ -500,141 +604,16 @@ void ShipController::drawGridOverGhost(const AttachableGhost& aAttachableGhost,
     drawGridOverProjection(aAttachableGhost.getCellFootprint(), aCanvas);
 }
 
-void ShipController::calcFootprint(const PolyShape& aShape, CellFootprint& aCellFootprint) {
-    HG_HARD_ASSERT(aShape.getState() == PolyShape::READY_RELATIVE);
-
-    // Recalculate all shape vertices relative to the ship's center
-    auto                            relativeShapeCenter = (aShape.getAnchor() - _position).cast<float>();
-    std::vector<hg::math::Vector2f> relativeShapeVertices{};
-    {
-        relativeShapeVertices.reserve(hg::pztos(aShape.getVertexCount()));
-        for (const auto& vert : aShape.getOutputVertices()) {
-            relativeShapeVertices.push_back(relativeShapeCenter + vert.cast<float>());
-        }
-    }
-
-    // Transform all vertices into the ship's coordinate system (center-relative)
-    {
-        TransformPoints(relativeShapeCenter,
-                        relativeShapeVertices.data(),
-                        relativeShapeVertices.size(),
-                        *_masterData->transformGlobalToShip);
-    }
-
-    // Find the AABB of the shape in the ship's coordinate system (center-relative)
-    hg::math::Vector2f aabbTopLeft     = relativeShapeCenter;
-    hg::math::Vector2f aabbBottomRight = relativeShapeCenter;
-    {
-        for (const auto vert : relativeShapeVertices) {
-            if (vert.x < aabbTopLeft.x) {
-                aabbTopLeft.x = vert.x;
-            }
-            if (vert.x > aabbBottomRight.x) {
-                aabbBottomRight.x = vert.x;
-            }
-            if (vert.y < aabbTopLeft.y) {
-                aabbTopLeft.y = vert.y;
-            }
-            if (vert.y > aabbBottomRight.y) {
-                aabbBottomRight.y = vert.y;
-            }
-        }
-    }
-
-    // Find grid coordinates of the AABB
-    hg::math::Vector2i aabbGridTopLeft;
-    hg::math::Vector2i aabbGridBottomRight;
-    {
-        aabbGridTopLeft     = {static_cast<int>(std::floor(aabbTopLeft.x / OVERWORLD_CELL_SIZE)) - 1,
-                               static_cast<int>(std::floor(aabbTopLeft.y / OVERWORLD_CELL_SIZE)) - 1};
-        aabbGridBottomRight = {static_cast<int>(std::floor(aabbBottomRight.x / OVERWORLD_CELL_SIZE)) + 1,
-                               static_cast<int>(std::floor(aabbBottomRight.y / OVERWORLD_CELL_SIZE)) +
-                                   1};
-    }
-
-    // Construct lambdas for checking if a point is inside of the shape
-    auto isPointInsideShape = [&relativeShapeCenter,
-                               &relativeShapeVertices](hg::math::Vector2f aPos) -> bool {
-        const auto vertCount = relativeShapeVertices.size();
-        for (std::size_t i = 0; i < vertCount - 1; ++i) {
-            if (hg::math::IsPointInsideTriangle(
-                    aPos,
-                    hg::math::Triangle<float>{.a = relativeShapeCenter,
-                                              .b = relativeShapeVertices[i],
-                                              .c = relativeShapeVertices[i + 1]})) {
-                return true;
-            }
-        }
-        return hg::math::IsPointInsideTriangle(
-            aPos,
-            hg::math::Triangle<float>{.a = relativeShapeCenter,
-                                      .b = relativeShapeVertices[vertCount - 1],
-                                      .c = relativeShapeVertices[0]});
-    };
-
-    // Output
-    aCellFootprint.topLeftPos = aabbGridTopLeft;
-    aCellFootprint.cells.reset(aabbGridBottomRight.x - aabbGridTopLeft.x + 1,
-                               aabbGridBottomRight.y - aabbGridTopLeft.y + 1);
-    aCellFootprint.totalBitmask = CellFootprint::EMPTY;
-
-    const auto&                             ggwld = _masterData->interiorWorld.getUnderlying();
-    jbatnozic::gridgoblin::cell::CellKindId cellKindId;
-    for (int y = aabbGridTopLeft.y; y <= aabbGridBottomRight.y; ++y) {
-        for (int x = aabbGridTopLeft.x; x <= aabbGridBottomRight.x; ++x) {
-            const bool isSquareInsideShape =
-                isPointInsideShape({(x + 0) * OVERWORLD_CELL_SIZE, (y + 0) * OVERWORLD_CELL_SIZE}) &&
-                isPointInsideShape({(x + 1) * OVERWORLD_CELL_SIZE, (y + 0) * OVERWORLD_CELL_SIZE}) &&
-                isPointInsideShape({(x + 0) * OVERWORLD_CELL_SIZE, (y + 1) * OVERWORLD_CELL_SIZE}) &&
-                isPointInsideShape({(x + 1) * OVERWORLD_CELL_SIZE, (y + 1) * OVERWORLD_CELL_SIZE});
-
-            if (!isSquareInsideShape) {
-                aCellFootprint.cells[y - aabbGridTopLeft.y][x - aabbGridTopLeft.x] =
-                    CellFootprint::EMPTY;
-                continue;
-            }
-
-            std::int8_t cellValue = CellFootprint::INSIDE_SHAPE;
-
-            // Since the origin of the ship's coordinate system is in the center of the ship, but the
-            // origin of the interior world's coordinate system is in its top-left corner, we must
-            // offset the X and Y values in order to target the correct IW cells.
-            const int iwX = x + (InteriorWorld::CELL_COUNT_X / 2);
-            const int iwY = y + (InteriorWorld::CELL_COUNT_Y / 2);
-            if (iwX < 0 || iwX >= ggwld.getCellCountX() || iwY < 0 || iwY >= ggwld.getCellCountY()) {
-                cellValue |= CellFootprint::OUT_OF_BOUNDS;
-            } else if (ggwld.getCellDataAt(iwX, iwY, &cellKindId) &&
-                       cellKindId.value != ToU16(interior::CellArchE::SOLID_VOID)) {
-                cellValue |= CellFootprint::COLLIDES_WITH_IW;
-            }
-
-            aCellFootprint.totalBitmask |= cellValue;
-            aCellFootprint.cells[y - aabbGridTopLeft.y][x - aabbGridTopLeft.x] = cellValue;
-        }
-    }
-}
-
-const ShipAttachable* ShipController::getAttachableWithIndex(std::int16_t aIndex) const {
-    // TODO: temporary implementation
-    return &(_masterData->graphOfAttachables.getNode(aIndex)->associatedAttachable);
-}
-
-hg::math::Vector2d ShipController::getAnchor() const {
-    // TODO: temporary implementation
-    return getAttachableWithIndex(0)->getPolyShape().getAnchor();
-}
-
-hg::math::AngleF ShipController::getRotation() const {
-    // TODO: temporary implementation
-    return getAttachableWithIndex(0)->getPolyShape().getRotation();
-}
-
-// QAO Message Handlers
+///////////////////////////////////////////////////////////////////////////
+// MARK: QAO Message Handlers                                            //
+///////////////////////////////////////////////////////////////////////////
 
 void ShipController::msgDowncastToShipController(DowncastToShipController::PayloadPtr aPtr,
                                                  bool /* aConst */) {
     (*aPtr) = this;
 }
+
+// MARK: ShipController PRIVATE
 
 void ShipController::_didAttach(QAO_Runtime& aRuntime) {
     SyncObjSuper::_didAttach(aRuntime);
@@ -646,7 +625,18 @@ void ShipController::_didAttach(QAO_Runtime& aRuntime) {
     }
 }
 
-// MARK: ShipController PRIVATE
+void ShipController::_willDetach(QAO_Runtime& aRuntime) {
+    // TODO: temporary implementation
+    for (int i = 0; i < 2048; ++i) {
+        auto* node = _masterData->graphOfAttachables.getNode(i);
+        if (node ==nullptr) {
+            continue;
+        }
+        node->associatedAttachable._detach();
+    }
+
+    SyncObjSuper::_willDetach(aRuntime);
+}
 
 void ShipController::_eventUpdate1(spe::IfMaster) {
     auto&       md      = *_masterData;
@@ -1124,8 +1114,6 @@ void ShipController::_createConstraintsUponAttach(
         space.add(gear);
     }
 }
-
-// MARK: ShipController SYNC
 
 void ShipController::_syncCreateImpl(spe::SyncControlDelegate& aSyncCtrl) const {
     // TODO

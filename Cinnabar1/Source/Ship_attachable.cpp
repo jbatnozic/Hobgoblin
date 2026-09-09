@@ -3,27 +3,47 @@
 
 #include <Ship_attachable.hpp>
 
+#include <Ship_controller.hpp>
+
 #include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/Math/Core.hpp>
+
+#include <cassert>
 
 namespace cinnabar {
 
 // MARK: ShipAttachable
 
 ShipAttachable::~ShipAttachable() {
-    _detachFromGraph();
+    _assertDetached("ShipAttachable");
 }
 
-void ShipAttachable::_detachFromGraph() {
+void ShipAttachable::_assertDetached(std::string_view aCaller) const {
+    if (_assocComps.has_value()) {
+        assert(false && "A ShipAttachable must be detached from a ShipController by its derived class!");
+        HG_THROW_TRACED(hg::AssertionFailedError,
+                        0,
+                        "A ShipAttachable wasn't detached from its ShipController by its derived class "
+                        "(called by {}).",
+                        aCaller);
+    }
+}
+
+void ShipAttachable::_detach() {
     if (!_assocComps.has_value()) {
         return;
     }
-    // TODO
+    _assocComps->controller.detach(*this);
+    HG_ASSERT(!_assocComps.has_value());
 }
 
 // MARK: UnibodyShipAttachable
 
 #define RADIUS (0.0)
+
+UnibodyShipAttachable::~UnibodyShipAttachable() {
+    _assertDetached("UnibodyShipAttachable");
+}
 
 const PolyShape& UnibodyShipAttachable::getPolyShape() const {
     return _polyShape;

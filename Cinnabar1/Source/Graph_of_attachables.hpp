@@ -51,9 +51,13 @@ public:
 
         hg::util::CompressedSmallVector<AdjacentNode, 3> adjacentNodes;
 
+        std::int16_t index;
+
         bool visited = false;
 
-        Node(GraphOfAttachables& aParentGraph, ShipAttachable& aAssociatedAttachable);
+        Node(GraphOfAttachables& aParentGraph,
+             ShipAttachable&     aAssociatedAttachable,
+             std::int16_t        aIndex);
     };
 
     //! returns the index of the inserted attachable
@@ -63,7 +67,7 @@ public:
                                   const decltype(AttachmentEvaluation::bonds)& aBonds,
                                   hg::alvin::Space&                            aSpace);
 
-    void removeAttachable();
+    void eraseAttachable(ShipAttachable& aAttachable);
 
     //! get node by index
     const Node* getNode(std::int16_t aIndex) const;
