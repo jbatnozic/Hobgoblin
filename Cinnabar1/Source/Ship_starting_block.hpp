@@ -19,6 +19,8 @@ public:
 
     void init(hg::math::Vector2d aPosition);
 
+    ~ShipStartingBlock();
+
     void drawAsGhost(
         const hg::math::Vector2d& aPosition,
         hg::math::AngleF          aAngle,

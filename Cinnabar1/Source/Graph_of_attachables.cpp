@@ -7,11 +7,16 @@
 
 #include <Ship_attachable.hpp>
 
+#include <cassert>
+
 namespace cinnabar {
 
-GraphOfAttachables::Node::Node(GraphOfAttachables& aParentGraph, ShipAttachable& aAssociatedAttachable)
+GraphOfAttachables::Node::Node(GraphOfAttachables& aParentGraph,
+                               ShipAttachable&     aAssociatedAttachable,
+                               std::int16_t        aIndex)
     : parentGraph{aParentGraph}
-    , associatedAttachable{aAssociatedAttachable} {}
+    , associatedAttachable{aAssociatedAttachable}
+    , index{aIndex} {}
 
 GraphOfAttachables::Node::AdjacentNode::AdjacentNode(Node* aNode, std::shared_ptr<Bond> aBond)
     : nodePtr{aNode}
@@ -25,7 +30,7 @@ std::int16_t GraphOfAttachables::insertInitialAttachable(ShipAttachable& aAttach
     HG_VALIDATE_PRECONDITION(_nodes.size() == 0);
     HG_VALIDATE_PRECONDITION(!aAttachable._assocComps.has_value());
 
-    _nodes.push_back(std::make_unique<Node>(*this, aAttachable));
+    _nodes.push_back(std::make_unique<Node>(*this, aAttachable, 0));
     aAttachable._assocComps.emplace(*_shipController, *_nodes.back());
 
     _mainNodeIndex = 0;
@@ -48,9 +53,11 @@ std::int16_t GraphOfAttachables::insertAttachable(ShipAttachable& aAttachable,
         _nodes.resize(index + 1);
     }
 
+    // TODO: make sure that index is in bounds (we only have 11 bits to store it)
+
     // *** Create Node ***
 
-    auto node = std::make_unique<Node>(*this, aAttachable);
+    auto node = std::make_unique<Node>(*this, aAttachable, static_cast<std::int16_t>(index));
 
     // *** Create Constraints & Bonds ***
 
@@ -87,7 +94,36 @@ std::int16_t GraphOfAttachables::insertAttachable(ShipAttachable& aAttachable,
     aAttachable._assocComps.emplace(*_shipController, *node);
     _nodes[index] = std::move(node);
 
-    return index;
+    return static_cast<std::int16_t>(index);
+}
+
+void GraphOfAttachables::eraseAttachable(ShipAttachable& aAttachable) {
+    // Here we can mostly assume that the attachable is indeed a part of this graph
+
+    auto& compsOpt = aAttachable._assocComps;
+    assert(compsOpt.has_value());
+
+    auto& nodeToErase = compsOpt->node;
+    assert(_nodes.at(nodeToErase.index).get() == &nodeToErase);
+
+    for (auto& neighbour : nodeToErase.adjacentNodes) {
+        auto& vec = neighbour.nodePtr->adjacentNodes;
+        auto  iter =
+            std::remove_if(vec.begin(),
+                           vec.end(),
+                           [&nodeToErase](GraphOfAttachables::Node::AdjacentNode& aAdjacentNode) {
+                               return aAdjacentNode.nodePtr == &nodeToErase;
+                           });
+        
+        const auto diff = iter - vec.begin();
+        while (static_cast<decltype(diff)>(vec.size()) > diff) {
+            vec.pop_back();
+        }
+    }
+
+    _nodes[nodeToErase.index].reset();
+
+    compsOpt.reset();
 }
 
 const GraphOfAttachables::Node* GraphOfAttachables::getNode(std::int16_t aIndex) const {

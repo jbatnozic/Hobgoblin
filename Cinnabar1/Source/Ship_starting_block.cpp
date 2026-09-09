@@ -55,6 +55,10 @@ void ShipStartingBlock::init(hg::math::Vector2d aPosition) {
     cpBodySetPosition(_unibody, cpv(aPosition.x, aPosition.y));
 }
 
+ShipStartingBlock::~ShipStartingBlock() {
+    ShipAttachable::_detach();
+}
+
 // MARK: Private
 
 PolyShape ShipStartingBlock::_initPolyShape() {

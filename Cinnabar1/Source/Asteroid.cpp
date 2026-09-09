@@ -36,6 +36,10 @@ void Asteroid::init(hg::math::Vector2d aPosition) {
     cpBodySetAngle(_unibody, hg::math::PI * hg::util::GetRandomNumber(0.0, 359.9) / 180.0);
 }
 
+Asteroid::~Asteroid() {
+    ShipAttachable::_detach();
+}
+
 // MARK: QAO Message Handlers
 
 void Asteroid::msgDowncastToShipAttachable(DowncastToShipAttachable::PayloadPtr aPtr,

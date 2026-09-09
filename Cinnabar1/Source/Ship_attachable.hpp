@@ -15,10 +15,13 @@
 
 #include <memory>
 #include <optional>
+#include <string_view>
 
 namespace cinnabar {
 
 class ShipController;
+
+// MARK: ShipAttachable
 
 class ShipAttachable {
 public:
@@ -63,8 +66,16 @@ public:
     //! attached to an existing ship at any angle).
     virtual const InteriorWorldSliceData* getInteriorWorldSliceData() const = 0;
 
+protected:
+    void _assertDetached(std::string_view aCaller) const;
+
+    //! \brief TODO(add description)
+    //! \note this function call is idempotent.
+    void _detach();
+
 private:
     friend class GraphOfAttachables;
+    friend class ShipController;
 
     struct AssociatedComponents {
         ShipController&           controller;
@@ -76,9 +87,9 @@ private:
     };
 
     std::optional<AssociatedComponents> _assocComps;
-
-    void _detachFromGraph();
 };
+
+// MARK: UnibodyShipAttachable
 
 class UnibodyShipAttachable : public ShipAttachable {
 public:
@@ -94,6 +105,8 @@ public:
                           taUnibodyCollisionDelegateFactory&& aUnibodyCollisionDelegateFactory,
                           taUnibodyBodyFactory&&              aUnibodyBodyFactory,
                           taUnibodyShapeFactory&&             aUnibodyShapeFactory);
+
+    ~UnibodyShipAttachable();
 
     const PolyShape& getPolyShape() const override;
 
