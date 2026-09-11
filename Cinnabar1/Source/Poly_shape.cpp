@@ -323,4 +323,19 @@ void PolyShape::debugDraw(hg::uwga::Color               aColor,
     aCanvas.draw(vArr, aRenderStates);
 }
 
+void PolyShape::writeRawVerticesToStream(hg::util::OutputStream& aOStream) const {
+    HG_HARD_ASSERT(_rawVertices.size() < 256U);
+    aOStream << (std::uint8_t)_rawVertices.size();
+    for (const auto& vertex : _rawVertices) {
+        aOStream << vertex.x << vertex.y;
+    }
+}
+
+void PolyShape::readRawVerticesFromStream(hg::util::InputStream& aIStream) {
+    _rawVertices.resize(aIStream.extract<std::uint8_t>());
+    for (auto& vertex : _rawVertices) {
+        aIStream >> vertex.x >> vertex.y;
+    }
+}
+
 } // namespace cinnabar

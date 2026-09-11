@@ -93,6 +93,9 @@ private:
 
 class UnibodyShipAttachable : public ShipAttachable {
 public:
+    //! \brief Default constructor.
+    UnibodyShipAttachable();
+
     //! \param taPolyShapeFactory create a poly shape (in <TODO> winding and without repeating the 1st
     //! vertex)
     template <class taPolyShapeFactory,

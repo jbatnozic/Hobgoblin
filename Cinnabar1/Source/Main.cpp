@@ -11,6 +11,7 @@ namespace cinnabar {
 
 int MyMain() try {
     hg::log::SetMinimalLogSeverity(hg::log::Severity::Info);
+    RN_IndexHandlers();
     const auto ctx    = CreateGameContext(GameContextMode::DEV);
     const auto status = ctx->runFor(-1);
     HG_LOG_INFO(LOG_ID, "Program exiting (status code {}).", status);

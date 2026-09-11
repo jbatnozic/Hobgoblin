@@ -34,8 +34,7 @@ void DefaultMainGameFlowManager::_didAttach(QAO_Runtime& aRuntime) {
     auto ship = QAO_Create<ShipController>(aRuntime, spe::SYNC_ID_NEW);
     ship->init(*core);
 
-    auto asteroid = QAO_Create<Asteroid>(aRuntime);
-    asteroid->init({512.0, 712.0});
+    auto asteroid = Asteroid::createMaster(aRuntime, {512.0, 712.0});
 }
 
 void DefaultMainGameFlowManager::_eventDisplay() {
