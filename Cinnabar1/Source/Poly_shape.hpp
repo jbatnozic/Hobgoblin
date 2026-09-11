@@ -8,6 +8,8 @@
 #include <Hobgoblin/Math.hpp>
 #include <Hobgoblin/UWGA/Canvas.hpp>
 #include <Hobgoblin/Utility/Compressed_small_vector.hpp>
+#include <Hobgoblin/Utility/Stream_input.hpp>
+#include <Hobgoblin/Utility/Stream_output.hpp>
 
 #include <span>
 #include <vector>
@@ -114,13 +116,17 @@ public:
     //!          function call is unspecified (throws, asserts, or returns garbage values).
     bool intersectsWithPointRel(hg::math::Vector2d aPoint) const;
 
-     float getDistanceToFarthestRawVertexSquared() const {
+    float getDistanceToFarthestRawVertexSquared() const {
         return _distanceToFarthestRawVertexSquared;
-     }
+    }
 
     void debugDraw(hg::uwga::Color               aColor,
                    hg::uwga::Canvas&             aCanvas,
                    const hg::uwga::RenderStates& aRenderStates = hg::uwga::RENDER_STATES_DEFAULT) const;
+
+    void writeRawVerticesToStream(hg::util::OutputStream& aOStream) const;
+
+    void readRawVerticesFromStream(hg::util::InputStream& aIStream);
 
 private:
     hg::math::Vector2d _anchor;

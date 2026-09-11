@@ -13,27 +13,73 @@
 
 namespace cinnabar {
 
+namespace {
+// clang-format off
+RN_DEFINE_RPC(Asteroid_SyncCreate, 
+    RN_ARGS(
+        spe::SyncId,       aSyncId, 
+        hg::util::Packet&, aPolyShapePacket
+    )
+) {
+    auto& node = RN_NODE_IN_HANDLER();
+
+    node.callIfClient([&](hg::RN_ClientInterface& aClient) {
+        auto  rc         = SPEMPE_GET_RPC_RECEIVER_CONTEXT(aClient);
+        auto& qaoRuntime = rc.gameContext.getQAORuntime();
+
+        if (spe::MapSyncIdToObject(rc, aSyncId) == nullptr) {
+            Asteroid::createDummy(&qaoRuntime, aSyncId, aPolyShapePacket);
+        }
+    });
+
+    node.callIfServer([](hg::RN_ServerInterface&) {
+        throw hg::RN_IllegalMessage("Server received a sync message");
+    });
+}
+// clang-format on
+} // namespace
+
 #define SIZE 32.f
 
+QAO_Handle<Asteroid> Asteroid::createMaster(QAO_RuntimeRef aRuntime, hg::math::Vector2d aPosition) {
+    auto handle = QAO_Create<Asteroid>(aRuntime);
+
+    cpBodySetPosition(handle->_unibody, cpv(aPosition.x, aPosition.y));
+    cpBodySetAngle(handle->_unibody, hg::math::PI * hg::util::GetRandomNumber(0.0, 359.9) / 180.0);
+
+    return handle;
+}
+
 Asteroid::Asteroid(QAO_InstGuard aInstGuard)
-    : spe::StateObject{aInstGuard,
-                       QAO_ExeCon::GAMEPLAY,
-                       PRIORITY_ENTITIES,
-                       QAO_STATIC_NAME("cinnabar::Asteroid")} // clang-format off
-    , UnibodyShipAttachable{
-        std::bind(&Asteroid::_initPolyShape, this),
-        std::bind(&Asteroid::_initPhysicalProperties, this),
-        std::bind(&Asteroid::_initColDelegate, this),
-        std::bind(&Asteroid::_alvinBodyFromPhysicalPropertiesAndPolyShape, this),
-        std::bind(&Asteroid::_alvinShapeFromPolyShape, this)
-    } // clang-format on
+    : SyncObjSuper{aInstGuard,
+                   QAO_ExeCon::GAMEPLAY,
+                   PRIORITY_ENTITIES,
+                   QAO_STATIC_NAME("cinnabar::Asteroid"),
+                   spe::SYNC_ID_NEW}
+    , UnibodyShipAttachable{std::bind(&Asteroid::_initPolyShape, this),
+                            std::bind(&Asteroid::_initPhysicalProperties, this),
+                            std::bind(&Asteroid::_initColDelegate, this),
+                            std::bind(&Asteroid::_alvinBodyFromPhysicalPropertiesAndPolyShape, this),
+                            std::bind(&Asteroid::_alvinShapeFromPolyShape, this)} //
 {
     _unibody.bindDelegate(*this);
 }
 
-void Asteroid::init(hg::math::Vector2d aPosition) {
-    cpBodySetPosition(_unibody, cpv(aPosition.x, aPosition.y));
-    cpBodySetAngle(_unibody, hg::math::PI * hg::util::GetRandomNumber(0.0, 359.9) / 180.0);
+QAO_Handle<Asteroid> Asteroid::createDummy(QAO_RuntimeRef    aRuntime,
+                                           spe::SyncId       aSyncId,
+                                           hg::util::Packet& aPolyShapePacket) {
+    return QAO_Create<Asteroid>(aRuntime, aSyncId, aPolyShapePacket);
+}
+
+Asteroid::Asteroid(QAO_InstGuard aInstGuard, spe::SyncId aSyncId, hg::util::Packet& aPolyShapePacket)
+    : SyncObjSuper{aInstGuard,
+                   QAO_ExeCon::GAMEPLAY,
+                   PRIORITY_ENTITIES,
+                   QAO_STATIC_NAME("cinnabar::Asteroid"),
+                   aSyncId}
+    , UnibodyShipAttachable{} //
+{
+    _polyShape.readRawVerticesFromStream(aPolyShapePacket);
 }
 
 Asteroid::~Asteroid() {
@@ -43,7 +89,7 @@ Asteroid::~Asteroid() {
 // MARK: QAO Message Handlers
 
 void Asteroid::msgDowncastToShipAttachable(DowncastToShipAttachable::PayloadPtr aPtr,
-                                            bool /* aConst */) {
+                                           bool /* aConst */) {
     (*aPtr) = static_cast<ShipAttachable*>(this);
 }
 
@@ -92,9 +138,12 @@ hg::alvin::CollisionDelegate Asteroid::_initColDelegate() {
 }
 
 void Asteroid::_didAttach(QAO_Runtime& aRuntime) {
-    spe::StateObject::_didAttach(aRuntime);
+    SyncObjSuper::_didAttach(aRuntime);
 
-    _unibody.addToSpace(ccomp<MOverworld>().getAlvinSpace());
+    if (isMasterObject()) {
+        _getCurrentState().initMirror();
+        _unibody.addToSpace(ccomp<MOverworld>().getAlvinSpace()); 
+    }
 }
 
 void Asteroid::_eventBeginUpdate() {
@@ -115,13 +164,22 @@ void Asteroid::_eventBeginUpdate() {
         });
 }
 
-void Asteroid::_eventUpdate1() {
-    // const auto& winMgr = ccomp<MWindow>();
-    // _applyPropulsion(winMgr.getInput());
+void Asteroid::_eventUpdate2(spe::IfMaster) {
+    _syncPolyShapeWithUnibody();
+
+    auto& self = _getCurrentState();
+    self.setPosition(_polyShape.getAnchor());
+    self.setRotation(_polyShape.getRotation());
 }
 
-void Asteroid::_eventUpdate2() {
-    _syncPolyShapeWithUnibody();
+void Asteroid::_eventUpdate2(spe::IfDummy) {
+    if (isDeactivated()) {
+        return;
+    }
+
+    const auto& self = _getCurrentState();
+    _polyShape.setAnchor(self.getPosition());
+    _polyShape.setRotation(self.getRotation());
 }
 
 void Asteroid::_eventDraw1() {
@@ -148,6 +206,28 @@ void Asteroid::_eventDraw1() {
     }
 
     _polyShape.debugDraw(hg::uwga::COLOR_AQUA, canvas);
+}
+
+SPEMPE_GENERATE_DEFAULT_SYNC_HANDLERS(Asteroid, (UPDATE, DESTROY));
+
+void Asteroid::_syncCreateImpl(spe::SyncControlDelegate& aSyncCtrl) const {
+    hg::util::Packet polyShapePacket;
+    _polyShape.writeRawVerticesToStream(polyShapePacket);
+    Compose_Asteroid_SyncCreate(aSyncCtrl.getLocalNode(),
+                                aSyncCtrl.getFilteredRecepients(),
+                                this->getSyncId(),
+                                polyShapePacket);
+}
+
+void Asteroid::_syncUpdateImpl(spe::SyncControlDelegate& aSyncCtrl) const {
+    aSyncCtrl.filter([](hg::PZInteger aClientIndex) -> spe::SyncFilterStatus {
+        return spe::SyncFilterStatus::REGULAR_SYNC; // TODO: implement proper filtering
+    });
+    SPEMPE_SYNC_UPDATE_DEFAULT_IMPL(Asteroid, aSyncCtrl);
+}
+
+void Asteroid::_syncDestroyImpl(spe::SyncControlDelegate& aSyncCtrl) const {
+    SPEMPE_SYNC_DESTROY_DEFAULT_IMPL(Asteroid, aSyncCtrl);
 }
 
 } // namespace cinnabar
