@@ -11,6 +11,8 @@
 #include <Hobgoblin/UWGA/Render_window.hpp>
 #include <SPeMPE/SPeMPE.hpp>
 
+#include "Stream_io_overloads.hpp"
+
 namespace cinnabar {
 
 namespace hg   = ::jbatnozic::hobgoblin;

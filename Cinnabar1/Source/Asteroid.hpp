@@ -12,11 +12,11 @@
 
 namespace cinnabar {
 
-// clang-format off
+// clang-format 
 SPEMPE_DEFINE_AUTODIFF_STATE(Asteroid_VisibleState,
-    SPEMPE_MEMBER(double, x,        0.0),
-    SPEMPE_MEMBER(double, y,        0.0),
-    SPEMPE_MEMBER(float,  rotation, 0.f)  // Rotation in radians
+    SPEMPE_MEMBER(double, x, 0.0),
+    SPEMPE_MEMBER(double, y, 0.0),
+    SPEMPE_MEMBER(hg::math::AngleF, rotation, hg::math::AngleF::zero())
 ) {
     hg::math::Vector2d getPosition() const {
         return {x, y};
@@ -24,14 +24,6 @@ SPEMPE_DEFINE_AUTODIFF_STATE(Asteroid_VisibleState,
 
     void setPosition(hg::math::Vector2d aPosition) {
         x = aPosition.x, y = aPosition.y;
-    }
-
-    hg::math::AngleF getRotation() const {
-        return hg::math::AngleF::fromRadians(rotation);
-    }
-
-    void setRotation(hg::math::AngleF aRotation) {
-        rotation = aRotation.asRadians();
     }
 };
 // clang-format on
