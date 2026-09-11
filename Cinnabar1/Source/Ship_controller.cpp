@@ -7,17 +7,17 @@
 #include <Graphics_system_provider.hpp>
 #include <InteriorWorld/Cell_archs.hpp>
 #include <InteriorWorld/Cell_props.hpp>
-#include <Ship/Constants.hpp>
 #include <Overworld_manager.hpp>
+#include <Ship/Constants.hpp>
 
 #include <GridGoblin/World/World_config.hpp>
+#include <Hobgoblin/Alvin/Constraint.hpp>
 #include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/Math.hpp>
 #include <Hobgoblin/UWGA/Circle_shape.hpp>
 #include <Hobgoblin/UWGA/Color.hpp>
 #include <Hobgoblin/UWGA/Rectangle_shape.hpp>
 #include <Hobgoblin/UWGA/Vertex_array.hpp>
-#include <Hobgoblin/Alvin/Constraint.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -124,7 +124,7 @@ void ShipController::calcFootprint(const PolyShape& aShape, CellFootprint& aCell
     HG_HARD_ASSERT(aShape.getState() == PolyShape::READY_RELATIVE);
 
     // Recalculate all shape vertices relative to the ship's center
-    auto                            relativeShapeCenter = (aShape.getAnchor() - _position).cast<float>();
+    auto relativeShapeCenter = (aShape.getAnchor() - _getCurrentState().getPosition()).cast<float>();
     std::vector<hg::math::Vector2f> relativeShapeVertices{};
     {
         relativeShapeVertices.reserve(hg::pztos(aShape.getVertexCount()));
@@ -138,7 +138,7 @@ void ShipController::calcFootprint(const PolyShape& aShape, CellFootprint& aCell
         TransformPoints(relativeShapeCenter,
                         relativeShapeVertices.data(),
                         relativeShapeVertices.size(),
-                        *_masterData->transformGlobalToShip);
+                        *_transformGlobalToShip);
     }
 
     // Find the AABB of the shape in the ship's coordinate system (center-relative)
@@ -246,7 +246,8 @@ AttachmentEvaluation ShipController::evalAttachment(const AttachableGhost& aGhos
 
     // *** STEP 1: Analyze orientation ***
 
-    const auto relativeRotation = _rotation.shortestDistanceTo(attachable.getPolyShape().getRotation());
+    const auto relativeRotation =
+        _getCurrentState().rotation.shortestDistanceTo(attachable.getPolyShape().getRotation());
 
     const auto orientationVariant = _checkIWSliceOrientation(*iwSliceData, relativeRotation);
     if (HOLDS_ANGLE(orientationVariant)) {
@@ -259,15 +260,15 @@ AttachmentEvaluation ShipController::evalAttachment(const AttachableGhost& aGhos
 
     // *** STEP 2: Analyze anchor offset ***
 
-    const auto anchorDiff = _masterData->transformGlobalToShip->transformPoint(
-        (attachable.getPolyShape().getAnchor() - _position).cast<float>());
+    const auto anchorDiff = _transformGlobalToShip->transformPoint(
+        (attachable.getPolyShape().getAnchor() - _getCurrentState().getPosition()).cast<float>());
 
     const auto tlCellMappingVariant =
         _checkIWTopLeftCellMapping(*iwSliceData, anchorDiff, result.orientation);
     if (HOLDS_VECTOR2F(tlCellMappingVariant)) {
         status = AttachmentEvaluation::INVALID_POS;
         result.anchorAdjustmentHint =
-            _masterData->transformShipToGlobal->transformPoint(GET_VECTOR2F(tlCellMappingVariant));
+            _transformShipToGlobal->transformPoint(GET_VECTOR2F(tlCellMappingVariant));
         return result;
     } else {
         result.topLeftCellMapping = GET_VECTOR2I(tlCellMappingVariant);
@@ -390,7 +391,7 @@ void ShipController::attach(AttachableGhost&            aGhost,
         _masterData->graphOfAttachables.insertAttachable(attachable,
                                                          aAttachmentEval.bonds,
                                                          ccomp<MOverworld>().getAlvinSpace());
-    const auto& grid  = aCellFootprint.cells;
+    const auto& grid = aCellFootprint.cells;
 
     _masterData->interiorWorld.editWorld([&](WorldEditor& aEditor) {
         for (hg::PZInteger y = 0; y < grid.getHeight(); ++y) {
@@ -460,7 +461,7 @@ void ShipController::drawGridOverShape(const PolyShape& aShape, uwga::Canvas& aC
     HG_HARD_ASSERT(aShape.getState() == PolyShape::READY_RELATIVE);
 
     // Recalculate all shape vertices relative to the ship
-    auto                            relativeShapeCenter = (aShape.getAnchor() - _position).cast<float>();
+    auto relativeShapeCenter = (aShape.getAnchor() - _getCurrentState().getPosition()).cast<float>();
     std::vector<hg::math::Vector2f> relativeShapeVertices{};
     {
         relativeShapeVertices.reserve(hg::pztos(aShape.getVertexCount()));
@@ -474,7 +475,7 @@ void ShipController::drawGridOverShape(const PolyShape& aShape, uwga::Canvas& aC
         TransformPoints(relativeShapeCenter,
                         relativeShapeVertices.data(),
                         relativeShapeVertices.size(),
-                        *_masterData->transformGlobalToShip);
+                        *_transformGlobalToShip);
     }
 
     // Find the AABB of the shape in the ship's coordinate system
@@ -534,7 +535,7 @@ void ShipController::drawGridOverShape(const PolyShape& aShape, uwga::Canvas& aC
         {OVERWORLD_CELL_SIZE - 2.f, OVERWORLD_CELL_SIZE - 2.f}
     };
     rect.setOrigin(-1.f, -1.f);
-    rect.setRotation(-_rotation);
+    rect.setRotation(-_getCurrentState().rotation);
     rect.setOutlineThickness(2.f);
     rect.setFillColor(uwga::COLOR_TRANSPARENT);
 
@@ -553,8 +554,8 @@ void ShipController::drawGridOverShape(const PolyShape& aShape, uwga::Canvas& aC
                 rect.setOutlineColor(uwga::COLOR_ORANGE.withAlpha(100));
             }
 
-            _masterData->transformShipToGlobal->transformPoints(1, &squareTopLeft);
-            const auto anchor = squareTopLeft.cast<double>() + _position;
+            _transformShipToGlobal->transformPoints(1, &squareTopLeft);
+            const auto anchor = squareTopLeft.cast<double>() + _getCurrentState().getPosition();
             rect.setAnchor(anchor);
 
             aCanvas.draw(rect);
@@ -569,7 +570,7 @@ void ShipController::drawGridOverProjection(const CellFootprint& aCellFootprint,
         {OVERWORLD_CELL_SIZE - 2.f, OVERWORLD_CELL_SIZE - 2.f}
     };
     rect.setOrigin(-1.f, -1.f);
-    rect.setRotation(-_rotation);
+    rect.setRotation(-_getCurrentState().rotation);
     rect.setOutlineThickness(2.f);
     rect.setFillColor(uwga::COLOR_TRANSPARENT);
 
@@ -590,8 +591,8 @@ void ShipController::drawGridOverProjection(const CellFootprint& aCellFootprint,
                 rect.setOutlineColor(uwga::COLOR_LIME.withAlpha(175));
             }
 
-            _masterData->transformShipToGlobal->transformPoints(1, &squareTopLeft);
-            const auto anchor = squareTopLeft.cast<double>() + _position;
+            _transformShipToGlobal->transformPoints(1, &squareTopLeft);
+            const auto anchor = squareTopLeft.cast<double>() + _getCurrentState().getPosition();
             rect.setAnchor(anchor);
 
             aCanvas.draw(rect);
@@ -618,10 +619,11 @@ void ShipController::msgDowncastToShipController(DowncastToShipController::Paylo
 void ShipController::_didAttach(QAO_Runtime& aRuntime) {
     SyncObjSuper::_didAttach(aRuntime);
 
+    _transformGlobalToShip = ccomp<GraphicsSystemProvider>().getSystem().createTransform();
+    _transformShipToGlobal = _transformGlobalToShip->clone();
+
     if (isMasterObject()) {
-        auto& md                 = *_masterData;
-        md.transformGlobalToShip = ccomp<GraphicsSystemProvider>().getSystem().createTransform();
-        md.transformShipToGlobal = md.transformGlobalToShip->clone();
+        _getCurrentState().initMirror();
     }
 }
 
@@ -629,7 +631,7 @@ void ShipController::_willDetach(QAO_Runtime& aRuntime) {
     // TODO: temporary implementation
     for (int i = 0; i < 2048; ++i) {
         auto* node = _masterData->graphOfAttachables.getNode(i);
-        if (node ==nullptr) {
+        if (node == nullptr) {
             continue;
         }
         node->associatedAttachable._detach();
@@ -642,23 +644,23 @@ void ShipController::_eventUpdate1(spe::IfMaster) {
     auto&       md      = *_masterData;
     const auto& mainAtt = md.graphOfAttachables.getNode(0)->associatedAttachable;
 
-    _position = mainAtt.getPolyShape().getAnchor();
-    _rotation = mainAtt.getPolyShape().getRotation();
+    _getCurrentState().setPosition(mainAtt.getPolyShape().getAnchor());
+    _getCurrentState().rotation = mainAtt.getPolyShape().getRotation();
 
-    md.transformGlobalToShip->setToIdentity();
-    md.transformGlobalToShip->rotate(_rotation);
-    md.transformShipToGlobal->setToInverseOf(*md.transformGlobalToShip);
+    _transformGlobalToShip->setToIdentity();
+    _transformGlobalToShip->rotate(_getCurrentState().rotation);
+    _transformShipToGlobal->setToInverseOf(*_transformGlobalToShip);
 }
 
 void ShipController::_eventDraw1() {
     auto& winMgr = ccomp<MWindow>();
 
     uwga::VertexArray vArr{uwga::PrimitiveType::TRIANGLES, 3};
-    vArr.anchor = _position;
+    vArr.anchor = _getCurrentState().getPosition();
 
     for (std::size_t i = 0; i < vArr.vertices.size(); ++i) {
         const auto relativePos =
-            (_rotation + AngleF::fromDegrees(120.f * i)).asNormalizedVector() * 48.f;
+            (_getCurrentState().rotation + AngleF::fromDegrees(120.f * i)).asNormalizedVector() * 48.f;
 
         auto& vert    = vArr.vertices[i];
         vert.position = relativePos;
@@ -671,7 +673,7 @@ void ShipController::_eventDraw1() {
     {
         uwga::CircleShape circle{winMgr.getGraphicsSystem(), 4.f, 8};
         circle.setOrigin(4.f, 4.f);
-        circle.setAnchor(_position);
+        circle.setAnchor(_getCurrentState().getPosition());
         circle.setFillColor(uwga::COLOR_LIME);
         winMgr.getActiveCanvas().draw(circle);
     }
@@ -682,15 +684,16 @@ void ShipController::_eventDraw1() {
             winMgr.getGraphicsSystem(),
             {OVERWORLD_CELL_SIZE, OVERWORLD_CELL_SIZE}
         };
-        rect.setRotation(-_rotation);
+        rect.setRotation(-_getCurrentState().rotation);
 
         auto flooredMousePosInLocalCoords = hg::math::Vector2f{
             std::floor(_mousePosInLocalCoords.x / OVERWORLD_CELL_SIZE) * OVERWORLD_CELL_SIZE,
             std::floor(_mousePosInLocalCoords.y / OVERWORLD_CELL_SIZE) * OVERWORLD_CELL_SIZE};
 
-        _masterData->transformShipToGlobal->transformPoints(1, &flooredMousePosInLocalCoords);
+        _transformShipToGlobal->transformPoints(1, &flooredMousePosInLocalCoords);
 
-        const auto anchor = flooredMousePosInLocalCoords.cast<double>() + _position;
+        const auto anchor =
+            flooredMousePosInLocalCoords.cast<double>() + _getCurrentState().getPosition();
         rect.setAnchor(anchor);
 
         rect.setOutlineThickness(2.f);
