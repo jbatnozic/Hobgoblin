@@ -9,6 +9,7 @@
 #include <Hobgoblin/RigelNet.hpp>
 
 #include <SPeMPE/GameContext/Context_components.hpp>
+#include <SPeMPE/GameObjectFramework/Sync_id.hpp>
 
 namespace jbatnozic {
 namespace spempe {
@@ -19,6 +20,8 @@ using NetworkingEventListener = hg::RN_EventListener;
 
 constexpr int CLIENT_INDEX_UNKNOWN = -2; //! Client index not yet received from Server.
 constexpr int CLIENT_INDEX_LOCAL   = -1; //! Denotes the same machine/process that's also the host.
+
+class SynchronizedObjectBase;
 
 class NetworkingManager : public ContextComponent {
 public:
@@ -186,6 +189,8 @@ public:
     //!
     //! \brief return the address of the associated `SynchronizedObjectRegistry` instance.
     virtual hg::NeverNull<void*> __spempeimpl_getRegistryAddress() = 0;
+
+    virtual SynchronizedObjectBase* mapSyncIdToObject(SyncId aSyncId) const = 0;
 
 private:
     SPEMPE_CTXCOMP_TAG("jbatnozic::spempe::NetworkingManager");

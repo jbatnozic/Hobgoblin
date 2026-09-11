@@ -41,6 +41,8 @@ void ShipAttachable::_detach() {
 
 #define RADIUS (0.0)
 
+UnibodyShipAttachable::UnibodyShipAttachable() {}
+
 UnibodyShipAttachable::~UnibodyShipAttachable() {
     _assertDetached("UnibodyShipAttachable");
 }

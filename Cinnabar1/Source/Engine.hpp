@@ -42,4 +42,10 @@ constexpr const char* LOG_ID = "Cinnabar1";
 
 #define STATE_BUFFERING_LENGTH 2
 
+// clang-format off 
+#define BEFRIEND_QAO_CREATE             \
+    template <class T, class... taArgs> \
+    friend auto ::jbatnozic::hobgoblin::qao::QAO_Create(QAO_RuntimeRef, taArgs&&...) -> QAO_Handle<T>
+// clang-format on
+
 } // namespace cinnabar

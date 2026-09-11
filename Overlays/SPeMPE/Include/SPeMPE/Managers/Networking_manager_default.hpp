@@ -108,6 +108,8 @@ public:
 
     hg::NeverNull<void*> __spempeimpl_getRegistryAddress() override;
 
+    SynchronizedObjectBase* mapSyncIdToObject(SyncId aSyncId) const override;
+
 protected:
     void _eventPreUpdate() override;
     void _eventBeginUpdate() override;
