@@ -21,16 +21,26 @@
 
 namespace cinnabar {
 
+// clang-format off
 SPEMPE_DEFINE_AUTODIFF_STATE(ShipController_VisibleState,
-                             SPEMPE_MEMBER(double, positionX, 0.0),
-                             SPEMPE_MEMBER(double, positionY, 0.0),
-                             SPEMPE_MEMBER(float, rotation, 0.0)
-                             // Below are ideas for members of a "ship section" object
-                             // SPEMPE_MEMBER(?, spriteId, SPRITEID_NONE),
-                             // SPEMPE_MEMBER(?, parentSyncId, ?),
-                             // SPEMPE_MEMBER(?, parentXOffset, 0),
-                             // SPEMPE_MEMBER(?, parentYOffset, 0),
-){};
+    SPEMPE_MEMBER(double, x, 0.0),
+    SPEMPE_MEMBER(double, y, 0.0),
+    SPEMPE_MEMBER(hg::math::AngleF, rotation, hg::math::AngleF::zero())
+    // Below are ideas for members of a "ship section" object
+    // SPEMPE_MEMBER(?, spriteId, SPRITEID_NONE),
+    // SPEMPE_MEMBER(?, parentSyncId, ?),
+    // SPEMPE_MEMBER(?, parentXOffset, 0),
+    // SPEMPE_MEMBER(?, parentYOffset, 0),
+) {
+    hg::math::Vector2d getPosition() const {
+        return {x, y};
+    }
+
+    void setPosition(hg::math::Vector2d aPosition) {
+        x = aPosition.x, y = aPosition.y;
+    }
+};
+// clang-format on
 
 class AttachableGhost;
 struct ShipController_MasterData;
@@ -152,9 +162,11 @@ private:
     void _syncUpdateImpl(spe::SyncControlDelegate& aSyncCtrl) const override;
     void _syncDestroyImpl(spe::SyncControlDelegate& aSyncCtrl) const override;
 
-    hg::math::Vector2d _position              = {};
+    std::unique_ptr<uwga::Transform> _transformGlobalToShip;
+    std::unique_ptr<uwga::Transform> _transformShipToGlobal;
+
+    // Temporarily here
     hg::math::Vector2f _mousePosInLocalCoords = {};
-    hg::math::AngleF   _rotation              = hg::math::AngleF::zero();
     bool               _drawGrid              = false;
 };
 
@@ -164,9 +176,6 @@ struct ShipController_MasterData {
     GraphOfAttachables graphOfAttachables;
 
     InteriorWorld interiorWorld;
-
-    std::unique_ptr<uwga::Transform> transformGlobalToShip;
-    std::unique_ptr<uwga::Transform> transformShipToGlobal;
 };
 
 // MARK: Register class

@@ -169,7 +169,7 @@ void Asteroid::_eventUpdate2(spe::IfMaster) {
 
     auto& self = _getCurrentState();
     self.setPosition(_polyShape.getAnchor());
-    self.setRotation(_polyShape.getRotation());
+    self.rotation = _polyShape.getRotation();
 }
 
 void Asteroid::_eventUpdate2(spe::IfDummy) {
@@ -179,7 +179,7 @@ void Asteroid::_eventUpdate2(spe::IfDummy) {
 
     const auto& self = _getCurrentState();
     _polyShape.setAnchor(self.getPosition());
-    _polyShape.setRotation(self.getRotation());
+    _polyShape.setRotation(self.rotation);
 }
 
 void Asteroid::_eventDraw1() {

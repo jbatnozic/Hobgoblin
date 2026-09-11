@@ -96,7 +96,7 @@ public:
         // clang-format off
         template <class T,
                   T_ENABLE_IF(OutputStream::supports_appending_of<T&>::value)>
-        NoThrowAdapter& operator<<(T& aRef) {
+        NoThrowAdapter& operator<<(T&& aRef) {
             _ostream.appendNoThrow(aRef);
             return SELF;
         }
