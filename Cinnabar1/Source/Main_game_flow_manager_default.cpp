@@ -28,11 +28,9 @@ void DefaultMainGameFlowManager::_didAttach(QAO_Runtime& aRuntime) {
     auto interactivityMgr = QAO_Create<DefaultInteractivityManager>(aRuntime.nonOwning());
     ctx().attachAndOwnComponent(std::move(interactivityMgr));
 
-    auto core = QAO_Create<ShipStartingBlock>(aRuntime);
-    core->init({150.0, 150.0});
+    auto core = ShipStartingBlock::createMaster(aRuntime, {150.0, 150.0});
 
-    auto ship = QAO_Create<ShipController>(aRuntime, spe::SYNC_ID_NEW);
-    ship->init(*core);
+    auto ship = ShipController::createMaster(aRuntime, *core);
 
     auto asteroid = Asteroid::createMaster(aRuntime, {512.0, 712.0});
 }

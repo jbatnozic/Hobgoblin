@@ -11,11 +11,19 @@ namespace cinnabar {
 
 #define SIZE (16.f * OVERWORLD_CELL_SIZE)
 
+QAO_Handle<ShipStartingBlock> ShipStartingBlock::createMaster(QAO_RuntimeRef     aRuntime,
+                                                             hg::math::Vector2d aPosition) {
+    auto handle = QAO_Create<ShipStartingBlock>(aRuntime);
+    cpBodySetPosition(handle->_unibody, cpv(aPosition.x, aPosition.y));
+    return handle;
+}
+
 ShipStartingBlock::ShipStartingBlock(QAO_InstGuard aInstGuard)
-    : spe::StateObject{aInstGuard,
-                       QAO_ExeCon::GAMEPLAY,
-                       PRIORITY_ENTITIES,
-                       QAO_STATIC_NAME("cinnabar::ShipStartingBlock")}
+    : SyncObjSuper{aInstGuard,
+                   QAO_ExeCon::GAMEPLAY,
+                   PRIORITY_ENTITIES,
+                   QAO_STATIC_NAME("cinnabar::ShipStartingBlock"),
+                   spe::SYNC_ID_NEW}
     // clang-format off
     , UnibodyShipAttachable{
         std::bind(&ShipStartingBlock::_initPolyShape, this),
@@ -51,8 +59,20 @@ ShipStartingBlock::ShipStartingBlock(QAO_InstGuard aInstGuard)
     _iwSliceData->cells[0][5].cellKindId = interior::cell_archetype::SOLID_VOID.cellKindId;
 }
 
-void ShipStartingBlock::init(hg::math::Vector2d aPosition) {
-    cpBodySetPosition(_unibody, cpv(aPosition.x, aPosition.y));
+QAO_Handle<ShipStartingBlock> ShipStartingBlock::createDummy(QAO_RuntimeRef aRuntime,
+                                                            spe::SyncId    aSyncId) {
+    return QAO_Create<ShipStartingBlock>(aRuntime, aSyncId);
+}
+
+ShipStartingBlock::ShipStartingBlock(QAO_InstGuard aInstGuard, spe::SyncId aSyncId)
+    : SyncObjSuper{aInstGuard,
+                   QAO_ExeCon::GAMEPLAY,
+                   PRIORITY_ENTITIES,
+                   QAO_STATIC_NAME("cinnabar::ShipStartingBlock"),
+                   aSyncId}
+    , UnibodyShipAttachable{} //
+{
+    _polyShape = _initPolyShape();
 }
 
 ShipStartingBlock::~ShipStartingBlock() {
@@ -88,18 +108,39 @@ hg::alvin::CollisionDelegate ShipStartingBlock::_initColDelegate() {
 }
 
 void ShipStartingBlock::_didAttach(QAO_Runtime& aRuntime) {
-    spe::StateObject::_didAttach(aRuntime);
+    SyncObjSuper::_didAttach(aRuntime);
 
-    _unibody.addToSpace(ccomp<MOverworld>().getAlvinSpace());
+    if (isMasterObject()) {
+        _getCurrentState().initMirror();
+        _unibody.addToSpace(ccomp<MOverworld>().getAlvinSpace());
+    }
 }
 
-void ShipStartingBlock::_eventUpdate1() {
+void ShipStartingBlock::_eventUpdate1(spe::IfMaster) {
     const auto& winMgr = ccomp<MWindow>();
     _applyPropulsion(winMgr.getInput());
 }
 
-void ShipStartingBlock::_eventUpdate2() {
+void ShipStartingBlock::_eventUpdate2(spe::IfMaster) {
     _syncPolyShapeWithUnibody();
+
+    auto& self = _getCurrentState();
+    self.setPosition(_polyShape.getAnchor());
+    self.rotation = _polyShape.getRotation();
+}
+
+void ShipStartingBlock::_eventUpdate2(spe::IfDummy) {
+    if (isDeactivated()) {
+        return;
+    }
+
+    const auto& self = _getCurrentState();
+    _polyShape.setAnchor(self.getPosition());
+    _polyShape.setRotation(self.rotation);
+}
+
+void ShipStartingBlock::_eventPostUpdate(spe::IfMaster) {
+    _getCurrentState().commit();
 }
 
 void ShipStartingBlock::_eventDraw1() {
@@ -149,6 +190,23 @@ void ShipStartingBlock::_applyPropulsion(const spe::WindowFrameInputView& aInput
 
     cpBodyApplyForceAtLocalPoint(_unibody, rotForce, cpv(16.0, 0.0));
     cpBodyApplyForceAtLocalPoint(_unibody, cpvneg(rotForce), cpvzero);
+}
+
+SPEMPE_GENERATE_DEFAULT_SYNC_HANDLERS(ShipStartingBlock, (CREATE, UPDATE, DESTROY));
+
+void ShipStartingBlock::_syncCreateImpl(spe::SyncControlDelegate& aSyncCtrl) const {
+    SPEMPE_SYNC_CREATE_DEFAULT_IMPL(ShipStartingBlock, aSyncCtrl);
+}
+
+void ShipStartingBlock::_syncUpdateImpl(spe::SyncControlDelegate& aSyncCtrl) const {
+    aSyncCtrl.filter([](hg::PZInteger aClientIndex) -> spe::SyncFilterStatus {
+        return spe::SyncFilterStatus::REGULAR_SYNC; // TODO: implement proper filtering
+    });
+    SPEMPE_SYNC_UPDATE_DEFAULT_IMPL(ShipStartingBlock, aSyncCtrl);
+}
+
+void ShipStartingBlock::_syncDestroyImpl(spe::SyncControlDelegate& aSyncCtrl) const {
+    SPEMPE_SYNC_DESTROY_DEFAULT_IMPL(ShipStartingBlock, aSyncCtrl);
 }
 
 } // namespace cinnabar

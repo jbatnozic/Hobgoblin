@@ -51,7 +51,12 @@ class ShipController
     : public spe::SynchronizedObject<ShipController_VisibleState,
                                      SPEMPE_RSDATA_HEAP(ShipController_MasterData, void)> {
 public:
-    ShipController(QAO_InstGuard aInstGuard, spe::SyncId aSyncId);
+    //! Factory method to create a master object.
+    static QAO_Handle<ShipController> createMaster(QAO_RuntimeRef  aRuntime,
+                                                   ShipAttachable& aInitialShipAttachable);
+
+    //! Factory method to create a dummy object.
+    static QAO_Handle<ShipController> createDummy(QAO_RuntimeRef aRuntime, spe::SyncId aSyncId);
 
     void init(ShipAttachable& aInitialShipAttachable);
 
@@ -108,10 +113,19 @@ public:
     void msgDowncastToShipController(DowncastToShipController::PayloadPtr aPtr, bool /* aConst */);
 
 private:
+    BEFRIEND_QAO_CREATE;
+
+    //! Private constructor for the master object.
+    ShipController(QAO_InstGuard aInstGuard);
+
+    //! Private constructor for the dummy object.
+    ShipController(QAO_InstGuard aInstGuard, spe::SyncId aSyncId);
+
     void _didAttach(QAO_Runtime& aRuntime) override;
     void _willDetach(QAO_Runtime& aRuntime) override;
 
     void _eventUpdate1(spe::IfMaster) override;
+    void _eventPostUpdate(spe::IfMaster) override;
     void _eventDraw1() override;
 
     //! Returns a non-INVALID rotation, if able, and a rotation hint otherwise.

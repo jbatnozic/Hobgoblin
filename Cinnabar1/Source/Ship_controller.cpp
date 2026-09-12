@@ -31,6 +31,29 @@ using hg::math::IsNearZero;
 using WorldEditor = jbatnozic::gridgoblin::World::Editor;
 
 namespace {
+// clang-format off
+RN_DEFINE_RPC(ShipController_SyncCreate,
+    RN_ARGS(
+        spe::SyncId, aSyncId
+    )
+) {
+    auto& node = RN_NODE_IN_HANDLER();
+
+    node.callIfClient([&](hg::RN_ClientInterface& aClient) {
+        auto  rc         = SPEMPE_GET_RPC_RECEIVER_CONTEXT(aClient);
+        auto& qaoRuntime = rc.gameContext.getQAORuntime();
+
+        if (spe::MapSyncIdToObject(rc, aSyncId) == nullptr) {
+            ShipController::createDummy(&qaoRuntime, aSyncId);
+        }
+    });
+
+    node.callIfServer([](hg::RN_ServerInterface&) {
+        throw hg::RN_IllegalMessage("Server received a sync message");
+    });
+}
+// clang-format on
+
 constexpr float ONE_DEG_AS_RAD = hg::math::DegToRad(1.f);
 
 // Defined further below; forward-declared here because `evalAttachment` (above its definition) uses it.
@@ -85,6 +108,24 @@ void TransformPoints(hg::math::Vector2f&    aCentralPoint,
 #define GET_ORIENTATION(_variant_) std::get<RelativeIWSliceOrientation>(_variant_)
 #define GET_VECTOR2I(_variant_)    std::get<hg::math::Vector2i>(_variant_)
 #define GET_VECTOR2F(_variant_)    std::get<hg::math::Vector2f>(_variant_)
+
+QAO_Handle<ShipController> ShipController::createMaster(QAO_RuntimeRef  aRuntime,
+                                                       ShipAttachable& aInitialShipAttachable) {
+    auto handle = QAO_Create<ShipController>(aRuntime);
+    handle->init(aInitialShipAttachable);
+    return handle;
+}
+
+ShipController::ShipController(QAO_InstGuard aInstGuard)
+    : SyncObjSuper{aInstGuard,
+                   QAO_ExeCon::GAMEPLAY,
+                   PRIORITY_ENTITIES, // TODO: set in relation to attachables
+                   QAO_STATIC_NAME("cinnabar::ShipController"),
+                   spe::SYNC_ID_NEW} {}
+
+QAO_Handle<ShipController> ShipController::createDummy(QAO_RuntimeRef aRuntime, spe::SyncId aSyncId) {
+    return QAO_Create<ShipController>(aRuntime, aSyncId);
+}
 
 ShipController::ShipController(QAO_InstGuard aInstGuard, spe::SyncId aSyncId)
     : SyncObjSuper{aInstGuard,
@@ -652,6 +693,10 @@ void ShipController::_eventUpdate1(spe::IfMaster) {
     _transformShipToGlobal->setToInverseOf(*_transformGlobalToShip);
 }
 
+void ShipController::_eventPostUpdate(spe::IfMaster) {
+    _getCurrentState().commit();
+}
+
 void ShipController::_eventDraw1() {
     auto& winMgr = ccomp<MWindow>();
 
@@ -1118,16 +1163,23 @@ void ShipController::_createConstraintsUponAttach(
     }
 }
 
+SPEMPE_GENERATE_DEFAULT_SYNC_HANDLERS(ShipController, (UPDATE, DESTROY));
+
 void ShipController::_syncCreateImpl(spe::SyncControlDelegate& aSyncCtrl) const {
-    // TODO
+    Compose_ShipController_SyncCreate(aSyncCtrl.getLocalNode(),
+                                      aSyncCtrl.getFilteredRecepients(),
+                                      this->getSyncId());
 }
 
 void ShipController::_syncUpdateImpl(spe::SyncControlDelegate& aSyncCtrl) const {
-    // TODO
+    aSyncCtrl.filter([](hg::PZInteger aClientIndex) -> spe::SyncFilterStatus {
+        return spe::SyncFilterStatus::REGULAR_SYNC; // TODO: implement proper filtering
+    });
+    SPEMPE_SYNC_UPDATE_DEFAULT_IMPL(ShipController, aSyncCtrl);
 }
 
 void ShipController::_syncDestroyImpl(spe::SyncControlDelegate& aSyncCtrl) const {
-    // TODO
+    SPEMPE_SYNC_DESTROY_DEFAULT_IMPL(ShipController, aSyncCtrl);
 }
 
 } // namespace cinnabar
