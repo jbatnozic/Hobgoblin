@@ -182,6 +182,10 @@ void Asteroid::_eventUpdate2(spe::IfDummy) {
     _polyShape.setRotation(self.rotation);
 }
 
+void Asteroid::_eventPostUpdate(spe::IfMaster) {
+    _getCurrentState().commit();
+}
+
 void Asteroid::_eventDraw1() {
     auto& canvas = ccomp<MWindow>().getActiveCanvas();
 
