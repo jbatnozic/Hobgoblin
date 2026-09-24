@@ -4,22 +4,27 @@
 project("Cinnabar1")
 
 add_executable(${PROJECT_NAME}
-    "Source/InteriorWorld/Interior_world.cpp"
+    "Source/CBR/GameContext/Game_context_factory.cpp"
+    "Source/CBR/GameContext/Graphics_system_provider.cpp"
 
-    "Source/Asteroid.cpp"
-    "Source/Attachable_ghost.cpp"
+    "Source/CBR/InteriorWorld/Interior_world.cpp"
+
+    "Source/CBR/Managers/Gameplay/Main_game_flow_manager_default.cpp"
+    "Source/CBR/Managers/Gameplay/Overworld_manager_default.cpp"
+    "Source/CBR/Managers/UserInterface/Interactivity_manager_default.cpp"
+    "Source/CBR/Managers/UserInterface/Lobby_frontend_manager_default.cpp"
+
+    "Source/CBR/Overworld/Asteroid.cpp"
+
+    "Source/CBR/Ship/Attachable_ghost.cpp"
+    "Source/CBR/Ship/Graph_of_attachables.cpp"
+    "Source/CBR/Ship/Ship_attachable.cpp"
+    "Source/CBR/Ship/Ship_controller.cpp"
+    "Source/CBR/Ship/Ship_starting_block.cpp"
+
+    "Source/CBR/Utility/Poly_shape.cpp"
+
     "Source/Main.cpp"
-    "Source/Overworld_manager_default.cpp"
-    "Source/Game_context_factory.cpp"
-    "Source/Graph_of_attachables.cpp"
-    "Source/Graphics_system_provider.cpp"
-    "Source/Lobby_frontend_manager_default.cpp"
-    "Source/Main_game_flow_manager_default.cpp"
-    "Source/Poly_shape.cpp"
-    "Source/Ship_attachable.cpp"
-    "Source/Ship_controller.cpp"
-    "Source/Ship_starting_block.cpp"
-    "Source/Interactivity_manager_default.cpp"
 )
 
 target_link_libraries(${PROJECT_NAME}

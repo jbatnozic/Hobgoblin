@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <Stream_io_overloads.hpp>
+
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/Logging.hpp>
@@ -10,8 +12,6 @@
 #include <Hobgoblin/RigelNet.hpp>
 #include <Hobgoblin/UWGA/Render_window.hpp>
 #include <SPeMPE/SPeMPE.hpp>
-
-#include "Stream_io_overloads.hpp"
 
 namespace cinnabar {
 
