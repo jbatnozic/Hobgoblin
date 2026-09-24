@@ -1,11 +1,10 @@
 // Copyright 2026 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#include <Engine.hpp>
+#include "Engine.hpp"
+#include <CBR/GameContext/Game_context_factory.hpp>
 
 #include <Hobgoblin/HGExcept.hpp>
-
-#include <Game_context_factory.hpp>
 
 namespace cinnabar {
 
