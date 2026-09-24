@@ -3,6 +3,8 @@
 
 #include <Asteroid.hpp>
 
+#include <Feature_toggles.hpp>
+
 #include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/UWGA/Vertex_array.hpp>
 #include <Hobgoblin/Utility/Randomization.hpp>
