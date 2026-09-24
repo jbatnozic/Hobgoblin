@@ -101,6 +101,9 @@ class HobgoblinConan(ConanFile):
         self.requires("gtest/1.14.0")
         self.requires("rapidjson/cci.20230929")
         self.requires("ztcpp/3.0.4@jbatnozic/stable")
+
+        # Connabar-only
+        self.requires("argparse/3.2")
         
         # Overrides (transitive dependencies)
         self.requires("freetype/2.11.1", override=True)
