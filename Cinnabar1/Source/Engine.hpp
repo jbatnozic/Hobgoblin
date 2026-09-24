@@ -28,23 +28,23 @@ using MWindow       = spe::WindowManager;
 
 constexpr const char* LOG_ID = "Cinnabar1";
 
-// #define PRIORITY_VARMAPMGR     16
-#define PRIORITY_NETWORKMGR       15
-// #define PRIORITY_LOBBYBACKMGR  14
-// #define PRIORITY_LOBBYFRONTMGR 13
-// #define PRIORITY_AUTHMGR       12
+#define PRIORITY_VARMAPMGR     16
+#define PRIORITY_NETWORKMGR    15
+#define PRIORITY_LOBBYBACKMGR  14
+#define PRIORITY_LOBBYFRONTMGR 13
+#define PRIORITY_AUTHMGR       12
 // #define PRIORITY_GAMEPLAYMGR   10
-#define PRIORITY_ENTITIES         10
-#define PRIORITY_ENVIRONMENTMGR    5
-// #define PRIORITY_INPUTMGR       7
+#define PRIORITY_ENTITIES       10
+#define PRIORITY_INPUTMGR       7
+#define PRIORITY_ENVIRONMENTMGR 5
 // #define PRIORITY_PLAYERAVATAR   5
-#define PRIORITY_INTERACTIVITYMGR  1
-#define PRIORITY_WINDOWMGR         0
+#define PRIORITY_INTERACTIVITYMGR 1
+#define PRIORITY_WINDOWMGR        0
 #define PRIORITY_MAINGAMEFLOWMGR  -1
 
 #define STATE_BUFFERING_LENGTH 2
 
-// clang-format off 
+// clang-format off
 #define BEFRIEND_QAO_CREATE             \
     template <class T, class... taArgs> \
     friend auto ::jbatnozic::hobgoblin::qao::QAO_Create(QAO_RuntimeRef, taArgs&&...) -> QAO_Handle<T>

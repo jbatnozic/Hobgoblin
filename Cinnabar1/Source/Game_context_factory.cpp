@@ -4,7 +4,14 @@
 #include <Game_context_factory.hpp>
 
 #include <Graphics_system_provider.hpp>
+#include <Lobby_frontend_manager_default.hpp>
 #include <Main_game_flow_manager_default.hpp>
+#include <Player_controls.hpp>
+
+#include <Hobgoblin/RmlUi.hpp>
+#include <Hobgoblin/Utility/Randomization.hpp>
+
+#include <string>
 
 namespace cinnabar {
 
@@ -37,7 +44,29 @@ spe::WindowManager::TimingConfig TIMING_CONFIG = {
 };
 
 constexpr int DEFAULT_STATE_BUFFERING_LENGTH = 3;
+
+//! The size of the lobby (number of player slots) when hosting.
+//! For now there's just a single slot for the local host.
+constexpr hg::PZInteger DEFAULT_LOBBY_SIZE = 1;
 // clang-format on
+
+//! Loads the GUI fonts needed by the RmlUi documents (such as the lobby).
+//! Must be called after the window manager has been switched to normal mode.
+void LoadGuiFonts() {
+    struct FontFace {
+        Rml::String filename;
+        bool        fallbackFace;
+    };
+    const FontFace fontFaces[] = {
+        {   "LatoLatin-Regular.ttf", false},
+        {    "LatoLatin-Italic.ttf", false},
+        {      "LatoLatin-Bold.ttf", false},
+        {"LatoLatin-BoldItalic.ttf", false},
+    };
+    for (const auto& face : fontFaces) {
+        Rml::LoadFontFace("assets/fonts/" + face.filename, face.fallbackFace);
+    }
+}
 
 std::unique_ptr<spe::GameContext> CreateBasicGameContext() {
     auto ctx = std::make_unique<spe::GameContext>(RUNTIME_CONFIG);
@@ -61,6 +90,8 @@ std::unique_ptr<spe::GameContext> CreateBasicGameContext() {
     return ctx;
 }
 
+// MARK: Manager factories
+
 void AttachWindowManager(spe::GameContext& aContext, GameContextMode aMode) {
     auto graphicsSystemPtr = aContext.getComponent<GraphicsSystemProvider>().getSystemPtr();
 
@@ -81,6 +112,11 @@ void AttachWindowManager(spe::GameContext& aContext, GameContextMode aMode) {
         }
         winMgr->setToNormalMode(graphicsSystemPtr, windowConfig, MRT_CONFIG, TIMING_CONFIG);
         winMgr->setStopIfCloseClicked(true);
+
+        // Set up RmlUi GUI (fonts + debugger) now that the window is in normal mode.
+        LoadGuiFonts();
+        Rml::Debugger::Initialise(&(winMgr->getGUIContext()));
+        Rml::Debugger::SetVisible(true);
         break;
 
     default:
@@ -134,24 +170,158 @@ void AttachNetworkingManager(spe::GameContext& aContext, GameContextMode aMode) 
     aContext.attachAndOwnComponent(std::move(netMgr));
 }
 
-// MARK: DEV
+void AttachInputSyncManager(spe::GameContext& aContext, GameContextMode aMode) {
+    auto insMgr = QAO_Create<spe::DefaultInputSyncManager>(aContext.getQAORuntime().nonOwning(),
+                                                           PRIORITY_INPUTMGR);
 
-std::unique_ptr<spe::GameContext> CreateDevGameContext() {
+    switch (aMode) {
+    case GameContextMode::SERVER:
+    case GameContextMode::DEV:
+        // Host mode. With 0 remote clients the manager just echoes the local player's input.
+        insMgr->setToHostMode(0, DEFAULT_STATE_BUFFERING_LENGTH);
+        break;
+
+    case GameContextMode::CLIENT:
+        insMgr->setToClientMode();
+        break;
+
+    default:
+        HG_UNREACHABLE("Invalid value for enum GameContextMode ({}).", (int)aMode);
+        break;
+    }
+
+    // Define the 4 directional controls (identically on the host and on clients).
+    SetUpPlayerControlsDefinitions(*insMgr);
+
+    aContext.attachAndOwnComponent(std::move(insMgr));
+}
+
+void AttachSyncedVarmapManager(spe::GameContext& aContext, GameContextMode aMode) {
+    auto svmMgr = QAO_Create<spe::DefaultSyncedVarmapManager>(aContext.getQAORuntime().nonOwning(),
+                                                              PRIORITY_VARMAPMGR);
+
+    switch (aMode) {
+    case GameContextMode::SERVER:
+    case GameContextMode::DEV:
+        svmMgr->setToMode(spe::SyncedVarmapManager::Mode::Host);
+        break;
+
+    case GameContextMode::CLIENT:
+        svmMgr->setToMode(spe::SyncedVarmapManager::Mode::Client);
+        break;
+
+    default:
+        HG_UNREACHABLE("Invalid value for enum GameContextMode ({}).", (int)aMode);
+        break;
+    }
+
+    aContext.attachAndOwnComponent(std::move(svmMgr));
+}
+
+void AttachLobbyBackendManager(spe::GameContext& aContext, GameContextMode aMode) {
+    // NOTE: Requires the Synced varmap manager and Networking manager to be attached already.
+    auto lobbyMgr = QAO_Create<spe::DefaultLobbyBackendManager>(aContext.getQAORuntime().nonOwning(),
+                                                                PRIORITY_LOBBYBACKMGR);
+
+    switch (aMode) {
+    case GameContextMode::SERVER:
+    case GameContextMode::DEV:
+        lobbyMgr->setToHostMode(DEFAULT_LOBBY_SIZE);
+        break;
+
+    case GameContextMode::CLIENT:
+        lobbyMgr->setToClientMode(DEFAULT_LOBBY_SIZE);
+        break;
+
+    default:
+        HG_UNREACHABLE("Invalid value for enum GameContextMode ({}).", (int)aMode);
+        break;
+    }
+
+    aContext.attachAndOwnComponent(std::move(lobbyMgr));
+}
+
+void AttachLobbyFrontendManager(spe::GameContext& aContext, GameContextMode aMode) {
+    // NOTE: Requires the Lobby backend manager and (in windowed modes) the Window manager.
+    auto lobbyFrontendMgr = QAO_Create<DefaultLobbyFrontendManager>(aContext.getQAORuntime().nonOwning(),
+                                                                    PRIORITY_LOBBYFRONTMGR);
+
+    switch (aMode) {
+    case GameContextMode::SERVER:
+        lobbyFrontendMgr->setToHeadlessHostMode();
+        break;
+
+    case GameContextMode::CLIENT:
+    case GameContextMode::DEV:
+        {
+            // DEV mode is a windowed host, so it uses the (windowed) client-mode frontend
+            // to actually display the lobby GUI.
+            const auto name = "player_" + std::to_string(hg::util::GetRandomNumber<int>(10'000, 99'999));
+            const auto uniqueId = "id_" + std::to_string(hg::util::GetRandomNumber<int>(10'000, 99'999));
+            lobbyFrontendMgr->setToClientMode(name, uniqueId);
+        }
+        break;
+
+    default:
+        HG_UNREACHABLE("Invalid value for enum GameContextMode ({}).", (int)aMode);
+        break;
+    }
+
+    aContext.attachAndOwnComponent(std::move(lobbyFrontendMgr));
+}
+
+void AttachAuthorizationManager(spe::GameContext& aContext, GameContextMode aMode) {
+    auto authMgr = QAO_Create<spe::DefaultAuthorizationManager>(aContext.getQAORuntime().nonOwning(),
+                                                                PRIORITY_AUTHMGR);
+
+    switch (aMode) {
+    case GameContextMode::SERVER:
+    case GameContextMode::DEV:
+        authMgr->setToHostMode();
+        break;
+
+    case GameContextMode::CLIENT:
+        authMgr->setToClientMode();
+        break;
+
+    default:
+        HG_UNREACHABLE("Invalid value for enum GameContextMode ({}).", (int)aMode);
+        break;
+    }
+
+    aContext.attachAndOwnComponent(std::move(authMgr));
+}
+
+// MARK: SERVER context
+
+std::unique_ptr<spe::GameContext> CreateServerGameContext() {
+    constexpr auto GCMODE = GameContextMode::SERVER;
+
     auto ctx = CreateBasicGameContext();
-    ctx->setToMode(spe::GameContext::Mode::GameMaster);
-
-    auto graphicsSystemPtr = ctx->getComponent<GraphicsSystemProvider>().getSystemPtr();
+    ctx->setToMode(spe::GameContext::Mode::Server);
 
     // Set EXECON level
     {
         constexpr auto CALLER_ID = "ctx_create";
         ctx->getGameState().setUpdateExeconLevel(QAO_ExeCon::ESSENTIAL, CALLER_ID);
-        ctx->getGameState().setDrawExeconLevel(QAO_ExeCon::ESSENTIAL, CALLER_ID);
+        // Headless server doesn't draw anything
+        ctx->getGameState().setDrawExeconLevel(QAO_ExeCon::META_EXECUTE_NONE, CALLER_ID);
+        // Need WindowManager (ESSENTIAL) still needs to run its Display event even in Headless mode
         ctx->getGameState().setDisplayExeconLevel(QAO_ExeCon::ESSENTIAL, CALLER_ID);
     }
 
-    AttachWindowManager(*ctx, GameContextMode::DEV);
-    AttachNetworkingManager(*ctx, GameContextMode::DEV);
+    AttachWindowManager(*ctx, GCMODE);
+    AttachNetworkingManager(*ctx, GCMODE);
+
+    // NOTE: attachment order matters here, because some managers look up others during setup:
+    //   - the Lobby backend manager needs the Synced varmap and Networking managers,
+    //   - the Lobby frontend manager needs the Lobby backend and Window managers,
+    //   - the Authorization manager needs the Lobby backend, Synced varmap and Networking managers.
+    AttachInputSyncManager(*ctx, GCMODE);
+    AttachSyncedVarmapManager(*ctx, GCMODE);
+    AttachLobbyBackendManager(*ctx, GCMODE);
+    AttachLobbyFrontendManager(*ctx, GCMODE);
+    AttachAuthorizationManager(*ctx, GCMODE);
 
     // Add DefaultMainGameFlowManager
     {
@@ -161,16 +331,93 @@ std::unique_ptr<spe::GameContext> CreateDevGameContext() {
 
     return ctx;
 }
+
+// MARK: CLIENT context
+
+std::unique_ptr<spe::GameContext> CreateClientGameContext() {
+    constexpr auto GCMODE = GameContextMode::CLIENT;
+
+    auto ctx = CreateBasicGameContext();
+    ctx->setToMode(spe::GameContext::Mode::Client);
+
+    // Set EXECON level
+    {
+        constexpr auto CALLER_ID = "ctx_create";
+        ctx->getGameState().setUpdateExeconLevel(QAO_ExeCon::ESSENTIAL, CALLER_ID);
+        ctx->getGameState().setDrawExeconLevel(QAO_ExeCon::ESSENTIAL, CALLER_ID);
+        ctx->getGameState().setDisplayExeconLevel(QAO_ExeCon::ESSENTIAL, CALLER_ID);
+    }
+
+    AttachWindowManager(*ctx, GCMODE);
+    AttachNetworkingManager(*ctx, GCMODE);
+
+    // NOTE: attachment order matters here, because some managers look up others during setup:
+    //   - the Lobby backend manager needs the Synced varmap and Networking managers,
+    //   - the Lobby frontend manager needs the Lobby backend and Window managers,
+    //   - the Authorization manager needs the Lobby backend, Synced varmap and Networking managers.
+    AttachInputSyncManager(*ctx, GCMODE);
+    AttachSyncedVarmapManager(*ctx, GCMODE);
+    AttachLobbyBackendManager(*ctx, GCMODE);
+    AttachLobbyFrontendManager(*ctx, GCMODE);
+    AttachAuthorizationManager(*ctx, GCMODE);
+
+    // Add DefaultMainGameFlowManager
+    {
+        auto mgfMgr = QAO_Create<DefaultMainGameFlowManager>(ctx->getQAORuntime().nonOwning());
+        ctx->attachAndOwnComponent(std::move(mgfMgr));
+    }
+
+    return ctx;
+}
+
+// MARK: DEV context
+
+std::unique_ptr<spe::GameContext> CreateDevGameContext() {
+    constexpr auto GCMODE = GameContextMode::DEV;
+
+    auto ctx = CreateBasicGameContext();
+    ctx->setToMode(spe::GameContext::Mode::GameMaster);
+
+    // Set EXECON level
+    {
+        constexpr auto CALLER_ID = "ctx_create";
+        ctx->getGameState().setUpdateExeconLevel(QAO_ExeCon::ESSENTIAL, CALLER_ID);
+        ctx->getGameState().setDrawExeconLevel(QAO_ExeCon::ESSENTIAL, CALLER_ID);
+        ctx->getGameState().setDisplayExeconLevel(QAO_ExeCon::ESSENTIAL, CALLER_ID);
+    }
+
+    AttachWindowManager(*ctx, GCMODE);
+    AttachNetworkingManager(*ctx, GCMODE);
+
+    // NOTE: attachment order matters here, because some managers look up others during setup:
+    //   - the Lobby backend manager needs the Synced varmap and Networking managers,
+    //   - the Lobby frontend manager needs the Lobby backend and Window managers,
+    //   - the Authorization manager needs the Lobby backend, Synced varmap and Networking managers.
+    AttachInputSyncManager(*ctx, GCMODE);
+    AttachSyncedVarmapManager(*ctx, GCMODE);
+    AttachLobbyBackendManager(*ctx, GCMODE);
+    AttachLobbyFrontendManager(*ctx, GCMODE);
+    AttachAuthorizationManager(*ctx, GCMODE);
+
+    // Add DefaultMainGameFlowManager
+    {
+        auto mgfMgr = QAO_Create<DefaultMainGameFlowManager>(ctx->getQAORuntime().nonOwning());
+        ctx->attachAndOwnComponent(std::move(mgfMgr));
+    }
+
+    return ctx;
+}
+
 } // namespace
 
 std::unique_ptr<spe::GameContext> CreateGameContext(GameContextMode aMode) {
     switch (aMode) {
     case GameContextMode::SERVER:
-        HG_NOT_IMPLEMENTED(); // TODO
+        return CreateServerGameContext();
         break;
 
     case GameContextMode::CLIENT:
-        HG_NOT_IMPLEMENTED(); // TODO
+        return CreateClientGameContext();
         break;
 
     case GameContextMode::DEV:
