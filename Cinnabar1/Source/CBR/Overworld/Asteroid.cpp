@@ -11,6 +11,8 @@
 #include <Hobgoblin/UWGA/Vertex_array.hpp>
 #include <Hobgoblin/Utility/Randomization.hpp>
 
+#include <cstdio>
+
 namespace cinnabar {
 
 namespace {

@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <Stream_io_overloads.hpp>
+#include "Stream_io_overloads.hpp"
 
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/HGExcept.hpp>
