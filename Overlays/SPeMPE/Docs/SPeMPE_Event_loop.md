@@ -2,33 +2,33 @@
 
 ## Recommended priorities
 
-- SyncedVarmapManager* (highest)
-- NetworkingManager*
-- LobbyBackendManager*
-- LobbyFrontendManager* (user-provided)
-- AuthorizationManager*
+- SyncedVarmapService* (highest)
+- NetworkingService*
+- LobbyBackendService*
+- LobbyFrontendService* (user-provided)
+- AuthorizationService*
 
-- GameplayManager (user-provided)
-- InputSyncManager
+- GameplayService (user-provided)
+- InputSyncService
 - Various gameplay objects (user-provided)
 
-- WindowManager (lowest)
+- WindowService (lowest)
 
 ## Breakdown by event
 
 ### PRE_UPDATE
-- NetworkingManager prepares itself to record telemetry
+- NetworkingService prepares itself to record telemetry
 - USER WINDOW
 
 ### BEGIN_UPDATE
-- NetworkingManager receives messages, calls handlers
-- LobbyBackendManager ... ???
-- LobbyFrontendManager ... ???
-- AuthorizationManager ... ???
+- NetworkingService receives messages, calls handlers
+- LobbyBackendService ... ???
+- LobbyFrontendService ... ???
+- AuthorizationService ... ???
 - USER WINDOW
 
 ### UPDATE_1
-- LobbyFrontendManager ... ???
+- LobbyFrontendService ... ???
 - << game objects delete selves >>
 - USER WINDOW
 
@@ -36,24 +36,24 @@
 - USER WINDOW
 
 ### END_UPDATE
-- SyncedVarmapManager composes messages
-- NetworkingManager sends messages
+- SyncedVarmapService composes messages
+- NetworkingService sends messages
 - USER WINDOW
 
 ### POST_UPDATE
-- LobbyBackendManager ... ???
+- LobbyBackendService ... ???
 - USER WINDOW
 
 ### PRE_DRAW
 - USER WINDOW
-- WindowManager clears MRT (main render texture)
+- WindowService clears MRT (main render texture)
 
 ### DRAW_1
 - USER WINDOW
 
 ### DRAW_2
 - USER WINDOW
-- WindowManager clears the window, draws MRT in it
+- WindowService clears the window, draws MRT in it
 
 ### DRAW_GUI
 - USER WINDOW
@@ -63,4 +63,4 @@
 
 ### DISPLAY
 - USER WINDOW
-- WindowManager displays window
+- WindowService displays window

@@ -292,18 +292,18 @@ public:
 //!
 //! The template parameters `taMasterSpecificInlineData` and `taMasterSpecificHeapData` are used
 //! to specify the type of an object which will be created only when the instance is created and
-//! attached to a networking manager as a Master object. Note that only one of these can be
+//! attached to a networking service as a Master object. Note that only one of these can be
 //! non-`void`. (but both can be left as `void` if you don't need this functionality).
 //! If the master data is not `void`, it can be referred to by the protected pointer `_masterData`.
 //!
 //! The template parameters `taDummySpecificInlineData` and `taDummySpecificHeapData` are used
 //! to specify the type of an object which will be created only when the instance is created and
-//! attached to a networking manager as a Master object. Note that only one of these can be
+//! attached to a networking service as a Master object. Note that only one of these can be
 //! non-`void`. (but both can be left as `void` if you don't need this functionality).
 //! If the dummy data is not `void`, it can be referred to by the protected pointer `_dummyData`.
 //!
 //! Role-specific data (master-specific and role-specific) data is cleaned up when the instance is
-//! detached from the networking manager - the relevant pointers will be null after that.
+//! detached from the networking service - the relevant pointers will be null after that.
 //!
 //! Role-specific data comes in 2 flavours: 'inline' and 'heap'. Their lifetimes are the same, but
 //! the difference is that 'inline' data is stored as a regular member of the instance (if both master

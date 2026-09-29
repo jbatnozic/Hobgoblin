@@ -9,18 +9,18 @@
 
 namespace singleplayer {
 
-class MainGameplayManager : public spe::ContextComponent {
+class MainGameplayService : public spe::ContextComponent {
 private:
-    SPEMPE_CTXCOMP_TAG("SPMainGameplayManager");
+    SPEMPE_CTXCOMP_TAG("SPMainGameplayService");
 };
 
 } // namespace singleplayer
 
 namespace multiplayer {
 
-class MainGameplayManager : public spe::ContextComponent {
+class MainGameplayService : public spe::ContextComponent {
 private:
-    SPEMPE_CTXCOMP_TAG("MPMainGameplayManager");
+    SPEMPE_CTXCOMP_TAG("MPMainGameplayService");
 };
 
 } // namespace multiplayer

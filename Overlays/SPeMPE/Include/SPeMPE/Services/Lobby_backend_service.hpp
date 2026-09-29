@@ -3,8 +3,8 @@
 
 // clang-format off
 
-#ifndef SPEMPE_MANAGERS_LOBBY_BACKEND_MANAGER_HPP
-#define SPEMPE_MANAGERS_LOBBY_BACKEND_MANAGER_HPP
+#ifndef SPEMPE_SERVICES_LOBBY_BACKEND_SERVICE_HPP
+#define SPEMPE_SERVICES_LOBBY_BACKEND_SERVICE_HPP
 
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/Utility/Visitor.hpp>
@@ -61,9 +61,9 @@ struct LobbyBackendEvent; // Forward-declare
 //! Represents a non-existing or undefined player.
 constexpr int PLAYER_INDEX_UNKNOWN = -1;
 
-class LobbyBackendManager : public ContextComponent {
+class LobbyBackendService : public ContextComponent {
 public:
-    ~LobbyBackendManager() override = default;
+    ~LobbyBackendService() override = default;
 
     enum class Mode {
         Uninitialized,
@@ -83,14 +83,14 @@ public:
     // (note: use of these methods while in client mode will result in an exception being thrown)
 
     //! Use while in Host mode to map an index of a client connected to a SPeMPE
-    //! Networking manager to their player index.
+    //! Networking service to their player index.
     //! As this refers to players in LockedIn slots, some players may not have been
     //! assigned a player index yet and in those cases this function will return
     //! PLAYER_INDEX_UNKNOWN.
     virtual int clientIdxToPlayerIdx(int aClientIdx) const = 0;
 
     //! Use while in Host mode to map a player index to their client index
-    //! (client = client connected to a SPeMPE Networking manager).
+    //! (client = client connected to a SPeMPE Networking service).
     //! As this refers to players in LockedIn slots, it will return PLAYER_INDEX_UNKNOWN
     //! if the selected slot is empty.
     virtual int playerIdxToClientIdx(hobgoblin::PZInteger aPlayerIdx) const = 0;
@@ -167,7 +167,7 @@ public:
     virtual std::string getEntireStateString() const = 0;
 
 private:
-    SPEMPE_CTXCOMP_TAG("jbatnozic::spempe::LobbyBackendManager");
+    SPEMPE_CTXCOMP_TAG("jbatnozic::spempe::LobbyBackendService");
 };
 
 ///////////////////////////////////////////////////////////////////////////
@@ -259,6 +259,6 @@ bool operator!=(const PlayerInfo& aLhs, const PlayerInfo& aRhs) {
 } // namespace spempe
 } // namespace jbatnozic
 
-#endif // !SPEMPE_MANAGERS_LOBBY_BACKEND_MANAGER_HPP
+#endif // !SPEMPE_SERVICES_LOBBY_BACKEND_SERVICE_HPP
 
 // clang-format on

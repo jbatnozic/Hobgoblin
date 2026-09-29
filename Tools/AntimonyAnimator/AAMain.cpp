@@ -66,8 +66,8 @@ public:
         _origin = aWorldPosition;
     }
 
-    void draw(spe::WindowManager& aWinMgr) {
-        auto& canvas = aWinMgr.getActiveCanvas();
+    void draw(spe::WindowService& aWinSvc) {
+        auto& canvas = aWinSvc.getActiveCanvas();
 
         // Draw master
         const auto blueprint = _masterLoader.getMasterBlueprint(_stage);
@@ -77,9 +77,9 @@ public:
         // Draw origin
     }
 
-    void drawGui(spe::WindowManager& aWinMgr) {
-        auto& grSystem = aWinMgr.getGraphicsSystem();
-        auto& canvas   = aWinMgr.getActiveCanvas();
+    void drawGui(spe::WindowService& aWinSvc) {
+        auto& grSystem = aWinSvc.getGraphicsSystem();
+        auto& canvas   = aWinSvc.getActiveCanvas();
 
         const auto string = hg::UFormat(HG_UNIFMT("Stage: {} / {} \n"
                                                   "Origin: {}, {}"),
@@ -96,7 +96,7 @@ public:
         canvas.draw(*text);
 
         if (_origin.has_value()) {
-            _drawCrosshairs(aWinMgr, *_origin, uwga::COLOR_RED);
+            _drawCrosshairs(aWinSvc, *_origin, uwga::COLOR_RED);
         }
     }
 
@@ -127,20 +127,20 @@ private:
     int _stage    = 0;
     int _substage = 0;
 
-    void _drawCrosshairs(spe::WindowManager& aWinMgr, hg::math::Vector2d aCenter, uwga::Color aColor) {
-        auto&      canvas    = aWinMgr.getActiveCanvas();
-        const auto screenPos = aWinMgr.mapCoordsToPixel({aCenter.x, aCenter.y});
+    void _drawCrosshairs(spe::WindowService& aWinSvc, hg::math::Vector2d aCenter, uwga::Color aColor) {
+        auto&      canvas    = aWinSvc.getActiveCanvas();
+        const auto screenPos = aWinSvc.mapCoordsToPixel({aCenter.x, aCenter.y});
 
         uwga::RectangleShape rect{canvas.getSystem()};
         rect.setFillColor(aColor);
 
         // Horizontal
-        rect.setSize({(float)aWinMgr.getWindowSize().x, 1.f});
+        rect.setSize({(float)aWinSvc.getWindowSize().x, 1.f});
         rect.setPosition({0.f, (float)screenPos.y});
         canvas.draw(rect);
 
         // Vertical
-        rect.setSize({1.f, (float)aWinMgr.getWindowSize().y});
+        rect.setSize({1.f, (float)aWinSvc.getWindowSize().y});
         rect.setPosition({(float)screenPos.x, 1.f});
         canvas.draw(rect);
     }
@@ -161,8 +161,8 @@ public:
     void _eventUpdate1() override {
         HG_HARD_ASSERT(_editor != nullptr);
 
-        auto&       winMgr = ccomp<spe::WindowManager>();
-        const auto& input  = winMgr.getInput();
+        auto&       winSvc = ccomp<spe::WindowService>();
+        const auto& input  = winSvc.getInput();
 
         _editorZoom -= input.getVerticalMouseWheelScroll() * 0.1f;
         if (_editorZoom < 0.1f) {
@@ -173,9 +173,9 @@ public:
             _editor->onLeftClick(input.getViewRelativeMousePos());
         }
 
-        auto view = winMgr.getMainRenderTexture().getView().clone();
+        auto view = winSvc.getMainRenderTexture().getView().clone();
         view->setSize({1024.f, 1024.f});
-        // winMgr.getView().zoom(_editorZoom);
+        // winSvc.getView().zoom(_editorZoom);
 
         const auto xOff =
             ((float)input.checkPressed(hg::in::PK_D) - (float)input.checkPressed(hg::in::PK_A)) * 8.f;
@@ -187,15 +187,15 @@ public:
     void _eventDraw1() override {
         HG_HARD_ASSERT(_editor != nullptr);
 
-        auto& winMgr = ccomp<spe::WindowManager>();
-        _editor->draw(winMgr);
+        auto& winSvc = ccomp<spe::WindowService>();
+        _editor->draw(winSvc);
     }
 
     void _eventDrawGUI() override {
         HG_HARD_ASSERT(_editor != nullptr);
 
-        auto& winMgr = ccomp<spe::WindowManager>();
-        _editor->drawGui(winMgr);
+        auto& winSvc = ccomp<spe::WindowService>();
+        _editor->drawGui(winSvc);
     }
 
 private:
@@ -221,20 +221,20 @@ std::unique_ptr<spe::GameContext> CreateContex() {
     spe::GameContext::RuntimeConfig rtConfig{spe::TickRate{TICK_RATE}};
     auto                            ctx = std::make_unique<spe::GameContext>(rtConfig);
 
-    // Add a WindowManager
-    auto winMgr = hg::QAO_Create<spe::DefaultWindowManager>(ctx->getQAORuntime().nonOwning(),
+    // Add a WindowService
+    auto winSvc = hg::QAO_Create<spe::DefaultWindowService>(ctx->getQAORuntime().nonOwning(),
                                                             PRIORITY_WINDOW_MANAGER);
     // clang-format off
-    spe::WindowManager::WindowConfig windowConfig{
+    spe::WindowService::WindowConfig windowConfig{
         .size  = {1200, 800},
         .title = "Antimony Animator",
         .style = hg::uwga::WindowStyle::DEFAULT
     };
-    spe::WindowManager::MainRenderTextureConfig mrtConfig{
+    spe::WindowService::MainRenderTextureConfig mrtConfig{
         .size   = {800, 600},
         .smooth = true
     };
-    spe::WindowManager::TimingConfig timingConfig{
+    spe::WindowService::TimingConfig timingConfig{
     #ifdef _MSC_VER
         spe::FrameRate{FRAME_RATE},
         spe::PREVENT_BUSY_WAIT_ON,
@@ -246,11 +246,11 @@ std::unique_ptr<spe::GameContext> CreateContex() {
     #endif
     };
     // clang-format on
-    winMgr->setToNormalMode(uwgaSystem, windowConfig, mrtConfig, timingConfig);
-    winMgr->setMainRenderTextureDrawPosition(spe::WindowManager::DrawPosition::FIT);
-    winMgr->setStopIfCloseClicked(true);
+    winSvc->setToNormalMode(uwgaSystem, windowConfig, mrtConfig, timingConfig);
+    winSvc->setMainRenderTextureDrawPosition(spe::WindowService::DrawPosition::FIT);
+    winSvc->setStopIfCloseClicked(true);
 
-    ctx->attachAndOwnComponent(std::move(winMgr));
+    ctx->attachAndOwnComponent(std::move(winSvc));
 
     return ctx;
 }
@@ -273,7 +273,7 @@ int main(int argc, char* argv[]) try {
 
     auto context = CreateContex();
 
-    MasterLoader loader{context->getComponent<spe::WindowManager>().getGraphicsSystem(),
+    MasterLoader loader{context->getComponent<spe::WindowService>().getGraphicsSystem(),
                         spriteDir,
                         spriteBaseName,
                         masterCount};

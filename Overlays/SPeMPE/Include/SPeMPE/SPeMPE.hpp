@@ -21,20 +21,20 @@
 #include <SPeMPE/GameObjectFramework/Sync_id.hpp>
 #include <SPeMPE/GameObjectFramework/Synchronized_object_registry.hpp>
 
-// Managers
+// Services
 
-#include <SPeMPE/Managers/Authorization_manager.hpp>
-#include <SPeMPE/Managers/Authorization_manager_default.hpp>
-#include <SPeMPE/Managers/Input_sync_manager.hpp>
-#include <SPeMPE/Managers/Input_sync_manager_default.hpp>
-#include <SPeMPE/Managers/Lobby_backend_manager.hpp>
-#include <SPeMPE/Managers/Lobby_backend_manager_default.hpp>
-#include <SPeMPE/Managers/Networking_manager.hpp>
-#include <SPeMPE/Managers/Networking_manager_default.hpp>
-#include <SPeMPE/Managers/Synced_varmap_manager.hpp>
-#include <SPeMPE/Managers/Synced_varmap_manager_default.hpp>
-#include <SPeMPE/Managers/Window_manager.hpp>
-#include <SPeMPE/Managers/Window_manager_default.hpp>
+#include <SPeMPE/Services/Authorization_service.hpp>
+#include <SPeMPE/Services/Authorization_service_default.hpp>
+#include <SPeMPE/Services/Input_sync_service.hpp>
+#include <SPeMPE/Services/Input_sync_service_default.hpp>
+#include <SPeMPE/Services/Lobby_backend_service.hpp>
+#include <SPeMPE/Services/Lobby_backend_service_default.hpp>
+#include <SPeMPE/Services/Networking_service.hpp>
+#include <SPeMPE/Services/Networking_service_default.hpp>
+#include <SPeMPE/Services/Synced_varmap_service.hpp>
+#include <SPeMPE/Services/Synced_varmap_service_default.hpp>
+#include <SPeMPE/Services/Window_service.hpp>
+#include <SPeMPE/Services/Window_service_default.hpp>
 
 // Utility
 

@@ -3,8 +3,8 @@
 
 // clang-format off
 
-#ifndef SPEMPE_MANAGERS_INPUT_SYNC_MANAGER_HPP
-#define SPEMPE_MANAGERS_INPUT_SYNC_MANAGER_HPP
+#ifndef SPEMPE_SERVICES_INPUT_SYNC_SERVICE_HPP
+#define SPEMPE_SERVICES_INPUT_SYNC_SERVICE_HPP
 
 #include <Hobgoblin/Utility/Packet.hpp>
 #include <SPeMPE/GameContext/Context_components.hpp>
@@ -17,19 +17,19 @@
 namespace jbatnozic {
 namespace spempe {
 
-/*            WindowMgr     ->   ControlsMgr   ->    InputSyncMgr
+/*            WindowSvc     ->   ControlsSvc   ->    InputSyncSvc
 FrameStart:  records input           -                    -
 PreUpdate:                                           [s] receives input
 Update:
 PostUpdate:                                          [c] uploads input
 */
 
-class InputSyncManager : public ContextComponent {
+class InputSyncService : public ContextComponent {
 public:
-    ~InputSyncManager() override = default;
+    ~InputSyncService() override = default;
 
-    //! Initializes the manager as the host for up to 'aClientCount' clients. Note: if 'aClientCount'
-    //! is 0, the manager will be able only to echo the inputs of the local player.
+    //! Initializes the service as the host for up to 'aClientCount' clients. Note: if 'aClientCount'
+    //! is 0, the service will be able only to echo the inputs of the local player.
     virtual void setToHostMode(hg::PZInteger aClientCount, hg::PZInteger aStateBufferingLength) = 0;
 
     virtual void setToClientMode() = 0;
@@ -40,7 +40,7 @@ public:
     // INPUT DEFINITIONS                                                     //
     ///////////////////////////////////////////////////////////////////////////
     
-    // Note: Use the InputSyncManagerWrapper to manage signal & event definitions
+    // Note: Use the InputSyncServiceWrapper to manage signal & event definitions
 
     virtual void defineSignal(std::string aSignalName, 
                               const std::type_info& aSignalType,
@@ -58,7 +58,7 @@ public:
     // SETTING INPUT VALUES (CLIENT-SIDE)                                    //
     ///////////////////////////////////////////////////////////////////////////
 
-    // Note: Use the InputSyncManagerWrapper to set signals & events
+    // Note: Use the InputSyncServiceWrapper to set signals & events
 
     virtual void setSignalValue(std::string aSignalName,
                                 const std::function<void(hg::util::Packet&)>& f) = 0;
@@ -72,7 +72,7 @@ public:
     // SETTING INPUT VALUES (SERVER-SIDE)                                    //
     ///////////////////////////////////////////////////////////////////////////
 
-    // Note: Use the InputSyncManagerWrapper to set signals & events
+    // Note: Use the InputSyncServiceWrapper to set signals & events
 
     virtual void setSignalValue(int aForClient,
                                 std::string aSignalName,
@@ -88,7 +88,7 @@ public:
     // GETTING INPUT VALUES (SERVER-SIDE)                                    //
     ///////////////////////////////////////////////////////////////////////////
 
-    // Note: Use the InputSyncManagerWrapper to get signal & event values
+    // Note: Use the InputSyncServiceWrapper to get signal & event values
 
     virtual void getSignalValue(int aForClient,
                                 std::string aSignalName,
@@ -103,18 +103,18 @@ public:
                                       const std::function<void(hg::util::Packet&)>& aPayloadHandler) const = 0;
 
 private:
-    SPEMPE_CTXCOMP_TAG("jbatnozic::spempe::InputSyncManager");
+    SPEMPE_CTXCOMP_TAG("jbatnozic::spempe::InputSyncService");
 };
 
-//! The bare InputSyncManager has very unwieldy methods which are difficult to use, so
+//! The bare InputSyncService has very unwieldy methods which are difficult to use, so
 //! in any place where you want to define, set or get inputs, you can construct an instance of
-//! 'InputSyncManagerWrapper' instead and use its templated methods which are must more ergonomic.
+//! 'InputSyncServiceWrapper' instead and use its templated methods which are must more ergonomic.
 //! This wrapper is very lightweight to construct so there isn't much overhead (if any) when using
 //! it, and you don't have to keep the instance around - just construct a new one when needed.
-class InputSyncManagerWrapper {
+class InputSyncServiceWrapper {
 public:
-    InputSyncManagerWrapper(InputSyncManager& aMgr)
-        : _mgr{aMgr}
+    InputSyncServiceWrapper(InputSyncService& aSvc)
+        : _svc{aSvc}
     {
     }
 
@@ -128,19 +128,19 @@ public:
     void defineSignal(std::string aSignalName, const taSignalType& aInitialValue) const {
         _helperPacket.clear();
         _helperPacket << aInitialValue;
-        _mgr.defineSignal(std::move(aSignalName), typeid(taSignalType), _helperPacket);
+        _svc.defineSignal(std::move(aSignalName), typeid(taSignalType), _helperPacket);
         _helperPacket.clear();
     }
 
     //! Defines a simple event with the name 'aEventName'.
     void defineSimpleEvent(std::string aEventName) const {
-        _mgr.defineSimpleEvent(std::move(aEventName));
+        _svc.defineSimpleEvent(std::move(aEventName));
     }
 
     //! Defines an event with a payload (of type 'taPayloadType') with the name 'aEventName'.
     template <class taPayloadType>
     void defineEventWithPayload(std::string aEventName) const {
-        _mgr.defineEventWithPayload(std::move(aEventName), typeid(taPayloadType));
+        _svc.defineEventWithPayload(std::move(aEventName), typeid(taPayloadType));
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -150,13 +150,13 @@ public:
     //! Sets the signal with the name 'aSignalName' to the value 'aValue'.
     template <class taSignalType>
     void setSignalValue(std::string aSignalName, const taSignalType& aValue) const {
-        if (typeid(taSignalType) != _mgr.getSignalType(aSignalName)) {
+        if (typeid(taSignalType) != _svc.getSignalType(aSignalName)) {
             HG_THROW_TRACED(hg::TracedLogicError, 0,
                             "Incorrect type for signal value (expected: '{}' vs actual: '{}').",
-                            _mgr.getSignalType(aSignalName).name(),
+                            _svc.getSignalType(aSignalName).name(),
                             typeid(taSignalType).name());
         }
-        _mgr.setSignalValue(std::move(aSignalName),
+        _svc.setSignalValue(std::move(aSignalName),
                             [&](hg::util::Packet& aPacket) {
                                 aPacket << aValue;
                             });
@@ -165,7 +165,7 @@ public:
     //! Triggers the signal with the name 'aEventName' if 'aPredicate' is true.
     void triggerEvent(std::string aEventName, bool aPredicate = true) const {
         if (aPredicate) {
-            _mgr.triggerEvent(std::move(aEventName));
+            _svc.triggerEvent(std::move(aEventName));
         }
     }
 
@@ -175,15 +175,15 @@ public:
     void triggerEventWithPayload(std::string aEventName,
                                  const taPayloadType& aPayload,
                                  bool aPredicate = true) const {
-        if (typeid(taPayloadType) != _mgr.getEventPayloadType(aEventName)) {
+        if (typeid(taPayloadType) != _svc.getEventPayloadType(aEventName)) {
             HG_THROW_TRACED(hg::TracedLogicError, 0,
                             "Incorrect type for payload (expected: '{}' vs actual: '{}').",
-                            _mgr.getEventPayloadType(aEventName).name(),
+                            _svc.getEventPayloadType(aEventName).name(),
                             typeid(taPayloadType).name());
         }
 
         if (aPredicate) {
-            _mgr.triggerEventWithPayload(std::move(aEventName),
+            _svc.triggerEventWithPayload(std::move(aEventName),
                                          [&](hg::util::Packet& aPacket) {
                                              aPacket << aPayload;
                                          });
@@ -198,13 +198,13 @@ public:
     //! 'aForClient' (or for the host if spempe::CLIENT_INDEX_LOCAL is provided).
     template <class taSignalType>
     void setSignalValue(int aForClient, std::string aSignalName, const taSignalType& aValue) const {
-        if (typeid(taSignalType) != _mgr.getSignalType(aSignalName)) {
+        if (typeid(taSignalType) != _svc.getSignalType(aSignalName)) {
             HG_THROW_TRACED(hg::TracedLogicError, 0,
                             "Incorrect type for signal value (expected: '{}' vs actual: '{}').",
-                            _mgr.getSignalType(aSignalName).name(),
+                            _svc.getSignalType(aSignalName).name(),
                             typeid(taSignalType).name());
         }
-        _mgr.setSignalValue(aForClient,
+        _svc.setSignalValue(aForClient,
                             std::move(aSignalName),
                             [&](hg::util::Packet& aPacket) {
             aPacket << aValue;
@@ -215,7 +215,7 @@ public:
     //! index 'aForClient' (or for the host if spempe::CLIENT_INDEX_LOCAL is provided).
     void triggerEvent(int aForClient, std::string aEventName, bool aPredicate = true) const {
         if (aPredicate) {
-            _mgr.triggerEvent(aForClient, std::move(aEventName));
+            _svc.triggerEvent(aForClient, std::move(aEventName));
         }
     }
 
@@ -227,15 +227,15 @@ public:
                                  std::string aEventName,
                                  const taPayloadType& aPayload,
                                  bool aPredicate = true) const {
-        if (typeid(taPayloadType) != _mgr.getEventPayloadType(aEventName)) {
+        if (typeid(taPayloadType) != _svc.getEventPayloadType(aEventName)) {
             HG_THROW_TRACED(hg::TracedLogicError, 0,
                             "Incorrect type for payload (expected: '{}' vs actual: '{}').",
-                            _mgr.getEventPayloadType(aEventName).name(),
+                            _svc.getEventPayloadType(aEventName).name(),
                             typeid(taPayloadType).name());
         }
 
         if (aPredicate) {
-            _mgr.triggerEventWithPayload(aForClient,
+            _svc.triggerEventWithPayload(aForClient,
                                          std::move(aEventName),
                                          [&](hg::util::Packet& aPacket) {
                 aPacket << aPayload;
@@ -251,15 +251,15 @@ public:
     template <class taSignalType>
     taSignalType getSignalValue(int aForClient,
                                 std::string aSignalName) const {
-        if (typeid(taSignalType) != _mgr.getSignalType(aSignalName)) {
+        if (typeid(taSignalType) != _svc.getSignalType(aSignalName)) {
             HG_THROW_TRACED(hg::TracedLogicError, 0,
                             "Incorrect type for signal value (expected: '{}' vs actual: '{}').",
-                            _mgr.getSignalType(aSignalName).name(),
+                            _svc.getSignalType(aSignalName).name(),
                             typeid(taSignalType).name());
 
         }
         _helperPacket.clear();
-        _mgr.getSignalValue(aForClient, std::move(aSignalName), _helperPacket);
+        _svc.getSignalValue(aForClient, std::move(aSignalName), _helperPacket);
         taSignalType retval;
         _helperPacket >> retval;
         _helperPacket.clear();
@@ -271,7 +271,7 @@ public:
                                   std::string aEventName,
                                   const std::function<void()>& aHandler) const {
         hg::PZInteger count = 0;
-        _mgr.pollSimpleEvent(aForClient, std::move(aEventName),
+        _svc.pollSimpleEvent(aForClient, std::move(aEventName),
                              [&]() {
                                  count++;
                                  aHandler();
@@ -283,7 +283,7 @@ public:
     hg::PZInteger countSimpleEvent(int aForClient,
                           std::string aEventName) const {
         hg::PZInteger count = 0;
-        _mgr.pollSimpleEvent(aForClient, 
+        _svc.pollSimpleEvent(aForClient, 
                              std::move(aEventName), 
                              [&]() {
                                  count++;
@@ -296,15 +296,15 @@ public:
     hg::PZInteger pollEventWithPayload(int aForClient,
                                        std::string aEventName,
                                        const std::function<void(const taPayloadType&)>& aHandler) const {
-        if (typeid(taPayloadType) != _mgr.getEventPayloadType(aEventName)) {
+        if (typeid(taPayloadType) != _svc.getEventPayloadType(aEventName)) {
             HG_THROW_TRACED(hg::TracedLogicError, 0,
                             "Incorrect type for payload (expected: '{}' vs actual: '{}').",
-                            _mgr.getEventPayloadType(aEventName).name(),
+                            _svc.getEventPayloadType(aEventName).name(),
                             typeid(taPayloadType).name());
         }
 
         hg::PZInteger count = 0;
-        _mgr.pollEventWithPayload(aForClient, std::move(aEventName),
+        _svc.pollEventWithPayload(aForClient, std::move(aEventName),
                                   [&](hg::util::Packet& aPacket) {
                                       count++;
                                       const auto payload = aPacket.extract<taPayloadType>();
@@ -314,13 +314,13 @@ public:
     }
 
 private:
-    InputSyncManager& _mgr;
+    InputSyncService& _svc;
     mutable hg::util::Packet _helperPacket;
 };
 
 } // namespace spempe
 } // namespace jbatnozic
 
-#endif // !SPEMPE_MANAGERS_INPUT_SYNC_MANAGER_HPP
+#endif // !SPEMPE_SERVICES_INPUT_SYNC_SERVICE_HPP
 
 // clang-format on

@@ -29,7 +29,7 @@ they are placed in the same repository for faster development in case something 
 Most of the directories have their own Readme file which describes relevant contents in more detail.
 
 ## Build instructions
-If you don't already have it, you will need to install the package manager [Conan](https://conan.io/) (version 2.0.0 or
+If you don't already have it, you will need to install the package service [Conan](https://conan.io/) (version 2.0.0 or
 higher) in order to be able to fetch all of Hobgoblin's dependencies and build it successfully. Other than that, you
 will need [CMake](https://cmake.org/) (version 3.23 or higher) and a C++ compiler that supports C++20.
 

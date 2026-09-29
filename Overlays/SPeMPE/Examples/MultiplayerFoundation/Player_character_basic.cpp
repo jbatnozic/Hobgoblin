@@ -27,7 +27,7 @@ void BasicPlayerCharacter::_eventUpdate1(spe::IfMaster) {
     if (const auto clientIndex = ccomp<MLobbyBackend>().playerIdxToClientIdx(self.owningPlayerIndex);
         clientIndex != spe::CLIENT_INDEX_UNKNOWN) {
 
-        spe::InputSyncManagerWrapper wrapper{ccomp<MInput>()};
+        spe::InputSyncServiceWrapper wrapper{ccomp<MInput>()};
 
         const bool left  = wrapper.getSignalValue<bool>(clientIndex, "left");
         const bool right = wrapper.getSignalValue<bool>(clientIndex, "right");

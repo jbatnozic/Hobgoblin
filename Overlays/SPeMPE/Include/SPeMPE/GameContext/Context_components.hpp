@@ -25,7 +25,7 @@ public:
 };
 
 //! Define a component's tag.
-//! For example: SPEMPE_CTXCOMP_TAG("PhysicsManager"); (can be in the private section)
+//! For example: SPEMPE_CTXCOMP_TAG("PhysicsService"); (can be in the private section)
 #define SPEMPE_CTXCOMP_TAG(_tag_string_)                                                          \
     ::std::string __spempeimpl_getComponentTag() const {                                          \
         return ::std::string{_tag_string_};                                                       \

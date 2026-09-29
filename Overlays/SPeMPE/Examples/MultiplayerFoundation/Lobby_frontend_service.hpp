@@ -9,7 +9,7 @@
 
 #include <string>
 
-class LobbyFrontendManager
+class LobbyFrontendService
     : public spe::ContextComponent
 {
 public:
@@ -19,7 +19,7 @@ public:
         Client,
     };
 
-    ~LobbyFrontendManager() override = default;
+    ~LobbyFrontendService() override = default;
 
     virtual void setToHeadlessHostMode() = 0;
     //virtual void setToHostMode() = 0;
@@ -28,7 +28,7 @@ public:
     virtual Mode getMode() const = 0;
 
 private:
-    SPEMPE_CTXCOMP_TAG("LobbyFrontendManager");
+    SPEMPE_CTXCOMP_TAG("LobbyFrontendService");
 };
 
 // clang-format on

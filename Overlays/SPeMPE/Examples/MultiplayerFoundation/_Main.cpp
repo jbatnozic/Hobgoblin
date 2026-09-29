@@ -2,8 +2,8 @@
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
 #include "Engine.h"
-#include "Lobby_frontend_manager_default.hpp"
-#include "Main_gameplay_manager_default.hpp"
+#include "Lobby_frontend_service_default.hpp"
+#include "Main_gameplay_service_default.hpp"
 
 #include "Player_character_alternating.hpp"
 #include "Player_character_autodiff.hpp"
@@ -51,10 +51,10 @@ std::unique_ptr<spe::GameContext> MakeGameContext(GameMode      aGameMode,
     context->setToMode((aGameMode == GameMode::Server) ? spe::GameContext::Mode::Server
                                                        : spe::GameContext::Mode::Client);
 
-    // Create and attach a Window manager
-    auto winMgr =
-        QAO_Create<spe::DefaultWindowManager>(context->getQAORuntime().nonOwning(), PRIORITY_WINDOWMGR);
-    spe::WindowManager::TimingConfig timingConfig{
+    // Create and attach a Window service
+    auto winSvc =
+        QAO_Create<spe::DefaultWindowService>(context->getQAORuntime().nonOwning(), PRIORITY_WINDOWMGR);
+    spe::WindowService::TimingConfig timingConfig{
 #ifdef _MSC_VER
         spe::FrameRate{FRAME_RATE},
         spe::PREVENT_BUSY_WAIT_ON,
@@ -66,16 +66,16 @@ std::unique_ptr<spe::GameContext> MakeGameContext(GameMode      aGameMode,
 #endif
     };
     if (aGameMode == GameMode::Server) {
-        winMgr->setToHeadlessMode(timingConfig);
+        winSvc->setToHeadlessMode(timingConfig);
     } else {
-        winMgr->setToNormalMode(
+        winSvc->setToNormalMode(
             hg::uwga::CreateGraphicsSystem("SFML"),
-            spe::WindowManager::WindowConfig{
+            spe::WindowService::WindowConfig{
                 .size  = {WINDOW_WIDTH, WINDOW_HEIGHT},
                 .title = "SPeMPE Multiplayer Foundation",
                 .style = hg::uwga::WindowStyle::DEFAULT
         },
-            spe::WindowManager::MainRenderTextureConfig{{WINDOW_WIDTH, WINDOW_HEIGHT}},
+            spe::WindowService::MainRenderTextureConfig{{WINDOW_WIDTH, WINDOW_HEIGHT}},
             timingConfig);
 
         struct FontFace {
@@ -92,26 +92,26 @@ std::unique_ptr<spe::GameContext> MakeGameContext(GameMode      aGameMode,
             Rml::LoadFontFace("assets/fonts/" + face.filename, face.fallback_face);
         }
 
-        Rml::Debugger::Initialise(&(winMgr->getGUIContext()));
+        Rml::Debugger::Initialise(&(winSvc->getGUIContext()));
         Rml::Debugger::SetVisible(true);
     }
 
-    context->attachAndOwnComponent(std::move(winMgr));
+    context->attachAndOwnComponent(std::move(winSvc));
 
-    // Create and attach a Networking manager
-    auto netMgr = QAO_Create<spe::DefaultNetworkingManager>(context->getQAORuntime().nonOwning(),
+    // Create and attach a Networking service
+    auto netSvc = QAO_Create<spe::DefaultNetworkingService>(context->getQAORuntime().nonOwning(),
                                                             PRIORITY_NETWORKMGR,
                                                             STATE_BUFFERING_LENGTH);
     if (aGameMode == GameMode::Server) {
-        netMgr->setToServerMode(
+        netSvc->setToServerMode(
             RN_Protocol::UDP,
             "minimal-multiplayer",
             aPlayerCount -
                 1, // -1 because player 0 is the host itself (even if it doesn't participate in the game)
             1024,
             RN_NetworkingStack::Default);
-        netMgr->setPacemakerPulsePeriod(120);
-        auto& server = netMgr->getServer();
+        netSvc->setPacemakerPulsePeriod(120);
+        auto& server = netSvc->getServer();
         server.setTimeoutLimit(std::chrono::seconds{5});
         server.setRetransmitPredicate(&MyRetransmitPredicate);
         server.start(aLocalPort);
@@ -120,11 +120,11 @@ std::unique_ptr<spe::GameContext> MakeGameContext(GameMode      aGameMode,
                     (int)server.getLocalPort(),
                     aPlayerCount - 1);
     } else {
-        netMgr->setToClientMode(RN_Protocol::UDP,
+        netSvc->setToClientMode(RN_Protocol::UDP,
                                 "minimal-multiplayer",
                                 1024,
                                 RN_NetworkingStack::Default);
-        auto& client = netMgr->getClient();
+        auto& client = netSvc->getClient();
         client.setTimeoutLimit(std::chrono::seconds{5});
         client.setRetransmitPredicate(&MyRetransmitPredicate);
         client.connect(aLocalPort, aRemoteIp, aRemotePort);
@@ -134,22 +134,22 @@ std::unique_ptr<spe::GameContext> MakeGameContext(GameMode      aGameMode,
                     aRemoteIp.c_str(),
                     (int)aRemotePort);
     }
-    netMgr->setTelemetryCycleLimit(120);
-    context->attachAndOwnComponent(std::move(netMgr));
+    netSvc->setTelemetryCycleLimit(120);
+    context->attachAndOwnComponent(std::move(netSvc));
 
-    // Create and attack an Input sync manager
-    auto insMgr = QAO_Create<spe::DefaultInputSyncManager>(context->getQAORuntime().nonOwning(),
+    // Create and attack an Input sync service
+    auto insSvc = QAO_Create<spe::DefaultInputSyncService>(context->getQAORuntime().nonOwning(),
                                                            PRIORITY_INPUTMGR);
 
     if (aGameMode == GameMode::Server) {
-        insMgr->setToHostMode(aPlayerCount - 1, STATE_BUFFERING_LENGTH);
+        insSvc->setToHostMode(aPlayerCount - 1, STATE_BUFFERING_LENGTH);
     } else {
-        insMgr->setToClientMode();
+        insSvc->setToClientMode();
     }
 
     /* Either way, define the inputs in the same way */
     {
-        spe::InputSyncManagerWrapper wrapper{*insMgr};
+        spe::InputSyncServiceWrapper wrapper{*insSvc};
         wrapper.defineSignal<bool>("left", false);
         wrapper.defineSignal<bool>("right", false);
         wrapper.defineSignal<bool>("up", false);
@@ -157,65 +157,65 @@ std::unique_ptr<spe::GameContext> MakeGameContext(GameMode      aGameMode,
         wrapper.defineSimpleEvent("jump");
     }
 
-    context->attachAndOwnComponent(std::move(insMgr));
+    context->attachAndOwnComponent(std::move(insSvc));
 
-    // Create and attach a varmap manager
-    auto svmMgr = QAO_Create<spe::DefaultSyncedVarmapManager>(context->getQAORuntime().nonOwning(),
+    // Create and attach a varmap service
+    auto svmSvc = QAO_Create<spe::DefaultSyncedVarmapService>(context->getQAORuntime().nonOwning(),
                                                               PRIORITY_VARMAPMGR);
     if (aGameMode == GameMode::Server) {
-        svmMgr->setToMode(spe::SyncedVarmapManager::Mode::Host);
+        svmSvc->setToMode(spe::SyncedVarmapService::Mode::Host);
         for (hg::PZInteger i = 0; i < aPlayerCount; i += 1) {
-            svmMgr->int64SetClientWritePermission("val" + std::to_string(i), i, true);
+            svmSvc->int64SetClientWritePermission("val" + std::to_string(i), i, true);
         }
     } else {
-        svmMgr->setToMode(spe::SyncedVarmapManager::Mode::Client);
+        svmSvc->setToMode(spe::SyncedVarmapService::Mode::Client);
     }
 
-    context->attachAndOwnComponent(std::move(svmMgr));
+    context->attachAndOwnComponent(std::move(svmSvc));
 
-    // Create and attach a lobby backend manager
-    auto lobbyMgr = QAO_Create<spe::DefaultLobbyBackendManager>(context->getQAORuntime().nonOwning(),
+    // Create and attach a lobby backend service
+    auto lobbySvc = QAO_Create<spe::DefaultLobbyBackendService>(context->getQAORuntime().nonOwning(),
                                                                 PRIORITY_LOBBYBACKMGR);
 
     if (aGameMode == GameMode::Server) {
-        lobbyMgr->setToHostMode(aPlayerCount);
+        lobbySvc->setToHostMode(aPlayerCount);
     } else {
-        lobbyMgr->setToClientMode(1);
+        lobbySvc->setToClientMode(1);
     }
 
-    context->attachAndOwnComponent(std::move(lobbyMgr));
+    context->attachAndOwnComponent(std::move(lobbySvc));
 
-    // Create and attach a lobby frontend manager
-    auto lobbyFrontendMgr = QAO_Create<DefaultLobbyFrontendManager>(context->getQAORuntime().nonOwning(),
+    // Create and attach a lobby frontend service
+    auto lobbyFrontendSvc = QAO_Create<DefaultLobbyFrontendService>(context->getQAORuntime().nonOwning(),
                                                                     PRIORITY_LOBBYFRONTMGR);
 
     if (aGameMode == GameMode::Server) {
-        lobbyFrontendMgr->setToHeadlessHostMode();
+        lobbyFrontendSvc->setToHeadlessHostMode();
     } else {
         const auto nameInLobby =
             "player_" + std::to_string(hg::util::GetRandomNumber<int>(10'000, 99'999));
         const auto uniqueId = "id_" + std::to_string(hg::util::GetRandomNumber<int>(10'000, 99'999));
-        lobbyFrontendMgr->setToClientMode(nameInLobby, uniqueId);
+        lobbyFrontendSvc->setToClientMode(nameInLobby, uniqueId);
     }
 
-    context->attachAndOwnComponent(std::move(lobbyFrontendMgr));
+    context->attachAndOwnComponent(std::move(lobbyFrontendSvc));
 
-    // Create and attach an Auth manager
-    auto authMgr = QAO_Create<spe::DefaultAuthorizationManager>(context->getQAORuntime().nonOwning(),
+    // Create and attach an Auth service
+    auto authSvc = QAO_Create<spe::DefaultAuthorizationService>(context->getQAORuntime().nonOwning(),
                                                                 PRIORITY_AUTHMGR);
 
     if (aGameMode == GameMode::Server) {
-        authMgr->setToHostMode();
+        authSvc->setToHostMode();
     } else {
-        authMgr->setToClientMode();
+        authSvc->setToClientMode();
     }
 
-    context->attachAndOwnComponent(std::move(authMgr));
+    context->attachAndOwnComponent(std::move(authSvc));
 
-    // Create and attach a Gameplay manager
-    auto gpMgr = QAO_Create<DefaultMainGameplayManager>(context->getQAORuntime().nonOwning(),
+    // Create and attach a Gameplay service
+    auto gpSvc = QAO_Create<DefaultMainGameplayService>(context->getQAORuntime().nonOwning(),
                                                         PRIORITY_GAMEPLAYMGR);
-    context->attachAndOwnComponent(std::move(gpMgr));
+    context->attachAndOwnComponent(std::move(gpSvc));
 
     // Create player "characters"
     if (aGameMode == GameMode::Server) {

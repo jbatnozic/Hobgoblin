@@ -19,7 +19,7 @@ class WindowInputTracker;
 } // namespace detail
 
 //! View into the current state of the input captured by a window.
-//! (note: input is captured and tracked between 2 frames by a WindowManager's
+//! (note: input is captured and tracked between 2 frames by a WindowService's
 //! internal input tracker, and this class is only a view into that state.)
 class WindowFrameInputView {
 public:

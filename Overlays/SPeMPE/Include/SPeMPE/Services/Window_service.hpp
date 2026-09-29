@@ -1,8 +1,8 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#ifndef SPEMPE_MANAGERS_WINDOW_MANAGER_HPP
-#define SPEMPE_MANAGERS_WINDOW_MANAGER_HPP
+#ifndef SPEMPE_SERVICES_WINDOW_SERVICE_HPP
+#define SPEMPE_SERVICES_WINDOW_SERVICE_HPP
 
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/Math/Vector.hpp>
@@ -31,9 +31,9 @@ constexpr bool PREVENT_BUSY_WAIT_OFF = false;
 constexpr bool VSYNC_ON  = true;
 constexpr bool VSYNC_OFF = false;
 
-class WindowManager : public ContextComponent {
+class WindowService : public ContextComponent {
 public:
-    virtual ~WindowManager() = default;
+    virtual ~WindowService() = default;
 
     ///////////////////////////////////////////////////////////////////////////
     // CONFIGURATION                                                         //
@@ -48,7 +48,7 @@ public:
         HEADLESS,
 
         //! The 'usual' mode in which a single window is opened and
-        //! operated by the WindowManager to display the game.
+        //! operated by the WindowService to display the game.
         NORMAL
     };
 
@@ -74,7 +74,7 @@ public:
         //!                        be displayed (refreshed by the game). This is decoupled from the
         //!                        tick rate of the game and won't affect simulation speed.
         //! \param aBusyWaitPreventionEnabled When set to `true` (PREVENT_BUSY_WAIT_ON), the
-        //!                                   WindowManager will sleep between GameContext/QAO
+        //!                                   WindowService will sleep between GameContext/QAO
         //!                                   iterations to preserve system resources.
         //! \param aVerticalSyncEnabled When set to `true` (VSYNC_ON), the window will use
         //!                             vertical synchronization to prevent screen tearing. It is
@@ -95,7 +95,7 @@ public:
         //!                                  simulation. A value of 0 will leave the framerate
         //!                                  unlimited (which is not recommended).
         //! \param aBusyWaitPreventionEnabled When set to `true` (PREVENT_BUSY_WAIT_ON), the
-        //!                                   WindowManager will sleep between GameContext/QAO
+        //!                                   WindowService will sleep between GameContext/QAO
         //!                                   iterations to preserve system resources.
         //! \param aVerticalSyncEnabled When set to `true` (VSYNC_ON), the window will use
         //!                             vertical synchronization to prevent screen tearing. It is
@@ -162,7 +162,7 @@ public:
     //! - during the `DRAW_GUI` QAO event, this is the window itself (as returned by `getWindow()`).
     //! - during other events, this is the main render texture (as returned by `getMainRenderTexture()`).
     //!
-    //! \throws unless the manager is in NORMAL mode.
+    //! \throws unless the service is in NORMAL mode.
     virtual hg::uwga::Canvas& getActiveCanvas() = 0;
 
     enum class DrawPosition {
@@ -208,10 +208,10 @@ public:
     virtual WindowFrameInputView getInput() const = 0;
 
 private:
-    SPEMPE_CTXCOMP_TAG("jbatnozic::spempe::WindowManager");
+    SPEMPE_CTXCOMP_TAG("jbatnozic::spempe::WindowService");
 };
 
-inline WindowManager::TimingConfig::TimingConfig(FrameRate aFrameRateLimit,
+inline WindowService::TimingConfig::TimingConfig(FrameRate aFrameRateLimit,
                                                  bool      aBusyWaitPreventionEnabled,
                                                  bool      aVerticalSyncEnabled)
     : framerateLimit{aFrameRateLimit}
@@ -219,7 +219,7 @@ inline WindowManager::TimingConfig::TimingConfig(FrameRate aFrameRateLimit,
     , busyWaitPreventionEnabled{aBusyWaitPreventionEnabled}
     , verticalSyncEnabled{aVerticalSyncEnabled} {}
 
-inline WindowManager::TimingConfig::TimingConfig(hg::PZInteger aLowLevelFramerateLimiter,
+inline WindowService::TimingConfig::TimingConfig(hg::PZInteger aLowLevelFramerateLimiter,
                                                  bool          aBusyWaitPreventionEnabled,
                                                  bool          aVerticalSyncEnabled)
     : framerateLimit{std::nullopt}
@@ -230,4 +230,4 @@ inline WindowManager::TimingConfig::TimingConfig(hg::PZInteger aLowLevelFramerat
 } // namespace spempe
 } // namespace jbatnozic
 
-#endif // !SPEMPE_MANAGERS_WINDOW_MANAGER_HPP
+#endif // !SPEMPE_SERVICES_WINDOW_SERVICE_HPP

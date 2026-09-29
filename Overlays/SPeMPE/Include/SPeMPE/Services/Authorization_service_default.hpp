@@ -3,14 +3,14 @@
 
 // clang-format off
 
-#ifndef SPEMPE_MANAGERS_AUTHORIZATION_MANAGER_DEFAULT_HPP
-#define SPEMPE_MANAGERS_AUTHORIZATION_MANAGER_DEFAULT_HPP
+#ifndef SPEMPE_SERVICES_AUTHORIZATION_SERVICE_DEFAULT_HPP
+#define SPEMPE_SERVICES_AUTHORIZATION_SERVICE_DEFAULT_HPP
 
 #include <Hobgoblin/QAO.hpp>
 #include <SPeMPE/GameObjectFramework/Game_object_bases.hpp>
-#include <SPeMPE/Managers/Authorization_manager.hpp>
-#include <SPeMPE/Managers/Networking_manager.hpp>
-#include <SPeMPE/Managers/Synced_varmap_manager.hpp>
+#include <SPeMPE/Services/Authorization_service.hpp>
+#include <SPeMPE/Services/Networking_service.hpp>
+#include <SPeMPE/Services/Synced_varmap_service.hpp>
 
 #include <functional>
 
@@ -30,14 +30,14 @@ struct PlayerInfoWithIndex {
 };
 } // namespace detail
 
-class DefaultAuthorizationManager
-    : public AuthorizationManager
+class DefaultAuthorizationService
+    : public AuthorizationService
     , public NonstateObject
 {
 public:
-    DefaultAuthorizationManager(hobgoblin::QAO_InstGuard aInstGuard, int aExecutionPriority);
+    DefaultAuthorizationService(hobgoblin::QAO_InstGuard aInstGuard, int aExecutionPriority);
 
-    ~DefaultAuthorizationManager() override;
+    ~DefaultAuthorizationService() override;
 
     void setToHostMode(/* TODO: provide auth strategy*/) override;
 
@@ -57,12 +57,12 @@ private:
     bool _hasCurrentlyAuthorizedPlayer() const;
     void _authorizePlayer(
         const detail::PlayerInfoWithIndex& aPlayerToAuthorize,
-        NetworkingManager& aNetMgr,
-        SyncedVarmapManager& aSvmMgr
+        NetworkingService& aNetSvc,
+        SyncedVarmapService& aSvmSvc
     );
 
-    friend void USPEMPE_DefaultAuthorizationManager_SetLocalAuthToken(
-        DefaultAuthorizationManager& aAuthMgr,
+    friend void USPEMPE_DefaultAuthorizationService_SetLocalAuthToken(
+        DefaultAuthorizationService& aAuthSvc,
         const AuthToken& aToken
     );
 };
@@ -81,6 +81,6 @@ bool operator==(const PlayerInfoWithIndex& aRhs,
 } // namespace spempe
 } // namespace jbatnozic
 
-#endif // !SPEMPE_MANAGERS_AUTHORIZATION_MANAGER_DEFAULT_HPP
+#endif // !SPEMPE_SERVICES_AUTHORIZATION_SERVICE_DEFAULT_HPP
 
 // clang-format on

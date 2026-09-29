@@ -1,7 +1,7 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#include <SPeMPE/Managers/Networking_manager_default.hpp>
+#include <SPeMPE/Services/Networking_service_default.hpp>
 
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/HGExcept.hpp>
@@ -17,17 +17,17 @@ namespace {
 constexpr const char* LOG_ID = "SPeMPE";
 } // namespace
 
-DefaultNetworkingManager::DefaultNetworkingManager(hobgoblin::QAO_InstGuard aInstGuard,
+DefaultNetworkingService::DefaultNetworkingService(hobgoblin::QAO_InstGuard aInstGuard,
                                                    int                      aExecutionPriority,
                                                    hg::PZInteger            aStateBufferingLength)
     : NonstateObject{aInstGuard,
                      hg::QAO_ExeCon::ESSENTIAL,
                      aExecutionPriority,
-                     QAO_STATIC_NAME("::jbatnozic::spempe::DefaultNetworkingManager")}
+                     QAO_STATIC_NAME("::jbatnozic::spempe::DefaultNetworkingService")}
     , _node{hg::RN_ServerFactory::createDummyServer()}
     , _syncObjReg{*_node, aStateBufferingLength} {}
 
-DefaultNetworkingManager::~DefaultNetworkingManager() {
+DefaultNetworkingService::~DefaultNetworkingService() {
     if (_mode != Mode::Uninitialized) {
         _node->removeEventListener(this);
     }
@@ -37,7 +37,7 @@ DefaultNetworkingManager::~DefaultNetworkingManager() {
 // CONFIGURATION                                                         //
 ///////////////////////////////////////////////////////////////////////////
 
-void DefaultNetworkingManager::setToServerMode(hg::RN_Protocol        aProtocol,
+void DefaultNetworkingService::setToServerMode(hg::RN_Protocol        aProtocol,
                                                std::string            aPassphrase,
                                                hg::PZInteger          aServerSize,
                                                hg::PZInteger          aMaxPacketSize,
@@ -58,7 +58,7 @@ void DefaultNetworkingManager::setToServerMode(hg::RN_Protocol        aProtocol,
     _mode = Mode::Server;
 }
 
-void DefaultNetworkingManager::setToClientMode(hg::RN_Protocol        aProtocol,
+void DefaultNetworkingService::setToClientMode(hg::RN_Protocol        aProtocol,
                                                std::string            aPassphrase,
                                                hg::PZInteger          aMaxPacketSize,
                                                hg::RN_NetworkingStack aNetworkingStack) {
@@ -77,19 +77,19 @@ void DefaultNetworkingManager::setToClientMode(hg::RN_Protocol        aProtocol,
     _mode = Mode::Client;
 }
 
-NetworkingManager::Mode DefaultNetworkingManager::getMode() const {
+NetworkingService::Mode DefaultNetworkingService::getMode() const {
     return _mode;
 }
 
-bool DefaultNetworkingManager::isUninitialized() const {
+bool DefaultNetworkingService::isUninitialized() const {
     return _mode == Mode::Uninitialized;
 }
 
-bool DefaultNetworkingManager::isServer() const {
+bool DefaultNetworkingService::isServer() const {
     return _mode == Mode::Server;
 }
 
-bool DefaultNetworkingManager::isClient() const {
+bool DefaultNetworkingService::isClient() const {
     return _mode == Mode::Client;
 }
 
@@ -97,16 +97,16 @@ bool DefaultNetworkingManager::isClient() const {
 // NODE ACCESS                                                           //
 ///////////////////////////////////////////////////////////////////////////
 
-NetworkingManager::NodeType& DefaultNetworkingManager::getNode() const {
+NetworkingService::NodeType& DefaultNetworkingService::getNode() const {
     return *_node;
 }
 
-NetworkingManager::ServerType& DefaultNetworkingManager::getServer() const {
+NetworkingService::ServerType& DefaultNetworkingService::getServer() const {
     assert(isServer());
     return static_cast<ServerType&>(getNode());
 }
 
-NetworkingManager::ClientType& DefaultNetworkingManager::getClient() const {
+NetworkingService::ClientType& DefaultNetworkingService::getClient() const {
     assert(isClient());
     return static_cast<ClientType&>(getNode());
 }
@@ -115,7 +115,7 @@ NetworkingManager::ClientType& DefaultNetworkingManager::getClient() const {
 // LISTENER MANAGEMENT                                                   //
 ///////////////////////////////////////////////////////////////////////////
 
-void DefaultNetworkingManager::addEventListener(hg::NeverNull<NetworkingEventListener*> aEventListener) {
+void DefaultNetworkingService::addEventListener(hg::NeverNull<NetworkingEventListener*> aEventListener) {
     const auto iter = std::find_if(_eventListeners.begin(),
                                    _eventListeners.end(),
                                    [=](hg::RN_EventListener* aFoundListener) {
@@ -130,7 +130,7 @@ void DefaultNetworkingManager::addEventListener(hg::NeverNull<NetworkingEventLis
     }
 }
 
-void DefaultNetworkingManager::removeEventListener(
+void DefaultNetworkingService::removeEventListener(
     hg::NeverNull<NetworkingEventListener*> aEventListener) {
     const auto iter = std::find_if(_eventListeners.begin(),
                                    _eventListeners.end(),
@@ -150,47 +150,47 @@ void DefaultNetworkingManager::removeEventListener(
 // SYNCHRONIZATION                                                       //
 ///////////////////////////////////////////////////////////////////////////
 
-hg::PZInteger DefaultNetworkingManager::getStateBufferingLength() const {
+hg::PZInteger DefaultNetworkingService::getStateBufferingLength() const {
     return _syncObjReg.getDefaultDelay();
 }
 
-void DefaultNetworkingManager::setStateBufferingLength(hg::PZInteger aNewStateBufferingLength) {
+void DefaultNetworkingService::setStateBufferingLength(hg::PZInteger aNewStateBufferingLength) {
     _syncObjReg.setDefaultDelay(aNewStateBufferingLength);
 }
 
-void DefaultNetworkingManager::setPacemakerPulsePeriod(hg::PZInteger aPeriod) {
+void DefaultNetworkingService::setPacemakerPulsePeriod(hg::PZInteger aPeriod) {
     _syncObjReg.setPacemakerPulsePeriod(aPeriod);
 }
 
-void DefaultNetworkingManager::setSyncCreateExeconFilter(ExeConSyncFilter aFilter) {
+void DefaultNetworkingService::setSyncCreateExeconFilter(ExeConSyncFilter aFilter) {
     _syncObjReg.setSyncCreateExeconFilter(aFilter);
 }
 
-void DefaultNetworkingManager::setSyncUpdateExeconFilter(ExeConSyncFilter aFilter) {
+void DefaultNetworkingService::setSyncUpdateExeconFilter(ExeConSyncFilter aFilter) {
     _syncObjReg.setSyncUpdateExeconFilter(aFilter);
 }
 
-void DefaultNetworkingManager::setSyncDestroyExeconFilter(ExeConSyncFilter aFilter) {
+void DefaultNetworkingService::setSyncDestroyExeconFilter(ExeConSyncFilter aFilter) {
     _syncObjReg.setSyncDestroyExeconFilter(aFilter);
 }
 
-auto DefaultNetworkingManager::getSyncCreateExeconFilter() const -> ExeConSyncFilter {
+auto DefaultNetworkingService::getSyncCreateExeconFilter() const -> ExeConSyncFilter {
     return _syncObjReg.getSyncCreateExeconFilter();
 }
 
-auto DefaultNetworkingManager::getSyncUpdateExeconFilter() const -> ExeConSyncFilter {
+auto DefaultNetworkingService::getSyncUpdateExeconFilter() const -> ExeConSyncFilter {
     return _syncObjReg.getSyncUpdateExeconFilter();
 }
 
-auto DefaultNetworkingManager::getSyncDestroyExeconFilter() const -> ExeConSyncFilter {
+auto DefaultNetworkingService::getSyncDestroyExeconFilter() const -> ExeConSyncFilter {
     return _syncObjReg.getSyncDestroyExeconFilter();
 }
 
-void DefaultNetworkingManager::setAutomaticStateSyncForNewConnectionsEnabled(bool aEnabled) {
+void DefaultNetworkingService::setAutomaticStateSyncForNewConnectionsEnabled(bool aEnabled) {
     // TODO
 }
 
-void DefaultNetworkingManager::syncCompleteStateToClient(hg::PZInteger aClientIndex, bool aCleanFirst) {
+void DefaultNetworkingService::syncCompleteStateToClient(hg::PZInteger aClientIndex, bool aCleanFirst) {
     // TODO
 }
 
@@ -198,7 +198,7 @@ void DefaultNetworkingManager::syncCompleteStateToClient(hg::PZInteger aClientIn
 // TELEMETRY                                                             //
 ///////////////////////////////////////////////////////////////////////////
 
-void DefaultNetworkingManager::setTelemetryCycleLimit(hg::PZInteger aCycleLimit) {
+void DefaultNetworkingService::setTelemetryCycleLimit(hg::PZInteger aCycleLimit) {
     while (hg::stopz(_telemetry.size()) < aCycleLimit) {
         _telemetry.emplace_front();
     }
@@ -208,7 +208,7 @@ void DefaultNetworkingManager::setTelemetryCycleLimit(hg::PZInteger aCycleLimit)
     }
 }
 
-hg::RN_Telemetry DefaultNetworkingManager::getTelemetry(hg::PZInteger aCycleCount) const {
+hg::RN_Telemetry DefaultNetworkingService::getTelemetry(hg::PZInteger aCycleCount) const {
     if (aCycleCount > hg::stopz(_telemetry.size())) {
         HG_THROW_TRACED(hg::TracedLogicError,
                         0,
@@ -230,11 +230,11 @@ hg::RN_Telemetry DefaultNetworkingManager::getTelemetry(hg::PZInteger aCycleCoun
 // MISC.                                                                 //
 ///////////////////////////////////////////////////////////////////////////
 
-int DefaultNetworkingManager::getLocalClientIndex() const {
+int DefaultNetworkingService::getLocalClientIndex() const {
     return _localClientIndex;
 }
 
-hg::NeverNull<void*> DefaultNetworkingManager::__spempeimpl_getRegistryAddress() {
+hg::NeverNull<void*> DefaultNetworkingService::__spempeimpl_getRegistryAddress() {
     return &_syncObjReg;
 }
 
@@ -242,19 +242,19 @@ hg::NeverNull<void*> DefaultNetworkingManager::__spempeimpl_getRegistryAddress()
 // PROTECTED & PRIVATE METHODS                                           //
 ///////////////////////////////////////////////////////////////////////////
 
-void DefaultNetworkingManager::_eventPreUpdate() {
+void DefaultNetworkingService::_eventPreUpdate() {
     _telemetry.emplace_back();
     _telemetry.pop_front();
 }
 
-void DefaultNetworkingManager::_eventBeginUpdate() {
+void DefaultNetworkingService::_eventBeginUpdate() {
     const auto telemetry = _node->update(hg::RN_UpdateMode::Receive);
     if (!_telemetry.empty()) {
         _telemetry.back() += telemetry;
     }
 }
 
-void DefaultNetworkingManager::_eventEndUpdate() {
+void DefaultNetworkingService::_eventEndUpdate() {
     // Update all Synchronized objects
     if (_node->isServer()) {
         _syncObjReg.update();
@@ -267,7 +267,7 @@ void DefaultNetworkingManager::_eventEndUpdate() {
     }
 }
 
-void DefaultNetworkingManager::onNetworkingEvent(const hg::RN_Event& aEvent) {
+void DefaultNetworkingService::onNetworkingEvent(const hg::RN_Event& aEvent) {
     using hg::RN_Event;
 
     aEvent.strictVisit(

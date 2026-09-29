@@ -20,13 +20,13 @@ namespace hg = ::jbatnozic::hobgoblin;
 
 //! This class can be instantiated within the body of a RigelNet RPC (=within a handler)
 //! to get easy access to the GameContext of the receiver and other relevant important info.
-template <class taNetwMgr>
+template <class taNetwSvc>
 struct RPCReceiverContextTemplate {
     //! Reference to game context.
     GameContext& gameContext;
 
-    //! Reference to instance of spempe::NetworkingManager.
-    taNetwMgr& netwMgr;
+    //! Reference to instance of spempe::NetworkingService.
+    taNetwSvc& netwSvc;
 
     //! Index of the sender (always -1000 on client).
     int senderIndex;
@@ -73,7 +73,7 @@ struct RPCReceiverContextTemplate {
 
     explicit RPCReceiverContextTemplate(const hg::RN_ClientInterface& aClient)
         : gameContext{*aClient.getUserDataOrThrow<GameContext>()}
-        , netwMgr{gameContext.template getComponent<taNetwMgr>()}
+        , netwSvc{gameContext.template getComponent<taNetwSvc>()}
         , senderIndex{-1000}
         , meanLatency{aClient.getServerConnector().getRemoteInfo().meanLatency / 2}
         , optimisticLatency{aClient.getServerConnector().getRemoteInfo().optimisticLatency / 2}
@@ -86,7 +86,7 @@ struct RPCReceiverContextTemplate {
 
     explicit RPCReceiverContextTemplate(const hg::RN_ServerInterface& aServer)
         : gameContext{*aServer.getUserDataOrThrow<GameContext>()}
-        , netwMgr{gameContext.template getComponent<taNetwMgr>()}
+        , netwSvc{gameContext.template getComponent<taNetwSvc>()}
         , senderIndex{aServer.getSenderIndex()}
         , meanLatency{aServer.getClientConnector(senderIndex).getRemoteInfo().meanLatency / 2}
         , optimisticLatency{aServer.getClientConnector(senderIndex).getRemoteInfo().optimisticLatency / 2}
@@ -102,14 +102,14 @@ struct RPCReceiverContextTemplate {
 
 namespace detail {
 
-template <class taNetwMgr>
-RPCReceiverContextTemplate<taNetwMgr> GetRPCReceiverContext(hg::RN_ClientInterface& aClient) {
-    return RPCReceiverContextTemplate<taNetwMgr>{aClient};
+template <class taNetwSvc>
+RPCReceiverContextTemplate<taNetwSvc> GetRPCReceiverContext(hg::RN_ClientInterface& aClient) {
+    return RPCReceiverContextTemplate<taNetwSvc>{aClient};
 }
 
-template <class taNetwMgr>
-RPCReceiverContextTemplate<taNetwMgr> GetRPCReceiverContext(hg::RN_ServerInterface& aServer) {
-    return RPCReceiverContextTemplate<taNetwMgr>{aServer};
+template <class taNetwSvc>
+RPCReceiverContextTemplate<taNetwSvc> GetRPCReceiverContext(hg::RN_ServerInterface& aServer) {
+    return RPCReceiverContextTemplate<taNetwSvc>{aServer};
 }
 
 } // namespace detail
@@ -118,11 +118,11 @@ RPCReceiverContextTemplate<taNetwMgr> GetRPCReceiverContext(hg::RN_ServerInterfa
 //! RN_ServerInterface or a RN_ClientInterface.
 //! 
 //! Note: This macro is intended for use by the engine itself (and when you use it, make sure
-//! to #include <SPeMPE/Managers/Networking_manager.hpp>). In user code, it's 
+//! to #include <SPeMPE/Services/Networking_service.hpp>). In user code, it's 
 //! recommended to use the non-templated class `RPCReceiverContext` from
 //! <SPeMPE/Utility/Rpc_receiver_context_user.hpp>.
 #define SPEMPE_GET_RPC_RECEIVER_CONTEXT(_node_) \
-    (::jbatnozic::spempe::detail::GetRPCReceiverContext<::jbatnozic::spempe::NetworkingManager>(_node_))
+    (::jbatnozic::spempe::detail::GetRPCReceiverContext<::jbatnozic::spempe::NetworkingService>(_node_))
 
 } // namespace spempe
 } // namespace jbatnozic

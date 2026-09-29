@@ -3,14 +3,14 @@
 
 // clang-format off
 
-#ifndef SPEMPE_MANAGERS_SYNCED_VARMAP_MANAGER_DEFAULT_HPP
-#define SPEMPE_MANAGERS_SYNCED_VARMAP_MANAGER_DEFAULT_HPP
+#ifndef SPEMPE_SERVICES_SYNCED_VARMAP_SERVICE_DEFAULT_HPP
+#define SPEMPE_SERVICES_SYNCED_VARMAP_SERVICE_DEFAULT_HPP
 
 #include <Hobgoblin/Utility/Dynamic_bitset.hpp>
 #include <Hobgoblin/Utility/Packet.hpp>
 #include <SPeMPE/GameObjectFramework/Game_object_bases.hpp>
-#include <SPeMPE/Managers/Networking_manager.hpp>
-#include <SPeMPE/Managers/Synced_varmap_manager.hpp>
+#include <SPeMPE/Services/Networking_service.hpp>
+#include <SPeMPE/Services/Synced_varmap_service.hpp>
 
 #include <unordered_map>
 
@@ -18,16 +18,16 @@ namespace jbatnozic {
 namespace spempe {
 
 /**
- * Needs: Networking manager
+ * Needs: Networking service
  */
-class DefaultSyncedVarmapManager 
-    : public SyncedVarmapManager
+class DefaultSyncedVarmapService 
+    : public SyncedVarmapService
     , public NonstateObject
     , private NetworkingEventListener {
 public:
-    DefaultSyncedVarmapManager(hobgoblin::QAO_InstGuard aInstGuard, int aExecutionPriority);
+    DefaultSyncedVarmapService(hobgoblin::QAO_InstGuard aInstGuard, int aExecutionPriority);
 
-    ~DefaultSyncedVarmapManager() override;
+    ~DefaultSyncedVarmapService() override;
 
     void setToMode(Mode aMode) override;
 
@@ -74,10 +74,10 @@ public:
                                         bool aAllowed) override;
 
 private:
-    friend void USPEMPE_DefaultSyncedVarmapManager_SetValues(DefaultSyncedVarmapManager&,
+    friend void USPEMPE_DefaultSyncedVarmapService_SetValues(DefaultSyncedVarmapService&,
                                                              hobgoblin::util::Packet&);
 
-    friend void USPEMPE_DefaultSyncedVarmapManager_SetValueRequested(DefaultSyncedVarmapManager&,
+    friend void USPEMPE_DefaultSyncedVarmapService_SetValueRequested(DefaultSyncedVarmapService&,
                                                                      hobgoblin::PZInteger aPlayerIndex,
                                                                      hobgoblin::util::Packet&);
 
@@ -87,7 +87,7 @@ private:
         hobgoblin::util::DynamicBitset permissions = {};
     };
 
-    NetworkingManager* _netMgr = nullptr;
+    NetworkingService* _netSvc = nullptr;
 
     Mode _mode = Mode::Uninitialized;
 
@@ -123,6 +123,6 @@ private:
 } // namespace spempe
 } // namespace jbatnozic
 
-#endif // !SPEMPE_MANAGERS_SYNCED_VARMAP_MANAGER_DEFAULT_HPP
+#endif // !SPEMPE_SERVICES_SYNCED_VARMAP_SERVICE_DEFAULT_HPP
 
 // clang-format on

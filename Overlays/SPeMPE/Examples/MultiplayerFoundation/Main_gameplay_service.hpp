@@ -8,11 +8,11 @@
 #include "Engine.h"
 
 //! TODO(add description)
-class MainGameplayManager : public spe::ContextComponent {
+class MainGameplayService : public spe::ContextComponent {
 private:
-    SPEMPE_CTXCOMP_TAG("MainGameplayManager");
+    SPEMPE_CTXCOMP_TAG("MainGameplayService");
 };
 
-using MMainGameplay = MainGameplayManager;
+using MMainGameplay = MainGameplayService;
 
 // clang-format on

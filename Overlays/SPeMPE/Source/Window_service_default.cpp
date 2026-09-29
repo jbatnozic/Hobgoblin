@@ -1,7 +1,7 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#include <SPeMPE/Managers/Window_manager_default.hpp>
+#include <SPeMPE/Services/Window_service_default.hpp>
 
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/HGExcept.hpp>
@@ -10,11 +10,11 @@
 namespace jbatnozic {
 namespace spempe {
 
-DefaultWindowManager::DefaultWindowManager(hobgoblin::QAO_InstGuard aInstGuard, int aExecutionPriority)
+DefaultWindowService::DefaultWindowService(hobgoblin::QAO_InstGuard aInstGuard, int aExecutionPriority)
     : NonstateObject{aInstGuard,
                      hg::QAO_ExeCon::ESSENTIAL,
                      aExecutionPriority,
-                     QAO_STATIC_NAME("::jbatnozic::spempe::DefaultWindowManager")}
+                     QAO_STATIC_NAME("::jbatnozic::spempe::DefaultWindowService")}
     , _rmlUiContextDriver{}
     , _inputTracker{[this](const hg::uwga::View* aView) -> hg::math::Vector2d {
                         return _getViewRelativeMousePos(aView);
@@ -27,7 +27,7 @@ DefaultWindowManager::DefaultWindowManager(hobgoblin::QAO_InstGuard aInstGuard, 
 // CONFIGURATION                                                         //
 ///////////////////////////////////////////////////////////////////////////
 
-void DefaultWindowManager::setToHeadlessMode(const TimingConfig& aTimingConfig) {
+void DefaultWindowService::setToHeadlessMode(const TimingConfig& aTimingConfig) {
     SPEMPE_VALIDATE_GAME_CONTEXT_FLAGS(ctx(), headless == true);
     HG_HARD_ASSERT(_mode == Mode::UNINITIALIZED);
 
@@ -38,7 +38,7 @@ void DefaultWindowManager::setToHeadlessMode(const TimingConfig& aTimingConfig) 
     _window.reset();
 }
 
-void DefaultWindowManager::setToNormalMode(
+void DefaultWindowService::setToNormalMode(
     hg::AvoidNull<std::shared_ptr<hg::uwga::System>> aGraphicsSystem,
     const WindowConfig&                              aWindowConfig,
     const MainRenderTextureConfig&                   aMainRenderTextureConfig,
@@ -76,10 +76,10 @@ void DefaultWindowManager::setToNormalMode(
 
     // Create GUI:
     _rmlUiBackendLifecycleGuard = hg::rml::HobgoblinBackend::initialize(_graphicsSystem);
-    _rmlUiContextDriver.emplace("DefaultWindowManager::RmlContext", *_window);
+    _rmlUiContextDriver.emplace("DefaultWindowService::RmlContext", *_window);
 }
 
-DefaultWindowManager::Mode DefaultWindowManager::getMode() const {
+DefaultWindowService::Mode DefaultWindowService::getMode() const {
     return _mode;
 }
 
@@ -87,11 +87,11 @@ DefaultWindowManager::Mode DefaultWindowManager::getMode() const {
 // WINDOW MANAGEMENT                                                     //
 ///////////////////////////////////////////////////////////////////////////
 
-hobgoblin::math::Vector2pz DefaultWindowManager::getWindowSize() const {
+hobgoblin::math::Vector2pz DefaultWindowService::getWindowSize() const {
     return GetSize(*_window);
 }
 
-void DefaultWindowManager::setStopIfCloseClicked(bool aStop) {
+void DefaultWindowService::setStopIfCloseClicked(bool aStop) {
     _stopIfCloseClicked = aStop;
 }
 
@@ -99,22 +99,22 @@ void DefaultWindowManager::setStopIfCloseClicked(bool aStop) {
 // GRAPHICS & DRAWING                                                    //
 ///////////////////////////////////////////////////////////////////////////
 
-hg::uwga::System& DefaultWindowManager::getGraphicsSystem() const {
+hg::uwga::System& DefaultWindowService::getGraphicsSystem() const {
     HG_HARD_ASSERT(_mode == Mode::NORMAL && "Method only available in NORMAL mode.");
     return *_graphicsSystem;
 }
 
-const hg::uwga::RenderWindow& DefaultWindowManager::getWindow() const {
+const hg::uwga::RenderWindow& DefaultWindowService::getWindow() const {
     HG_HARD_ASSERT(_mode == Mode::NORMAL && "Method only available in NORMAL mode.");
     return *_window;
 }
 
-const hg::uwga::RenderTexture& DefaultWindowManager::getMainRenderTexture() const {
+const hg::uwga::RenderTexture& DefaultWindowService::getMainRenderTexture() const {
     HG_HARD_ASSERT(_mode == Mode::NORMAL && "Method only available in NORMAL mode.");
     return *_mainRenderTexture;
 }
 
-hg::uwga::Canvas& DefaultWindowManager::getActiveCanvas() {
+hg::uwga::Canvas& DefaultWindowService::getActiveCanvas() {
     HG_HARD_ASSERT(_mode == Mode::NORMAL && "Method only available in NORMAL mode.");
     if (getRuntime()->getCurrentEvent() == hg::QAO_Event::DRAW_GUI) {
         return *_window;
@@ -123,7 +123,7 @@ hg::uwga::Canvas& DefaultWindowManager::getActiveCanvas() {
     }
 }
 
-void DefaultWindowManager::setMainRenderTextureDrawPosition(DrawPosition aDrawPosition) {
+void DefaultWindowService::setMainRenderTextureDrawPosition(DrawPosition aDrawPosition) {
     _mainRenderTextureDrawPos = aDrawPosition;
 }
 
@@ -131,7 +131,7 @@ void DefaultWindowManager::setMainRenderTextureDrawPosition(DrawPosition aDrawPo
 // VIEWS                                                                 //
 ///////////////////////////////////////////////////////////////////////////
 
-hg::math::Vector2d DefaultWindowManager::mapPixelToCoords(const hg::math::Vector2f& aPixel,
+hg::math::Vector2d DefaultWindowService::mapPixelToCoords(const hg::math::Vector2f& aPixel,
                                                           const hg::uwga::View&     aView) const {
     HG_HARD_ASSERT(_mode == Mode::NORMAL && "Method only available in NORMAL mode.");
 
@@ -146,11 +146,11 @@ hg::math::Vector2d DefaultWindowManager::mapPixelToCoords(const hg::math::Vector
     return _mainRenderTexture->mapPixelToCoords(windowPos.cast<float>(), aView);
 }
 
-hg::math::Vector2d DefaultWindowManager::mapPixelToCoords(const hg::math::Vector2f& aPixel) const {
+hg::math::Vector2d DefaultWindowService::mapPixelToCoords(const hg::math::Vector2f& aPixel) const {
     return mapPixelToCoords(aPixel, _mainRenderTexture->getView());
 }
 
-hg::math::Vector2f DefaultWindowManager::mapCoordsToPixel(const hg::math::Vector2d& aCoords,
+hg::math::Vector2f DefaultWindowService::mapCoordsToPixel(const hg::math::Vector2d& aCoords,
                                                           const hg::uwga::View&     aView) const {
     HG_HARD_ASSERT(_mode == Mode::NORMAL && "Method only available in NORMAL mode.");
 
@@ -165,7 +165,7 @@ hg::math::Vector2f DefaultWindowManager::mapCoordsToPixel(const hg::math::Vector
     return _window->mapCoordsToPixel({xx, yy}, _window->getView());
 }
 
-hg::math::Vector2f DefaultWindowManager::mapCoordsToPixel(const hg::math::Vector2d& aCoords) const {
+hg::math::Vector2f DefaultWindowService::mapCoordsToPixel(const hg::math::Vector2d& aCoords) const {
     return mapCoordsToPixel(aCoords, _mainRenderTexture->getView());
 }
 
@@ -173,7 +173,7 @@ hg::math::Vector2f DefaultWindowManager::mapCoordsToPixel(const hg::math::Vector
 // GUI                                                                   //
 ///////////////////////////////////////////////////////////////////////////
 
-Rml::Context& DefaultWindowManager::getGUIContext() {
+Rml::Context& DefaultWindowService::getGUIContext() {
     HG_HARD_ASSERT(_mode == Mode::NORMAL && "Method only available in NORMAL mode.");
     return *(*_rmlUiContextDriver);
 }
@@ -182,7 +182,7 @@ Rml::Context& DefaultWindowManager::getGUIContext() {
 // KEYBOARD & MOUSE INPUT                                                //
 ///////////////////////////////////////////////////////////////////////////
 
-WindowFrameInputView DefaultWindowManager::getInput() const {
+WindowFrameInputView DefaultWindowService::getInput() const {
     return _inputTracker.getInputView();
 }
 
@@ -190,7 +190,7 @@ WindowFrameInputView DefaultWindowManager::getInput() const {
 // PRIVATE METHODS                                                       //
 ///////////////////////////////////////////////////////////////////////////
 
-void DefaultWindowManager::_eventPreUpdate() {
+void DefaultWindowService::_eventPreUpdate() {
     _inputTracker.prepForEvents();
 
     for (const auto& ev : _events) {
@@ -221,7 +221,7 @@ void DefaultWindowManager::_eventPreUpdate() {
     _events.clear();
 }
 
-void DefaultWindowManager::_eventPreDraw() {
+void DefaultWindowService::_eventPreDraw() {
     if (_mode == Mode::NORMAL) {
         if (_mrtClearingColor.has_value()) {
             _mainRenderTexture->clear(*_mrtClearingColor);
@@ -229,7 +229,7 @@ void DefaultWindowManager::_eventPreDraw() {
     }
 }
 
-void DefaultWindowManager::_eventDraw2() {
+void DefaultWindowService::_eventDraw2() {
     if (_mode == Mode::NORMAL) {
         if (_windowClearingColor.has_value()) {
             _window->clear(*_windowClearingColor);
@@ -238,7 +238,7 @@ void DefaultWindowManager::_eventDraw2() {
     }
 }
 
-void DefaultWindowManager::_eventDrawGUI() {
+void DefaultWindowService::_eventDrawGUI() {
     if (_mode == Mode::NORMAL) {
         _window->flush();
         _rmlUiContextDriver->update();
@@ -247,7 +247,7 @@ void DefaultWindowManager::_eventDrawGUI() {
     }
 }
 
-void DefaultWindowManager::_eventDisplay() {
+void DefaultWindowService::_eventDisplay() {
     if (_mode == Mode::NORMAL) {
         _displayWindowAndPollEvents();
     }
@@ -256,7 +256,7 @@ void DefaultWindowManager::_eventDisplay() {
     }
 }
 
-DefaultWindowManager::MainRenderTexturePositioningData DefaultWindowManager::
+DefaultWindowService::MainRenderTexturePositioningData DefaultWindowService::
     _getMainRenderTexturePositioningData() const //
 {
     MainRenderTexturePositioningData result;
@@ -315,7 +315,7 @@ DefaultWindowManager::MainRenderTexturePositioningData DefaultWindowManager::
     return result;
 }
 
-void DefaultWindowManager::_drawMainRenderTexture() {
+void DefaultWindowService::_drawMainRenderTexture() {
     _mainRenderTexture->flush();
     _mainRenderTexture->display();
 
@@ -331,7 +331,7 @@ void DefaultWindowManager::_drawMainRenderTexture() {
     _window->draw(*_mrtSprite);
 }
 
-void DefaultWindowManager::_displayWindowAndPollEvents() {
+void DefaultWindowService::_displayWindowAndPollEvents() {
     if (_timingConfig.framerateLimit.has_value() &&
         _timeSinceLastDisplay.getElapsedTime() < _getFrameDeltaTime()) {
         goto EVENTS;
@@ -351,7 +351,7 @@ EVENTS:
     }
 }
 
-void DefaultWindowManager::_sleepUntilNextStep() {
+void DefaultWindowService::_sleepUntilNextStep() {
     using std::chrono::duration_cast;
     using Duration = std::chrono::microseconds;
     const auto now = std::chrono::steady_clock::now();
@@ -375,15 +375,15 @@ void DefaultWindowManager::_sleepUntilNextStep() {
     }
 }
 
-FloatSeconds DefaultWindowManager::_getTickDeltaTime() const {
+FloatSeconds DefaultWindowService::_getTickDeltaTime() const {
     return ctx().getRuntimeConfig().tickRate.getDeltaTime();
 }
 
-FloatSeconds DefaultWindowManager::_getFrameDeltaTime() const {
+FloatSeconds DefaultWindowService::_getFrameDeltaTime() const {
     return _timingConfig.framerateLimit.value().getDeltaTime();
 }
 
-hg::math::Vector2d DefaultWindowManager::_getViewRelativeMousePos(const hg::uwga::View* aView) const {
+hg::math::Vector2d DefaultWindowService::_getViewRelativeMousePos(const hg::uwga::View* aView) const {
     if (_mode != Mode::NORMAL) {
         return {0.f, 0.f};
     }
@@ -401,7 +401,7 @@ hg::math::Vector2d DefaultWindowManager::_getViewRelativeMousePos(const hg::uwga
     return _mainRenderTexture->mapPixelToCoords(windowPos.cast<float>());
 }
 
-hg::math::Vector2f DefaultWindowManager::_getWindowRelativeMousePos() const {
+hg::math::Vector2f DefaultWindowService::_getWindowRelativeMousePos() const {
     if (_mode != Mode::NORMAL) {
         return {0, 0};
     }

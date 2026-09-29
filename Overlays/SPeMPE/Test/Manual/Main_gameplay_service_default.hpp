@@ -8,12 +8,12 @@
 #include "Config.hpp"
 #include "Engine.hpp"
 
-#include "Main_gameplay_manager.hpp"
+#include "Main_gameplay_service.hpp"
 
-class MainGameplayManagerBase
+class MainGameplayServiceBase
     : public spe::NonstateObject {
 public:
-    MainGameplayManagerBase(QAO_InstGuard aInstGuard);
+    MainGameplayServiceBase(QAO_InstGuard aInstGuard);
 
 protected:
     void _didAttach(QAO_Runtime&) override;
@@ -24,11 +24,11 @@ private:
 
 namespace singleplayer {
 
-class DefaultMainGameplayManager
-    : public MainGameplayManager
-    , public MainGameplayManagerBase {
+class DefaultMainGameplayService
+    : public MainGameplayService
+    , public MainGameplayServiceBase {
 public:
-    DefaultMainGameplayManager(QAO_InstGuard aInstGuard);
+    DefaultMainGameplayService(QAO_InstGuard aInstGuard);
 
 protected:
     void _didAttach(QAO_Runtime&) override;
@@ -38,11 +38,11 @@ protected:
 
 namespace multiplayer {
 
-class DefaultMainGameplayManager
-    : public MainGameplayManager
-    , public MainGameplayManagerBase {
+class DefaultMainGameplayService
+    : public MainGameplayService
+    , public MainGameplayServiceBase {
 public:
-    DefaultMainGameplayManager(QAO_InstGuard aInstGuard);
+    DefaultMainGameplayService(QAO_InstGuard aInstGuard);
 
 protected:
     void _didAttach(QAO_Runtime&) override;

@@ -1,7 +1,7 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#include "Main_gameplay_manager_default.hpp"
+#include "Main_gameplay_service_default.hpp"
 
 #include "Player_controls.hpp"
 
@@ -23,36 +23,36 @@ RN_DEFINE_RPC(SetGlobalStateBufferingLength, RN_ARGS(unsigned, aNewLength)) {
     });
 }
 
-DefaultMainGameplayManager::DefaultMainGameplayManager(QAO_InstGuard aInstGuard, int aExecutionPriority)
+DefaultMainGameplayService::DefaultMainGameplayService(QAO_InstGuard aInstGuard, int aExecutionPriority)
     : NonstateObject{aInstGuard,
                      QAO_ExeCon::ESSENTIAL,
                      aExecutionPriority,
-                     QAO_STATIC_NAME("GameplayManager")} {}
+                     QAO_STATIC_NAME("GameplayService")} {}
 
-void DefaultMainGameplayManager::_didAttach(QAO_Runtime& aRuntime) {
+void DefaultMainGameplayService::_didAttach(QAO_Runtime& aRuntime) {
     NonstateObject::_didAttach(aRuntime);
-    auto& netMgr = ccomp<MNetworking>();
-    netMgr.addEventListener(this);
-    stateBufferingLength = netMgr.getStateBufferingLength();
+    auto& netSvc = ccomp<MNetworking>();
+    netSvc.addEventListener(this);
+    stateBufferingLength = netSvc.getStateBufferingLength();
 }
 
-void DefaultMainGameplayManager::_willDetach(QAO_Runtime& aRuntime) {
+void DefaultMainGameplayService::_willDetach(QAO_Runtime& aRuntime) {
     ccomp<MNetworking>().removeEventListener(this);
     NonstateObject::_willDetach(aRuntime);
 }
 
-void DefaultMainGameplayManager::_eventUpdate1() {
+void DefaultMainGameplayService::_eventUpdate1() {
     if (ctx().isPrivileged()) {
-        auto& winMgr = ccomp<MWindow>();
+        auto& winSvc = ccomp<MWindow>();
 
         const int MAX_BUFFERING_LENGTH = 10;
         bool      sync                 = false;
 
-        if (winMgr.getInput().checkPressed(hg::in::PK_I, spe::WindowFrameInputView::Mode::Direct)) {
+        if (winSvc.getInput().checkPressed(hg::in::PK_I, spe::WindowFrameInputView::Mode::Direct)) {
             stateBufferingLength = (stateBufferingLength + 1) % (MAX_BUFFERING_LENGTH + 1);
             sync                 = true;
         }
-        if (winMgr.getInput().checkPressed(hg::in::PK_U, spe::WindowFrameInputView::Mode::Direct)) {
+        if (winSvc.getInput().checkPressed(hg::in::PK_U, spe::WindowFrameInputView::Mode::Direct)) {
             stateBufferingLength =
                 (stateBufferingLength + MAX_BUFFERING_LENGTH) % (MAX_BUFFERING_LENGTH + 1);
             sync = true;
@@ -79,7 +79,7 @@ void DefaultMainGameplayManager::_eventUpdate1() {
                 input.checkPressed(hg::in::PK_S),
                 input.checkPressed(hg::in::PK_SPACE, spe::WindowFrameInputView::Mode::Edge)};
 
-            spe::InputSyncManagerWrapper wrapper{ccomp<MInput>()};
+            spe::InputSyncServiceWrapper wrapper{ccomp<MInput>()};
             wrapper.setSignalValue<bool>(CTRLNAME_LEFT, controls.left);
             wrapper.setSignalValue<bool>(CTRLNAME_RIGHT, controls.right);
             wrapper.setSignalValue<bool>(CTRLNAME_UP, controls.up);
@@ -89,11 +89,11 @@ void DefaultMainGameplayManager::_eventUpdate1() {
     }
 }
 
-void DefaultMainGameplayManager::_eventDrawGUI() {
+void DefaultMainGameplayService::_eventDrawGUI() {
     // Do nothing
 }
 
-void DefaultMainGameplayManager::_eventPostUpdate() {
+void DefaultMainGameplayService::_eventPostUpdate() {
     const auto input = ccomp<MWindow>().getInput();
     if (input.checkPressed(hg::in::PK_F9, spe::WindowFrameInputView::Mode::Direct)) {
         // Stopping the context will delete:
@@ -105,8 +105,8 @@ void DefaultMainGameplayManager::_eventPostUpdate() {
     printBandwidthUsageCountdown -= 1;
     if (printBandwidthUsageCountdown == 0) {
         printBandwidthUsageCountdown = 120;
-        auto&      netMgr            = ccomp<MNetworking>();
-        const auto telemetry         = netMgr.getTelemetry(120);
+        auto&      netSvc            = ccomp<MNetworking>();
+        const auto telemetry         = netSvc.getTelemetry(120);
         HG_LOG_INFO(LOG_ID,
                     "Bandwidth usage in the last 120 frame(s): {:6.2f}kB UP, {:6.2f}kB DOWN.",
                     static_cast<double>(telemetry.uploadByteCount) / 1024.0,
@@ -114,7 +114,7 @@ void DefaultMainGameplayManager::_eventPostUpdate() {
     }
 }
 
-void DefaultMainGameplayManager::onNetworkingEvent(const hg::RN_Event& aEvent) {
+void DefaultMainGameplayService::onNetworkingEvent(const hg::RN_Event& aEvent) {
     if (ccomp<MNetworking>().isClient()) {
         // CLIENT
         aEvent.visit([this](const RN_Event::Connected& ev) {

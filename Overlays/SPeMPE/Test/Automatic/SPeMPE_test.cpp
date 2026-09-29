@@ -184,7 +184,7 @@ void Avatar::_syncDestroyImpl(SyncControlDelegate& aSyncCtrl) const {
     SPEMPE_SYNC_DESTROY_DEFAULT_IMPL(Avatar, aSyncCtrl);
 }
 
-using MNetworking = NetworkingManager;
+using MNetworking = NetworkingService;
 
 } // namespace
 
@@ -199,18 +199,18 @@ TEST_F(SPeMPE_SynchronizedTest, BasicFunctionalityTest) {
         // Server context:
         _serverCtx->setToMode(GameContext::Mode::Server);
 
-        auto netwMgr1 = QAO_Create<DefaultNetworkingManager>(_serverCtx->getQAORuntime().nonOwning(), 
+        auto netwSvc1 = QAO_Create<DefaultNetworkingService>(_serverCtx->getQAORuntime().nonOwning(), 
                                                              0, BUFFERING_LENGTH);
-        netwMgr1->setToServerMode(RN_Protocol::UDP, "pass", 2, 512, RN_NetworkingStack::Default);
-        _serverCtx->attachAndOwnComponent(std::move(netwMgr1));
+        netwSvc1->setToServerMode(RN_Protocol::UDP, "pass", 2, 512, RN_NetworkingStack::Default);
+        _serverCtx->attachAndOwnComponent(std::move(netwSvc1));
 
         // Client context:
         _clientCtx->setToMode(GameContext::Mode::Client);
 
-        auto netwMgr2 = QAO_Create<DefaultNetworkingManager>(_clientCtx->getQAORuntime().nonOwning(), 
+        auto netwSvc2 = QAO_Create<DefaultNetworkingService>(_clientCtx->getQAORuntime().nonOwning(), 
                                                              0, BUFFERING_LENGTH);
-        netwMgr2->setToClientMode(RN_Protocol::UDP, "pass", 512, RN_NetworkingStack::Default);
-        _clientCtx->attachAndOwnComponent(std::move(netwMgr2));
+        netwSvc2->setToClientMode(RN_Protocol::UDP, "pass", 512, RN_NetworkingStack::Default);
+        _clientCtx->attachAndOwnComponent(std::move(netwSvc2));
     }
     {
         SCOPED_TRACE("Establish conection between contexts");
@@ -325,18 +325,18 @@ TEST_F(SPeMPE_SynchronizedTest, ExeConFilteringTest) {
         // Server context:
         _serverCtx->setToMode(GameContext::Mode::Server);
 
-        auto netwMgr1 = QAO_Create<DefaultNetworkingManager>(_serverCtx->getQAORuntime().nonOwning(), 
+        auto netwSvc1 = QAO_Create<DefaultNetworkingService>(_serverCtx->getQAORuntime().nonOwning(), 
                                                              0, BUFFERING_LENGTH);
-        netwMgr1->setToServerMode(RN_Protocol::UDP, "pass", 2, 512, RN_NetworkingStack::Default);
-        _serverCtx->attachAndOwnComponent(std::move(netwMgr1));
+        netwSvc1->setToServerMode(RN_Protocol::UDP, "pass", 2, 512, RN_NetworkingStack::Default);
+        _serverCtx->attachAndOwnComponent(std::move(netwSvc1));
 
         // Client context:
         _clientCtx->setToMode(GameContext::Mode::Client);
 
-        auto netwMgr2 = QAO_Create<DefaultNetworkingManager>(_clientCtx->getQAORuntime().nonOwning(), 
+        auto netwSvc2 = QAO_Create<DefaultNetworkingService>(_clientCtx->getQAORuntime().nonOwning(), 
                                                              0, BUFFERING_LENGTH);
-        netwMgr2->setToClientMode(RN_Protocol::UDP, "pass", 512, RN_NetworkingStack::Default);
-        _clientCtx->attachAndOwnComponent(std::move(netwMgr2));
+        netwSvc2->setToClientMode(RN_Protocol::UDP, "pass", 512, RN_NetworkingStack::Default);
+        _clientCtx->attachAndOwnComponent(std::move(netwSvc2));
     }
     {
         SCOPED_TRACE("Establish conection between contexts");
@@ -463,18 +463,18 @@ TEST_F(SPeMPE_SynchronizedTest, DeactivationTest) {
         // Server context:
         _serverCtx->setToMode(GameContext::Mode::Server);
 
-        auto netwMgr1 = QAO_Create<DefaultNetworkingManager>(_serverCtx->getQAORuntime().nonOwning(),
+        auto netwSvc1 = QAO_Create<DefaultNetworkingService>(_serverCtx->getQAORuntime().nonOwning(),
                                                              0, BUFFERING_LENGTH);
-        netwMgr1->setToServerMode(RN_Protocol::UDP, "pass", 2, 512, RN_NetworkingStack::Default);
-        _serverCtx->attachAndOwnComponent(std::move(netwMgr1));
+        netwSvc1->setToServerMode(RN_Protocol::UDP, "pass", 2, 512, RN_NetworkingStack::Default);
+        _serverCtx->attachAndOwnComponent(std::move(netwSvc1));
 
         // Client context:
         _clientCtx->setToMode(GameContext::Mode::Client);
 
-        auto netwMgr2 = QAO_Create<DefaultNetworkingManager>(_clientCtx->getQAORuntime().nonOwning(),
+        auto netwSvc2 = QAO_Create<DefaultNetworkingService>(_clientCtx->getQAORuntime().nonOwning(),
                                                              0, BUFFERING_LENGTH);
-        netwMgr2->setToClientMode(RN_Protocol::UDP, "pass", 512, RN_NetworkingStack::Default);
-        _clientCtx->attachAndOwnComponent(std::move(netwMgr2));
+        netwSvc2->setToClientMode(RN_Protocol::UDP, "pass", 512, RN_NetworkingStack::Default);
+        _clientCtx->attachAndOwnComponent(std::move(netwSvc2));
     }
     {
         SCOPED_TRACE("Establish conection between contexts");
@@ -712,18 +712,18 @@ TEST_P(SPeMPE_ParametrizedSynchronizedTest, DeactivationWithAutodiffStateTest) {
         // Server context:
         _serverCtx->setToMode(GameContext::Mode::Server);
 
-        auto netwMgr1 = QAO_Create<DefaultNetworkingManager>(_serverCtx->getQAORuntime().nonOwning(),
+        auto netwSvc1 = QAO_Create<DefaultNetworkingService>(_serverCtx->getQAORuntime().nonOwning(),
                                                              0, BUFFERING_LENGTH);
-        netwMgr1->setToServerMode(RN_Protocol::UDP, "pass", 2, 512, RN_NetworkingStack::Default);
-        _serverCtx->attachAndOwnComponent(std::move(netwMgr1));
+        netwSvc1->setToServerMode(RN_Protocol::UDP, "pass", 2, 512, RN_NetworkingStack::Default);
+        _serverCtx->attachAndOwnComponent(std::move(netwSvc1));
 
         // Client context:
         _clientCtx->setToMode(GameContext::Mode::Client);
 
-        auto netwMgr2 = QAO_Create<DefaultNetworkingManager>(_clientCtx->getQAORuntime().nonOwning(),
+        auto netwSvc2 = QAO_Create<DefaultNetworkingService>(_clientCtx->getQAORuntime().nonOwning(),
                                                              0, BUFFERING_LENGTH);
-        netwMgr2->setToClientMode(RN_Protocol::UDP, "pass", 512, RN_NetworkingStack::Default);
-        _clientCtx->attachAndOwnComponent(std::move(netwMgr2));
+        netwSvc2->setToClientMode(RN_Protocol::UDP, "pass", 512, RN_NetworkingStack::Default);
+        _clientCtx->attachAndOwnComponent(std::move(netwSvc2));
     }
     {
         SCOPED_TRACE("Establish conection between contexts");

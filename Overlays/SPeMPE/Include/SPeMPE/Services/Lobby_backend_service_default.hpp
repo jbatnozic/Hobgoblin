@@ -3,10 +3,10 @@
 
 // clang-format off
 
-#ifndef SPEMPE_MANAGERS_LOBBY_BACKEND_MANAGER_DEFAULT_HPP
-#define SPEMPE_MANAGERS_LOBBY_BACKEND_MANAGER_DEFAULT_HPP
+#ifndef SPEMPE_SERVICES_LOBBY_BACKEND_SERVICE_DEFAULT_HPP
+#define SPEMPE_SERVICES_LOBBY_BACKEND_SERVICE_DEFAULT_HPP
 
-#include <SPeMPE/Managers/Lobby_backend_manager.hpp>
+#include <SPeMPE/Services/Lobby_backend_service.hpp>
 
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/RigelNet.hpp>
@@ -16,23 +16,23 @@
 #include <vector>
 
 #include <SPeMPE/GameObjectFramework/Game_object_bases.hpp>
-#include <SPeMPE/Managers/Networking_manager.hpp>
+#include <SPeMPE/Services/Networking_service.hpp>
 
 namespace jbatnozic {
 namespace spempe {
 
 /**
- * Needs: Networking manager, Synced varmap manager, [opt] Window manager
+ * Needs: Networking service, Synced varmap service, [opt] Window service
  */
-class DefaultLobbyBackendManager
-    : public LobbyBackendManager
+class DefaultLobbyBackendService
+    : public LobbyBackendService
     , public NonstateObject
     , private NetworkingEventListener
 {
 public:
-    DefaultLobbyBackendManager(hobgoblin::QAO_InstGuard aInstGuard, int aExecutionPriority);
+    DefaultLobbyBackendService(hobgoblin::QAO_InstGuard aInstGuard, int aExecutionPriority);
 
-    ~DefaultLobbyBackendManager() override;
+    ~DefaultLobbyBackendService() override;
 
     void setToHostMode(hobgoblin::PZInteger aLobbySize) override;
 
@@ -140,8 +140,8 @@ private:
     void _enqueueLobbyLockedIn(bool aSomethingDidChange);
     void _enqueueLobbyChanged();
 
-    friend void USPEMPE_DefaultLobbyBackendManager_SetPlayerInfo_Impl(
-        DefaultLobbyBackendManager& aLobbyMgr,
+    friend void USPEMPE_DefaultLobbyBackendService_SetPlayerInfo_Impl(
+        DefaultLobbyBackendService& aLobbySvc,
         const int aClientIndex,
         const std::string& aName,
         const std::string& aUniqueId,
@@ -151,8 +151,8 @@ private:
         const std::string& aCustomData_3
     );
 
-    friend void USPEMPE_DefaultLobbyBackendManager_SetPlayerIndex_Impl(
-        DefaultLobbyBackendManager& aLobbyMgr,
+    friend void USPEMPE_DefaultLobbyBackendService_SetPlayerIndex_Impl(
+        DefaultLobbyBackendService& aLobbySvc,
         hobgoblin::PZInteger aPlayerIndex
     );
 };
@@ -160,6 +160,6 @@ private:
 } // namespace spempe
 } // namespace jbatnozic
 
-#endif // !SPEMPE_MANAGERS_LOBBY_BACKEND_MANAGER_DEFAULT_HPP
+#endif // !SPEMPE_SERVICES_LOBBY_BACKEND_SERVICE_DEFAULT_HPP
 
 // clang-format on

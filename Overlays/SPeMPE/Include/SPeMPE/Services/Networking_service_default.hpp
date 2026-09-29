@@ -1,11 +1,11 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#ifndef SPEMPE_MANAGERS_NETWORKING_MANAGER_DEFAULT_HPP
-#define SPEMPE_MANAGERS_NETWORKING_MANAGER_DEFAULT_HPP
+#ifndef SPEMPE_SERVICES_NETWORKING_SERVICE_DEFAULT_HPP
+#define SPEMPE_SERVICES_NETWORKING_SERVICE_DEFAULT_HPP
 
 #include <SPeMPE/GameObjectFramework/Game_object_bases.hpp>
-#include <SPeMPE/Managers/Networking_manager.hpp>
+#include <SPeMPE/Services/Networking_service.hpp>
 
 #include <deque>
 #include <memory>
@@ -14,18 +14,18 @@
 namespace jbatnozic {
 namespace spempe {
 
-//! One concrete implementation of NetworkingManager.
+//! One concrete implementation of NetworkingService.
 //! TODO: Tip on setting execution priority?
-class DefaultNetworkingManager
-    : public NetworkingManager
+class DefaultNetworkingService
+    : public NetworkingService
     , public NonstateObject
     , private hg::RN_EventListener {
 public:
-    DefaultNetworkingManager(hobgoblin::QAO_InstGuard aInstGuard,
+    DefaultNetworkingService(hobgoblin::QAO_InstGuard aInstGuard,
                              int                      aExecutionPriority,
                              hg::PZInteger            aStateBufferingLength);
 
-    ~DefaultNetworkingManager() override;
+    ~DefaultNetworkingService() override;
 
     ///////////////////////////////////////////////////////////////////////////
     // CONFIGURATION                                                         //
@@ -130,4 +130,4 @@ private:
 } // namespace spempe
 } // namespace jbatnozic
 
-#endif // !SPEMPE_MANAGERS_NETWORKING_MANAGER_DEFAULT_HPP
+#endif // !SPEMPE_SERVICES_NETWORKING_SERVICE_DEFAULT_HPP

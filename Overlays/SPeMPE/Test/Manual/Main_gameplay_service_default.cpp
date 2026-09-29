@@ -1,7 +1,7 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#include "Main_gameplay_manager_default.hpp"
+#include "Main_gameplay_service_default.hpp"
 
 #include <Hobgoblin/Input.hpp>
 #include <Hobgoblin/Logging.hpp>
@@ -11,13 +11,13 @@
 
 static constexpr auto LOG_ID = "SPeMPE.ManualTest";
 
-MainGameplayManagerBase::MainGameplayManagerBase(QAO_InstGuard aInstGuard)
+MainGameplayServiceBase::MainGameplayServiceBase(QAO_InstGuard aInstGuard)
     : spe::NonstateObject{aInstGuard,
                           QAO_ExeCon::ESSENTIAL,
                           PRIORITY_GAMEPLAYMGR,
-                          "DefaultMainGameplayManager"} {}
+                          "DefaultMainGameplayService"} {}
 
-void MainGameplayManagerBase::_didAttach(QAO_Runtime& aRuntime) {
+void MainGameplayServiceBase::_didAttach(QAO_Runtime& aRuntime) {
     spe::NonstateObject::_didAttach(aRuntime);
 
     const int execPriority = 10;  // not really important for these objects
@@ -30,11 +30,11 @@ void MainGameplayManagerBase::_didAttach(QAO_Runtime& aRuntime) {
         const auto config = spe::NetworkingTelemetryReporter::Config{cycleLength};
         QAO_Create<spe::NetworkingTelemetryReporter>(ctx().getQAORuntime(), execPriority, config);
 
-        ccomp<spe::NetworkingManager>().setTelemetryCycleLimit(cycleLength);
+        ccomp<spe::NetworkingService>().setTelemetryCycleLimit(cycleLength);
     }
 }
 
-void MainGameplayManagerBase::_eventPreUpdate() {
+void MainGameplayServiceBase::_eventPreUpdate() {
     if (hg::in::CheckPressedPK(hg::in::PK_RSHIFT)) {
         ctx().stop();
     }
@@ -42,11 +42,11 @@ void MainGameplayManagerBase::_eventPreUpdate() {
 
 namespace singleplayer {
 
-DefaultMainGameplayManager::DefaultMainGameplayManager(QAO_InstGuard aInstGuard)
-    : MainGameplayManagerBase{aInstGuard} {}
+DefaultMainGameplayService::DefaultMainGameplayService(QAO_InstGuard aInstGuard)
+    : MainGameplayServiceBase{aInstGuard} {}
 
-void DefaultMainGameplayManager::_didAttach(QAO_Runtime& aRuntime) {
-    MainGameplayManagerBase::_didAttach(aRuntime);
+void DefaultMainGameplayService::_didAttach(QAO_Runtime& aRuntime) {
+    MainGameplayServiceBase::_didAttach(aRuntime);
 
     auto p = QAO_Create<BasicActor>(aRuntime);
     p->init(32.f, 32.f, hg::uwga::COLOR_PURPLE, 0);
@@ -56,11 +56,11 @@ void DefaultMainGameplayManager::_didAttach(QAO_Runtime& aRuntime) {
 
 namespace multiplayer {
 
-DefaultMainGameplayManager::DefaultMainGameplayManager(QAO_InstGuard aInstGuard)
-    : MainGameplayManagerBase{aInstGuard} {}
+DefaultMainGameplayService::DefaultMainGameplayService(QAO_InstGuard aInstGuard)
+    : MainGameplayServiceBase{aInstGuard} {}
 
-void DefaultMainGameplayManager::_didAttach(QAO_Runtime& aRuntime) {
-    MainGameplayManagerBase::_didAttach(aRuntime);
+void DefaultMainGameplayService::_didAttach(QAO_Runtime& aRuntime) {
+    MainGameplayServiceBase::_didAttach(aRuntime);
 
     if (ctx().isPrivileged()) {
 #if 1

@@ -4,7 +4,7 @@
 // clang-format off
 
 
-#include <SPeMPE/Managers/Networking_manager.hpp>
+#include <SPeMPE/Services/Networking_service.hpp>
 #include <SPeMPE/Utility/Networking_telemetry_reporter.hpp>
 
 #include <Hobgoblin/HGExcept.hpp>
@@ -34,8 +34,8 @@ void NetworkingTelemetryReporter::_eventPostUpdate() {
         return;
     }
 
-    const auto& netMgr    = ccomp<NetworkingManager>();
-    const auto& telemetry = netMgr.getTelemetry(_cycleLength);
+    const auto& netSvc    = ccomp<NetworkingService>();
+    const auto& telemetry = netSvc.getTelemetry(_cycleLength);
     HG_LOG_INFO(
         LOG_ID,
         "Bandwidth usage in the last {} iteration(s):\n      UPLOADED: {:6.2f}kB\n    DOWNLOADED: {:6.2f}kB",

@@ -7,9 +7,9 @@ find_package(GTest CONFIG REQUIRED)
 
 add_executable(${PROJECT_NAME}
     "Autodiff_state_test.cpp"
-    "Default_lobby_backend_manager_test.cpp"
-    "Default_synced_varmap_manager_test.cpp"
-    "Input_sync_manager_test.cpp"
+    "Default_lobby_backend_service_test.cpp"
+    "Default_synced_varmap_service_test.cpp"
+    "Input_sync_service_test.cpp"
     # "Keyboard_input_test.cpp"
     "SPeMPE_test.cpp"
     "Sync_obj_role_specific_data_test.cpp"

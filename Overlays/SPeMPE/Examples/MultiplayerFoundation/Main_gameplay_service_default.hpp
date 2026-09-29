@@ -4,14 +4,14 @@
 #pragma once
 
 #include "Engine.h"
-#include "Main_gameplay_manager.hpp"
+#include "Main_gameplay_service.hpp"
 
-class DefaultMainGameplayManager
-    : public MainGameplayManager
+class DefaultMainGameplayService
+    : public MainGameplayService
     , public spe::NonstateObject
     , private spe::NetworkingEventListener {
 public:
-    explicit DefaultMainGameplayManager(QAO_InstGuard aInstGuard, int aExecutionPriority);
+    explicit DefaultMainGameplayService(QAO_InstGuard aInstGuard, int aExecutionPriority);
 
 private:
     hg::PZInteger stateBufferingLength = 0;
@@ -28,7 +28,7 @@ private:
     void onNetworkingEvent(const RN_Event& aEvent) override;
 };
 
-QAO_REGISTER_CLASS(DefaultMainGameplayManager, Example_MainGameplayManager) {
+QAO_REGISTER_CLASS(DefaultMainGameplayService, Example_MainGameplayService) {
     QAO_LOCAL_ALIAS(C, clazz);
     clazz.setSuperclass<spe::NonstateObject>();
 }

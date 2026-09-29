@@ -14,7 +14,7 @@
 #include <SPeMPE/GameObjectFramework/Synchronized_object_registry.hpp>
 #include <SPeMPE/GameObjectFramework/Sync_control_delegate.hpp>
 #include <SPeMPE/GameObjectFramework/Sync_id.hpp>
-#include <SPeMPE/Managers/Networking_manager.hpp>
+#include <SPeMPE/Services/Networking_service.hpp>
 #include <SPeMPE/Utility/Rpc_receiver_context_template.hpp>
 
 #include <type_traits>
@@ -28,12 +28,12 @@ namespace hg = ::jbatnozic::hobgoblin;
 
 namespace detail {
 
-template <class taSyncObj, class taNetwMgr>
+template <class taSyncObj, class taNetwSvc>
 void DefaultSyncCreateHandler(hg::RN_NodeInterface& node, SyncId syncId) {
     node.callIfClient([&](hg::RN_ClientInterface& client) {
         auto  rc         = SPEMPE_GET_RPC_RECEIVER_CONTEXT(client);
         auto& runtime    = rc.gameContext.getQAORuntime();
-        auto* regAddr    = rc.netwMgr.__spempeimpl_getRegistryAddress().copy();
+        auto* regAddr    = rc.netwSvc.__spempeimpl_getRegistryAddress().copy();
         auto& syncObjReg = *static_cast<detail::SynchronizedObjectRegistry*>(regAddr);
 
         if (syncObjReg.getMapping(syncId) == nullptr) {
@@ -46,7 +46,7 @@ void DefaultSyncCreateHandler(hg::RN_NodeInterface& node, SyncId syncId) {
     });
 }
 
-template <class taSyncObj, class taNetwMgr>
+template <class taSyncObj, class taNetwSvc>
 void DefaultSyncUpdateHandler(
     hg::RN_NodeInterface& node,
     SyncId syncId,
@@ -55,7 +55,7 @@ void DefaultSyncUpdateHandler(
 {
     node.callIfClient([&](hg::RN_ClientInterface& client) {
         auto  rc         = SPEMPE_GET_RPC_RECEIVER_CONTEXT(client);
-        auto* regAddr    = rc.netwMgr.__spempeimpl_getRegistryAddress().copy();
+        auto* regAddr    = rc.netwSvc.__spempeimpl_getRegistryAddress().copy();
         auto& syncObjReg = *static_cast<detail::SynchronizedObjectRegistry*>(regAddr);
         auto* object     = static_cast<taSyncObj*>(syncObjReg.getMapping(syncId));
 
@@ -73,11 +73,11 @@ void DefaultSyncUpdateHandler(
     });
 }
 
-template <class taSyncObj, class taNetwMgr>
+template <class taSyncObj, class taNetwSvc>
 void DefaultSyncDestroyHandler(hg::RN_NodeInterface& node, SyncId syncId) {
     node.callIfClient([&](hg::RN_ClientInterface& client) {
         auto  rc         = SPEMPE_GET_RPC_RECEIVER_CONTEXT(client);
-        auto* regAddr    = rc.netwMgr.__spempeimpl_getRegistryAddress().copy();
+        auto* regAddr    = rc.netwSvc.__spempeimpl_getRegistryAddress().copy();
         auto& syncObjReg = *static_cast<detail::SynchronizedObjectRegistry*>(regAddr);
         auto* object     = static_cast<taSyncObj*>(syncObjReg.getMapping(syncId));
 
@@ -230,7 +230,7 @@ T& StripConstFromRef(const T& aRef) {
     RN_DEFINE_RPC(USPEMPE_Create##_class_name_, \
                   RN_ARGS(::jbatnozic::spempe::SyncId, syncId)) { \
         ::jbatnozic::spempe::detail::DefaultSyncCreateHandler<_class_name_, \
-                                                              ::jbatnozic::spempe::NetworkingManager>( \
+                                                              ::jbatnozic::spempe::NetworkingService>( \
             RN_NODE_IN_HANDLER(), syncId); \
     }
 
@@ -240,7 +240,7 @@ T& StripConstFromRef(const T& aRef) {
                           ::jbatnozic::spempe::SyncFlags, flags, \
                           _class_name_::VisibleState&, state)) { \
         ::jbatnozic::spempe::detail::DefaultSyncUpdateHandler<_class_name_, \
-                                                              ::jbatnozic::spempe::NetworkingManager>( \
+                                                              ::jbatnozic::spempe::NetworkingService>( \
             RN_NODE_IN_HANDLER(), syncId, flags, state); \
     }
 
@@ -248,7 +248,7 @@ T& StripConstFromRef(const T& aRef) {
     RN_DEFINE_RPC(USPEMPE_Destroy##_class_name_, \
                   RN_ARGS(::jbatnozic::spempe::SyncId, syncId)) { \
         ::jbatnozic::spempe::detail::DefaultSyncDestroyHandler<_class_name_, \
-                                                               ::jbatnozic::spempe::NetworkingManager>( \
+                                                               ::jbatnozic::spempe::NetworkingService>( \
             RN_NODE_IN_HANDLER(), syncId); \
     }
 

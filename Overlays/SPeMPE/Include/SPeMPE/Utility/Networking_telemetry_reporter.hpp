@@ -14,7 +14,7 @@
 namespace jbatnozic {
 namespace spempe {
 
-//! Periodically logs the bandwidth usage of a NetworkingManager.
+//! Periodically logs the bandwidth usage of a NetworkingService.
 class NetworkingTelemetryReporter : public NonstateObject {
 public:
     struct Config {

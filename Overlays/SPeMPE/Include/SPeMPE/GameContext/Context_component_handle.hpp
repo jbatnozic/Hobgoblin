@@ -37,7 +37,7 @@ public:
     //! Default constructor; makes an empty null handle.
     ContextComponentHandle()
         : _ccompPointer{nullptr}
-        , _lifetimeManager{std::unique_ptr<taCComp>(nullptr)} {}
+        , _lifetimeService{std::unique_ptr<taCComp>(nullptr)} {}
 
     //! Construction from nullptr is the same as default construction.
     ContextComponentHandle(std::nullptr_t)
@@ -46,7 +46,7 @@ public:
     //! Construct from a unique_ptr to a ContextComponent.
     ContextComponentHandle(std::unique_ptr<taCComp> aUPtr)
         : _ccompPointer{aUPtr.get()}
-        , _lifetimeManager{std::move(aUPtr)} {}
+        , _lifetimeService{std::move(aUPtr)} {}
 
     //! Construct from a QAO_Handle to a ContextComponent that's also a QAO object.
     //! The passed must be owning (or null), otherwise `InvalidArgumentError` will be thrown.
@@ -57,10 +57,10 @@ public:
     // clang-format on
     ContextComponentHandle(hg::QAO_Handle<U> aHandle)
         : _ccompPointer{aHandle.ptr()}
-        , _lifetimeManager{std::move(aHandle)} //
+        , _lifetimeService{std::move(aHandle)} //
     {
         HG_VALIDATE_ARGUMENT(_ccompPointer == nullptr ||
-                                 std::get<VARIANT_QAOHANDLE>(_lifetimeManager).isOwning(),
+                                 std::get<VARIANT_QAOHANDLE>(_lifetimeService).isOwning(),
                              "ContextComponentHandle must be constructed from an owning QAO handle.");
     }
 
@@ -72,10 +72,10 @@ public:
     //! \note leaves `aOther` in anempty (null) state.
     ContextComponentHandle(ContextComponentHandle&& aOther) noexcept
         : _ccompPointer{aOther._ccompPointer}
-        , _lifetimeManager{std::move(aOther._lifetimeManager)} //
+        , _lifetimeService{std::move(aOther._lifetimeService)} //
     {
         aOther._ccompPointer    = nullptr;
-        aOther._lifetimeManager = {};
+        aOther._lifetimeService = {};
     }
 
     //! Move assignment operator.
@@ -83,9 +83,9 @@ public:
     ContextComponentHandle& operator=(ContextComponentHandle&& aOther) noexcept {
         if (&aOther != this) {
             _ccompPointer           = aOther._ccompPointer;
-            _lifetimeManager        = std::move(aOther._lifetimeManager);
+            _lifetimeService        = std::move(aOther._lifetimeService);
             aOther._ccompPointer    = nullptr;
-            aOther._lifetimeManager = {};
+            aOther._lifetimeService = {};
         }
         return *this;
     }
@@ -97,9 +97,9 @@ public:
     // clang-format on
     ContextComponentHandle(ContextComponentHandle<U>&& aOther)
         : _ccompPointer{aOther._ccompPointer}
-        , _lifetimeManager{std::move(aOther._lifetimeManager)} {
+        , _lifetimeService{std::move(aOther._lifetimeService)} {
         aOther._ccompPointer    = nullptr;
-        aOther._lifetimeManager = {};
+        aOther._lifetimeService = {};
     }
 
     //! Move assignment from a handle to a subclass of `taCComp`.
@@ -110,9 +110,9 @@ public:
     ContextComponentHandle& operator=(ContextComponentHandle<U>&& aOther) {
         if ((void*)&aOther != (void*)this) {
             _ccompPointer           = aOther._ccompPointer;
-            _lifetimeManager        = std::move(aOther._lifetimeManager);
+            _lifetimeService        = std::move(aOther._lifetimeService);
             aOther._ccompPointer    = nullptr;
-            aOther._lifetimeManager = {};
+            aOther._lifetimeService = {};
         }
         return *this;
     }
@@ -125,9 +125,9 @@ public:
     ContextComponentHandle<U> downcastMove() {
         ContextComponentHandle<U> result;
         result._ccompPointer    = _ccompPointer;
-        result._lifetimeManager = std::move(_lifetimeManager);
+        result._lifetimeService = std::move(_lifetimeService);
         _ccompPointer           = nullptr;
-        _lifetimeManager        = {};
+        _lifetimeService        = {};
         return result;
     }
 
@@ -172,7 +172,7 @@ private:
     friend class ContextComponentHandle;
 
     ContextComponent*                                                                  _ccompPointer;
-    std::variant<std::unique_ptr<ContextComponent>, hobgoblin::qao::QAO_GenericHandle> _lifetimeManager;
+    std::variant<std::unique_ptr<ContextComponent>, hobgoblin::qao::QAO_GenericHandle> _lifetimeService;
 
     static constexpr std::size_t VARIANT_UPOINTER  = 0;
     static constexpr std::size_t VARIANT_QAOHANDLE = 1;

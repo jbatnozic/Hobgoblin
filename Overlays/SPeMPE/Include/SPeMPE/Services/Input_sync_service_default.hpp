@@ -3,13 +3,13 @@
 
 // clang-format off
 
-#ifndef SPEMPE_MANAGERS_INPUT_SYNC_MANAGER_DEFAULT_HPP
-#define SPEMPE_MANAGERS_INPUT_SYNC_MANAGER_DEFAULT_HPP
+#ifndef SPEMPE_SERVICES_INPUT_SYNC_SERVICE_DEFAULT_HPP
+#define SPEMPE_SERVICES_INPUT_SYNC_SERVICE_DEFAULT_HPP
 
 #include <Hobgoblin/Utility/Packet.hpp>
 #include <Hobgoblin/Utility/State_scheduler_simple.hpp>
 #include <SPeMPE/GameObjectFramework/Game_object_bases.hpp>
-#include <SPeMPE/Managers/Input_sync_manager.hpp>
+#include <SPeMPE/Services/Input_sync_service.hpp>
 
 #include <unordered_map>
 #include <variant>
@@ -17,11 +17,11 @@
 namespace jbatnozic {
 namespace spempe {
 
-class DefaultInputSyncManager 
-    : public InputSyncManager
+class DefaultInputSyncService 
+    : public InputSyncService
     , public NonstateObject {
 public:
-    DefaultInputSyncManager(hobgoblin::QAO_InstGuard aInstGuard, int aExecutionPriority);
+    DefaultInputSyncService(hobgoblin::QAO_InstGuard aInstGuard, int aExecutionPriority);
 
     void setToHostMode(hg::PZInteger aClientCount, hg::PZInteger aStateBufferingLength) override;
     void setToClientMode() override;
@@ -135,7 +135,7 @@ private:
     void _eventUpdate1() override;
     void _eventEndUpdate() override;
 
-    friend void USPEMPE_DefaultInputSyncManager_PutNewState(DefaultInputSyncManager&,
+    friend void USPEMPE_DefaultInputSyncService_PutNewState(DefaultInputSyncService&,
                                                             int,
                                                             const hg::util::Packet&,
                                                             hg::PZInteger);
@@ -144,6 +144,6 @@ private:
 } // namespace spempe
 } // namespace jbatnozic
 
-#endif // !SPEMPE_MANAGERS_INPUT_SYNC_MANAGER_DEFAULT_HPP
+#endif // !SPEMPE_SERVICES_INPUT_SYNC_SERVICE_DEFAULT_HPP
 
 // clang-format on

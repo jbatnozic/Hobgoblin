@@ -90,7 +90,7 @@ but at the same time we don't want to have to pass a reference to it manually al
 that would make good context components are: user input controllers, window controllers networking controllers etc.
 
 A Context Component can _also_ be an active object (be a member of the QAO runtime and respond to events same as any
-other), in which case the SPeMPE convention is to call it a "Manager". More word on this later.
+other), in which case the SPeMPE convention is to call it a "Service". More word on this later.
 
 For multiple reasons, including: avoiding circular includes, reducing coupling, increased testability and
 maintainability, and others, it's **strongly** recommended to separate all context components into abstract
@@ -247,7 +247,7 @@ The way this works is that on the server-side a so-called "Master" object is cre
 is guaranteed to have the same SyncId as its Master on the remote. SPeMPE will keep the states of all the Dummy objects
 synced to the state of the Master object at all times, automatically (until the Master is destroyed, after which its
 Dummies will also be destroyed), and even with lag compensation if you turn it on (which you should, because it provides
-a very smooth experience for the players). This requires assistance from SPeMPE's NetworkingManager (read below for more
+a very smooth experience for the players). This requires assistance from SPeMPE's NetworkingService (read below for more
 info on that) which, apart from keeping the local RigelNet node running, also holds a registry which keeps track of all
 synchronized objects currently in the game (note: new synchronized objects will register themselves in this registry
 automatically upon being attached to the runtime/context). The final thing to note here is that you can, and should,
@@ -395,59 +395,59 @@ that `_eventUpdate1()` is `final` in `SynchronizedObjectBase`, because it's spec
 **TODO:** destructor, default sync implementations, sinclaire (alternating updates),
 pacemaker pulses, skipping updates, deactivation, custom syncing (so many...) _getCurrentState
 
-## SPeMPE Managers
+## SPeMPE Services
 
 (In order of importance, more or less)
 
-### WindowManager
+### WindowService
 
 TODO (handles window I/O, including keyboard and mouse input, frame timing, graphics and GUI rendering and display)
 
-### NetworkingManager
+### NetworkingService
 
 TODO (handles network communication; holds the registry of synchronized objects)
 
-### InputSyncManager
+### InputSyncService
 
 TODO (syncs players' inputs to the server)
 
-### AuthorizationManager
+### AuthorizationService
 
 TODO (manages permissions for players to be the 'game master' - to start, stop and control the game)
 
-### SyncedVarmapManager
+### SyncedVarmapService
 
 TODO (holds a dictionary of values to be synced automatically to all clients in a very simple way)
 
-### LobbyBackendManager
+### LobbyBackendService
 
 TODO (manages players joining and leaving the game, who goes into which slot etc...)
 
-### Handling Managers' Execution Priorities
+### Handling Services' Execution Priorities
 
 An important element in your game's programming will be properly setting the execution priorities of all active objects
-to ensure that all events (especially those of the Manager objects, which do a lot of important work) of those objects
+to ensure that all events (especially those of the Service objects, which do a lot of important work) of those objects
 are executed in the correct order. If you get it wrong, the game most likely won't crash but it it could become less
 responsive and the on-screen output could look wrong.
 
 **Recommended execution priority setup:**
-- Highest: `SyncedVarmapManager`, `NetworkingManager`, `LobbyBackendManager`, `LobbyFrontendManager`,
-`AuthenticationManager` - in that specific order.
-- Then all other objects, including your own custom manager. Note: SPeMPE's `InputSyncManager` should go somewhere in
-here - for it it's important that it goes after `NetworkingManager` (but that's already fulfilled), that on the client
+- Highest: `SyncedVarmapService`, `NetworkingService`, `LobbyBackendService`, `LobbyFrontendService`,
+`AuthenticationService` - in that specific order.
+- Then all other objects, including your own custom service. Note: SPeMPE's `InputSyncService` should go somewhere in
+here - for it it's important that it goes after `NetworkingService` (but that's already fulfilled), that on the client
 side, it goes after whatever it is that reads and sets the player input, and on the server side it goes before
 anything that reads the input state.
-- Finally, `WindowManager` goes after ALL OTHER objects.
+- Finally, `WindowService` goes after ALL OTHER objects.
 
 For example:
-- `SyncedVarmapManager` => 1105
-- `NetworkingManager` =>  1104
-- `LobbyBackendManager` => 1103
-- `LobbyFrontendManager` => 1102
-- `AuthenticationManager` => 1101
+- `SyncedVarmapService` => 1105
+- `NetworkingService` =>  1104
+- `LobbyBackendService` => 1103
+- `LobbyFrontendService` => 1102
+- `AuthenticationService` => 1101
 - `<input reader>` => 1010
-- `InputSyncManager` => 1009
+- `InputSyncService` => 1009
 - `<other>` => 1000 - 0
-- `WindowManager` => -1
+- `WindowService` => -1
 
 `=====================================================================================================================`

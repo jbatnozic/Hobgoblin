@@ -6,7 +6,7 @@
 #include <SPeMPE/GameContext/Game_context.hpp>
 #include <SPeMPE/GameObjectFramework/Game_object_bases.hpp>
 #include <SPeMPE/GameObjectFramework/Synchronized_object_registry.hpp>
-#include <SPeMPE/Managers/Networking_manager.hpp>
+#include <SPeMPE/Services/Networking_service.hpp>
 #include <SPeMPE/Utility/Rpc_receiver_context_template.hpp>
 
 #include <Hobgoblin/Common/Build_type.hpp>
@@ -29,7 +29,7 @@ RN_DEFINE_RPC(USPEMPE_DeactivateObject, RN_ARGS(SyncId, aSyncId)) {
     RN_NODE_IN_HANDLER().callIfClient(
         [=](hg::RN_ClientInterface& aClient) {
             const auto rc    = SPEMPE_GET_RPC_RECEIVER_CONTEXT(aClient);
-            auto  regAddr    = rc.netwMgr.__spempeimpl_getRegistryAddress();
+            auto  regAddr    = rc.netwSvc.__spempeimpl_getRegistryAddress();
             auto& syncObjReg = *static_cast<detail::SynchronizedObjectRegistry*>(regAddr.copy());
 
             syncObjReg.deactivateObject(aSyncId, rc.pessimisticLatencyInSteps);
@@ -41,8 +41,8 @@ RN_DEFINE_RPC(USPEMPE_DeactivateObject, RN_ARGS(SyncId, aSyncId)) {
         });
 }
 
-bool IsFilteredOut(NetworkingManager::ExeCon aExeconThreshold,
-                   NetworkingManager::ExeConSyncFilter aFilter) {
+bool IsFilteredOut(NetworkingService::ExeCon aExeconThreshold,
+                   NetworkingService::ExeConSyncFilter aFilter) {
     return aExeconThreshold < aFilter.min || aExeconThreshold > aFilter.max;
 }
 } // namespace

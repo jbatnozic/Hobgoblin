@@ -15,30 +15,30 @@ using namespace jbatnozic::spempe;
 using namespace hg::qao;
 using namespace hg::rn;
 
-class InputSyncManagerTest : public ::testing::Test {
+class InputSyncServiceTest : public ::testing::Test {
 public:
     void SetUp() override {
         RN_IndexHandlers();
     }
 
     void TearDown() override {
-        _netMgr2->getClient().disconnect(false);
-        _netMgr1->getServer().stop();
+        _netSvc2->getClient().disconnect(false);
+        _netSvc1->getServer().stop();
 
         DetachStatus detachStatus;
-        _ctx1->detachComponent<NetworkingManager>(&detachStatus);
+        _ctx1->detachComponent<NetworkingService>(&detachStatus);
         ASSERT_EQ(detachStatus, DetachStatus::NOT_OWNED_BY_CONTEXT);
-        _ctx1->detachComponent<InputSyncManager>(&detachStatus);
+        _ctx1->detachComponent<InputSyncService>(&detachStatus);
         ASSERT_EQ(detachStatus, DetachStatus::NOT_OWNED_BY_CONTEXT);
-        _ctx2->detachComponent<NetworkingManager>(&detachStatus);
+        _ctx2->detachComponent<NetworkingService>(&detachStatus);
         ASSERT_EQ(detachStatus, DetachStatus::NOT_OWNED_BY_CONTEXT);
-        _ctx2->detachComponent<InputSyncManager>(&detachStatus);
+        _ctx2->detachComponent<InputSyncService>(&detachStatus);
         ASSERT_EQ(detachStatus, DetachStatus::NOT_OWNED_BY_CONTEXT);
 
-        _netMgr1.reset();
-        _insMgr1.reset();
-        _netMgr2.reset();
-        _insMgr2.reset();
+        _netSvc1.reset();
+        _insSvc1.reset();
+        _netSvc2.reset();
+        _insSvc2.reset();
 
         _ctx1.reset();
         _ctx2.reset();
@@ -58,11 +58,11 @@ protected:
     std::unique_ptr<GameContext> _ctx1;
     std::unique_ptr<GameContext> _ctx2;
 
-    QAO_Handle<DefaultNetworkingManager> _netMgr1;
-    QAO_Handle<DefaultNetworkingManager> _netMgr2;
+    QAO_Handle<DefaultNetworkingService> _netSvc1;
+    QAO_Handle<DefaultNetworkingService> _netSvc2;
 
-    QAO_Handle<DefaultInputSyncManager> _insMgr1;
-    QAO_Handle<DefaultInputSyncManager> _insMgr2;
+    QAO_Handle<DefaultInputSyncService> _insSvc1;
+    QAO_Handle<DefaultInputSyncService> _insSvc2;
 
     void _setUp(hg::PZInteger aStateBufferingLength) {
         GameContext::RuntimeConfig rc{};
@@ -71,40 +71,40 @@ protected:
         _ctx2 = std::make_unique<GameContext>(rc);
         _ctx2->setToMode(GameContext::Mode::Client);
 
-        // Add networking managers
-        _netMgr1 = QAO_Create<DefaultNetworkingManager>(_ctx1->getQAORuntime().nonOwning(),
+        // Add networking services
+        _netSvc1 = QAO_Create<DefaultNetworkingService>(_ctx1->getQAORuntime().nonOwning(),
                                                         PRIORITY_NETMGR,
                                                         aStateBufferingLength);
-        _netMgr1->setToServerMode(RN_Protocol::UDP, "pass", 2, 512, RN_NetworkingStack::Default);
+        _netSvc1->setToServerMode(RN_Protocol::UDP, "pass", 2, 512, RN_NetworkingStack::Default);
 
-        _netMgr2 = QAO_Create<DefaultNetworkingManager>(_ctx2->getQAORuntime().nonOwning(),
+        _netSvc2 = QAO_Create<DefaultNetworkingService>(_ctx2->getQAORuntime().nonOwning(),
                                                         PRIORITY_NETMGR,
                                                         aStateBufferingLength);
-        _netMgr2->setToClientMode(RN_Protocol::UDP, "pass", 512, RN_NetworkingStack::Default);
+        _netSvc2->setToClientMode(RN_Protocol::UDP, "pass", 512, RN_NetworkingStack::Default);
 
         {
-            auto& server = _netMgr1->getServer();
-            auto& client = _netMgr2->getClient();
+            auto& server = _netSvc1->getServer();
+            auto& client = _netSvc2->getClient();
 
             server.start(0);
             client.connectLocal(server);
         }
 
-        _ctx1->attachComponent(*_netMgr1);
-        _ctx2->attachComponent(*_netMgr2);
+        _ctx1->attachComponent(*_netSvc1);
+        _ctx2->attachComponent(*_netSvc2);
 
-        // Add input sync managers
-        _insMgr1 = QAO_Create<DefaultInputSyncManager>(_ctx1->getQAORuntime().nonOwning(), PRIORITY_INSMGR);
+        // Add input sync services
+        _insSvc1 = QAO_Create<DefaultInputSyncService>(_ctx1->getQAORuntime().nonOwning(), PRIORITY_INSMGR);
         // aPlayerCount is 2 because player 0 is the local player and player 1 is the actual client
-        _insMgr1->setToHostMode(2, aStateBufferingLength);
-        _defineInputs(*_insMgr1);
+        _insSvc1->setToHostMode(2, aStateBufferingLength);
+        _defineInputs(*_insSvc1);
 
-        _insMgr2 = QAO_Create<DefaultInputSyncManager>(_ctx2->getQAORuntime().nonOwning(), PRIORITY_INSMGR);
-        _insMgr2->setToClientMode();
-        _defineInputs(*_insMgr2);
+        _insSvc2 = QAO_Create<DefaultInputSyncService>(_ctx2->getQAORuntime().nonOwning(), PRIORITY_INSMGR);
+        _insSvc2->setToClientMode();
+        _defineInputs(*_insSvc2);
 
-        _ctx1->attachComponent(*_insMgr1);
-        _ctx2->attachComponent(*_insMgr2);
+        _ctx1->attachComponent(*_insSvc1);
+        _ctx2->attachComponent(*_insSvc2);
 
         // Run both contexts a little to propagate the connection
         _ctx2->runFor(1);
@@ -113,15 +113,15 @@ protected:
         _ctx1->runFor(1);
     }
 
-    void _defineInputs(InputSyncManager& aInputSyncManager) {
-        const InputSyncManagerWrapper wrap{aInputSyncManager};
+    void _defineInputs(InputSyncService& aInputSyncService) {
+        const InputSyncServiceWrapper wrap{aInputSyncService};
 
         wrap.defineSignal<int>(SIGNAL_NAME, SIGNAL_INIT);
         wrap.defineSimpleEvent(EVENT_NAME);
         wrap.defineEventWithPayload<int>(EVENTWP_NAME);
     }
 
-    static hg::PZInteger _countEventWP(const InputSyncManagerWrapper& aWrapper, 
+    static hg::PZInteger _countEventWP(const InputSyncServiceWrapper& aWrapper, 
                                        hg::PZInteger aForPlayer, 
                                        std::string aEventName) {
         hg::PZInteger count = 0;
@@ -133,31 +133,31 @@ protected:
     }
 };
 
-TEST_F(InputSyncManagerTest, OverlappingNameInDefinition_ThrowsException) {
+TEST_F(InputSyncServiceTest, OverlappingNameInDefinition_ThrowsException) {
     _setUp(0);
 
-    const InputSyncManagerWrapper wrap{*_insMgr1};
+    const InputSyncServiceWrapper wrap{*_insSvc1};
 
     EXPECT_THROW(wrap.defineSignal<SignalType>(SIGNAL_NAME, 123), hg::TracedLogicError);
     EXPECT_THROW(wrap.defineSimpleEvent(EVENT_NAME), hg::TracedLogicError);
     EXPECT_THROW(wrap.defineEventWithPayload<int>(EVENTWP_NAME), hg::TracedLogicError);
 }
 
-TEST_F(InputSyncManagerTest, OverlappingNameInDefinition_OkWithDifferentKind) {
+TEST_F(InputSyncServiceTest, OverlappingNameInDefinition_OkWithDifferentKind) {
     _setUp(0);
 
-    const InputSyncManagerWrapper wrap{*_insMgr1};
+    const InputSyncServiceWrapper wrap{*_insSvc1};
 
     EXPECT_NO_THROW(wrap.defineSignal<SignalType>(EVENTWP_NAME, 123));
     EXPECT_NO_THROW(wrap.defineSimpleEvent(SIGNAL_NAME));
     EXPECT_NO_THROW(wrap.defineEventWithPayload<int>(EVENT_NAME));
 }
 
-TEST_F(InputSyncManagerTest, HappyPathTest_NoStateBuffering) {
+TEST_F(InputSyncServiceTest, HappyPathTest_NoStateBuffering) {
     _setUp(0); // No state buffering
 
-    const InputSyncManagerWrapper wrap1{*_insMgr1}; // Host
-    const InputSyncManagerWrapper wrap2{*_insMgr2}; // Client
+    const InputSyncServiceWrapper wrap1{*_insSvc1}; // Host
+    const InputSyncServiceWrapper wrap2{*_insSvc2}; // Client
 
     EXPECT_EQ(wrap1.getSignalValue<SignalType>(CLIENT_INDEX_LOCAL, SIGNAL_NAME), SIGNAL_INIT);
     EXPECT_EQ(wrap1.countSimpleEvent(CLIENT_INDEX_LOCAL, EVENT_NAME), 0);
@@ -187,11 +187,11 @@ TEST_F(InputSyncManagerTest, HappyPathTest_NoStateBuffering) {
     EXPECT_EQ(wrap1.countSimpleEvent(0, EVENT_NAME), 0);
 }
 
-TEST_F(InputSyncManagerTest, HappyPathTest_StateBuffering_1) {
+TEST_F(InputSyncServiceTest, HappyPathTest_StateBuffering_1) {
     _setUp(1); // 1 frame of state buffering
 
-    const InputSyncManagerWrapper wrap1{*_insMgr1}; // Host
-    const InputSyncManagerWrapper wrap2{*_insMgr2}; // Client
+    const InputSyncServiceWrapper wrap1{*_insSvc1}; // Host
+    const InputSyncServiceWrapper wrap2{*_insSvc2}; // Client
 
     EXPECT_EQ(wrap1.getSignalValue<SignalType>(0, SIGNAL_NAME), SIGNAL_INIT);
     EXPECT_EQ(wrap1.countSimpleEvent(0, EVENT_NAME), 0);

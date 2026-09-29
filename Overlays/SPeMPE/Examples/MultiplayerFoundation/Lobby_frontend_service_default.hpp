@@ -4,16 +4,16 @@
 #pragma once
 
 #include "Engine.h"
-#include "Lobby_frontend_manager.hpp"
+#include "Lobby_frontend_service.hpp"
 
 #include <memory>
 
-class DefaultLobbyFrontendManager
-    : public LobbyFrontendManager
+class DefaultLobbyFrontendService
+    : public LobbyFrontendService
     , public spe::NonstateObject {
 public:
-    DefaultLobbyFrontendManager(QAO_InstGuard aInstGuard, int aExecutionPriority);
-    ~DefaultLobbyFrontendManager() override;
+    DefaultLobbyFrontendService(QAO_InstGuard aInstGuard, int aExecutionPriority);
+    ~DefaultLobbyFrontendService() override;
 
     void setToHeadlessHostMode() override;
     void setToClientMode(const std::string& aName, const std::string& aUniqueId) override;
@@ -30,10 +30,10 @@ private:
     void _eventUpdate1() override;
     void _eventDrawGUI() override;
 
-    friend void ActivateCommand(DefaultLobbyFrontendManager& aMgr, int aCommand, void* aArgs);
+    friend void ActivateCommand(DefaultLobbyFrontendService& aSvc, int aCommand, void* aArgs);
 };
 
-QAO_REGISTER_CLASS(DefaultLobbyFrontendManager, Example_LobbyFrontendManager) {
+QAO_REGISTER_CLASS(DefaultLobbyFrontendService, Example_LobbyFrontendService) {
     QAO_LOCAL_ALIAS(C, clazz);
     clazz.setSuperclass<spe::NonstateObject>();
 }

@@ -43,7 +43,7 @@ constexpr int GCM_SOLO = GCMF_PRIV;
 constexpr int GCM_GMAS = GCMF_PRIV | GCMF_NETW;
 } // namespace detail
 
-//! TODO: Components included by default: WindowManager, LoggingManager, (NetworkingManager?)
+//! TODO: Components included by default: WindowService, LoggingService, (NetworkingService?)
 class GameContext {
 public:
     ///////////////////////////////////////////////////////////////////////////

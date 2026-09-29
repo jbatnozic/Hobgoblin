@@ -259,7 +259,7 @@ Most commonly, you'll be running the `startStep()`/`advanceStep()` combo in an i
 some external condition is met (user clicked X, pressed Escape, etc). However, QAO itself doesn't keep track of time
 at all. If you want a consistent framerate (for example, if your game doesn't use delta time), it is up to you to 
 implement vSync or some other timing mechanism.
-[SPeMPE](https://github.com/jbatnozic/Hobgoblin/tree/master/Overlays/SPeMPE)'s `WindowManager` can also help with
+[SPeMPE](https://github.com/jbatnozic/Hobgoblin/tree/master/Overlays/SPeMPE)'s `WindowService` can also help with
 this.
 
 ### Inspecting objects within a runtime

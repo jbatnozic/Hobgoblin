@@ -14,7 +14,7 @@ using SyncId = std::uint64_t;
 
 //! When instantiating a new `SynchronizedObject`, pass it this constant as a constructor
 //! parameter to indicate that a new synchronization ID should be assigned to it by the
-//! `NetworkingManager` when it is attached to the runtime/context.
+//! `NetworkingService` when it is attached to the runtime/context.
 constexpr SyncId SYNC_ID_NEW = 0;
 
 } // namespace spempe

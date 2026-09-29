@@ -11,22 +11,22 @@ set(OVERLAY_NAME "SPeMPE")
 # ===== GATHER SOURCES ======
 
 set(OVERLAY_SOURCES
-  "Source/Authorization_manager_default.cpp"
+  "Source/Authorization_service_default.cpp"
   "Source/Context_components.cpp"
   "Source/Event_loop_timing_reporter.cpp"
   "Source/Game_context.cpp"
   "Source/Game_context_flag_validation.cpp"
   "Source/Game_object_bases.cpp"
-  "Source/Input_sync_manager_default.cpp"
-  "Source/Lobby_backend_manager_default.cpp"
-  "Source/Networking_manager_default.cpp"
-  "Source/Synced_varmap_manager_default.cpp"
+  "Source/Input_sync_service_default.cpp"
+  "Source/Lobby_backend_service_default.cpp"
+  "Source/Networking_service_default.cpp"
+  "Source/Synced_varmap_service_default.cpp"
   "Source/Synchronized_object_registry.cpp"
   "Source/Networking_telemetry_reporter.cpp"
   "Source/Sync_flags.cpp"
   "Source/Window_frame_input_view.cpp"
   "Source/Window_input_tracker.cpp"
-  "Source/Window_manager_default.cpp"
+  "Source/Window_service_default.cpp"
 )
 
 # ===== TARGET SETUP =====

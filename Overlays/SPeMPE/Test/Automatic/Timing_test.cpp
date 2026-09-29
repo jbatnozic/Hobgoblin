@@ -26,7 +26,7 @@ double SecondsCnt(taDuration aDuration) {
 }
 
 TEST(SPeMPE_TimingTest,
-     RunningContextProducesCorrectTickRateWithoutWindowManager_1) {
+     RunningContextProducesCorrectTickRateWithoutWindowService_1) {
     hobgoblin::log::SetMinimalLogSeverity(hobgoblin::log::Severity::Info);
 
     static constexpr auto TEST_DURATION = std::chrono::seconds{2};
@@ -51,7 +51,7 @@ TEST(SPeMPE_TimingTest,
 }
 
 TEST(SPeMPE_TimingTest,
-     RunningContextProducesCorrectTickRateWithoutWindowManager_2) {
+     RunningContextProducesCorrectTickRateWithoutWindowService_2) {
     hobgoblin::log::SetMinimalLogSeverity(hobgoblin::log::Severity::Info);
 
     static constexpr auto TEST_DURATION = std::chrono::seconds{2};

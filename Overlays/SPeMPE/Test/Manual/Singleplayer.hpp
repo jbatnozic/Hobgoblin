@@ -7,11 +7,11 @@
 
 #include "Config.hpp"
 #include "Engine.hpp"
-#include "Main_gameplay_manager_default.hpp"
+#include "Main_gameplay_service_default.hpp"
 
 #include <Hobgoblin/UWGA.hpp>
 
-#include <SPeMPE/Managers/Networking_manager_default.hpp>
+#include <SPeMPE/Services/Networking_service_default.hpp>
 
 #include <memory>
 
@@ -23,39 +23,39 @@ std::unique_ptr<spe::GameContext> CreateGameContext() {
         spe::GameContext::RuntimeConfig{spe::TickRate{TICK_RATE}});
     context->setToMode(spe::GameContext::Mode::GameMaster);
 
-    // Create and attach a Networking manager
-    auto netMgr = QAO_Create<spe::DefaultNetworkingManager>(
+    // Create and attach a Networking service
+    auto netSvc = QAO_Create<spe::DefaultNetworkingService>(
         context->getQAORuntime().nonOwning(), PRIORITY_NETWORKMGR, 0);
-    netMgr->setToServerMode(
+    netSvc->setToServerMode(
         hg::RN_Protocol::UDP, "pass", 1, 1024, hg::RN_NetworkingStack::Default);
 
-    context->attachAndOwnComponent(std::move(netMgr));
+    context->attachAndOwnComponent(std::move(netSvc));
 
-    // Create and attach a Window manager
-    auto winMgr = QAO_Create<spe::DefaultWindowManager>(context->getQAORuntime().nonOwning(),
+    // Create and attach a Window service
+    auto winSvc = QAO_Create<spe::DefaultWindowService>(context->getQAORuntime().nonOwning(),
                                                         PRIORITY_WINDOWMGR);
-    winMgr->setToNormalMode(
+    winSvc->setToNormalMode(
         hg::uwga::CreateGraphicsSystem("SFML"),
-        spe::WindowManager::WindowConfig{
+        spe::WindowService::WindowConfig{
             .size = {WINDOW_WIDTH, WINDOW_HEIGHT},
             .title = "SPeMPE Manual Test (Singleplayer)",
             .style = hg::uwga::WindowStyle::DEFAULT
         },
-        spe::WindowManager::MainRenderTextureConfig{{WINDOW_WIDTH, WINDOW_HEIGHT}},
-        spe::WindowManager::TimingConfig{
+        spe::WindowService::MainRenderTextureConfig{{WINDOW_WIDTH, WINDOW_HEIGHT}},
+        spe::WindowService::TimingConfig{
             spe::FrameRate{FRAME_RATE},
             spe::PREVENT_BUSY_WAIT_ON,
             spe::VSYNC_OFF
         }
     );
 
-    context->attachAndOwnComponent(std::move(winMgr));
+    context->attachAndOwnComponent(std::move(winSvc));
 
-    // Create and attach a Main gameplay manager
-    auto mainGameplayMgr = QAO_Create<DefaultMainGameplayManager>(
+    // Create and attach a Main gameplay service
+    auto mainGameplaySvc = QAO_Create<DefaultMainGameplayService>(
         context->getQAORuntime().nonOwning());
 
-    context->attachAndOwnComponent(std::move(mainGameplayMgr));
+    context->attachAndOwnComponent(std::move(mainGameplaySvc));
 
     return context;
 }

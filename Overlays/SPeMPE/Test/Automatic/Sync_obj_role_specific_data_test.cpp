@@ -110,7 +110,7 @@ void AvatarWithHeapRSData::_syncDestroyImpl(SyncControlDelegate& aSyncCtrl) cons
 
 // MARK: Fixture
 
-using MNetworking = NetworkingManager;
+using MNetworking = NetworkingService;
 
 class SPeMPE_SyncObjRoleSpecificDataTest : public ::testing::Test {
 protected:
@@ -134,20 +134,20 @@ protected:
             // Server context:
             _serverCtx->setToMode(GameContext::Mode::Server);
 
-            auto netwMgr1 = QAO_Create<DefaultNetworkingManager>(_serverCtx->getQAORuntime().nonOwning(),
+            auto netwSvc1 = QAO_Create<DefaultNetworkingService>(_serverCtx->getQAORuntime().nonOwning(),
                                                                  0,
                                                                  BUFFERING_LENGTH);
-            netwMgr1->setToServerMode(RN_Protocol::UDP, "pass", 2, 512, RN_NetworkingStack::Default);
-            _serverCtx->attachAndOwnComponent(std::move(netwMgr1));
+            netwSvc1->setToServerMode(RN_Protocol::UDP, "pass", 2, 512, RN_NetworkingStack::Default);
+            _serverCtx->attachAndOwnComponent(std::move(netwSvc1));
 
             // Client context:
             _clientCtx->setToMode(GameContext::Mode::Client);
 
-            auto netwMgr2 = QAO_Create<DefaultNetworkingManager>(_clientCtx->getQAORuntime().nonOwning(),
+            auto netwSvc2 = QAO_Create<DefaultNetworkingService>(_clientCtx->getQAORuntime().nonOwning(),
                                                                  0,
                                                                  BUFFERING_LENGTH);
-            netwMgr2->setToClientMode(RN_Protocol::UDP, "pass", 512, RN_NetworkingStack::Default);
-            _clientCtx->attachAndOwnComponent(std::move(netwMgr2));
+            netwSvc2->setToClientMode(RN_Protocol::UDP, "pass", 512, RN_NetworkingStack::Default);
+            _clientCtx->attachAndOwnComponent(std::move(netwSvc2));
         }
         // Connect
         {

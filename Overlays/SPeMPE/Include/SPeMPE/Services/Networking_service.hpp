@@ -1,8 +1,8 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#ifndef SPEMPE_MANAGERS_NETWORKING_MANAGER_HPP
-#define SPEMPE_MANAGERS_NETWORKING_MANAGER_HPP
+#ifndef SPEMPE_SERVICES_NETWORKING_SERVICE_HPP
+#define SPEMPE_SERVICES_NETWORKING_SERVICE_HPP
 
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/QAO/Execon.hpp>
@@ -20,9 +20,9 @@ using NetworkingEventListener = hg::RN_EventListener;
 constexpr int CLIENT_INDEX_UNKNOWN = -2; //! Client index not yet received from Server.
 constexpr int CLIENT_INDEX_LOCAL   = -1; //! Denotes the same machine/process that's also the host.
 
-class NetworkingManager : public ContextComponent {
+class NetworkingService : public ContextComponent {
 public:
-    virtual ~NetworkingManager() = default;
+    virtual ~NetworkingService() = default;
 
     using NodeType   = hg::RN_NodeInterface;
     using ServerType = hg::RN_ServerInterface;
@@ -39,7 +39,7 @@ public:
         Client,        //! Underlying node is a Client
     };
 
-    //! Sets the manager into Host/Server mode and initializes the underlying RigelNet Node as
+    //! Sets the service into Host/Server mode and initializes the underlying RigelNet Node as
     //! an implementation of RN_ServerInterface with the given parameters.
     virtual void setToServerMode(hg::RN_Protocol        aProtocol,
                                  std::string            aPassphrase,
@@ -47,7 +47,7 @@ public:
                                  hg::PZInteger          aMaxPacketSize,
                                  hg::RN_NetworkingStack aNetworkingStack) = 0;
 
-    //! Sets the manager into Client mode and initializes the underlying RigelNet Node as
+    //! Sets the service into Client mode and initializes the underlying RigelNet Node as
     //! an implementation of RN_ClientInterface with the given parameters.
     virtual void setToClientMode(hg::RN_Protocol        aProtocol,
                                  std::string            aPassphrase,
@@ -103,7 +103,7 @@ public:
     //! \brief synchronization filter based on synchronized objects' EXECON thresholds.
     //!
     //! When an instance of a class inheriting from `SynchronizedObject` is instantiated, it
-    //! automatically registers itself to the context's `NetworkingManager` (or rather its associated
+    //! automatically registers itself to the context's `NetworkingService` (or rather its associated
     //! synchronized object registry). Thus the instance's creation, and subsequent updates, and
     //! eventual destruction will all be automatically synced with all current and future connected
     //! clients (by default at least).
@@ -188,10 +188,10 @@ public:
     virtual hg::NeverNull<void*> __spempeimpl_getRegistryAddress() = 0;
 
 private:
-    SPEMPE_CTXCOMP_TAG("jbatnozic::spempe::NetworkingManager");
+    SPEMPE_CTXCOMP_TAG("jbatnozic::spempe::NetworkingService");
 };
 
 } // namespace spempe
 } // namespace jbatnozic
 
-#endif // !SPEMPE_MANAGERS_NETWORKING_MANAGER_HPP
+#endif // !SPEMPE_SERVICES_NETWORKING_SERVICE_HPP

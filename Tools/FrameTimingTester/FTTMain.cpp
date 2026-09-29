@@ -75,20 +75,20 @@ std::unique_ptr<spe::GameContext> CreateContex() {
     spe::GameContext::RuntimeConfig rtConfig{spe::TickRate{TICK_RATE}};
     auto                            ctx = std::make_unique<spe::GameContext>(rtConfig);
 
-    // Add a WindowManager
-    auto winMgr = hg::QAO_Create<spe::DefaultWindowManager>(ctx->getQAORuntime().nonOwning(),
+    // Add a WindowService
+    auto winSvc = hg::QAO_Create<spe::DefaultWindowService>(ctx->getQAORuntime().nonOwning(),
                                                             PRIORITY_WINDOW_MANAGER);
     // clang-format off
-    spe::WindowManager::WindowConfig windowConfig{
+    spe::WindowService::WindowConfig windowConfig{
         .size = {800, 800},
         .title = "FTT (SPeMPE)",
         .style = hg::uwga::WindowStyle::DEFAULT
     };
-    spe::WindowManager::MainRenderTextureConfig mrtConfig{
+    spe::WindowService::MainRenderTextureConfig mrtConfig{
         .size = {1024, 1024},
         .smooth = true
     };
-    spe::WindowManager::TimingConfig timingConfig{
+    spe::WindowService::TimingConfig timingConfig{
     #ifdef _MSC_VER
         spe::FrameRate{FRAME_RATE},
         spe::PREVENT_BUSY_WAIT_ON,
@@ -100,15 +100,15 @@ std::unique_ptr<spe::GameContext> CreateContex() {
     #endif
     };
     // clang-format on
-    winMgr->setToNormalMode(uwgaSystem, windowConfig, mrtConfig, timingConfig);
-    winMgr->setMainRenderTextureDrawPosition(spe::WindowManager::DrawPosition::FIT);
-    winMgr->setStopIfCloseClicked(true);
+    winSvc->setToNormalMode(uwgaSystem, windowConfig, mrtConfig, timingConfig);
+    winSvc->setMainRenderTextureDrawPosition(spe::WindowService::DrawPosition::FIT);
+    winSvc->setStopIfCloseClicked(true);
 
-    auto view = winMgr->getActiveCanvas().getView().clone();
+    auto view = winSvc->getActiveCanvas().getView().clone();
     view->setCenter({0.f, 0.f});
-    winMgr->getActiveCanvas().setView(*view);
+    winSvc->getActiveCanvas().setView(*view);
 
-    ctx->attachAndOwnComponent(std::move(winMgr));
+    ctx->attachAndOwnComponent(std::move(winSvc));
 
     return ctx;
 }
@@ -119,21 +119,21 @@ public:
         : spe::NonstateObject{aInstGuard, hg::QAO_ExeCon::INTERACTIVITY, aExecutionPriority, "Driver"} {}
 
     void _eventUpdate1() override {
-        auto&       winMgr = ccomp<spe::WindowManager>();
-        const auto& input  = winMgr.getInput();
+        auto&       winSvc = ccomp<spe::WindowService>();
+        const auto& input  = winSvc.getInput();
 
         const auto lr         = (float)input.checkPressed(PK_D) - (float)input.checkPressed(PK_A);
         const auto ud         = (float)input.checkPressed(PK_S) - (float)input.checkPressed(PK_W);
         const auto multiplier = 8.f;
 
-        auto view = winMgr.getActiveCanvas().getView().clone();
+        auto view = winSvc.getActiveCanvas().getView().clone();
         view->setCenter(view->getCenter() + hg::math::Vector2f{-lr * multiplier, -ud * multiplier});
-        winMgr.getActiveCanvas().setView(*view);
+        winSvc.getActiveCanvas().setView(*view);
     }
 
     void _eventDraw1() override {
-        auto& winMgr = ccomp<spe::WindowManager>();
-        auto& canvas = winMgr.getActiveCanvas();
+        auto& winSvc = ccomp<spe::WindowService>();
+        auto& canvas = winSvc.getActiveCanvas();
 
         uwga::CircleShape circle{canvas.getSystem(), 32.f};
         circle.setOrigin({32.f, 32.f});

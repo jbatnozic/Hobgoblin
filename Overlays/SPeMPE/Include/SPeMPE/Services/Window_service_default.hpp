@@ -1,8 +1,8 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-#ifndef SPEMPE_MANAGERS_WINDOW_MANAGER_DEFAULT_HPP
-#define SPEMPE_MANAGERS_WINDOW_MANAGER_DEFAULT_HPP
+#ifndef SPEMPE_SERVICES_WINDOW_SERVICE_DEFAULT_HPP
+#define SPEMPE_SERVICES_WINDOW_SERVICE_DEFAULT_HPP
 
 #include <Hobgoblin/Math/Vector.hpp>
 #include <Hobgoblin/RmlUi.hpp>
@@ -13,7 +13,7 @@
 #include <Hobgoblin/Utility/Time_utils.hpp>
 
 #include <SPeMPE/GameObjectFramework/Game_object_bases.hpp>
-#include <SPeMPE/Managers/Window_manager.hpp>
+#include <SPeMPE/Services/Window_service.hpp>
 #include <SPeMPE/Utility/Timing.hpp>
 #include <SPeMPE/Utility/Window_frame_input_view.hpp>
 #include <SPeMPE/Utility/Window_input_tracker.hpp>
@@ -25,11 +25,11 @@ namespace spempe {
 
 namespace hg = ::jbatnozic::hobgoblin;
 
-class DefaultWindowManager
-    : public WindowManager
+class DefaultWindowService
+    : public WindowService
     , public NonstateObject {
 public:
-    DefaultWindowManager(hobgoblin::QAO_InstGuard aInstGuard, int aExecutionPriority);
+    DefaultWindowService(hobgoblin::QAO_InstGuard aInstGuard, int aExecutionPriority);
 
     ///////////////////////////////////////////////////////////////////////////
     // CONFIGURATION                                                         //
@@ -152,4 +152,4 @@ private:
 } // namespace spempe
 } // namespace jbatnozic
 
-#endif // !SPEMPE_MANAGERS_WINDOW_MANAGER_DEFAULT_HPP
+#endif // !SPEMPE_SERVICES_WINDOW_SERVICE_DEFAULT_HPP

@@ -62,8 +62,8 @@ void BasicActor::_eventDraw1() {
         return;
     }
 
-    auto& winMgr = ccomp<spe::WindowManager>();
-    auto& canvas = winMgr.getActiveCanvas();
+    auto& winSvc = ccomp<spe::WindowService>();
+    auto& canvas = winSvc.getActiveCanvas();
 
     const auto& self = _getCurrentState();
 
@@ -154,8 +154,8 @@ void AutodiffActor::_eventDraw1() {
         return;
     }
 
-    auto& winMgr = ccomp<spe::WindowManager>();
-    auto& canvas = winMgr.getActiveCanvas();
+    auto& winSvc = ccomp<spe::WindowService>();
+    auto& canvas = winSvc.getActiveCanvas();
 
     const auto& self = _getCurrentState();
 
@@ -239,8 +239,8 @@ void AlternatingActor::_eventDraw1() {
         return;
     }
 
-    auto& winMgr = ccomp<spe::WindowManager>();
-    auto& canvas = winMgr.getActiveCanvas();
+    auto& winSvc = ccomp<spe::WindowService>();
+    auto& canvas = winSvc.getActiveCanvas();
 
     const auto& self_curr = _getCurrentState();
     const auto& self_next = _getFollowingState();
@@ -341,8 +341,8 @@ void AlternatingAutodiffActor::_eventDraw1() {
         return;
     }
 
-    auto& winMgr = ccomp<spe::WindowManager>();
-    auto& canvas = winMgr.getActiveCanvas();
+    auto& winSvc = ccomp<spe::WindowService>();
+    auto& canvas = winSvc.getActiveCanvas();
 
     const auto& self_curr = _getCurrentState();
     const auto& self_next = _getFollowingState();
