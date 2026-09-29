@@ -22,6 +22,7 @@ namespace qao {
 namespace {
 constexpr auto         LOG_ID           = "Hobgoblin.QAO";
 constexpr std::int64_t MIN_STEP_ORDINAL = std::numeric_limits<std::int64_t>::min(); // TODO to config.hpp
+constexpr PZInteger    MAX_ATTEMPTS     = 10;
 } // namespace
 
 QAO_Runtime::QAO_Runtime()
@@ -38,10 +39,68 @@ QAO_Runtime::QAO_Runtime(util::AnyPtr aUserData, const QAO_ExeCon* aExeconAddres
     , _currentEvent{QAO_Event::NONE}
     , _step_orderer_iterator{_orderer.end()}
     , _userData{aUserData}
-    , _execon{aExeconAddress} {}
+    , _execon{aExeconAddress} //
+{
+    pushRoom("default");
+}
 
 QAO_Runtime::~QAO_Runtime() {
-    destroyAllOwnedObjects(NO_PROPAGATE_EXCEPTIONS);
+    popAllRooms(NO_PROPAGATE_EXCEPTIONS);
+
+    PZInteger attempts = 0;
+    while (true) {
+        ++attempts;
+
+        PZInteger                  ownedCount = 0;
+        std::vector<QAO_GenericId> objectsToDetach;
+        for (auto& object : SELF) {
+            const auto id = object->getId();
+            if (ownsObject(id)) {
+                ownedCount += 1;
+            }
+            objectsToDetach.push_back(id);
+        }
+        if (objectsToDetach.empty()) {
+            break;
+        }
+        if (attempts > MAX_ATTEMPTS) {
+            HG_LOG_ERROR(LOG_ID,
+                         "QAO_Runtime still has {} objects attached after {} attempts to forcibly "
+                         "detach them! Bailing...",
+                         objectsToDetach.size(),
+                         MAX_ATTEMPTS);
+            break;
+        }
+
+        HG_LOG_WARN(LOG_ID,
+                    "QAO_Runtime is being destroyed with {} owned and {} non-owned objects still "
+                    "attached; will forcibly detach all of them (attempt {}/{}).",
+                    ownedCount,
+                    stopz(objectsToDetach.size()) - ownedCount,
+                    attempts,
+                    MAX_ATTEMPTS);
+
+        for (const auto& id : objectsToDetach) {
+            const auto current = find(id);
+            if (current.isNull()) {
+                continue; // Could have been destroyed by another object's detaching or destruction
+            }
+            try {
+                MoveToUnderlying(detachObject(id)).reset();
+            } catch (const TracedException& ex) {
+                HG_LOG_ERROR(LOG_ID,
+                             "Encountered an error while forcibly detaching object. Details: {}",
+                             ex.getFormattedDescription());
+            } catch (const std::exception& ex) {
+                HG_LOG_ERROR(LOG_ID,
+                             "Encountered an error while forcibly detaching object. Details: {}",
+                             ex.what());
+            } catch (...) {
+                HG_LOG_ERROR(LOG_ID,
+                             "Encountered an error while forcibly detaching object. Details: n/a");
+            }
+        }
+    }
 }
 
 QAO_RuntimeRef QAO_Runtime::nonOwning() {
@@ -63,18 +122,26 @@ void QAO_Runtime::attachObject(AvoidNull<QAO_GenericHandle> aHandle) {
     }
 
     HG_VALIDATE_PRECONDITION(aHandle->getRuntime() == nullptr);
+    // Usually we can't insert objects when there is no active room, but for objects that
+    // won't be owned by the runtime this doesn't matter.
+    HG_VALIDATE_PRECONDITION(getRoomCount() > 0 || !aHandle.underlying().isOwning());
 
-    QAO_Base* const objRaw = aHandle.underlying().ptr();
-    const auto      id     = _registry.insert(std::move(aHandle));
+    const bool      ownedByRuntime = aHandle.underlying().isOwning();
+    QAO_Base* const objRaw         = aHandle.underlying().ptr();
+    const auto      id             = _registry.insert(std::move(aHandle));
 
     auto ordererInsertionResult =
         _orderer.insert(qao_detail::QAO_HandleFactory::createHandle(objRaw, false));
     HG_HARD_ASSERT(ordererInsertionResult.second);
 
-    objRaw->_context = {.stepOrdinal     = MIN_STEP_ORDINAL,
-                        .id              = id,
-                        .ordererIterator = ordererInsertionResult.first,
-                        .runtime         = this};
+    const auto roomCount = getRoomCount();
+    objRaw->_context     = {.stepOrdinal     = MIN_STEP_ORDINAL,
+                            .id              = id,
+                            .ordererIterator = ordererInsertionResult.first,
+                            .runtime         = this,
+                            .roomId          = (roomCount == 0 || !ownedByRuntime)
+                                                   ? QAO_INVALID_ROOM_ID
+                                                   : static_cast<QAO_RoomId>(roomCount)};
 
     objRaw->_didAttach(SELF);
 
@@ -103,30 +170,38 @@ void QAO_Runtime::attachObject(AvoidNull<QAO_GenericHandle> aHandle, QAO_Generic
     }
 
     HG_VALIDATE_PRECONDITION(aHandle->getRuntime() == nullptr);
+    // Usually we can't insert objects when there is no active room, but for objects that
+    // won't be owned by the runtime this doesn't matter.
+    HG_VALIDATE_PRECONDITION(getRoomCount() > 0 || !aHandle.underlying().isOwning());
 
-    QAO_Base* const objRaw = aHandle.underlying().ptr();
+    const bool      ownedByRuntime = aHandle.underlying().isOwning();
+    QAO_Base* const objRaw         = aHandle.underlying().ptr();
     _registry.insertWithId(std::move(aHandle), aSpecificId);
 
     auto ordererInsertionResult =
         _orderer.insert(qao_detail::QAO_HandleFactory::createHandle(objRaw, false));
     HG_HARD_ASSERT(ordererInsertionResult.second);
 
-    objRaw->_context = {.stepOrdinal     = MIN_STEP_ORDINAL,
-                        .id              = aSpecificId,
-                        .ordererIterator = ordererInsertionResult.first,
-                        .runtime         = this};
+    const auto roomCount = getRoomCount();
+    objRaw->_context     = {.stepOrdinal     = MIN_STEP_ORDINAL,
+                            .id              = aSpecificId,
+                            .ordererIterator = ordererInsertionResult.first,
+                            .runtime         = this,
+                            .roomId          = (roomCount == 0 || !ownedByRuntime)
+                                                   ? QAO_INVALID_ROOM_ID
+                                                   : static_cast<QAO_RoomId>(roomCount)};
 
     objRaw->_didAttach(SELF);
 
-    if (HG_UNLIKELY_CONDITION((aHandle->_flags & QAO_Base::ATTACHED_PROPERLY_BIT) == 0)) {
+    if (HG_UNLIKELY_CONDITION((objRaw->_flags & QAO_Base::ATTACHED_PROPERLY_BIT) == 0)) {
         HG_UNLIKELY_BRANCH;
         HG_THROW_TRACED(AssertionFailedError,
                         0,
                         "Object to attach ('{}' of type '{}') wasn't attached properly. Do all derived "
                         "classes call the "
                         "_didAttach() method of their superclasses?",
-                        aHandle->getName(),
-                        typeid(*aHandle).name());
+                        objRaw->getName(),
+                        typeid(*objRaw).name());
     }
 }
 
@@ -171,48 +246,118 @@ AvoidNull<QAO_GenericHandle> QAO_Runtime::detachObject(NeverNull<QAO_GenericHand
 }
 
 void QAO_Runtime::destroyAllOwnedObjects(bool aPropagateExceptions) {
-    std::vector<QAO_GenericId> objectsToErase;
-    for (auto& object : SELF) {
-        const auto id = object->getId();
-        if (ownsObject(id)) {
-            objectsToErase.push_back(id);
-        }
+    HG_NOT_IMPLEMENTED();
+}
+
+const QAO_Room& QAO_Runtime::pushRoom(std::string aRoomName) {
+    const auto roomCount = getRoomCount();
+    HG_VALIDATE_PRECONDITION(roomCount < QAO_MAX_ROOM_COUNT);
+
+    _roomStack.emplace_back(std::move(aRoomName), static_cast<QAO_RoomId>(roomCount + 1));
+    return _roomStack.back();
+}
+
+void QAO_Runtime::popRoom(bool aPropagateExceptions) {
+    // TODO: guard against recursive popRoom() calls
+
+    HG_VALIDATE_PRECONDITION(getRoomCount() > 0);
+
+    {
+        const auto* topRoom = getTopRoom();
+        HG_LOG_ERROR(LOG_ID, "Popping room '{}'...", topRoom->name);
     }
-    for (auto& id : objectsToErase) {
-        std::string objectInfo = "?";
-        try {
-            auto handle = MoveToUnderlying(detachObject(id));
-            objectInfo =
-                fmt::format(FMT_STRING("'{}' of type '{}'"), handle->getName(), typeid(*handle).name());
-            handle.reset();
-        } catch (const TracedException& ex) {
-            HG_LOG_ERROR(LOG_ID,
-                         "destroyAllOwnedObjects - Encountered an error while detaching and/or "
-                         "destroying object ({}). Details: {}",
-                         objectInfo,
-                         ex.getFormattedDescription());
-            if (aPropagateExceptions) {
-                throw;
-            }
-        } catch (const std::exception& ex) {
-            HG_LOG_ERROR(LOG_ID,
-                         "destroyAllOwnedObjects - Encountered an error while detaching and/or "
-                         "destroying object ({}). Details: {}",
-                         objectInfo,
-                         ex.what());
-            if (aPropagateExceptions) {
-                throw;
-            }
-        } catch (...) {
-            HG_LOG_ERROR(LOG_ID,
-                         "destroyAllOwnedObjects - Encountered an error while detaching and/or "
-                         "destroying object ({}). Details: n/a",
-                         objectInfo);
-            if (aPropagateExceptions) {
-                throw;
+
+    PZInteger attempts = 0;
+    while (true) {
+        ++attempts;
+
+        const auto* topRoom = getTopRoom();
+
+        std::vector<QAO_GenericId> objectsToErase;
+        for (auto& object : SELF) {
+            const auto id = object->getId();
+            if (object->getRoomId() == topRoom->id && ownsObject(id)) {
+                objectsToErase.push_back(id);
             }
         }
+        if (objectsToErase.empty()) {
+            if (attempts > 1) {
+                HG_LOG_ERROR(LOG_ID, "Room '{}' is now empty.", topRoom->name);
+            }
+            break;
+        }
+
+        if (attempts <= MAX_ATTEMPTS) {
+            HG_LOG_ERROR(LOG_ID,
+                         "Clearing out room '{}' (attempt {}/{}).",
+                         topRoom->name,
+                         attempts,
+                         MAX_ATTEMPTS);
+        } else {
+            HG_LOG_ERROR(LOG_ID,
+                         "Room '{}' still not cleared after {} attempts! Bailing...",
+                         topRoom->name,
+                         MAX_ATTEMPTS);
+            break;
+        }
+
+        for (auto& id : objectsToErase) {
+            if (find(id).isNull()) {
+                continue; // Could have been destroyed by another object's detaching or destruction
+            }
+
+            std::string objectInfo = "?";
+            try {
+                auto handle = MoveToUnderlying(detachObject(id));
+                objectInfo  = fmt::format(FMT_STRING("'{}' of type '{}'"),
+                                          handle->getName(),
+                                          typeid(*handle).name());
+                handle.reset();
+            } catch (const TracedException& ex) {
+                HG_LOG_ERROR(LOG_ID,
+                             "Encountered an error while detaching and/or "
+                             "destroying object ({}). Details: {}",
+                             objectInfo,
+                             ex.getFormattedDescription());
+                if (aPropagateExceptions) {
+                    throw;
+                }
+            } catch (const std::exception& ex) {
+                HG_LOG_ERROR(LOG_ID,
+                             "Encountered an error while detaching and/or "
+                             "destroying object ({}). Details: {}",
+                             objectInfo,
+                             ex.what());
+                if (aPropagateExceptions) {
+                    throw;
+                }
+            } catch (...) {
+                HG_LOG_ERROR(LOG_ID,
+                             "Encountered an error while detaching and/or "
+                             "destroying object ({}). Details: n/a",
+                             objectInfo);
+                if (aPropagateExceptions) {
+                    throw;
+                }
+            }
+        }
     }
+
+    _roomStack.pop_back();
+}
+
+void QAO_Runtime::popAllRooms(bool aPropagateExceptions) {
+    while (!_roomStack.empty()) {
+        popRoom(aPropagateExceptions);
+    }
+}
+
+const QAO_Room* QAO_Runtime::getTopRoom() const {
+    return _roomStack.empty() ? nullptr : &(_roomStack.back());
+}
+
+PZInteger QAO_Runtime::getRoomCount() const {
+    return stopz(_roomStack.size());
 }
 
 void QAO_Runtime::updateExecutionPriorityForObject(QAO_Base& object, int newPriority) {

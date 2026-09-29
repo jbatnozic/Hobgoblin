@@ -12,12 +12,14 @@
 #include <Hobgoblin/QAO/Id.hpp>
 #include <Hobgoblin/QAO/Orderer.hpp>
 #include <Hobgoblin/QAO/Registry.hpp>
+#include <Hobgoblin/QAO/Room.hpp>
 #include <Hobgoblin/QAO/Runtime_ref.hpp>
 #include <Hobgoblin/Utility/Any_ptr.hpp>
 #include <Hobgoblin/Utility/No_copy_no_move.hpp>
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
@@ -58,7 +60,49 @@ public:
     static constexpr bool PROPAGATE_EXCEPTIONS    = true;
     static constexpr bool NO_PROPAGATE_EXCEPTIONS = false;
 
+    //! \warning NOT YET IMPLEMENTED
     void destroyAllOwnedObjects(bool aPropagateExceptions = PROPAGATE_EXCEPTIONS);
+
+    //! \brief Push a new room onto the room stack.
+    //!
+    //! While this room is the top room of the room stack, all objects added to the runtime will
+    //! be added to this room, and will be destroyed once the room is popped (note: this only applies
+    //! to objects owned by the runtime).
+    //!
+    //! \param aRoomName name for the new room.
+    //!
+    //! \returns reference to the newly pushed room object.
+    //!
+    //! \throws if the room count would exceed `QAO_MAX_ROOM_COUNT`.
+    //!
+    //! \note even if you push no rooms, by creating the runtime, an initial room with the name
+    //!       "default" will be pushed.
+    const QAO_Room& pushRoom(std::string aRoomName);
+
+    //! \brief Pop a room from the room stack.
+    //!
+    //! This action will destroy all objects added to this room (note: this only applies
+    //! to objects owned by the runtime; see `pushRoom`).
+    //!
+    //! \param aPropagateExceptions whether to propagate exceptions produced by destroying owned objects
+    //!                             (true) or swallow them (false).
+    //!
+    //! \throws if there are no more rooms left to pop.
+    //!
+    //! \warning if you pop all the rooms, you won't be able to add runtime-owned objects to the runtime
+    //!          until you push a new room!
+    void popRoom(bool aPropagateExceptions = PROPAGATE_EXCEPTIONS);
+
+    //! \brief Pops all rooms from the room stack (LIFO ordering).
+    void popAllRooms(bool aPropagateExceptions = PROPAGATE_EXCEPTIONS);
+
+    //! \brief Get the top room of the room stack.
+    //!
+    //! \returns pointer to the top room of the room stack, or `nullptr` if all rooms have been popped.
+    const QAO_Room* getTopRoom() const;
+
+    //! \brief Get the size of the room stack.
+    PZInteger getRoomCount() const;
 
     template <class T = QAO_Base>
     QAO_Handle<T> find(const std::string& name) const;
@@ -119,6 +163,7 @@ public:
 private:
     qao_detail::QAO_Registry _registry;
     qao_detail::QAO_Orderer  _orderer;
+    std::vector<QAO_Room>    _roomStack;
     std::int64_t             _step_counter;
     QAO_Event::Enum          _currentEvent;
     QAO_OrdererIterator      _step_orderer_iterator;

@@ -12,6 +12,7 @@
 #include <Hobgoblin/QAO/Instantiation_guard.hpp>
 #include <Hobgoblin/QAO/Name_ref.hpp>
 #include <Hobgoblin/QAO/Orderer.hpp>
+#include <Hobgoblin/QAO/Room.hpp>
 #include <Hobgoblin/Utility/Any_ptr.hpp>
 #include <Hobgoblin/Utility/No_copy_no_move.hpp>
 
@@ -58,6 +59,10 @@ public:
 
     QAO_Runtime* getRuntime() const noexcept;
 
+    //! for objects not attached to a runtime or not owned by their runtime, returns
+    //! `QAO_INVALID_ROOM_ID`.
+    QAO_RoomId getRoomId() const;
+
     void       setExeconThreshold(QAO_ExeCon aExeconThreshold);
     QAO_ExeCon getExeconThreshold() const;
 
@@ -91,6 +96,7 @@ private:
         QAO_GenericId       id;
         QAO_OrdererIterator ordererIterator;
         QAO_Runtime*        runtime = nullptr;
+        QAO_RoomId          roomId  = QAO_INVALID_ROOM_ID;
     };
 
     const char*   _instanceName = nullptr;

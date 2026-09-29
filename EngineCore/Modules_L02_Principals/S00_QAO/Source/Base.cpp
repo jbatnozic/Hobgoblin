@@ -70,6 +70,10 @@ QAO_Runtime* QAO_Base::getRuntime() const noexcept {
     return _context.runtime;
 }
 
+QAO_RoomId QAO_Base::getRoomId() const {
+    return _context.roomId;
+}
+
 void QAO_Base::setExeconThreshold(QAO_ExeCon aExeconThreshold) {
     _execonThreshold = aExeconThreshold;
 }
