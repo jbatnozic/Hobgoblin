@@ -12,7 +12,6 @@
 #include <cstring>
 #include <exception>
 #include <limits>
-#include <typeinfo>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
@@ -114,11 +113,10 @@ void QAO_Runtime::attachObject(AvoidNull<QAO_GenericHandle> aHandle) {
         HG_UNLIKELY_BRANCH;
         HG_THROW_TRACED(AssertionFailedError,
                         0,
-                        "Object to attach ('{}' of type '{}') wasn't set up properly. Do all derived "
+                        "Object to attach ({}) wasn't set up properly. Do all derived "
                         "classes call the "
                         "_setUp() method of their superclasses?",
-                        aHandle->getName(),
-                        typeid(*aHandle).name());
+                        aHandle->getDebugDescription());
     }
 
     HG_VALIDATE_PRECONDITION(aHandle->getRuntime() == nullptr);
@@ -149,11 +147,10 @@ void QAO_Runtime::attachObject(AvoidNull<QAO_GenericHandle> aHandle) {
         HG_UNLIKELY_BRANCH;
         HG_THROW_TRACED(AssertionFailedError,
                         0,
-                        "Object to attach ('{}' of type '{}') wasn't attached properly. Do all derived "
+                        "Object to attach ({}) wasn't attached properly. Do all derived "
                         "classes call the "
                         "_didAttach() method of their superclasses?",
-                        objRaw->getName(),
-                        typeid(*objRaw).name());
+                        objRaw->getDebugDescription());
     }
 }
 
@@ -162,11 +159,10 @@ void QAO_Runtime::attachObject(AvoidNull<QAO_GenericHandle> aHandle, QAO_Generic
         HG_UNLIKELY_BRANCH;
         HG_THROW_TRACED(AssertionFailedError,
                         0,
-                        "Object to attach ('{}' of type '{}') wasn't set up properly. Do all derived "
+                        "Object to attach ({}) wasn't set up properly. Do all derived "
                         "classes call the "
                         "_setUp() method of their superclasses?",
-                        aHandle->getName(),
-                        typeid(*aHandle).name());
+                        aHandle->getDebugDescription());
     }
 
     HG_VALIDATE_PRECONDITION(aHandle->getRuntime() == nullptr);
@@ -197,11 +193,10 @@ void QAO_Runtime::attachObject(AvoidNull<QAO_GenericHandle> aHandle, QAO_Generic
         HG_UNLIKELY_BRANCH;
         HG_THROW_TRACED(AssertionFailedError,
                         0,
-                        "Object to attach ('{}' of type '{}') wasn't attached properly. Do all derived "
+                        "Object to attach ({}) wasn't attached properly. Do all derived "
                         "classes call the "
                         "_didAttach() method of their superclasses?",
-                        objRaw->getName(),
-                        typeid(*objRaw).name());
+                        aHandle->getDebugDescription());
     }
 }
 
@@ -215,11 +210,10 @@ AvoidNull<QAO_GenericHandle> QAO_Runtime::detachObject(QAO_GenericId aId) {
         HG_UNLIKELY_BRANCH;
         HG_THROW_TRACED(AssertionFailedError,
                         0,
-                        "Object to detach ('{}' of type '{}') wasn't detached properly. Do all derived "
+                        "Object to detach ({}) wasn't detached properly. Do all derived "
                         "classes call the "
                         "_willDetach() method of their superclasses?",
-                        handle->getName(),
-                        typeid(*handle).name());
+                        handle->getDebugDescription());
     }
     handle->_context = QAO_Base::Context{};
 
@@ -309,9 +303,7 @@ void QAO_Runtime::popRoom(bool aPropagateExceptions) {
             std::string objectInfo = "?";
             try {
                 auto handle = MoveToUnderlying(detachObject(id));
-                objectInfo  = fmt::format(FMT_STRING("'{}' of type '{}'"),
-                                          handle->getName(),
-                                          typeid(*handle).name());
+                objectInfo  = handle->getDebugDescription();
                 handle.reset();
             } catch (const TracedException& ex) {
                 HG_LOG_ERROR(LOG_ID,

@@ -238,6 +238,10 @@ hg::NeverNull<void*> DefaultNetworkingManager::__spempeimpl_getRegistryAddress()
     return &_syncObjReg;
 }
 
+SynchronizedObjectBase* DefaultNetworkingManager::mapSyncIdToObject(SyncId aSyncId) const {
+    return _syncObjReg.getMapping(aSyncId);
+}
+
 ///////////////////////////////////////////////////////////////////////////
 // PROTECTED & PRIVATE METHODS                                           //
 ///////////////////////////////////////////////////////////////////////////

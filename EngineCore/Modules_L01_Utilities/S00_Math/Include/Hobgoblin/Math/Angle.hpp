@@ -83,7 +83,10 @@ template <class taReal>
 taReal ShortestDistanceBetweenAngles(taReal andle1InRadians, taReal angle2InRadians) {
     const auto two = static_cast<taReal>(2.f);
     const auto pi = Pi<taReal>();
-    const taReal diff = std::fmod<taReal>(angle2InRadians - andle1InRadians + pi, two * pi) - pi;
+    const taReal diff = std::fmod(
+        static_cast<taReal>(angle2InRadians - andle1InRadians + pi),
+        static_cast<taReal>(two * pi)
+    ) - pi;
     return (diff < -pi) ? (diff + two * pi) : diff;
 }
 
