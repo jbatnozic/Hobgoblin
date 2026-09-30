@@ -71,7 +71,7 @@ void GameContext::GameState::setUpdateExeconLevel(hg::QAO_ExeCon aExecon, std::s
     if (aExecon != _execonForUpdate) {
         _execonForUpdate = aExecon;
         HG_LOG_WARN(LOG_ID,
-                    "EXECON level for UPDATE events set to {} by {}.",
+                    "EXECON level for [ UPDATE  ] events set to {} by {}.",
                     (int)aExecon,
                     aCallerID.empty() ? "<unknown>" : aCallerID);
     }
@@ -81,7 +81,7 @@ void GameContext::GameState::setDrawExeconLevel(hg::QAO_ExeCon aExecon, std::str
     if (aExecon != _execonForDraw) {
         _execonForDraw = aExecon;
         HG_LOG_WARN(LOG_ID,
-                    "EXECON level for DRAW events set to {} by {}.",
+                    "EXECON level for [ DRAW    ] events set to {} by {}.",
                     (int)aExecon,
                     aCallerID.empty() ? "<unknown>" : aCallerID);
     }
@@ -91,7 +91,7 @@ void GameContext::GameState::setDisplayExeconLevel(hg::QAO_ExeCon aExecon, std::
     if (aExecon != _execonForDisplay) {
         _execonForDisplay = aExecon;
         HG_LOG_WARN(LOG_ID,
-                    "EXECON level for DISPLAY events set to {} by {}.",
+                    "EXECON level for [ DISPLAY ] events set to {} by {}.",
                     (int)aExecon,
                     aCallerID.empty() ? "<unknown>" : aCallerID);
     }

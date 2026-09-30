@@ -8,6 +8,7 @@
 
 #include <cstdlib>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -27,8 +28,8 @@ public:
 //! Define a component's tag.
 //! For example: SPEMPE_CTXCOMP_TAG("PhysicsManager"); (can be in the private section)
 #define SPEMPE_CTXCOMP_TAG(_tag_string_)                                                          \
-    ::std::string __spempeimpl_getComponentTag() const {                                          \
-        return ::std::string{_tag_string_};                                                       \
+    ::std::string_view __spempeimpl_getComponentTag() const {                                     \
+        return {_tag_string_};                                                                    \
     }                                                                                             \
     ::jbatnozic::spempe::ContextComponent::TagHash __spempeimpl_getComponentTagHash() const {     \
         constexpr static auto TAG_HASH_ = ::jbatnozic::hobgoblin::util::HornerHash(_tag_string_); \
@@ -78,7 +79,7 @@ private:
     std::vector<Node> _table;
 
     void _attachComponent(ContextComponent&         aComponent,
-                          std::string               aTag,
+                          std::string_view          aTag,
                           ContextComponent::TagHash aTagHash);
 
     ContextComponent* _getComponentPtr(ContextComponent::TagHash aTagHash) const;
@@ -89,7 +90,7 @@ template <class taComponent>
 void ComponentTable::attachComponent(taComponent& aComponent) {
     const auto tag     = aComponent.__spempeimpl_getComponentTag();
     const auto tagHash = aComponent.__spempeimpl_getComponentTagHash();
-    _attachComponent(aComponent, std::move(tag), tagHash);
+    _attachComponent(aComponent, tag, tagHash);
 }
 
 template <class taComponent>
