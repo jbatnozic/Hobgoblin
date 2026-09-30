@@ -47,3 +47,6 @@ add_subdirectory("Overlays")
 
 # add_subdirectory("ProofOfConceptProjects")
 add_subdirectory("Tools")
+
+# ===== THE GAME =====
+add_subdirectory("Cinnabar1")
