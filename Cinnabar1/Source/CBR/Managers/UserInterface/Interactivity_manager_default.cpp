@@ -15,7 +15,7 @@ namespace cinnabar {
 
 DefaultInteractivityManager::DefaultInteractivityManager(QAO_InstGuard aInstGuard)
     : spe::NonstateObject{aInstGuard,
-                          QAO_ExeCon::GAMEPLAY,
+                          QAO_ExeCon::INTERACTIVITY,
                           PRIORITY_INTERACTIVITYMGR,
                           QAO_STATIC_NAME("cinnabar::DefaultInteractivityManager")} {}
 

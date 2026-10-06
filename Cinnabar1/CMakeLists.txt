@@ -3,7 +3,10 @@
 
 project("Cinnabar1")
 
+find_package(argparse CONFIG REQUIRED)
+
 add_executable(${PROJECT_NAME}
+    "Source/CBR/GameContext/Game_context_creation_params.cpp"
     "Source/CBR/GameContext/Game_context_factory.cpp"
     "Source/CBR/GameContext/Graphics_system_provider.cpp"
 
@@ -55,7 +58,7 @@ PUBLIC
     "SPeMPE"
 
     # External
-    # TODO
+    "argparse::argparse"
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE "Source/")
