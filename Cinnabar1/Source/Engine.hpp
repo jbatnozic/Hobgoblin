@@ -1,0 +1,53 @@
+// Copyright 2026 Jovan Batnozic. Released under MS-PL licence in Serbia.
+// See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
+
+#pragma once
+
+#include "Stream_io_overloads.hpp"
+
+#include <Hobgoblin/Common.hpp>
+#include <Hobgoblin/HGExcept.hpp>
+#include <Hobgoblin/Logging.hpp>
+#include <Hobgoblin/QAO.hpp>
+#include <Hobgoblin/RigelNet.hpp>
+#include <Hobgoblin/UWGA/Render_window.hpp>
+#include <SPeMPE/SPeMPE.hpp>
+
+namespace cinnabar {
+
+namespace hg   = ::jbatnozic::hobgoblin;
+namespace spe  = ::jbatnozic::spempe;
+namespace uwga = ::jbatnozic::hobgoblin::uwga;
+using namespace hg::qao; // All names from QAO are prefixed with QAO_
+using namespace hg::rn;  // All names from RigelNet are prefixed with RN_
+
+using MInput        = spe::InputSyncManager;
+using MLobbyBackend = spe::LobbyBackendManager;
+using MNetworking   = spe::NetworkingManager;
+using MWindow       = spe::WindowManager;
+
+constexpr const char* LOG_ID = "Cinnabar1";
+
+#define PRIORITY_VARMAPMGR     16
+#define PRIORITY_NETWORKMGR    15
+#define PRIORITY_LOBBYBACKMGR  14
+#define PRIORITY_LOBBYFRONTMGR 13
+#define PRIORITY_AUTHMGR       12
+// #define PRIORITY_GAMEPLAYMGR   10
+#define PRIORITY_ENTITIES       10
+#define PRIORITY_INPUTMGR       7
+#define PRIORITY_ENVIRONMENTMGR 5
+// #define PRIORITY_PLAYERAVATAR   5
+#define PRIORITY_INTERACTIVITYMGR 1
+#define PRIORITY_WINDOWMGR        0
+#define PRIORITY_MAINGAMEFLOWMGR  -1
+
+#define STATE_BUFFERING_LENGTH 2
+
+// clang-format off
+#define BEFRIEND_QAO_CREATE             \
+    template <class T, class... taArgs> \
+    friend auto ::jbatnozic::hobgoblin::qao::QAO_Create(QAO_RuntimeRef, taArgs&&...) -> QAO_Handle<T>
+// clang-format on
+
+} // namespace cinnabar
