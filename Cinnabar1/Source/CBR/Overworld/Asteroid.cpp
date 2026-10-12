@@ -167,7 +167,7 @@ void Asteroid::_eventBeginUpdate() {
 }
 
 void Asteroid::_eventUpdate2(spe::IfMaster) {
-    _syncPolyShapeWithUnibody();
+    _syncPolyShapeWithUnibody(); // also calls _polyShape.recalcRel()
 
     auto& self = _getCurrentState();
     self.setPosition(_polyShape.getAnchor());
@@ -182,6 +182,7 @@ void Asteroid::_eventUpdate2(spe::IfDummy) {
     const auto& self = _getCurrentState();
     _polyShape.setAnchor(self.getPosition());
     _polyShape.setRotation(self.rotation);
+    _polyShape.recalcRel();
 }
 
 void Asteroid::_eventPostUpdate(spe::IfMaster) {
@@ -189,6 +190,10 @@ void Asteroid::_eventPostUpdate(spe::IfMaster) {
 }
 
 void Asteroid::_eventDraw1() {
+    if (isDeactivated()) {
+        return;
+    }
+
     auto& canvas = ccomp<MWindow>().getActiveCanvas();
 
     const auto vertCount = _polyShape.getVertexCount();

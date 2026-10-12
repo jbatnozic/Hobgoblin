@@ -27,6 +27,8 @@ add_executable(${PROJECT_NAME}
 
     "Source/CBR/Utility/Poly_shape.cpp"
 
+    "Source/CBR/Player_controls.cpp"
+
     "Source/Main.cpp"
 )
 

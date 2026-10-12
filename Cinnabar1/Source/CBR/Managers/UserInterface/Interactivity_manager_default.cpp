@@ -11,6 +11,62 @@
 
 namespace cinnabar {
 
+// MARK: HostData
+    
+class DefaultInteractivityManager::HostData {
+public:
+    HostData(hg::PZInteger aPlayerCount) {
+        setPlayerCount(aPlayerCount);
+    }
+
+    void setPlayerCount(hg::PZInteger aPlayerCount) {
+        const auto sz = hg::pztos(aPlayerCount);
+        _playerControls.resize(sz);
+        _clientControls.resize(sz);
+    }
+    
+    void setAllControlsToDefault() {
+        for (auto& pc : _playerControls) {
+            pc = {};
+        }
+        for (auto& cc : _clientControls) {
+            cc = {};
+        }
+    }
+
+    void setControlsOfPlayer(hg::PZInteger aPlayerIndex, const PlayerControls& aControls) {
+        const_cast<PlayerControls&>(getControlsOfPlayer(aPlayerIndex)) = aControls;
+    }
+
+    const PlayerControls& getControlsOfPlayer(hg::PZInteger aPlayerIndex) {
+        const auto index = hg::pztos(aPlayerIndex);
+        HG_ASSERT(index < _playerControls.size());
+        return _playerControls[index];
+    }
+
+    void setControlsOfClient(int aClientIndex, const PlayerControls& aControls) {
+        const_cast<PlayerControls&>(getControlsOfClient(aClientIndex)) = aControls;
+    }
+
+    const PlayerControls& getControlsOfClient(int aClientIndex) {
+        const auto index = hg::pztos(aClientIndex + CLIENT_INDEX_OFFSET);
+        HG_ASSERT(index < _clientControls.size());
+        return _clientControls[index];
+    }
+
+private:
+    static_assert(spe::CLIENT_INDEX_LOCAL == -1);
+    constexpr static hg::PZInteger CLIENT_INDEX_OFFSET = 1;
+
+    //! Entry [P] holds controls for player [P]
+    std::vector<PlayerControls> _playerControls;
+
+    //! Entry [C] holds controls of client [C-1] (offset of 1 because local player has index -1)
+    std::vector<PlayerControls> _clientControls;
+};
+
+// MARK: DefaultInteractivityManager
+
 #define MODE_EDGE spe::WindowFrameInputView::Mode::Edge
 
 DefaultInteractivityManager::DefaultInteractivityManager(QAO_InstGuard aInstGuard)
@@ -18,6 +74,32 @@ DefaultInteractivityManager::DefaultInteractivityManager(QAO_InstGuard aInstGuar
                           QAO_ExeCon::INTERACTIVITY,
                           PRIORITY_INTERACTIVITYMGR,
                           QAO_STATIC_NAME("cinnabar::DefaultInteractivityManager")} {}
+
+DefaultInteractivityManager::~DefaultInteractivityManager() = default;
+
+DefaultInteractivityManager::Mode DefaultInteractivityManager::getMode() const {
+    return _mode;
+}
+
+void DefaultInteractivityManager::setToClientMode() {
+    SPEMPE_VALIDATE_GAME_CONTEXT_FLAGS(ctx(),
+                                       privileged == false,
+                                       headless == false,
+                                       networking == true);
+    _mode = Mode::CLIENT;
+}
+
+void DefaultInteractivityManager::setToHostMode(hg::PZInteger aPlayerCount) {
+    SPEMPE_VALIDATE_GAME_CONTEXT_FLAGS(ctx(), privileged == true, headless == true, networking == true);
+    _mode = Mode::HOST;
+
+    _hostData = std::make_unique<HostData>(aPlayerCount);
+}
+
+void DefaultInteractivityManager::setToDevMode() {
+    SPEMPE_VALIDATE_GAME_CONTEXT_FLAGS(ctx(), privileged == true, headless == false);
+    _mode = Mode::DEV;
+}
 
 void DefaultInteractivityManager::pushClickableObject(
     QAO_GenericId                           aClickableId,
@@ -38,6 +120,18 @@ void DefaultInteractivityManager::pushClickableObject(
                            .fullMouseOverCheck  = std::move(aFullMouseOverCheck)});
 }
 
+const PlayerControls& DefaultInteractivityManager::getControlsOfPlayer(
+    hg::PZInteger aPlayerIndex) const //
+{
+    return _hostData->getControlsOfPlayer(aPlayerIndex);
+}
+
+const PlayerControls& DefaultInteractivityManager::getControlsOfClient(int aClientIndex) const {
+    return _hostData->getControlsOfClient(aClientIndex);
+}
+
+// MARK: Private
+
 void DefaultInteractivityManager::_didAttach(QAO_Runtime& aRuntime) {
     spe::NonstateObject::_didAttach(aRuntime);
     _winMgr = &ccomp<MWindow>();
@@ -49,33 +143,26 @@ void DefaultInteractivityManager::_eventPreUpdate() {
 }
 
 void DefaultInteractivityManager::_eventBeginUpdate() {
-    std::stable_sort(_clickables.begin(), _clickables.end());
+    switch (_mode) {
+    case Mode::INITIAL:
+        // Do nothing
+        break;
 
-    while (!_clickables.empty()) {
-        auto& info = _clickables.back();
+    case Mode::HOST:
+        _gatherRemotePlayerControls();
+        break;
 
-        auto instance = getRuntime()->find(info.id);
-        if (instance.isNull()) {
-            _clickables.pop_back();
-            continue;
-        }
+    case Mode::CLIENT:
+        _dispatchPNCSEvents();
+        _sendLocalPlayerControls();
+        break;
 
-        if (!info.fullMouseOverCheck(_getMouseWorldPosition())) {
-            _clickables.pop_back(); // The object doesn't intersect with the mouse cursor
-            continue;
-        }
+    case Mode::DEV:
+        _dispatchPNCSEvents();
+        break;
 
-        const auto input = _winMgr->getInput();
-
-        PNCSEventData evData = {.mbLeftDown  = input.checkPressed(hg::in::MB_LEFT, MODE_EDGE),
-                                .mbRightDown = input.checkPressed(hg::in::MB_RIGHT, MODE_EDGE),
-                                .mbLeftUp    = input.checkReleased(hg::in::MB_LEFT, MODE_EDGE),
-                                .mbRightUp   = input.checkReleased(hg::in::MB_RIGHT, MODE_EDGE),
-                                .userData    = info.userData};
-
-        (void)QAO_SendMessage<HandlePNCSEvent>(*instance, &evData);
-
-        break; // End the loop after the "foreground-most" object receives its message
+    default:
+        HG_UNREACHABLE("Illegal value for enum InteractivityManager::Mode ({})!", (int)_mode);
     }
 }
 
@@ -114,6 +201,69 @@ hg::math::Vector2d DefaultInteractivityManager::_getMouseWorldPosition() {
     }
 
     return *_mouseWorldPos;
+}
+
+void DefaultInteractivityManager::_gatherRemotePlayerControls() {
+    HG_ASSERT(_mode == Mode::HOST);
+
+    auto& lobbyBackendMgr = ccomp<MLobbyBackend>();
+    auto& inputSyncMgr    = ccomp<MInput>();
+
+    const auto playerCount = lobbyBackendMgr.getSize();
+
+    _hostData->setPlayerCount(playerCount); // no-op if player count is already correct
+    _hostData->setAllControlsToDefault();
+
+    for (hg::PZInteger clientIndex = 0; clientIndex < playerCount - 1; ++clientIndex) {
+        const int playerIndex = lobbyBackendMgr.clientIdxToPlayerIdx(clientIndex);
+
+        const auto controls = PlayerControls::fromInputSyncManager(inputSyncMgr, clientIndex);
+
+        _hostData->setControlsOfClient(clientIndex, controls);
+
+        if (playerIndex != spe::PLAYER_INDEX_UNKNOWN) {
+            _hostData->setControlsOfPlayer(clientIndex + 1, controls);
+        }
+    }
+}
+
+void DefaultInteractivityManager::_sendLocalPlayerControls() {
+    HG_ASSERT(_mode == Mode::CLIENT);
+
+    const auto controls = PlayerControls::fromLocalInput(_winMgr->getInput());
+    controls.toInputSyncManager(ccomp<MInput>());
+}
+
+void DefaultInteractivityManager::_dispatchPNCSEvents() {
+    std::stable_sort(_clickables.begin(), _clickables.end());
+
+    const auto mouseWorldPos = _getMouseWorldPosition();
+    while (!_clickables.empty()) {
+        auto& info = _clickables.back();
+
+        auto instance = getRuntime()->find(info.id);
+        if (instance.isNull()) {
+            _clickables.pop_back();
+            continue;
+        }
+
+        if (!info.fullMouseOverCheck(mouseWorldPos)) {
+            _clickables.pop_back(); // The object doesn't intersect with the mouse cursor
+            continue;
+        }
+
+        const auto input = _winMgr->getInput();
+
+        PNCSEventData evData = {.mbLeftDown  = input.checkPressed(hg::in::MB_LEFT, MODE_EDGE),
+                                .mbRightDown = input.checkPressed(hg::in::MB_RIGHT, MODE_EDGE),
+                                .mbLeftUp    = input.checkReleased(hg::in::MB_LEFT, MODE_EDGE),
+                                .mbRightUp   = input.checkReleased(hg::in::MB_RIGHT, MODE_EDGE),
+                                .userData    = info.userData};
+
+        (void)QAO_SendMessage<HandlePNCSEvent>(*instance, &evData);
+
+        break; // End the loop after the "foreground-most" object receives its message
+    }
 }
 
 } // namespace cinnabar

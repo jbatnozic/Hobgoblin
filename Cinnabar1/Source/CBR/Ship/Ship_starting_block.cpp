@@ -6,6 +6,7 @@
 #include "Constants.hpp"
 #include <CBR/InteriorWorld/Cell_archs.hpp>
 #include <CBR/Managers/Gameplay/Overworld_manager.hpp>
+#include <CBR/Managers/UserInterface/Interactivity_manager.hpp>
 
 namespace cinnabar {
 
@@ -137,6 +138,7 @@ void ShipStartingBlock::_eventUpdate2(spe::IfDummy) {
     const auto& self = _getCurrentState();
     _polyShape.setAnchor(self.getPosition());
     _polyShape.setRotation(self.rotation);
+    _polyShape.recalcRel();
 }
 
 void ShipStartingBlock::_eventPostUpdate(spe::IfMaster) {
@@ -144,15 +146,21 @@ void ShipStartingBlock::_eventPostUpdate(spe::IfMaster) {
 }
 
 void ShipStartingBlock::_eventDraw1() {
+    if (isDeactivated()) {
+        return;
+    }
+
     auto& winMgr = ccomp<MWindow>();
     _polyShape.debugDraw(hg::uwga::COLOR_GREY, winMgr.getActiveCanvas());
 }
 
 void ShipStartingBlock::_applyPropulsion(const spe::WindowFrameInputView& aInput) {
-    const auto left  = aInput.checkPressed(hg::in::PK_A);
-    const auto right = aInput.checkPressed(hg::in::PK_D);
-    const auto up    = aInput.checkPressed(hg::in::PK_W);
-    const auto down  = aInput.checkPressed(hg::in::PK_S);
+    const auto& controls = ccomp<InteractivityManager>().getControlsOfPlayer(1);
+
+    const auto left  = controls.left;
+    const auto right = controls.right;
+    const auto up    = controls.up;
+    const auto down  = controls.down;
 
     // Propulsion
     const cpVect  pos                = cpBodyGetPosition(_unibody);
@@ -181,10 +189,10 @@ void ShipStartingBlock::_applyPropulsion(const spe::WindowFrameInputView& aInput
     // Rotation
     auto rotForce = cpv(0.0, 0.0);
 
-    if (aInput.checkPressed(hg::in::PK_E)) {
+    if (controls.rotateClockwise) {
         rotForce.y += 2000.0;
     }
-    if (aInput.checkPressed(hg::in::PK_Q)) {
+    if (controls.rotateCounterclockwise) {
         rotForce.y -= 2000.0;
     }
 

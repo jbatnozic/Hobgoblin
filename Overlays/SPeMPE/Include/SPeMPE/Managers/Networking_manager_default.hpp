@@ -16,6 +16,10 @@ namespace spempe {
 
 //! One concrete implementation of NetworkingManager.
 //! TODO: Tip on setting execution priority?
+//!
+//! Event listing:
+//! - _eventBeginUpdate() => Receive messages
+//! - _eventEndUpdate() => Send/upload messages
 class DefaultNetworkingManager
     : public NetworkingManager
     , public NonstateObject

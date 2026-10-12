@@ -670,12 +670,14 @@ void ShipController::_didAttach(QAO_Runtime& aRuntime) {
 
 void ShipController::_willDetach(QAO_Runtime& aRuntime) {
     // TODO: temporary implementation
-    for (int i = 0; i < 2048; ++i) {
-        auto* node = _masterData->graphOfAttachables.getNode(i);
-        if (node == nullptr) {
-            continue;
+    if (isMasterObject()) {
+        for (int i = 0; i < 2048; ++i) {
+            auto* node = _masterData->graphOfAttachables.getNode(i);
+            if (node == nullptr) {
+                continue;
+            }
+            node->associatedAttachable._detach();
         }
-        node->associatedAttachable._detach();
     }
 
     SyncObjSuper::_willDetach(aRuntime);
@@ -698,6 +700,10 @@ void ShipController::_eventPostUpdate(spe::IfMaster) {
 }
 
 void ShipController::_eventDraw1() {
+    if (isDeactivated()) {
+        return;
+    }
+
     auto& winMgr = ccomp<MWindow>();
 
     uwga::VertexArray vArr{uwga::PrimitiveType::TRIANGLES, 3};

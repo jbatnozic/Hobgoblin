@@ -10,6 +10,6 @@
 
 namespace cinnabar {
 
-std::unique_ptr<spe::GameContext> CreateGameContext(GameContextMode aMode);
+std::unique_ptr<spe::GameContext> CreateGameContext(const GameContextCreationParams& aParams);
 
 } // namespace cinnabar

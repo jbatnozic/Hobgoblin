@@ -30,7 +30,7 @@ int Main(int aArgumentCount, char** aArgumentArray) try {
         }
     }
 
-    const auto ctx    = CreateGameContext(GameContextMode::DEV);
+    const auto ctx    = CreateGameContext(gccParams);
     const auto status = ctx->runFor(-1);
     HG_LOG_INFO(LOG_ID, "Program exiting (status code {}).", status);
     return status;

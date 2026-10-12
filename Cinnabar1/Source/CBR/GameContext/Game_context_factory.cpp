@@ -5,6 +5,7 @@
 
 #include "Graphics_system_provider.hpp"
 #include <CBR/Managers/Gameplay/Main_game_flow_manager_default.hpp>
+#include <CBR/Managers/UserInterface/Interactivity_manager_default.hpp>
 #include <CBR/Managers/UserInterface/Lobby_frontend_manager_default.hpp>
 #include <CBR/Player_controls.hpp>
 
@@ -127,19 +128,21 @@ void AttachWindowManager(spe::GameContext& aContext, GameContextMode aMode) {
     aContext.attachAndOwnComponent(std::move(winMgr));
 }
 
-void AttachNetworkingManager(spe::GameContext& aContext, GameContextMode aMode) {
+void AttachNetworkingManager(spe::GameContext& aContext, const GameContextCreationParams& aParams) {
     auto netMgr = QAO_Create<spe::DefaultNetworkingManager>(aContext.getQAORuntime().nonOwning(),
                                                             PRIORITY_NETWORKMGR,
                                                             DEFAULT_STATE_BUFFERING_LENGTH);
 
-    switch (aMode) {
+    constexpr hg::PZInteger MAX_PACKET_BYTES = 2048;
+
+    switch (aParams.mode) {
     case GameContextMode::SERVER:
     case GameContextMode::DEV:
         {
             netMgr->setToServerMode(RN_Protocol::UDP,
                                     "dreamscape-escape",
-                                    1,
-                                    1024,
+                                    aParams.server.playerCount - 1,
+                                    MAX_PACKET_BYTES,
                                     RN_NetworkingStack::Default);
             netMgr->setPacemakerPulsePeriod(300);
             auto& server = netMgr->getServer();
@@ -153,40 +156,47 @@ void AttachNetworkingManager(spe::GameContext& aContext, GameContextMode aMode) 
         {
             netMgr->setToClientMode(RN_Protocol::UDP,
                                     "dreamscape-escape",
-                                    1024,
+                                    MAX_PACKET_BYTES,
                                     RN_NetworkingStack::Default);
             auto& client = netMgr->getClient();
             client.setTimeoutLimit(std::chrono::seconds{5});
             // client.setRetransmitPredicate(&MyRetransmitPredicate);
-            // client.connect(aLocalPort, aRemoteIp, aRemotePort);
+            if (aParams.client.connectImmediately) {
+                client.connect(aParams.client.localPort,
+                               aParams.client.serverIp,
+                               aParams.client.serverPort);
+            }
         }
         break;
 
     default:
-        HG_UNREACHABLE("Invalid value for enum GameContextMode ({}).", (int)aMode);
+        HG_UNREACHABLE("Invalid value for enum GameContextMode ({}).", (int)aParams.mode);
         break;
     }
 
     aContext.attachAndOwnComponent(std::move(netMgr));
 }
 
-void AttachInputSyncManager(spe::GameContext& aContext, GameContextMode aMode) {
+void AttachInputSyncManager(spe::GameContext& aContext, const GameContextCreationParams& aParams) {
+    if (aParams.mode == GameContextMode::DEV) {
+        return; // No need to sync controls in developer mode
+    }
+
     auto insMgr = QAO_Create<spe::DefaultInputSyncManager>(aContext.getQAORuntime().nonOwning(),
                                                            PRIORITY_INPUTMGR);
 
-    switch (aMode) {
+    switch (aParams.mode) {
     case GameContextMode::SERVER:
-    case GameContextMode::DEV:
-        // Host mode. With 0 remote clients the manager just echoes the local player's input.
-        insMgr->setToHostMode(0, DEFAULT_STATE_BUFFERING_LENGTH);
+        insMgr->setToHostMode(aParams.server.playerCount - 1, DEFAULT_STATE_BUFFERING_LENGTH);
         break;
 
     case GameContextMode::CLIENT:
         insMgr->setToClientMode();
         break;
 
+    case GameContextMode::DEV:
     default:
-        HG_UNREACHABLE("Invalid value for enum GameContextMode ({}).", (int)aMode);
+        HG_UNREACHABLE("Invalid value for enum GameContextMode ({}).", (int)aParams.mode);
         break;
     }
 
@@ -218,13 +228,16 @@ void AttachSyncedVarmapManager(spe::GameContext& aContext, GameContextMode aMode
     aContext.attachAndOwnComponent(std::move(svmMgr));
 }
 
-void AttachLobbyBackendManager(spe::GameContext& aContext, GameContextMode aMode) {
-    // NOTE: Requires the Synced varmap manager and Networking manager to be attached already.
+// Depends on `NetworkingManager` and `SyncedVarmapManager`
+void AttachLobbyBackendManager(spe::GameContext& aContext, const GameContextCreationParams& aParams) {
     auto lobbyMgr = QAO_Create<spe::DefaultLobbyBackendManager>(aContext.getQAORuntime().nonOwning(),
                                                                 PRIORITY_LOBBYBACKMGR);
 
-    switch (aMode) {
+    switch (aParams.mode) {
     case GameContextMode::SERVER:
+        lobbyMgr->setToHostMode(aParams.server.playerCount);
+        break;
+
     case GameContextMode::DEV:
         lobbyMgr->setToHostMode(DEFAULT_LOBBY_SIZE);
         break;
@@ -234,7 +247,7 @@ void AttachLobbyBackendManager(spe::GameContext& aContext, GameContextMode aMode
         break;
 
     default:
-        HG_UNREACHABLE("Invalid value for enum GameContextMode ({}).", (int)aMode);
+        HG_UNREACHABLE("Invalid value for enum GameContextMode ({}).", (int)aParams.mode);
         break;
     }
 
@@ -292,9 +305,33 @@ void AttachAuthorizationManager(spe::GameContext& aContext, GameContextMode aMod
     aContext.attachAndOwnComponent(std::move(authMgr));
 }
 
+void AttachInteractivityManager(spe::GameContext& aContext, const GameContextCreationParams& aParams) {
+    auto intrMgr = QAO_Create<DefaultInteractivityManager>(aContext.getQAORuntime().nonOwning());
+
+    switch (aParams.mode) {
+    case GameContextMode::CLIENT:
+        intrMgr->setToClientMode();
+        break;
+
+    case GameContextMode::SERVER:
+        intrMgr->setToHostMode(aParams.server.playerCount);
+        break;
+
+    case GameContextMode::DEV:
+        intrMgr->setToDevMode();
+        break;
+
+    default:
+        HG_UNREACHABLE("Invalid value for enum GameContextMode ({}).", (int)aParams.mode);
+        break;
+    }
+
+    aContext.attachAndOwnComponent(std::move(intrMgr));
+}
+
 // MARK: SERVER context
 
-std::unique_ptr<spe::GameContext> CreateServerGameContext() {
+std::unique_ptr<spe::GameContext> CreateServerGameContext(const GameContextCreationParams& aParams) {
     constexpr auto GCMODE = GameContextMode::SERVER;
 
     auto ctx = CreateBasicGameContext();
@@ -311,17 +348,18 @@ std::unique_ptr<spe::GameContext> CreateServerGameContext() {
     }
 
     AttachWindowManager(*ctx, GCMODE);
-    AttachNetworkingManager(*ctx, GCMODE);
+    AttachNetworkingManager(*ctx, aParams);
 
     // NOTE: attachment order matters here, because some managers look up others during setup:
     //   - the Lobby backend manager needs the Synced varmap and Networking managers,
     //   - the Lobby frontend manager needs the Lobby backend and Window managers,
     //   - the Authorization manager needs the Lobby backend, Synced varmap and Networking managers.
-    AttachInputSyncManager(*ctx, GCMODE);
+    AttachInputSyncManager(*ctx, aParams);
     AttachSyncedVarmapManager(*ctx, GCMODE);
-    AttachLobbyBackendManager(*ctx, GCMODE);
+    AttachLobbyBackendManager(*ctx, aParams);
     AttachLobbyFrontendManager(*ctx, GCMODE);
     AttachAuthorizationManager(*ctx, GCMODE);
+    AttachInteractivityManager(*ctx, aParams);
 
     // Add DefaultMainGameFlowManager
     {
@@ -334,7 +372,7 @@ std::unique_ptr<spe::GameContext> CreateServerGameContext() {
 
 // MARK: CLIENT context
 
-std::unique_ptr<spe::GameContext> CreateClientGameContext() {
+std::unique_ptr<spe::GameContext> CreateClientGameContext(const GameContextCreationParams& aParams) {
     constexpr auto GCMODE = GameContextMode::CLIENT;
 
     auto ctx = CreateBasicGameContext();
@@ -349,17 +387,18 @@ std::unique_ptr<spe::GameContext> CreateClientGameContext() {
     }
 
     AttachWindowManager(*ctx, GCMODE);
-    AttachNetworkingManager(*ctx, GCMODE);
+    AttachNetworkingManager(*ctx, aParams);
 
     // NOTE: attachment order matters here, because some managers look up others during setup:
     //   - the Lobby backend manager needs the Synced varmap and Networking managers,
     //   - the Lobby frontend manager needs the Lobby backend and Window managers,
     //   - the Authorization manager needs the Lobby backend, Synced varmap and Networking managers.
-    AttachInputSyncManager(*ctx, GCMODE);
+    AttachInputSyncManager(*ctx, aParams);
     AttachSyncedVarmapManager(*ctx, GCMODE);
-    AttachLobbyBackendManager(*ctx, GCMODE);
+    AttachLobbyBackendManager(*ctx, aParams);
     AttachLobbyFrontendManager(*ctx, GCMODE);
     AttachAuthorizationManager(*ctx, GCMODE);
+    AttachInteractivityManager(*ctx, aParams);
 
     // Add DefaultMainGameFlowManager
     {
@@ -372,7 +411,7 @@ std::unique_ptr<spe::GameContext> CreateClientGameContext() {
 
 // MARK: DEV context
 
-std::unique_ptr<spe::GameContext> CreateDevGameContext() {
+std::unique_ptr<spe::GameContext> CreateDevGameContext(const GameContextCreationParams& aParams) {
     constexpr auto GCMODE = GameContextMode::DEV;
 
     auto ctx = CreateBasicGameContext();
@@ -387,17 +426,18 @@ std::unique_ptr<spe::GameContext> CreateDevGameContext() {
     }
 
     AttachWindowManager(*ctx, GCMODE);
-    AttachNetworkingManager(*ctx, GCMODE);
+    AttachNetworkingManager(*ctx, aParams);
 
     // NOTE: attachment order matters here, because some managers look up others during setup:
     //   - the Lobby backend manager needs the Synced varmap and Networking managers,
     //   - the Lobby frontend manager needs the Lobby backend and Window managers,
     //   - the Authorization manager needs the Lobby backend, Synced varmap and Networking managers.
-    AttachInputSyncManager(*ctx, GCMODE);
+    AttachInputSyncManager(*ctx, aParams);
     AttachSyncedVarmapManager(*ctx, GCMODE);
-    AttachLobbyBackendManager(*ctx, GCMODE);
+    AttachLobbyBackendManager(*ctx, aParams);
     AttachLobbyFrontendManager(*ctx, GCMODE);
     AttachAuthorizationManager(*ctx, GCMODE);
+    AttachInteractivityManager(*ctx, aParams);
 
     // Add DefaultMainGameFlowManager
     {
@@ -410,22 +450,22 @@ std::unique_ptr<spe::GameContext> CreateDevGameContext() {
 
 } // namespace
 
-std::unique_ptr<spe::GameContext> CreateGameContext(GameContextMode aMode) {
-    switch (aMode) {
+std::unique_ptr<spe::GameContext> CreateGameContext(const GameContextCreationParams& aParams) {
+    switch (aParams.mode) {
     case GameContextMode::SERVER:
-        return CreateServerGameContext();
+        return CreateServerGameContext(aParams);
         break;
 
     case GameContextMode::CLIENT:
-        return CreateClientGameContext();
+        return CreateClientGameContext(aParams);
         break;
 
     case GameContextMode::DEV:
-        return CreateDevGameContext();
+        return CreateDevGameContext(aParams);
         break;
 
     default:
-        HG_UNREACHABLE("Invalid value for GameContextMode ({}).", (int)aMode);
+        HG_UNREACHABLE("Invalid value for GameContextMode ({}).", (int)aParams.mode);
     }
 }
 
