@@ -20,19 +20,25 @@ DefaultMainGameFlowManager::DefaultMainGameFlowManager(QAO_InstGuard aInstGuard)
 void DefaultMainGameFlowManager::_didAttach(QAO_Runtime& aRuntime) {
     spe::NonstateObject::_didAttach(aRuntime);
 
+    ccomp<MNetworking>().addEventListener(this);
+
     // Init scenario (TEMPORARY)
 
-    auto ovwMgr = QAO_Create<DefaultOverworldManager>(aRuntime.nonOwning());
-    ctx().attachAndOwnComponent(std::move(ovwMgr));
+    if (ctx().isPrivileged()) {
+        auto ovwMgr = QAO_Create<DefaultOverworldManager>(aRuntime.nonOwning());
+        ctx().attachAndOwnComponent(std::move(ovwMgr));
 
-    auto interactivityMgr = QAO_Create<DefaultInteractivityManager>(aRuntime.nonOwning());
-    ctx().attachAndOwnComponent(std::move(interactivityMgr));
+        auto core = ShipStartingBlock::createMaster(aRuntime, {150.0, 150.0});
 
-    auto core = ShipStartingBlock::createMaster(aRuntime, {150.0, 150.0});
+        auto ship = ShipController::createMaster(aRuntime, *core);
 
-    auto ship = ShipController::createMaster(aRuntime, *core);
+        auto asteroid = Asteroid::createMaster(aRuntime, {512.0, 712.0});
+    }
+}
 
-    auto asteroid = Asteroid::createMaster(aRuntime, {512.0, 712.0});
+void DefaultMainGameFlowManager::_willDetach(QAO_Runtime& aRuntime) {
+    ccomp<MNetworking>().removeEventListener(this);
+    spe::NonstateObject::_willDetach(aRuntime);
 }
 
 void DefaultMainGameFlowManager::_eventDisplay() {
@@ -68,6 +74,18 @@ void DefaultMainGameFlowManager::_eventDisplay() {
 
     // Display
     // No need to increase it, only essential managers do stuff in DISPLAY anyway.
+}
+
+void DefaultMainGameFlowManager::onNetworkingEvent(const RN_Event& aEvent) {
+    // TODO: The main game flow manager is probably not the best place to upload
+    //       local lobby info; consider moving this elsewhere (e.g. lobby backend
+    //       or a dedicated client connection handler).
+    if (ccomp<MNetworking>().isClient()) {
+        aEvent.visit([this](const RN_Event::Connected&) {
+            HG_LOG_INFO(LOG_ID, "Client lobby uploading local info to server.");
+            ccomp<MLobbyBackend>().uploadLocalInfo();
+        });
+    }
 }
 
 } // namespace cinnabar

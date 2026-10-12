@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <CBR/Player_controls.hpp>
 #include <Engine.hpp>
 
 #include <Hobgoblin/Math.hpp>
@@ -14,7 +15,18 @@ namespace cinnabar {
 
 class InteractivityManager : public spe::ContextComponent {
 public:
-    SPEMPE_CTXCOMP_TAG("cinnabar::InteractivityManager");
+    enum class Mode {
+        INITIAL, // Not initizlized properly/yet
+        CLIENT,
+        HOST,
+        DEV
+    };
+
+    virtual Mode getMode() const = 0;
+
+    virtual void setToClientMode() = 0;
+    virtual void setToHostMode(hg::PZInteger aPlayerCount) = 0;
+    virtual void setToDevMode() = 0;
 
     //! \brief Register an object as a candidate to receive mouse-over and click events this frame.
     //!
@@ -53,6 +65,13 @@ public:
                                      std::intptr_t                           aUserData,
                                      std::function<bool(hg::math::Vector2d)> aQuickMouseOverCheck,
                                      std::function<bool(hg::math::Vector2d)> aFullMouseOverCheck) = 0;
+
+    virtual const PlayerControls& getControlsOfPlayer(hg::PZInteger aPlayerIndex) const = 0;
+
+    virtual const PlayerControls& getControlsOfClient(int aClientIndex) const = 0;
+
+private:
+    SPEMPE_CTXCOMP_TAG("cinnabar::InteractivityManager");
 };
 
 using MInteractivity = InteractivityManager;

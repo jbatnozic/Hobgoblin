@@ -6,6 +6,7 @@
 #include <CBR/Managers/UserInterface/Interactivity_manager.hpp>
 #include <Engine.hpp>
 
+#include <memory>
 #include <optional>
 #include <vector>
 
@@ -17,13 +18,27 @@ class DefaultInteractivityManager
 public:
     DefaultInteractivityManager(QAO_InstGuard aInstGuard);
 
+    ~DefaultInteractivityManager();
+
+    Mode getMode() const override;
+
+    void setToClientMode() override;
+    void setToHostMode(hg::PZInteger aPlayerCount) override;
+    void setToDevMode() override;
+
     void pushClickableObject(QAO_GenericId                           aClickableId,
                              int                                     aFinegrainedPriority,
                              std::intptr_t                           aUserData,
                              std::function<bool(hg::math::Vector2d)> aQuickMouseOverCheck,
                              std::function<bool(hg::math::Vector2d)> aFullMouseOverCheck) override;
 
+    const PlayerControls& getControlsOfPlayer(hg::PZInteger aPlayerIndex) const override;
+
+    const PlayerControls& getControlsOfClient(int aClientIndex) const override;
+
 private:
+    Mode _mode = Mode::INITIAL;
+
     MWindow* _winMgr = nullptr;
 
     struct ClickableInfo {
@@ -44,6 +59,9 @@ private:
 
     std::optional<hg::math::Vector2d> _mouseWorldPos;
 
+    class HostData;
+    std::unique_ptr<HostData> _hostData;
+
     void _didAttach(QAO_Runtime& aRuntime) override;
 
     void _eventPreUpdate() override;
@@ -51,6 +69,10 @@ private:
     void _eventPreDraw() override;
 
     hg::math::Vector2d _getMouseWorldPosition();
+
+    void _gatherRemotePlayerControls();
+    void _sendLocalPlayerControls();
+    void _dispatchPNCSEvents();
 };
 
 QAO_REGISTER_CLASS(DefaultInteractivityManager, cinnabar_InteractivityManager) {

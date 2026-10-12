@@ -30,6 +30,9 @@ struct PlayerInfoWithIndex {
 };
 } // namespace detail
 
+//! Event listing:
+//! - _eventBeginUpdate() => (Host only): Check if the authorized playes is still connected;
+//!                          if not, authorize another one.
 class DefaultAuthorizationManager
     : public AuthorizationManager
     , public NonstateObject

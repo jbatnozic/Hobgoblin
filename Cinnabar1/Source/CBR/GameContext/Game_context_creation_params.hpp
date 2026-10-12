@@ -5,6 +5,8 @@
 
 #include <Engine.hpp>
 
+#include <cstdint>
+
 namespace cinnabar {
 
 enum class GameContextMode {
@@ -19,11 +21,15 @@ struct GameContextCreationParams {
     GameContextMode mode = GameContextMode::CLIENT;
 
     struct ClientParams {
-
+        bool          connectImmediately = false;
+        std::uint16_t localPort          = 0;
+        std::uint16_t serverPort         = 0;
+        std::string   serverIp           = "127.0.0.1";
     } client;
 
     struct ServerParams {
-
+        hg::PZInteger playerCount = 2;
+        std::uint16_t localPort   = 0;
     } server;
 };
 

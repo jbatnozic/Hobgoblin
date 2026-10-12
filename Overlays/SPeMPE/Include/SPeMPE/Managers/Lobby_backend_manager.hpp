@@ -146,6 +146,9 @@ public:
     //! Resizes the lobby (aNewLobbySize must be at least 1). When called on the Host size,
     //! it will set the lobby size for all connected clients. On client side, you can also
     //! call this but the lobby will keep reverting to the size set by the host.
+    //!
+    //! \note the server itself takes up 1 slot in the lobby! So if you want to, for example,
+    //!       have 2 actual players, the lobby size should be 3.
     virtual void resize(hobgoblin::PZInteger aNewLobbySize) = 0;
 
     virtual const PlayerInfo& getLockedInPlayerInfo(hobgoblin::PZInteger aSlotIndex) const = 0;

@@ -12,14 +12,18 @@ namespace cinnabar {
 
 class DefaultMainGameFlowManager
     : public spe::NonstateObject
-    , public MainGameFlowManager {
+    , public MainGameFlowManager
+    , private spe::NetworkingEventListener {
 public:
     DefaultMainGameFlowManager(QAO_InstGuard aInstGuard);
 
 private:
     void _didAttach(QAO_Runtime& aRuntime) override;
+    void _willDetach(QAO_Runtime& aRuntime) override;
 
     void _eventDisplay() override;
+
+    void onNetworkingEvent(const RN_Event& aEvent) override;
 
     std::uint32_t _iterOrdinal = 0;
 };
