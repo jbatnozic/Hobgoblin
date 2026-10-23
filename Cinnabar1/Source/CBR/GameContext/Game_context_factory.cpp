@@ -5,6 +5,7 @@
 
 #include "Graphics_system_provider.hpp"
 #include <CBR/Managers/Gameplay/Main_game_flow_manager_default.hpp>
+#include <CBR/Managers/Gameplay/Overworld_manager_default.hpp>
 #include <CBR/Managers/UserInterface/Interactivity_manager_default.hpp>
 #include <CBR/Managers/UserInterface/Lobby_frontend_manager_default.hpp>
 #include <CBR/Player_controls.hpp>
@@ -329,6 +330,31 @@ void AttachInteractivityManager(spe::GameContext& aContext, const GameContextCre
     aContext.attachAndOwnComponent(std::move(intrMgr));
 }
 
+void AttachOverworldManager(spe::GameContext& aContext, const GameContextCreationParams& aParams) {
+    auto ovwMgr = QAO_Create<DefaultOverworldManager>(aContext.getQAORuntime().nonOwning());
+
+    switch (aParams.mode) {
+    case GameContextMode::CLIENT:
+        // intrMgr->setToClientMode();
+        return; // TODO: temporary
+        break;
+
+    case GameContextMode::SERVER:
+        // intrMgr->setToHostMode(aParams.server.playerCount);
+        break;
+
+    case GameContextMode::DEV:
+        // intrMgr->setToDevMode();
+        break;
+
+    default:
+        HG_UNREACHABLE("Invalid value for enum GameContextMode ({}).", (int)aParams.mode);
+        break;
+    }
+
+    aContext.attachAndOwnComponent(std::move(ovwMgr));
+}
+
 // MARK: SERVER context
 
 std::unique_ptr<spe::GameContext> CreateServerGameContext(const GameContextCreationParams& aParams) {
@@ -360,6 +386,7 @@ std::unique_ptr<spe::GameContext> CreateServerGameContext(const GameContextCreat
     AttachLobbyFrontendManager(*ctx, GCMODE);
     AttachAuthorizationManager(*ctx, GCMODE);
     AttachInteractivityManager(*ctx, aParams);
+    AttachOverworldManager(*ctx, aParams);
 
     // Add DefaultMainGameFlowManager
     {
@@ -399,6 +426,7 @@ std::unique_ptr<spe::GameContext> CreateClientGameContext(const GameContextCreat
     AttachLobbyFrontendManager(*ctx, GCMODE);
     AttachAuthorizationManager(*ctx, GCMODE);
     AttachInteractivityManager(*ctx, aParams);
+    AttachOverworldManager(*ctx, aParams);
 
     // Add DefaultMainGameFlowManager
     {
@@ -438,6 +466,7 @@ std::unique_ptr<spe::GameContext> CreateDevGameContext(const GameContextCreation
     AttachLobbyFrontendManager(*ctx, GCMODE);
     AttachAuthorizationManager(*ctx, GCMODE);
     AttachInteractivityManager(*ctx, aParams);
+    AttachOverworldManager(*ctx, aParams);
 
     // Add DefaultMainGameFlowManager
     {

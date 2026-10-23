@@ -17,8 +17,8 @@
 #include <Hobgoblin/Utility/No_copy_no_move.hpp>
 
 #include <cstdint>
-#include <string_view>
 #include <string>
+#include <string_view>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
@@ -27,9 +27,11 @@ namespace qao {
 
 class QAO_Runtime;
 
-// Forward-declare the create function:
+// Forward-declare the create functions:
 template <class T, class... taArgs>
 QAO_Handle<T> QAO_Create(QAO_RuntimeRef aRuntimeRef, taArgs&&... aArgs);
+template <class T, class... taArgs>
+QAO_Handle<T> QAO_Create_USE_IN_FACTORY_FUNCTIONS_ONLY(QAO_RuntimeRef aRuntimeRef, taArgs&&... aArgs);
 // Forward-declare the destroy function:
 void QAO_Destroy(QAO_GenericHandle&& aHandle);
 
@@ -88,9 +90,12 @@ protected:
     virtual void _willDetach(QAO_Runtime& aRuntime);
 
 private:
-    // Befriend `QAO_Create` so that it can call `_setUp()` when needed.
+    // Befriend `QAO_Create*` so that it can call `_setUp()` when needed.
     template <class T, class... taArgs>
     friend QAO_Handle<T> QAO_Create(QAO_RuntimeRef aRuntimeRef, taArgs&&... aArgs);
+    template <class T, class... taArgs>
+    friend QAO_Handle<T> QAO_Create_USE_IN_FACTORY_FUNCTIONS_ONLY(QAO_RuntimeRef aRuntimeRef,
+                                                                  taArgs&&... aArgs);
     // Befriend `QAO_Destroy` so that it can call `_tearDown()` when needed.
     friend void QAO_Destroy(QAO_GenericHandle&& aHandle);
 

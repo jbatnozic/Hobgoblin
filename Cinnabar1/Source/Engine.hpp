@@ -48,6 +48,13 @@ constexpr const char* LOG_ID = "Cinnabar1";
 #define BEFRIEND_QAO_CREATE             \
     template <class T, class... taArgs> \
     friend auto ::jbatnozic::hobgoblin::qao::QAO_Create(QAO_RuntimeRef, taArgs&&...) -> QAO_Handle<T>
+
+#define BEFRIEND_QAO_CREATE_FOR_FACTORIES                                              \
+    template <class T, class... taArgs>                                                \
+    friend auto ::jbatnozic::hobgoblin::qao::QAO_Create_USE_IN_FACTORY_FUNCTIONS_ONLY( \
+        QAO_RuntimeRef,                                                                \
+        taArgs&&...                                                                    \
+    ) -> QAO_Handle<T>
 // clang-format on
 
 } // namespace cinnabar

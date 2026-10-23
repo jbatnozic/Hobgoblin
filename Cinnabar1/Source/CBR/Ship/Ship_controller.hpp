@@ -112,7 +112,7 @@ public:
     void msgDowncastToShipController(DowncastToShipController::PayloadPtr aPtr, bool /* aConst */);
 
 private:
-    BEFRIEND_QAO_CREATE;
+    BEFRIEND_QAO_CREATE_FOR_FACTORIES;
 
     //! Private constructor for the master object.
     ShipController(QAO_InstGuard aInstGuard);

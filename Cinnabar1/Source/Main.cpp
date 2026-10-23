@@ -14,6 +14,7 @@ namespace cinnabar {
 int Main(int aArgumentCount, char** aArgumentArray) try {
     // Initialization that absolutely must run before anything else
     hg::log::SetMinimalLogSeverity(hg::log::Severity::Info);
+    QAO_InitializeMetadata();
     RN_IndexHandlers();
 
     // Getting the config from the command line

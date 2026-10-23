@@ -134,7 +134,8 @@ const PlayerControls& DefaultInteractivityManager::getControlsOfClient(int aClie
 
 void DefaultInteractivityManager::_didAttach(QAO_Runtime& aRuntime) {
     spe::NonstateObject::_didAttach(aRuntime);
-    _winMgr = &ccomp<MWindow>();
+    _winMgr          = &ccomp<MWindow>();
+    _lobbyBackendMgr = &ccomp<MLobbyBackend>();
 }
 
 void DefaultInteractivityManager::_eventPreUpdate() {
@@ -183,11 +184,12 @@ void DefaultInteractivityManager::_eventPreDraw() {
             continue;
         }
 
-        PNCSEventData evData = {.mbLeftDown  = false,
-                                .mbRightDown = false,
-                                .mbLeftUp    = false,
-                                .mbRightUp   = false,
-                                .userData    = info.userData};
+        PNCSEventData evData = {.mbLeftDown       = false,
+                                .mbRightDown      = false,
+                                .mbLeftUp         = false,
+                                .mbRightUp        = false,
+                                .localPlayerIndex = _lobbyBackendMgr->getLocalPlayerIndex(),
+                                .userData         = info.userData};
 
         (void)QAO_SendMessage<HandlePNCSEvent>(*instance, &evData);
 
@@ -254,11 +256,12 @@ void DefaultInteractivityManager::_dispatchPNCSEvents() {
 
         const auto input = _winMgr->getInput();
 
-        PNCSEventData evData = {.mbLeftDown  = input.checkPressed(hg::in::MB_LEFT, MODE_EDGE),
-                                .mbRightDown = input.checkPressed(hg::in::MB_RIGHT, MODE_EDGE),
-                                .mbLeftUp    = input.checkReleased(hg::in::MB_LEFT, MODE_EDGE),
-                                .mbRightUp   = input.checkReleased(hg::in::MB_RIGHT, MODE_EDGE),
-                                .userData    = info.userData};
+        PNCSEventData evData = {.mbLeftDown       = input.checkPressed(hg::in::MB_LEFT, MODE_EDGE),
+                                .mbRightDown      = input.checkPressed(hg::in::MB_RIGHT, MODE_EDGE),
+                                .mbLeftUp         = input.checkReleased(hg::in::MB_LEFT, MODE_EDGE),
+                                .mbRightUp        = input.checkReleased(hg::in::MB_RIGHT, MODE_EDGE),
+                                .localPlayerIndex = _lobbyBackendMgr->getLocalPlayerIndex(),
+                                .userData         = info.userData};
 
         (void)QAO_SendMessage<HandlePNCSEvent>(*instance, &evData);
 

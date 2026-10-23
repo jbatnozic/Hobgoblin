@@ -16,29 +16,135 @@
 
 namespace cinnabar {
 
-AttachableGhost::AttachableGhost(QAO_InstGuard aInstGuard)
-    : spe::StateObject{aInstGuard,
-                       QAO_ExeCon::GAMEPLAY,
-                       PRIORITY_ENTITIES,
-                       QAO_STATIC_NAME("cinnabar::AttachableGhost")} {}
+namespace {
+// clang-format off
+RN_DEFINE_RPC(AskServerToHoldAttachableGhost,
+    RN_ARGS(
+        spe::SyncId ,aGhostSyncId,
+        std::int8_t ,aPlayerIndex
+    )
+) {
+    RN_NODE_IN_HANDLER().illegalIfClient(__func__);
 
-void AttachableGhost::init(QAO_GenericId aAssociatedShipController,
-                           QAO_GenericId aAssociatedAttachableId) {
-    _controllerPtr = _findControllerById(aAssociatedShipController);
-    _controllerId  = aAssociatedShipController;
+    RN_NODE_IN_HANDLER().callIfServer([=](hg::RN_ServerInterface& aServer) {
+        auto  rc         = SPEMPE_GET_RPC_RECEIVER_CONTEXT(aServer);
 
-    _attachablePtr = _findAttachableById(aAssociatedAttachableId);
-    _attachableId  = aAssociatedAttachableId;
+        auto* ghostPtr = rc.netwMgr.mapSyncIdToObject(aGhostSyncId);
+        if (ghostPtr == nullptr) {
+            return;
+        }
+
+        static_cast<AttachableGhost*>(ghostPtr)->tryHold(aPlayerIndex);
+    });
+}
+
+RN_DEFINE_RPC(AskServerToDropAttachableGhost,
+    RN_ARGS(
+        spe::SyncId ,aGhostSyncId,
+        std::int8_t ,aPlayerIndex
+    )
+) {
+    RN_NODE_IN_HANDLER().illegalIfClient(__func__);
+
+    RN_NODE_IN_HANDLER().callIfServer([=](hg::RN_ServerInterface& aServer) {
+        auto rc = SPEMPE_GET_RPC_RECEIVER_CONTEXT(aServer);
+
+        auto* ghostPtr = rc.netwMgr.mapSyncIdToObject(aGhostSyncId);
+        if (ghostPtr == nullptr) {
+            return;
+        }
+
+        static_cast<AttachableGhost*>(ghostPtr)->tryDrop(aPlayerIndex);
+    });
+}
+
+RN_DEFINE_RPC(AskServerToAdjustAttachableGhostPosition,
+    RN_ARGS(
+        spe::SyncId      ,aGhostSyncId,
+        std::int8_t      ,aPlayerIndex,
+        float            ,aXOffset,
+        float            ,aYOffset,
+        hg::math::AngleF ,aAngleOffset
+    )
+) {
+    RN_NODE_IN_HANDLER().illegalIfClient(__func__);
+
+    RN_NODE_IN_HANDLER().callIfServer([=](hg::RN_ServerInterface& aServer) {
+        auto  rc = SPEMPE_GET_RPC_RECEIVER_CONTEXT(aServer);
+
+        auto* ghostPtr = rc.netwMgr.mapSyncIdToObject(aGhostSyncId);
+        if (ghostPtr == nullptr) {
+            return;
+        }
+
+        static_cast<AttachableGhost*>(ghostPtr)->tryAdjustPos(
+            aPlayerIndex, aXOffset, aYOffset, aAngleOffset);
+    });
+}
+// clang-format on
+} // namespace
+
+AttachableGhost::AttachableGhost(QAO_InstGuard aInstGuard, spe::SyncId aSyncId)
+    : SyncObjSuper{aInstGuard,
+                   QAO_ExeCon::GAMEPLAY,
+                   PRIORITY_ENTITIES,
+                   QAO_STATIC_NAME("cinnabar::AttachableGhost"),
+                   aSyncId} //
+{
+    HG_LOG_WARN(LOG_ID, "Created AttachableGhost with SyncId {}", aSyncId);
+}
+
+QAO_Handle<AttachableGhost> AttachableGhost::createMaster(QAO_RuntimeRef aRuntime,
+                                                          QAO_GenericId  aAssociatedShipController,
+                                                          QAO_GenericId  aAssociatedAttachableId,
+                                                          int            aOnBehalfOfPlayerIndex) //
+{
+    auto handle = QAO_Create_USE_IN_FACTORY_FUNCTIONS_ONLY<AttachableGhost>(aRuntime, spe::SYNC_ID_NEW);
+    handle->_initMaster(aAssociatedShipController, aAssociatedAttachableId, aOnBehalfOfPlayerIndex);
+    return handle;
+}
+
+QAO_Handle<AttachableGhost> AttachableGhost::createDummy(QAO_RuntimeRef aRuntime,
+                                                         spe::SyncId    aSyncId,
+                                                         spe::SyncId    aAssociatedShipControllerSyncId,
+                                                         spe::SyncId    aAssociatedShipAttachableSyncId,
+                                                         int            aOnBehalfOfPlayerIndex) //
+{
+    auto handle = QAO_Create_USE_IN_FACTORY_FUNCTIONS_ONLY<AttachableGhost>(aRuntime, aSyncId);
+
+    const auto& netMgr = handle->ccomp<MNetworking>();
+
+    auto* shipController = netMgr.mapSyncIdToObject(aAssociatedShipControllerSyncId);
+    HG_HARD_ASSERT(shipController != nullptr);
+
+    auto* shipAttachable = netMgr.mapSyncIdToObject(aAssociatedShipAttachableSyncId);
+    HG_HARD_ASSERT(shipAttachable != nullptr);
+
+    handle->_initAssociatedObjectRefs(shipController->getId(), shipAttachable->getId());
+
+    handle->_shape = handle->_attachablePtr->getPolyShape();
+
+    return handle;
+}
+
+void AttachableGhost::_initMaster(QAO_GenericId aAssociatedShipController,
+                                  QAO_GenericId aAssociatedAttachableId,
+                                  int           aOnBehalfOfPlayerIndex) {
+    _initAssociatedObjectRefs(aAssociatedShipController, aAssociatedAttachableId);
 
     _shape = _attachablePtr->getPolyShape();
 
-    _held = true;
+    // _held = true;
 
-    const auto input       = ccomp<MWindow>().getInput();
-    const auto mousePos    = input.getViewRelativeMousePos();
-    const auto mousePosRel = mousePos - _shape.getAnchor();
+    // const auto input       = ccomp<MWindow>().getInput();
+    // const auto mousePos    = input.getViewRelativeMousePos();
+    // const auto mousePosRel = mousePos - _shape.getAnchor();
 
-    _cursorOffset = mousePosRel;
+    // _cursorOffset = mousePosRel;
+    _getCurrentState().angleOffsetRelativeToShipController =
+        _controllerPtr->getRotation().shortestDistanceTo(_attachablePtr->getPolyShape().getRotation());
+
+    tryHold(aOnBehalfOfPlayerIndex);
 }
 
 const ShipAttachable& AttachableGhost::getAssociatedAttachable() const {
@@ -55,34 +161,192 @@ const CellFootprint& AttachableGhost::getCellFootprint() const {
 
 void AttachableGhost::msgHandlePNCSEvent(HandlePNCSEvent::PayloadPtr aPayload, bool /* aConst */) {
     HG_ASSERT(aPayload != nullptr);
-    if (aPayload->mbRightDown) {
+    if (aPayload->mbRightDown && isMasterObject()) {
         QAO_Destroy(*this);
         return;
     }
     if (aPayload->mbLeftDown) {
-        _leftClicked = true;
+        _leftClicked          = true;
+        _leftClickPlayerIndex = static_cast<std::uint8_t>(aPayload->localPlayerIndex);
+    }
+}
+
+void AttachableGhost::_didAttach(QAO_Runtime& aRuntime) {
+    SyncObjSuper::_didAttach(aRuntime);
+    _inHeadlessContext = ctx().isHeadless();
+
+    if (isMasterObject()) {
+        _getCurrentState().initMirror();
     }
 }
 
 void AttachableGhost::_eventBeginUpdate() {
-    _leftClicked = false;
+    if (!_inHeadlessContext) {
+        _leftClicked = false;
 
-    ccomp<MInteractivity>().pushClickableObject(
-        this->getId(),
-        _held ? -9999 : 0,
-        0,
-        /* quick check */
-        [this](hg::math::Vector2d aMouseWorldPos) -> bool {
-            return _held || ((aMouseWorldPos - _shape.getAnchor()).lengthSquared() <=
-                             _shape.getDistanceToFarthestRawVertexSquared());
-        },
-        /* full check */
-        [this](hg::math::Vector2d aMouseWorldPos) -> bool {
-            return _held || _shape.intersectsWithPointRel(aMouseWorldPos - _shape.getAnchor());
-        });
+        ccomp<MInteractivity>().pushClickableObject(
+            this->getId(),
+            _isBeingHeld() ? -9999 : 0,
+            0,
+            /* quick check */
+            [this](hg::math::Vector2d aMouseWorldPos) -> bool {
+                return _isBeingHeld() || ((aMouseWorldPos - _shape.getAnchor()).lengthSquared() <=
+                                          _shape.getDistanceToFarthestRawVertexSquared());
+            },
+            /* full check */
+            [this](hg::math::Vector2d aMouseWorldPos) -> bool {
+                return _isBeingHeld() ||
+                       _shape.intersectsWithPointRel(aMouseWorldPos - _shape.getAnchor());
+            });
+    }
 }
 
-void AttachableGhost::_eventUpdate1() {
+// MARK: QAO Events
+
+void AttachableGhost::_eventUpdate1(spe::IfDummy) {
+    if (isDeactivated()) {
+        return;
+    }
+
+    auto& self = _getCurrentState();
+
+    const auto localPlayerIndex = ccomp<MLobbyBackend>().getLocalPlayerIndex();
+
+    // Check if a state change is needed
+    switch (_dummyState) {
+    case DummyState::PICKING_UP:
+        if (_leftClicked) {
+            _dummyState_changeTo_DROPPING(true);
+        } else if (localPlayerIndex < 0) {
+            _dummyState_changeTo_RECEIVING(true);
+        } else if (self.holdingPlayerIndex == localPlayerIndex) {
+            _dummyState_changeTo_HOLDING_AND_SENDING(false);
+        } else if (self.holdingPlayerIndex != -1 && self.holdingPlayerIndex != localPlayerIndex) {
+            _dummyState_changeTo_RECEIVING(false);
+        } else if (self.holdingPlayerIndex == -1) {
+            // Do nothing
+        } else {
+            // TODO: provisional state timeout
+        }
+        break;
+
+    case DummyState::HOLDING_AND_SENDING:
+        if (_leftClicked) {
+            _dummyState_changeTo_DROPPING(true);
+        } else if (localPlayerIndex < 0) {
+            _dummyState_changeTo_RECEIVING(true);
+        } else if (self.holdingPlayerIndex == localPlayerIndex) {
+            // Do nothing
+        } else if (self.holdingPlayerIndex != -1 && self.holdingPlayerIndex != localPlayerIndex) {
+            _dummyState_changeTo_RECEIVING(false);
+        } else if (self.holdingPlayerIndex == -1) {
+            _dummyState_changeTo_RECEIVING(false);
+        }
+        break;
+
+    case DummyState::DROPPING:
+        // TODO: timeout for provisional states
+        if (_leftClicked && localPlayerIndex != -1 && self.holdingPlayerIndex == -1) {
+            _dummyState_changeTo_PICKING_UP(true);
+        } else if (localPlayerIndex < 0) {
+            _dummyState_changeTo_RECEIVING(false);
+        } else if (self.holdingPlayerIndex == localPlayerIndex) {
+            // Do nothing
+        } else if (self.holdingPlayerIndex != -1 && self.holdingPlayerIndex != localPlayerIndex) {
+            _dummyState_changeTo_RECEIVING(false);
+        } else if (self.holdingPlayerIndex == -1) {
+            _dummyState_changeTo_RECEIVING(false);
+        } else {
+            // TODO: provisional state timeout
+        }
+        break;
+
+    case DummyState::RECEIVING:
+        if (_leftClicked && localPlayerIndex != -1 && self.holdingPlayerIndex == -1) {
+            _dummyState_changeTo_PICKING_UP(true);
+        } else if (localPlayerIndex < 0) {
+            // Do nothing
+        } else if (self.holdingPlayerIndex == localPlayerIndex) {
+            _dummyState_changeTo_HOLDING_AND_SENDING(false);
+        } /* else if (self.holdingPlayerIndex != -1 && self.holdingPlayerIndex != localPlayerIndex) {
+            // Do nothing
+        } else if (self.holdingPlayerIndex == -1) {
+            // Do nothing
+        }
+        */
+        break;
+
+    default:
+        HG_UNREACHABLE("Invalid value for DummyState ({}).", (int)_dummyState);
+    }
+
+    // Execute current state
+    switch (_dummyState) {
+    case DummyState::PICKING_UP:
+    case DummyState::HOLDING_AND_SENDING:
+        {
+            const auto& winMgr   = ccomp<MWindow>();
+            const auto  input    = winMgr.getInput();
+            const auto  mousePos = input.getViewRelativeMousePos();
+
+            // Adjust _shape
+
+            _shape.setAnchor(mousePos - _cursorOffset);
+            _shape.setRotation(_shape.getRotation() +
+                               hg::math::AngleF::fromDegrees(input.getVerticalMouseWheelScroll()));
+
+            // Adjust current state
+
+            const auto controllerAnchorOffset =
+                hg::math::RotateVector(_shape.getAnchor() - _controllerPtr->getAnchor(),
+                                       -_controllerPtr->getRotation());
+
+            self.xOffsetRelativeToShipController = controllerAnchorOffset.x;
+            self.yOffsetRelativeToShipController = controllerAnchorOffset.y;
+
+            self.angleOffsetRelativeToShipController =
+                _controllerPtr->getRotation().shortestDistanceTo(_shape.getRotation());
+
+            // Send to server
+
+            Compose_AskServerToAdjustAttachableGhostPosition(
+                ccomp<MNetworking>().getNode(),
+                RN_COMPOSE_FOR_ALL,
+                this->getSyncId(),
+                localPlayerIndex,
+                self.xOffsetRelativeToShipController,
+                self.yOffsetRelativeToShipController,
+                self.angleOffsetRelativeToShipController);
+        }
+        break;
+
+    case DummyState::DROPPING:
+    case DummyState::RECEIVING:
+        {
+            const auto ctrlAnchor = _controllerPtr->getAnchor();
+            const auto ctrlRot    = _controllerPtr->getRotation();
+            const auto rotatedOffset =
+                hg::math::RotateVector(hg::math::Vector2d{self.xOffsetRelativeToShipController,
+                                                          self.yOffsetRelativeToShipController},
+                                       ctrlRot);
+
+            _shape.setAnchor(ctrlAnchor + rotatedOffset);
+            _shape.setRotation(_controllerPtr->getRotation() + self.angleOffsetRelativeToShipController);
+        }
+        break;
+
+    default:
+        HG_UNREACHABLE("Invalid value for DummyState ({}).", (int)_dummyState);
+    }
+
+    _shape.recalcRel();
+    if (!_controllerPtr->isDeactivated()) {
+        // TODO: not possible until the interior world is present on clients too!
+        // _controllerPtr->calcFootprint(_shape, _cellFootprint);
+    }
+}
+
+void AttachableGhost::_eventUpdate1(spe::IfMaster) {
     auto* runtime = getRuntime();
     if (runtime->find(_controllerId).isNull() || runtime->find(_attachableId).isNull()) {
         auto handle = hg::MoveToUnderlying(runtime->detachObject(getId()));
@@ -96,6 +360,9 @@ void AttachableGhost::_eventUpdate1() {
         return;
     }
 
+    if (!_inHeadlessContext) {
+        // DEV-mode UI code
+#if 0
     const auto& winMgr      = ccomp<MWindow>();
     const auto  input       = winMgr.getInput();
     const auto  mousePos    = input.getViewRelativeMousePos();
@@ -126,18 +393,6 @@ void AttachableGhost::_eventUpdate1() {
     }
 
     if (_held) {
-        if (input.checkPressed(hg::in::PK_LSHIFT)) {
-            if (!_shift) {
-                _shiftCursorPos = mousePos;
-                _shift          = true;
-            }
-        } else {
-            if (_shift) {
-                _cursorOffset = mousePosRel;
-                _shift        = false;
-            }
-        }
-
         bool needRecalc = false;
 
         if (auto wheelScroll = input.getVerticalMouseWheelScroll(); wheelScroll != 0.f) {
@@ -145,16 +400,7 @@ void AttachableGhost::_eventUpdate1() {
             needRecalc = true;
         }
 
-        if (_shift) {
-            const auto shiftScroll = static_cast<float>(_shiftCursorPos.x - mousePos.x) * 0.25;
-            if (std::abs(shiftScroll) > 0.1f) {
-                _shape.setRotation(_shape.getRotation() + hg::math::AngleF::fromDegrees(shiftScroll));
-                _shiftCursorPos = mousePos;
-                needRecalc      = true;
-            }
-        } else {
-            _shape.setAnchor(mousePos - _cursorOffset);
-        }
+        _shape.setAnchor(mousePos - _cursorOffset);
 
         // if (needRecalc) {
         _shape.recalcRel();
@@ -174,9 +420,29 @@ void AttachableGhost::_eventUpdate1() {
         _shape.recalcRel();
         _controllerPtr->calcFootprint(_shape, _cellFootprint);
     }
+#endif
+    }
+
+    const auto& self       = _getCurrentState();
+    const auto  ctrlAnchor = _controllerPtr->getAnchor();
+    const auto  ctrlRot    = _controllerPtr->getRotation();
+    const auto  rotOffset  = hg::math::RotateVector(self.getXYOffset(), ctrlRot);
+    _shape.setAnchor(ctrlAnchor + rotOffset);
+    _shape.setRotation(_controllerPtr->getRotation() + self.angleOffsetRelativeToShipController);
+
+    _shape.recalcRel();
+    _controllerPtr->calcFootprint(_shape, _cellFootprint);
+}
+
+void AttachableGhost::_eventPostUpdate(spe::IfMaster) {
+    _getCurrentState().commit();
 }
 
 void AttachableGhost::_eventDraw1() {
+    if (isDeactivated()) {
+        return;
+    }
+
     const auto vertCount = _shape.getVertexCount();
 
     // Draw the AttachableGhost itself
@@ -199,13 +465,12 @@ void AttachableGhost::_eventDraw1() {
     _shape.debugDraw(hg::uwga::COLOR_AQUA, canvas);
 
     // Draw the construction grid on top
-    if (_held) {
-        if (const auto shipCtrl = getRuntime()->find("cinnabar::ShipController"); shipCtrl) {
-            // shipCtrl.downcastCopy<ShipController>()->drawGridOverShape(_shape, canvas);
-            shipCtrl.downcastCopy<ShipController>()->drawGridOverGhost(*this, canvas);
-        }
+    if (_isBeingHeld()) {
+        _controllerPtr->drawGridOverGhost(*this, canvas);
     }
 }
+
+// MARK: Private impl.
 
 ShipAttachable* AttachableGhost::_findAttachableById(QAO_GenericId aAttachableId) const {
     HG_ASSERT(getRuntime() != nullptr);
@@ -245,8 +510,19 @@ ShipController* AttachableGhost::_findControllerById(QAO_GenericId aAttachableId
     return ptr;
 }
 
+void AttachableGhost::_initAssociatedObjectRefs(QAO_GenericId aAssociatedShipController,
+                                                QAO_GenericId aAssociatedAttachableId) {
+    _controllerPtr = _findControllerById(aAssociatedShipController);
+    _controllerId  = aAssociatedShipController;
+
+    _attachablePtr = _findAttachableById(aAssociatedAttachableId);
+    _attachableId  = aAssociatedAttachableId;
+}
+
 bool AttachableGhost::_attachIfPositionIsRight() {
-    if (_held) {
+    HG_ASSERT(isMasterObject());
+
+    if (_isBeingHeld()) {
         return false;
     }
 
@@ -282,6 +558,174 @@ bool AttachableGhost::_attachIfPositionIsRight() {
     }
 
     return false;
+}
+
+void AttachableGhost::_dummyState_changeTo_PICKING_UP(bool aAsk) {
+    HG_ASSERT(!isMasterObject());
+    if (_dummyState == DummyState::PICKING_UP) {
+        return;
+    }
+
+    if (aAsk) {
+        Compose_AskServerToHoldAttachableGhost(ccomp<MNetworking>().getNode(),
+                                               RN_COMPOSE_FOR_ALL,
+                                               this->getSyncId(),
+                                               _leftClickPlayerIndex);
+    }
+
+    if (_dummyState != DummyState::HOLDING_AND_SENDING) {
+        _cursorOffset = (ccomp<MWindow>().getInput().getViewRelativeMousePos() - _shape.getAnchor());
+    }
+
+    _dummyState = DummyState::PICKING_UP;
+}
+
+void AttachableGhost::_dummyState_changeTo_HOLDING_AND_SENDING(bool aAsk) {
+    HG_ASSERT(!isMasterObject());
+    if (_dummyState == DummyState::HOLDING_AND_SENDING) {
+        return;
+    }
+
+    if (aAsk) {
+        Compose_AskServerToHoldAttachableGhost(ccomp<MNetworking>().getNode(),
+                                               RN_COMPOSE_FOR_ALL,
+                                               this->getSyncId(),
+                                               _leftClickPlayerIndex);
+    }
+    
+    if (_dummyState != DummyState::PICKING_UP) {
+        _cursorOffset = (ccomp<MWindow>().getInput().getViewRelativeMousePos() - _shape.getAnchor());
+    }
+
+    _dummyState = DummyState::HOLDING_AND_SENDING;
+}
+
+void AttachableGhost::_dummyState_changeTo_DROPPING(bool aAsk) {
+    HG_ASSERT(!isMasterObject());
+    if (_dummyState == DummyState::DROPPING) {
+        return;
+    }
+
+    if (aAsk) {
+        Compose_AskServerToDropAttachableGhost(ccomp<MNetworking>().getNode(),
+                                               RN_COMPOSE_FOR_ALL,
+                                               this->getSyncId(),
+                                               _leftClickPlayerIndex);
+    }
+
+    _dummyState = DummyState::DROPPING;
+}
+
+void AttachableGhost::_dummyState_changeTo_RECEIVING(bool aAsk) {
+    HG_ASSERT(!isMasterObject());
+    if (_dummyState == DummyState::RECEIVING) {
+        return;
+    }
+
+    if (aAsk) {
+        Compose_AskServerToDropAttachableGhost(ccomp<MNetworking>().getNode(),
+                                               RN_COMPOSE_FOR_ALL,
+                                               this->getSyncId(),
+                                               _leftClickPlayerIndex);
+    }
+
+    _dummyState = DummyState::RECEIVING;
+}
+
+// MARK: Sync functions
+
+namespace {
+// clang-format off
+RN_DEFINE_RPC(AttachableGhost_SyncCreate, 
+    RN_ARGS(
+        spe::SyncId ,aSyncId, 
+        spe::SyncId ,aAssociatedShipControllerSyncId,
+        spe::SyncId ,aAssociatedShipAttachableSyncId,
+        std::int8_t ,aOnBehalfOfPlayerIndex
+    )
+) {
+    RN_NODE_IN_HANDLER().illegalIfServer(__func__);
+
+    RN_NODE_IN_HANDLER().callIfClient([&](hg::RN_ClientInterface& aClient) {
+        auto  rc         = SPEMPE_GET_RPC_RECEIVER_CONTEXT(aClient);
+        auto& qaoRuntime = rc.gameContext.getQAORuntime();
+
+        if (spe::MapSyncIdToObject(rc, aSyncId) == nullptr) {
+            AttachableGhost::createDummy(&qaoRuntime, 
+                                         aSyncId,
+                                         aAssociatedShipControllerSyncId,
+                                         aAssociatedShipAttachableSyncId,
+                                         aOnBehalfOfPlayerIndex);
+        }
+    });
+}
+// clang-format on
+} // namespace
+
+SPEMPE_GENERATE_DEFAULT_SYNC_HANDLERS(AttachableGhost, (UPDATE, DESTROY));
+
+void AttachableGhost::_syncCreateImpl(spe::SyncControlDelegate& aSyncCtrl) const {
+    const auto& rt = getRuntime();
+    Compose_AttachableGhost_SyncCreate(
+        aSyncCtrl.getLocalNode(),
+        aSyncCtrl.getFilteredRecepients(),
+        this->getSyncId(),
+        rt->find<spe::SynchronizedObjectBase>(this->_controllerId)->getSyncId(),
+        rt->find<spe::SynchronizedObjectBase>(this->_attachableId)->getSyncId(),
+        -1);
+}
+
+void AttachableGhost::_syncUpdateImpl(spe::SyncControlDelegate& aSyncCtrl) const {
+    aSyncCtrl.filter([](hg::PZInteger aClientIndex) -> spe::SyncFilterStatus {
+        return spe::SyncFilterStatus::REGULAR_SYNC; // TODO: implement proper filtering
+    });
+    SPEMPE_SYNC_UPDATE_DEFAULT_IMPL(AttachableGhost, aSyncCtrl);
+}
+
+void AttachableGhost::_syncDestroyImpl(spe::SyncControlDelegate& aSyncCtrl) const {
+    SPEMPE_SYNC_DESTROY_DEFAULT_IMPL(AttachableGhost, aSyncCtrl);
+}
+
+// MARK: Free functions
+
+namespace {
+// clang-format off
+RN_DEFINE_RPC(TryCreateAttachableGhost,
+    RN_ARGS(
+        spe::SyncId ,aAssociatedShipControllerSyncId,
+        spe::SyncId ,aAssociatedShipAttachableSyncId,
+        std::int8_t ,aOnBehalfOfPlayerIndex
+    )
+) {
+    RN_NODE_IN_HANDLER().callIfClient([](hg::RN_ClientInterface&) {
+        throw RN_IllegalMessage("TryCreateAttachableGhost is only for the server!");
+    });
+
+    RN_NODE_IN_HANDLER().callIfServer([=](hg::RN_ServerInterface& aServer) {
+        auto  rc             = SPEMPE_GET_RPC_RECEIVER_CONTEXT(aServer);
+        auto& netMgr         = rc.netwMgr;
+        auto* shipController = netMgr.mapSyncIdToObject(aAssociatedShipControllerSyncId);
+        auto* shipAttachable = netMgr.mapSyncIdToObject(aAssociatedShipAttachableSyncId);
+        if (shipController && shipAttachable) {
+            AttachableGhost::createMaster(rc.gameContext.getQAORuntime(),
+                                          shipController->getId(),
+                                          shipAttachable->getId(), 
+                                          aOnBehalfOfPlayerIndex);
+        }
+    });
+}
+// clang-format on
+} // namespace
+
+void AskServerToCreateAttachableGhost(spe::NetworkingManager& aNetworkingManager,
+                                      spe::SyncId             aAssociatedShipControllerSyncId,
+                                      spe::SyncId             aAssociatedShipAttachableSyncId,
+                                      int                     aOnBehalfOfPlayerIndex) {
+    Compose_TryCreateAttachableGhost(aNetworkingManager.getNode(),
+                                     RN_COMPOSE_FOR_ALL,
+                                     aAssociatedShipControllerSyncId,
+                                     aAssociatedShipAttachableSyncId,
+                                     static_cast<std::int8_t>(aOnBehalfOfPlayerIndex));
 }
 
 } // namespace cinnabar

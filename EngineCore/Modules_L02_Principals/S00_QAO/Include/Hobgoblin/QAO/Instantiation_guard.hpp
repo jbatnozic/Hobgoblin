@@ -12,9 +12,11 @@
 HOBGOBLIN_NAMESPACE_BEGIN
 namespace qao {
 
-// Forward-declare the create function.
+// Forward-declare the create functions.
 template <class T, class... taArgs>
 QAO_Handle<T> QAO_Create(QAO_RuntimeRef aRuntimeRef, taArgs&&... aArgs);
+template <class T, class... taArgs>
+QAO_Handle<T> QAO_Create_USE_IN_FACTORY_FUNCTIONS_ONLY(QAO_RuntimeRef aRuntimeRef, taArgs&&... aArgs);
 
 //! This object is a mandatory parameter of the constructor of `QAO_Base`.
 //! Because it has a private constructor, it can only be constructed by certain
@@ -30,6 +32,9 @@ private:
 
     template <class T, class... taArgs>
     friend QAO_Handle<T> QAO_Create(QAO_RuntimeRef aRuntimeRef, taArgs&&... aArgs);
+    template <class T, class... taArgs>
+    friend QAO_Handle<T> QAO_Create_USE_IN_FACTORY_FUNCTIONS_ONLY(QAO_RuntimeRef aRuntimeRef,
+                                                                  taArgs&&... aArgs);
 };
 
 } // namespace qao
