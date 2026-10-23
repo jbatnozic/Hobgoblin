@@ -19,8 +19,8 @@ namespace {
 // clang-format off
 RN_DEFINE_RPC(Asteroid_SyncCreate, 
     RN_ARGS(
-        spe::SyncId,       aSyncId, 
-        hg::util::Packet&, aPolyShapePacket
+        spe::SyncId       ,aSyncId, 
+        hg::util::Packet& ,aPolyShapePacket
     )
 ) {
     auto& node = RN_NODE_IN_HANDLER();
@@ -34,9 +34,7 @@ RN_DEFINE_RPC(Asteroid_SyncCreate,
         }
     });
 
-    node.callIfServer([](hg::RN_ServerInterface&) {
-        throw hg::RN_IllegalMessage("Server received a sync message");
-    });
+    node.illegalIfServer(__func__);
 }
 // clang-format on
 } // namespace
@@ -44,7 +42,7 @@ RN_DEFINE_RPC(Asteroid_SyncCreate,
 #define SIZE 32.f
 
 QAO_Handle<Asteroid> Asteroid::createMaster(QAO_RuntimeRef aRuntime, hg::math::Vector2d aPosition) {
-    auto handle = QAO_Create<Asteroid>(aRuntime);
+    auto handle = QAO_Create_USE_IN_FACTORY_FUNCTIONS_ONLY<Asteroid>(aRuntime);
 
     cpBodySetPosition(handle->_unibody, cpv(aPosition.x, aPosition.y));
     cpBodySetAngle(handle->_unibody, hg::math::PI * hg::util::GetRandomNumber(0.0, 359.9) / 180.0);
@@ -70,7 +68,7 @@ Asteroid::Asteroid(QAO_InstGuard aInstGuard)
 QAO_Handle<Asteroid> Asteroid::createDummy(QAO_RuntimeRef    aRuntime,
                                            spe::SyncId       aSyncId,
                                            hg::util::Packet& aPolyShapePacket) {
-    return QAO_Create<Asteroid>(aRuntime, aSyncId, aPolyShapePacket);
+    return QAO_Create_USE_IN_FACTORY_FUNCTIONS_ONLY<Asteroid>(aRuntime, aSyncId, aPolyShapePacket);
 }
 
 Asteroid::Asteroid(QAO_InstGuard aInstGuard, spe::SyncId aSyncId, hg::util::Packet& aPolyShapePacket)
@@ -100,8 +98,18 @@ void Asteroid::msgHandlePNCSEvent(HandlePNCSEvent::PayloadPtr aPayload, bool /* 
     if (aPayload->mbLeftDown) {
         auto* runtime  = this->getRuntime();
         auto  shipCtrl = runtime->find("cinnabar::ShipController"); // TODO: temporary
-        auto  ghost    = QAO_Create<AttachableGhost>(runtime);
-        ghost->init(shipCtrl->getId(), this->getId());
+        if (isMasterObject()) {
+            AttachableGhost::createMaster(runtime,
+                                          shipCtrl->getId(),
+                                          this->getId(),
+                                          aPayload->localPlayerIndex);
+        } else {
+            AskServerToCreateAttachableGhost(
+                ccomp<MNetworking>(),
+                shipCtrl.downcastCopy<spe::SynchronizedObjectBase>()->getSyncId(),
+                this->getSyncId(),
+                aPayload->localPlayerIndex);
+        }
     }
 }
 
@@ -149,6 +157,10 @@ void Asteroid::_didAttach(QAO_Runtime& aRuntime) {
 }
 
 void Asteroid::_eventBeginUpdate() {
+    if (isDeactivated()) {
+        return;
+    }
+
     _leftClicked = false;
 
     ccomp<MInteractivity>().pushClickableObject(

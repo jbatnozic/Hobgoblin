@@ -25,11 +25,7 @@ void DefaultMainGameFlowManager::_didAttach(QAO_Runtime& aRuntime) {
     // Init scenario (TEMPORARY)
 
     if (ctx().isPrivileged()) {
-        auto ovwMgr = QAO_Create<DefaultOverworldManager>(aRuntime.nonOwning());
-        ctx().attachAndOwnComponent(std::move(ovwMgr));
-
         auto core = ShipStartingBlock::createMaster(aRuntime, {150.0, 150.0});
-
         auto ship = ShipController::createMaster(aRuntime, *core);
 
         auto asteroid = Asteroid::createMaster(aRuntime, {512.0, 712.0});

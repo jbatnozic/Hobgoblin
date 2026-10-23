@@ -39,7 +39,8 @@ public:
 private:
     Mode _mode = Mode::INITIAL;
 
-    MWindow* _winMgr = nullptr;
+    MWindow*       _winMgr          = nullptr;
+    MLobbyBackend* _lobbyBackendMgr = nullptr;
 
     struct ClickableInfo {
         QAO_GenericId                           id;

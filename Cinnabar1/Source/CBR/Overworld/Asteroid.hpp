@@ -11,7 +11,7 @@
 
 namespace cinnabar {
 
-// clang-format 
+// clang-format off
 SPEMPE_DEFINE_AUTODIFF_STATE(Asteroid_VisibleState,
     SPEMPE_MEMBER(double, x, 0.0),
     SPEMPE_MEMBER(double, y, 0.0),
@@ -56,7 +56,7 @@ public:
     void msgHandlePNCSEvent(HandlePNCSEvent::PayloadPtr aPayload, bool /* aConst */);
 
 private:
-    BEFRIEND_QAO_CREATE;
+    BEFRIEND_QAO_CREATE_FOR_FACTORIES;
 
     //! Private constructor for the master object.
     Asteroid(QAO_InstGuard aInstGuard);

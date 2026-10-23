@@ -111,7 +111,7 @@ void TransformPoints(hg::math::Vector2f&    aCentralPoint,
 
 QAO_Handle<ShipController> ShipController::createMaster(QAO_RuntimeRef  aRuntime,
                                                        ShipAttachable& aInitialShipAttachable) {
-    auto handle = QAO_Create<ShipController>(aRuntime);
+    auto handle = QAO_Create_USE_IN_FACTORY_FUNCTIONS_ONLY<ShipController>(aRuntime);
     handle->init(aInitialShipAttachable);
     return handle;
 }
@@ -124,7 +124,7 @@ ShipController::ShipController(QAO_InstGuard aInstGuard)
                    spe::SYNC_ID_NEW} {}
 
 QAO_Handle<ShipController> ShipController::createDummy(QAO_RuntimeRef aRuntime, spe::SyncId aSyncId) {
-    return QAO_Create<ShipController>(aRuntime, aSyncId);
+    return QAO_Create_USE_IN_FACTORY_FUNCTIONS_ONLY<ShipController>(aRuntime, aSyncId);
 }
 
 ShipController::ShipController(QAO_InstGuard aInstGuard, spe::SyncId aSyncId)
@@ -485,12 +485,24 @@ void ShipController::detach(ShipAttachable& aAttachable) {
 
 hg::math::Vector2d ShipController::getAnchor() const {
     // TODO: temporary implementation
-    return getAttachableWithIndex(0)->getPolyShape().getAnchor();
+    if (isMasterObject()) {
+        return getAttachableWithIndex(0)->getPolyShape().getAnchor();
+    }
+    if (isDeactivated()) {
+        return {};
+    }
+    return _getCurrentState().getPosition();
 }
 
 hg::math::AngleF ShipController::getRotation() const {
     // TODO: temporary implementation
-    return getAttachableWithIndex(0)->getPolyShape().getRotation();
+    if (isMasterObject()) {
+        getAttachableWithIndex(0)->getPolyShape().getRotation();
+    }
+    if (isDeactivated()) {
+        return {};
+    }
+    return _getCurrentState().rotation;
 }
 
 const ShipAttachable* ShipController::getAttachableWithIndex(std::int16_t aIndex) const {

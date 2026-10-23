@@ -336,6 +336,9 @@ void PolyShape::readRawVerticesFromStream(hg::util::InputStream& aIStream) {
     for (auto& vertex : _rawVertices) {
         aIStream >> vertex.x >> vertex.y;
     }
+    _outputVertices.resize(_rawVertices.size());
+    _state = DIRTY;
+    _recalcDistanceToFarthestRawVertex();
 }
 
 } // namespace cinnabar

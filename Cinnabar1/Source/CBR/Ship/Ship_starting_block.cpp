@@ -14,7 +14,7 @@ namespace cinnabar {
 
 QAO_Handle<ShipStartingBlock> ShipStartingBlock::createMaster(QAO_RuntimeRef     aRuntime,
                                                              hg::math::Vector2d aPosition) {
-    auto handle = QAO_Create<ShipStartingBlock>(aRuntime);
+    auto handle = QAO_Create_USE_IN_FACTORY_FUNCTIONS_ONLY<ShipStartingBlock>(aRuntime);
     cpBodySetPosition(handle->_unibody, cpv(aPosition.x, aPosition.y));
     return handle;
 }
@@ -62,7 +62,7 @@ ShipStartingBlock::ShipStartingBlock(QAO_InstGuard aInstGuard)
 
 QAO_Handle<ShipStartingBlock> ShipStartingBlock::createDummy(QAO_RuntimeRef aRuntime,
                                                             spe::SyncId    aSyncId) {
-    return QAO_Create<ShipStartingBlock>(aRuntime, aSyncId);
+    return QAO_Create_USE_IN_FACTORY_FUNCTIONS_ONLY<ShipStartingBlock>(aRuntime, aSyncId);
 }
 
 ShipStartingBlock::ShipStartingBlock(QAO_InstGuard aInstGuard, spe::SyncId aSyncId)
