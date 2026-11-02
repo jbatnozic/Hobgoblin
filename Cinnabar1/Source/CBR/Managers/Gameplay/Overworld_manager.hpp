@@ -11,11 +11,12 @@ namespace cinnabar {
 
 class OverworldManager : public spe::ContextComponent {
 public:
-    SPEMPE_CTXCOMP_TAG("cinnabar::OverworldManager");
-
     virtual hg::alvin::Space& getAlvinSpace() = 0;
 
     virtual const hg::alvin::Space& getAlvinSpace() const = 0;
+
+private:
+    SPEMPE_CTXCOMP_TAG("cinnabar::OverworldManager");
 };
 
 using MOverworld = OverworldManager;

@@ -13,6 +13,8 @@
 #include <Engine.hpp>
 
 #include <Hobgoblin/Math.hpp>
+#include <Hobgoblin/Utility/Dynamic_bitset.hpp>
+#include <Hobgoblin/Utility/Packet.hpp>
 #include <Hobgoblin/UWGA/Transform.hpp>
 
 #include <memory>
@@ -24,7 +26,8 @@ namespace cinnabar {
 SPEMPE_DEFINE_AUTODIFF_STATE(ShipController_VisibleState,
     SPEMPE_MEMBER(double, x, 0.0),
     SPEMPE_MEMBER(double, y, 0.0),
-    SPEMPE_MEMBER(hg::math::AngleF, rotation, hg::math::AngleF::zero())
+    SPEMPE_MEMBER(hg::math::AngleF, rotation, hg::math::AngleF::zero()),
+    SPEMPE_MEMBER(std::uint8_t, svsCounter, 0)
     // Below are ideas for members of a "ship section" object
     // SPEMPE_MEMBER(?, spriteId, SPRITEID_NONE),
     // SPEMPE_MEMBER(?, parentSyncId, ?),
@@ -55,9 +58,10 @@ public:
                                                    ShipAttachable& aInitialShipAttachable);
 
     //! Factory method to create a dummy object.
-    static QAO_Handle<ShipController> createDummy(QAO_RuntimeRef aRuntime, spe::SyncId aSyncId);
+    static QAO_Handle<ShipController> createDummy(QAO_RuntimeRef    aRuntime,
+                                                  spe::SyncId       aSyncId);
 
-    void init(ShipAttachable& aInitialShipAttachable);
+    void init(ShipAttachable& aInitialShipAttachable); // TODO: to private
 
     ///////////////////////////////////////////////////////////////////////////
     // ATTACHING                                                             //
@@ -114,6 +118,20 @@ public:
 private:
     BEFRIEND_QAO_CREATE_FOR_FACTORIES;
 
+    friend void ApplySVSUpdate(ShipController&   aShipCtrl,
+                               hg::util::Packet& aCellStatePacket,
+                               bool              aIsFullState);
+
+    std::unique_ptr<uwga::Transform> _transformGlobalToShip;
+    std::unique_ptr<uwga::Transform> _transformShipToGlobal;
+
+    GraphOfAttachables _graphOfAttachables;
+    InteriorWorld      _interiorWorld;
+
+    // Temporarily here
+    hg::math::Vector2f _mousePosInLocalCoords = {};
+    bool               _drawGrid              = false;
+
     //! Private constructor for the master object.
     ShipController(QAO_InstGuard aInstGuard);
 
@@ -123,8 +141,10 @@ private:
     void _didAttach(QAO_Runtime& aRuntime) override;
     void _willDetach(QAO_Runtime& aRuntime) override;
 
+    void _eventBeginUpdate() override;
     void _eventUpdate1(spe::IfMaster) override;
-    void _eventPostUpdate(spe::IfMaster) override;
+    void _eventEndUpdate(spe::IfMaster) override;
+    void _eventPostUpdate() override;
     void _eventDraw1() override;
 
     //! Returns a non-INVALID rotation, if able, and a rotation hint otherwise.
@@ -174,21 +194,23 @@ private:
     void _syncCreateImpl(spe::SyncControlDelegate& aSyncCtrl) const override;
     void _syncUpdateImpl(spe::SyncControlDelegate& aSyncCtrl) const override;
     void _syncDestroyImpl(spe::SyncControlDelegate& aSyncCtrl) const override;
-
-    std::unique_ptr<uwga::Transform> _transformGlobalToShip;
-    std::unique_ptr<uwga::Transform> _transformShipToGlobal;
-
-    // Temporarily here
-    hg::math::Vector2f _mousePosInLocalCoords = {};
-    bool               _drawGrid              = false;
 };
 
 // MARK: MasterData
 
 struct ShipController_MasterData {
-    GraphOfAttachables graphOfAttachables;
+    //! This bitset tracks relations between the ShipController's SVS and the data synced to the
+    //! clients, in the following way:
+    //! - there are 2 bits per clients, so bits 0 and 1 pertain to client 0, bits 2 and 3 pertain to
+    //!   client 1, and so on.
+    //! - of the two bits pertaining to an individual client, the less significant bit (e.g., bit 0 for
+    //!   client 0) tells us whether the client is "onboard" this ship [controller] and whether SVS data
+    //!   *should* be synced to this client.
+    //! - of the two bits pertaining to an individual client, the more significant bit (e.g., bit 1 for
+    //!   client 0) tells us whether SVS data has been synced to this client thus far. 
+    mutable hg::util::DynamicBitset _onboardClientData;
 
-    InteriorWorld interiorWorld;
+    hg::util::Packet cellDiffPacket;
 };
 
 // MARK: Register class

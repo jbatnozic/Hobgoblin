@@ -4,6 +4,7 @@
 #include "Game_context_factory.hpp"
 
 #include "Graphics_system_provider.hpp"
+#include <CBR/Managers/Gameplay/Auxiliary_gameplay_manager_default.hpp>
 #include <CBR/Managers/Gameplay/Main_game_flow_manager_default.hpp>
 #include <CBR/Managers/Gameplay/Overworld_manager_default.hpp>
 #include <CBR/Managers/UserInterface/Interactivity_manager_default.hpp>
@@ -132,6 +133,7 @@ void AttachWindowManager(spe::GameContext& aContext, GameContextMode aMode) {
 void AttachNetworkingManager(spe::GameContext& aContext, const GameContextCreationParams& aParams) {
     auto netMgr = QAO_Create<spe::DefaultNetworkingManager>(aContext.getQAORuntime().nonOwning(),
                                                             PRIORITY_NETWORKMGR,
+                                                            PRIORITY_NETWORKSENDHELPER,
                                                             DEFAULT_STATE_BUFFERING_LENGTH);
 
     constexpr hg::PZInteger MAX_PACKET_BYTES = 2048;
@@ -355,6 +357,31 @@ void AttachOverworldManager(spe::GameContext& aContext, const GameContextCreatio
     aContext.attachAndOwnComponent(std::move(ovwMgr));
 }
 
+void AttachAuxiliaryGameplayManager(spe::GameContext&                aContext,
+                                    const GameContextCreationParams& aParams) {
+    auto ovwMgr = QAO_Create<DefaultAuxiliaryGameplayManager>(aContext.getQAORuntime().nonOwning());
+
+    switch (aParams.mode) {
+    case GameContextMode::CLIENT:
+        // intrMgr->setToClientMode();
+        break;
+
+    case GameContextMode::SERVER:
+        // intrMgr->setToHostMode(aParams.server.playerCount);
+        break;
+
+    case GameContextMode::DEV:
+        // intrMgr->setToDevMode();
+        break;
+
+    default:
+        HG_UNREACHABLE("Invalid value for enum GameContextMode ({}).", (int)aParams.mode);
+        break;
+    }
+
+    aContext.attachAndOwnComponent(std::move(ovwMgr));
+}
+
 // MARK: SERVER context
 
 std::unique_ptr<spe::GameContext> CreateServerGameContext(const GameContextCreationParams& aParams) {
@@ -387,6 +414,7 @@ std::unique_ptr<spe::GameContext> CreateServerGameContext(const GameContextCreat
     AttachAuthorizationManager(*ctx, GCMODE);
     AttachInteractivityManager(*ctx, aParams);
     AttachOverworldManager(*ctx, aParams);
+    AttachAuxiliaryGameplayManager(*ctx, aParams);
 
     // Add DefaultMainGameFlowManager
     {
@@ -427,6 +455,7 @@ std::unique_ptr<spe::GameContext> CreateClientGameContext(const GameContextCreat
     AttachAuthorizationManager(*ctx, GCMODE);
     AttachInteractivityManager(*ctx, aParams);
     AttachOverworldManager(*ctx, aParams);
+    AttachAuxiliaryGameplayManager(*ctx, aParams);
 
     // Add DefaultMainGameFlowManager
     {
@@ -467,6 +496,7 @@ std::unique_ptr<spe::GameContext> CreateDevGameContext(const GameContextCreation
     AttachAuthorizationManager(*ctx, GCMODE);
     AttachInteractivityManager(*ctx, aParams);
     AttachOverworldManager(*ctx, aParams);
+    AttachAuxiliaryGameplayManager(*ctx, aParams);
 
     // Add DefaultMainGameFlowManager
     {

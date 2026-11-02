@@ -14,17 +14,31 @@
 namespace jbatnozic {
 namespace spempe {
 
-//! One concrete implementation of NetworkingManager.
-//! TODO: Tip on setting execution priority?
-//!
-//! Event listing:
-//! - _eventBeginUpdate() => Receive messages
-//! - _eventEndUpdate() => Send/upload messages
+/*!
+ * \brief Default implementation of `NetworkingManager`.
+ *
+ * Dependencies:
+ * - <none>
+ *
+ * Event listing:
+ * - _eventPreUpdate()   => Adjust telemetry data.
+ * - _eventBeginUpdate() => Process received packets and messages.
+ * - _eventEndUpdate()   => Send composed messages.
+ *
+ * Execution priority hint:
+ * - Highest, executes before everything else (except `SyncedVarmapManager`).
+ * - NOTE: the execution priority for sending data during _eventEndUpdate() is separately configurable.
+ */
 class DefaultNetworkingManager
     : public NetworkingManager
     , public NonstateObject
     , private hg::RN_EventListener {
 public:
+    DefaultNetworkingManager(hobgoblin::QAO_InstGuard aInstGuard,
+                             int                      aExecutionPriority,
+                             int                      aSendExecutionPriority,
+                             hg::PZInteger            aStateBufferingLength);
+
     DefaultNetworkingManager(hobgoblin::QAO_InstGuard aInstGuard,
                              int                      aExecutionPriority,
                              hg::PZInteger            aStateBufferingLength);
@@ -51,6 +65,9 @@ public:
     bool isUninitialized() const override;
     bool isServer() const override;
     bool isClient() const override;
+
+    void setSendExecutionPriority(int aSendExecutionPriority) override;
+    int  getSendExecutionPriority() const override;
 
     ///////////////////////////////////////////////////////////////////////////
     // NODE ACCESS                                                           //
@@ -115,6 +132,9 @@ public:
     SynchronizedObjectBase* mapSyncIdToObject(SyncId aSyncId) const override;
 
 protected:
+    void _didAttach(hg::QAO_Runtime& aRuntime) override;
+    void _willDetach(hg::QAO_Runtime& aRuntime) override;
+
     void _eventPreUpdate() override;
     void _eventBeginUpdate() override;
     void _eventEndUpdate() override;
@@ -123,12 +143,16 @@ private:
     Mode _mode             = Mode::Uninitialized;
     int  _localClientIndex = CLIENT_INDEX_UNKNOWN;
 
+    hg::QAO_GenericHandle _sendHelper;
+
     std::unique_ptr<NodeType>          _node;
     detail::SynchronizedObjectRegistry _syncObjReg;
 
     std::vector<NetworkingEventListener*> _eventListeners;
 
     std::deque<hg::RN_Telemetry> _telemetry;
+
+    void _doSend();
 
     void onNetworkingEvent(const hg::RN_Event& aEvent) override;
 };

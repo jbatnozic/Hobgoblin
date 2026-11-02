@@ -4,8 +4,10 @@
 #include "Asteroid.hpp"
 
 #include <CBR/Managers/Gameplay/Overworld_manager.hpp>
+#include <CBR/Managers/Gameplay/Auxiliary_gameplay_manager.hpp>
 #include <CBR/Managers/UserInterface/Interactivity_manager.hpp>
 #include <CBR/Ship/Attachable_ghost.hpp>
+#include <CBR/Ship/Ship_controller.hpp>
 
 #include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/UWGA/Vertex_array.hpp>
@@ -96,17 +98,17 @@ void Asteroid::msgDowncastToShipAttachable(DowncastToShipAttachable::PayloadPtr 
 void Asteroid::msgHandlePNCSEvent(HandlePNCSEvent::PayloadPtr aPayload, bool /* aConst */) {
     HG_ASSERT(aPayload != nullptr);
     if (aPayload->mbLeftDown) {
+        auto  shipCtrl = ccomp<MAuxGameplay>().getAssociatedShipControllerOfLocalPlayer();
         auto* runtime  = this->getRuntime();
-        auto  shipCtrl = runtime->find("cinnabar::ShipController"); // TODO: temporary
         if (isMasterObject()) {
-            AttachableGhost::createMaster(runtime,
+            AttachableGhost::createMaster(this->getRuntime(),
                                           shipCtrl->getId(),
                                           this->getId(),
                                           aPayload->localPlayerIndex);
         } else {
             AskServerToCreateAttachableGhost(
                 ccomp<MNetworking>(),
-                shipCtrl.downcastCopy<spe::SynchronizedObjectBase>()->getSyncId(),
+                shipCtrl->getSyncId(),
                 this->getSyncId(),
                 aPayload->localPlayerIndex);
         }

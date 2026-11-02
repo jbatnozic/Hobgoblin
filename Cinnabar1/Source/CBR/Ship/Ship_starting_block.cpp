@@ -61,7 +61,7 @@ ShipStartingBlock::ShipStartingBlock(QAO_InstGuard aInstGuard)
 }
 
 QAO_Handle<ShipStartingBlock> ShipStartingBlock::createDummy(QAO_RuntimeRef aRuntime,
-                                                            spe::SyncId    aSyncId) {
+                                                             spe::SyncId    aSyncId) {
     return QAO_Create_USE_IN_FACTORY_FUNCTIONS_ONLY<ShipStartingBlock>(aRuntime, aSyncId);
 }
 

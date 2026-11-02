@@ -3,7 +3,6 @@
 
 #include "Main_game_flow_manager_default.hpp"
 
-#include "Overworld_manager_default.hpp"
 #include <CBR/Managers/UserInterface/Interactivity_manager_default.hpp>
 #include <CBR/Overworld/Asteroid.hpp>
 #include <CBR/Ship/Ship_controller.hpp>

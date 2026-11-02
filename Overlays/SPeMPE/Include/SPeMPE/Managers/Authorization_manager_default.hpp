@@ -30,9 +30,20 @@ struct PlayerInfoWithIndex {
 };
 } // namespace detail
 
-//! Event listing:
-//! - _eventBeginUpdate() => (Host only): Check if the authorized playes is still connected;
-//!                          if not, authorize another one.
+/*!
+ * \brief Default implementation of `AuthorizationManager`.
+ *
+ * Dependencies:
+ * - `NetworkingManager`
+ * - `LobbyBackendManager`
+ * - `SyncedVarmapManager`
+ *
+ * Event listing:
+ * - _eventBeginUpdate() => (Host only): Check if the authorized playes is still connected;
+ *                          if not, authorize another one.
+ * Execution priority hint:
+ * - Just after lobby managers (i.e., `LobbyBackendManager` and associated components).
+ */
 class DefaultAuthorizationManager
     : public AuthorizationManager
     , public NonstateObject

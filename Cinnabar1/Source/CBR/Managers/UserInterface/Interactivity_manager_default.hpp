@@ -12,6 +12,25 @@
 
 namespace cinnabar {
 
+/*!
+ * \brief Default implementation of `AuxiliaryGameplayManager`.
+ *
+ * Dependencies:
+ * - `LobbyBackendManager`
+ * - `InputSyncManager`
+ * - `WindowManager`
+ *
+ * Event listing:
+ * - _eventPreUpdate()   => Clean PNCS (Point n' Click System) data.
+ * - _eventBeginUpdate() => (Client only) Send (upload) local controls, dispatch PNCS events;
+ *                          (Host only) Gater remote player controls;
+ *                          (Dev only) Dispatch PNCS events.
+ * - _eventPreDraw()     => Dispatch mouseover/mouse hover PNCS events.
+ *
+ * Execution priority hint:
+ * - As late as possible; after all interactible entities (to gather PNCS registrations);
+ *   ideally just before `WindowManager`.
+ */
 class DefaultInteractivityManager
     : public spe::NonstateObject
     , public InteractivityManager {

@@ -31,29 +31,6 @@ using hg::math::IsNearZero;
 using WorldEditor = jbatnozic::gridgoblin::World::Editor;
 
 namespace {
-// clang-format off
-RN_DEFINE_RPC(ShipController_SyncCreate,
-    RN_ARGS(
-        spe::SyncId, aSyncId
-    )
-) {
-    auto& node = RN_NODE_IN_HANDLER();
-
-    node.callIfClient([&](hg::RN_ClientInterface& aClient) {
-        auto  rc         = SPEMPE_GET_RPC_RECEIVER_CONTEXT(aClient);
-        auto& qaoRuntime = rc.gameContext.getQAORuntime();
-
-        if (spe::MapSyncIdToObject(rc, aSyncId) == nullptr) {
-            ShipController::createDummy(&qaoRuntime, aSyncId);
-        }
-    });
-
-    node.callIfServer([](hg::RN_ServerInterface&) {
-        throw hg::RN_IllegalMessage("Server received a sync message");
-    });
-}
-// clang-format on
-
 constexpr float ONE_DEG_AS_RAD = hg::math::DegToRad(1.f);
 
 // Defined further below; forward-declared here because `evalAttachment` (above its definition) uses it.
@@ -110,7 +87,7 @@ void TransformPoints(hg::math::Vector2f&    aCentralPoint,
 #define GET_VECTOR2F(_variant_)    std::get<hg::math::Vector2f>(_variant_)
 
 QAO_Handle<ShipController> ShipController::createMaster(QAO_RuntimeRef  aRuntime,
-                                                       ShipAttachable& aInitialShipAttachable) {
+                                                        ShipAttachable& aInitialShipAttachable) {
     auto handle = QAO_Create_USE_IN_FACTORY_FUNCTIONS_ONLY<ShipController>(aRuntime);
     handle->init(aInitialShipAttachable);
     return handle;
@@ -121,7 +98,8 @@ ShipController::ShipController(QAO_InstGuard aInstGuard)
                    QAO_ExeCon::GAMEPLAY,
                    PRIORITY_ENTITIES, // TODO: set in relation to attachables
                    QAO_STATIC_NAME("cinnabar::ShipController"),
-                   spe::SYNC_ID_NEW} {}
+                   spe::SYNC_ID_NEW}
+    , _interiorWorld{InteriorWorld::Mode::MASTER} {}
 
 QAO_Handle<ShipController> ShipController::createDummy(QAO_RuntimeRef aRuntime, spe::SyncId aSyncId) {
     return QAO_Create_USE_IN_FACTORY_FUNCTIONS_ONLY<ShipController>(aRuntime, aSyncId);
@@ -132,12 +110,13 @@ ShipController::ShipController(QAO_InstGuard aInstGuard, spe::SyncId aSyncId)
                    QAO_ExeCon::GAMEPLAY,
                    PRIORITY_ENTITIES, // TODO: set in relation to attachables
                    QAO_STATIC_NAME("cinnabar::ShipController"),
-                   aSyncId} {}
+                   aSyncId}
+    , _interiorWorld{InteriorWorld::Mode::DUMMY} {}
 
 void ShipController::init(ShipAttachable& aInitialShipAttachable) {
     HG_VALIDATE_PRECONDITION(isMasterObject());
 
-    _masterData->graphOfAttachables.init(*this);
+    _graphOfAttachables.init(*this);
 
     const auto* iwSliceData = aInitialShipAttachable.getInteriorWorldSliceData();
     HG_VALIDATE_ARGUMENT(
@@ -152,7 +131,7 @@ void ShipController::init(ShipAttachable& aInitialShipAttachable) {
         GET_VECTOR2I(tlCellMappingVariant) +
         hg::math::Vector2pz{InteriorWorld::CELL_COUNT_X / 2, InteriorWorld::CELL_COUNT_Y / 2};
 
-    const auto id = _masterData->graphOfAttachables.insertInitialAttachable(aInitialShipAttachable);
+    const auto id = _graphOfAttachables.insertInitialAttachable(aInitialShipAttachable);
 
     _copySliceDataToInteriorWorld_rot000(*iwSliceData, tlCellPosInIW, id);
 }
@@ -239,7 +218,7 @@ void ShipController::calcFootprint(const PolyShape& aShape, CellFootprint& aCell
                                aabbGridBottomRight.y - aabbGridTopLeft.y + 1);
     aCellFootprint.totalBitmask = CellFootprint::EMPTY;
 
-    const auto&                             ggwld = _masterData->interiorWorld.getUnderlying();
+    const auto&                             ggwld = _interiorWorld.getUnderlying();
     jbatnozic::gridgoblin::cell::CellKindId cellKindId;
     for (int y = aabbGridTopLeft.y; y <= aabbGridBottomRight.y; ++y) {
         for (int x = aabbGridTopLeft.x; x <= aabbGridBottomRight.x; ++x) {
@@ -355,8 +334,7 @@ AttachmentEvaluation ShipController::evalAttachment(const AttachableGhost& aGhos
     // makes contact with at least one existing attachable, so only bond strength has to be analyzed.
     result.orientation = RelativeIWSliceOrientation::NOT_RELEVANT;
 
-    result.status =
-        CheckProjectionBondStrength(_masterData->interiorWorld, aCellFootprint, result.bonds);
+    result.status = CheckProjectionBondStrength(_interiorWorld, aCellFootprint, result.bonds);
 
     if (aCellFootprint.totalBitmask & CellFootprint::COLLIDES_WITH_IW) {
         result.status |= AttachmentEvaluation::OVERLAP;
@@ -384,7 +362,7 @@ void ShipController::attach(AttachableGhost& aGhost, const AttachmentEvaluation&
         aAttachmentEval.topLeftCellMapping +
         hg::math::Vector2i{InteriorWorld::CELL_COUNT_X / 2, InteriorWorld::CELL_COUNT_Y / 2};
 
-    const auto id = _masterData->graphOfAttachables.insert(attachable);
+    const auto id = _graphOfAttachables.insert(attachable);
 
     switch (aAttachmentEval.orientation) {
     case RelativeIWSliceOrientation::ROT_ALIGNED:
@@ -428,13 +406,12 @@ void ShipController::attach(AttachableGhost&            aGhost,
         cpBodySetAngle(body, -poly.getRotation().asRadians());
     }
 
-    const auto index =
-        _masterData->graphOfAttachables.insertAttachable(attachable,
-                                                         aAttachmentEval.bonds,
-                                                         ccomp<MOverworld>().getAlvinSpace());
-    const auto& grid = aCellFootprint.cells;
+    const auto  index = _graphOfAttachables.insertAttachable(attachable,
+                                                             aAttachmentEval.bonds,
+                                                             ccomp<MOverworld>().getAlvinSpace());
+    const auto& grid  = aCellFootprint.cells;
 
-    _masterData->interiorWorld.editWorld([&](WorldEditor& aEditor) {
+    _interiorWorld.editWorld([&](WorldEditor& aEditor) {
         for (hg::PZInteger y = 0; y < grid.getHeight(); ++y) {
             for (hg::PZInteger x = 0; x < grid.getWidth(); ++x) {
                 const auto cell = grid[y][x];
@@ -474,7 +451,7 @@ void ShipController::detach(ShipAttachable& aAttachable) {
 
     // TODO: see what to do with IW cells
 
-    _masterData->graphOfAttachables.eraseAttachable(aAttachable);
+    _graphOfAttachables.eraseAttachable(aAttachable);
 
     HG_ASSERT(!aAttachable._assocComps.has_value());
 }
@@ -497,7 +474,7 @@ hg::math::Vector2d ShipController::getAnchor() const {
 hg::math::AngleF ShipController::getRotation() const {
     // TODO: temporary implementation
     if (isMasterObject()) {
-        getAttachableWithIndex(0)->getPolyShape().getRotation();
+        return getAttachableWithIndex(0)->getPolyShape().getRotation();
     }
     if (isDeactivated()) {
         return {};
@@ -507,7 +484,7 @@ hg::math::AngleF ShipController::getRotation() const {
 
 const ShipAttachable* ShipController::getAttachableWithIndex(std::int16_t aIndex) const {
     // TODO: temporary implementation
-    return &(_masterData->graphOfAttachables.getNode(aIndex)->associatedAttachable);
+    return &(_graphOfAttachables.getNode(aIndex)->associatedAttachable);
 }
 
 void ShipController::drawGridOverShape(const PolyShape& aShape, uwga::Canvas& aCanvas) const {
@@ -684,7 +661,7 @@ void ShipController::_willDetach(QAO_Runtime& aRuntime) {
     // TODO: temporary implementation
     if (isMasterObject()) {
         for (int i = 0; i < 2048; ++i) {
-            auto* node = _masterData->graphOfAttachables.getNode(i);
+            auto* node = _graphOfAttachables.getNode(i);
             if (node == nullptr) {
                 continue;
             }
@@ -695,9 +672,12 @@ void ShipController::_willDetach(QAO_Runtime& aRuntime) {
     SyncObjSuper::_willDetach(aRuntime);
 }
 
+void ShipController::_eventBeginUpdate() {
+    _interiorWorld.onBeginUpdate();
+}
+
 void ShipController::_eventUpdate1(spe::IfMaster) {
-    auto&       md      = *_masterData;
-    const auto& mainAtt = md.graphOfAttachables.getNode(0)->associatedAttachable;
+    const auto& mainAtt = _graphOfAttachables.getNode(0)->associatedAttachable;
 
     _getCurrentState().setPosition(mainAtt.getPolyShape().getAnchor());
     _getCurrentState().rotation = mainAtt.getPolyShape().getRotation();
@@ -707,8 +687,38 @@ void ShipController::_eventUpdate1(spe::IfMaster) {
     _transformShipToGlobal->setToInverseOf(*_transformGlobalToShip);
 }
 
-void ShipController::_eventPostUpdate(spe::IfMaster) {
-    _getCurrentState().commit();
+void ShipController::_eventEndUpdate(spe::IfMaster) {
+    {
+        auto& stream = _masterData->cellDiffPacket;
+        stream.clear();
+        if (_interiorWorld.writeStateDiff(stream)) {
+            _getCurrentState().svsCounter += 1;
+        } else {
+            stream.clear();
+        }
+    }
+}
+
+#if 0
+bool ShouldApplySVSUpdate(std::uint8_t aCurrentSVSCounter, std::uint8_t aTag) {
+    constexpr std::uint8_t THR = 255 * 0.85;
+    if (aCurrentSVSCounter >= aTag && aCurrentSVSCounter - aTag < THR) {
+        return true;
+    }
+    if (aCurrentSVSCounter < (255 * 0.15) && aTag > THR) {
+        return true;
+    }
+    /* TODO: return true if the package has aged enough */
+    return false;
+}
+#endif
+
+void ShipController::_eventPostUpdate() {
+    _interiorWorld.onEndUpdate(); // TODO: misnomer
+
+    if (isMasterObject()) {
+        _getCurrentState().commit();
+    }
 }
 
 void ShipController::_eventDraw1() {
@@ -1021,7 +1031,7 @@ void CopySliceDataToInteriorWorld(InteriorWorld&                                
                                       &cell.floorSprite,
                                       &cell.wallSprite,
                                       &cell.spatialInfo,
-                                      &cell.userData);
+                                      &userData);
             }
         }
     });
@@ -1034,7 +1044,7 @@ char ShipController::_checkSliceDataToIWIntegration_rot000(
     std::vector<AttachmentEvaluation::BondStrength>& aOutBonds) //
 {
     return CheckSliceDataToIWIntegration(
-        _masterData->interiorWorld,
+        _interiorWorld,
         aSlice,
         [aStartingCorner](hg::PZInteger x, hg::PZInteger y) -> hg::math::Vector2i {
             return {aStartingCorner.x + x, aStartingCorner.y + y};
@@ -1048,7 +1058,7 @@ char ShipController::_checkSliceDataToIWIntegration_rot090(
     std::vector<AttachmentEvaluation::BondStrength>& aOutBonds) //
 {
     return CheckSliceDataToIWIntegration(
-        _masterData->interiorWorld,
+        _interiorWorld,
         aSlice,
         [aStartingCorner](hg::PZInteger x, hg::PZInteger y) -> hg::math::Vector2i {
             return {aStartingCorner.x + y, aStartingCorner.y - x};
@@ -1062,7 +1072,7 @@ char ShipController::_checkSliceDataToIWIntegration_rot180(
     std::vector<AttachmentEvaluation::BondStrength>& aOutBonds) //
 {
     return CheckSliceDataToIWIntegration(
-        _masterData->interiorWorld,
+        _interiorWorld,
         aSlice,
         [aStartingCorner](hg::PZInteger x, hg::PZInteger y) -> hg::math::Vector2i {
             return {aStartingCorner.x - x, aStartingCorner.y - y};
@@ -1076,7 +1086,7 @@ char ShipController::_checkSliceDataToIWIntegration_rot270(
     std::vector<AttachmentEvaluation::BondStrength>& aOutBonds) //
 {
     return CheckSliceDataToIWIntegration(
-        _masterData->interiorWorld,
+        _interiorWorld,
         aSlice,
         [aStartingCorner](hg::PZInteger x, hg::PZInteger y) -> hg::math::Vector2i {
             return {aStartingCorner.x - y, aStartingCorner.y + x};
@@ -1090,7 +1100,7 @@ void ShipController::_copySliceDataToInteriorWorld_rot000(
     std::int16_t                                  aAttachableId) //
 {
     CopySliceDataToInteriorWorld(
-        _masterData->interiorWorld,
+        _interiorWorld,
         aSlice,
         aAttachableId,
         [aStartingCorner](hg::PZInteger x, hg::PZInteger y) -> hg::math::Vector2pz {
@@ -1104,7 +1114,7 @@ void ShipController::_copySliceDataToInteriorWorld_rot090(
     std::int16_t                                  aAttachableId) //
 {
     CopySliceDataToInteriorWorld(
-        _masterData->interiorWorld,
+        _interiorWorld,
         aSlice,
         aAttachableId,
         [aStartingCorner](hg::PZInteger x, hg::PZInteger y) -> hg::math::Vector2pz {
@@ -1118,7 +1128,7 @@ void ShipController::_copySliceDataToInteriorWorld_rot180(
     std::int16_t                                  aAttachableId) //
 {
     CopySliceDataToInteriorWorld(
-        _masterData->interiorWorld,
+        _interiorWorld,
         aSlice,
         aAttachableId,
         [aStartingCorner](hg::PZInteger x, hg::PZInteger y) -> hg::math::Vector2pz {
@@ -1132,7 +1142,7 @@ void ShipController::_copySliceDataToInteriorWorld_rot270(
     std::int16_t                                  aAttachableId) //
 {
     CopySliceDataToInteriorWorld(
-        _masterData->interiorWorld,
+        _interiorWorld,
         aSlice,
         aAttachableId,
         [aStartingCorner](hg::PZInteger x, hg::PZInteger y) -> hg::math::Vector2pz {
@@ -1158,7 +1168,7 @@ void ShipController::_createConstraintsUponAttach(
     }
 
     for (const auto bond : aBonds) {
-        const auto* node = _masterData->graphOfAttachables.getNode(bond.attachableId);
+        const auto* node = _graphOfAttachables.getNode(bond.attachableId);
         HG_ASSERT(node != nullptr);
 
         auto body2 = node->associatedAttachable.getPhysicsBody();
@@ -1181,12 +1191,68 @@ void ShipController::_createConstraintsUponAttach(
     }
 }
 
+// MARK: Sync functions
+
+// clang-format off
+RN_DEFINE_RPC(ShipController_SyncCreate,
+    RN_ARGS(
+        spe::SyncId ,aSyncId
+    )
+) {
+    auto& node = RN_NODE_IN_HANDLER();
+
+    node.callIfClient([&](hg::RN_ClientInterface& aClient) {
+        auto  rc         = SPEMPE_GET_RPC_RECEIVER_CONTEXT(aClient);
+        auto& qaoRuntime = rc.gameContext.getQAORuntime();
+
+        if (spe::MapSyncIdToObject(rc, aSyncId) == nullptr) {
+            ShipController::createDummy(&qaoRuntime, aSyncId);
+        }
+    });
+
+    node.illegalIfServer(__func__);
+}
+
+void ApplySVSUpdate(ShipController& aShipCtrl, hg::util::Packet& aCellStatePacket, bool aIsFullState) {
+    if (aIsFullState) {
+        aShipCtrl._interiorWorld.readWholeState(aCellStatePacket);
+    } else {
+        aShipCtrl._interiorWorld.readAndApplyStateDiff(aCellStatePacket);
+    }
+}
+
+RN_DEFINE_RPC(ShipController_SyncSVSUpdate,
+    RN_ARGS(
+        spe::SyncId       ,aSyncId,
+        hg::util::Packet& ,aCellStatePacket,
+        bool              ,aIsFullState
+    )
+) {
+    auto& node = RN_NODE_IN_HANDLER();
+
+    node.callIfClient([&](hg::RN_ClientInterface& aClient) {
+        auto rc = SPEMPE_GET_RPC_RECEIVER_CONTEXT(aClient);
+
+        if (auto* obj = spe::MapSyncIdToObject(rc, aSyncId); obj != nullptr) {
+            ApplySVSUpdate(*static_cast<ShipController*>(obj), aCellStatePacket, aIsFullState);
+        }
+    });
+
+    node.illegalIfServer(__func__);
+}
+// clang-format on
+
 SPEMPE_GENERATE_DEFAULT_SYNC_HANDLERS(ShipController, (UPDATE, DESTROY));
 
 void ShipController::_syncCreateImpl(spe::SyncControlDelegate& aSyncCtrl) const {
     Compose_ShipController_SyncCreate(aSyncCtrl.getLocalNode(),
                                       aSyncCtrl.getFilteredRecepients(),
                                       this->getSyncId());
+
+    for (hg::PZInteger clientIdx : aSyncCtrl.getFilteredRecepients()) {
+        _masterData->_onboardClientData.setBit(clientIdx * 2 + 0);
+        _masterData->_onboardClientData.clearBit(clientIdx * 2 + 1);
+    }
 }
 
 void ShipController::_syncUpdateImpl(spe::SyncControlDelegate& aSyncCtrl) const {
@@ -1194,6 +1260,32 @@ void ShipController::_syncUpdateImpl(spe::SyncControlDelegate& aSyncCtrl) const 
         return spe::SyncFilterStatus::REGULAR_SYNC; // TODO: implement proper filtering
     });
     SPEMPE_SYNC_UPDATE_DEFAULT_IMPL(ShipController, aSyncCtrl);
+
+    // Compose secondary visible state
+    for (hg::PZInteger clientIdx : aSyncCtrl.getFilteredRecepients()) {
+        if (!_masterData->_onboardClientData.getBit(clientIdx * 2 + 0)) {
+            continue;
+        }
+        if (!_masterData->_onboardClientData.getBit(clientIdx * 2 + 1)) {
+            // Send full state
+            hg::util::Packet fullCellStatePacket;
+            _interiorWorld.writeWholeState(fullCellStatePacket);
+            Compose_ShipController_SyncSVSUpdate(aSyncCtrl.getLocalNode(),
+                                                 clientIdx,
+                                                 this->getSyncId(),
+                                                 fullCellStatePacket,
+                                                 true);
+            _masterData->_onboardClientData.setBit(clientIdx * 2 + 1);
+
+        } else if (_masterData->cellDiffPacket.getDataSize() > 0) {
+            // Send just the diff
+            Compose_ShipController_SyncSVSUpdate(aSyncCtrl.getLocalNode(),
+                                                 clientIdx,
+                                                 this->getSyncId(),
+                                                 _masterData->cellDiffPacket,
+                                                 false);
+        }
+    }
 }
 
 void ShipController::_syncDestroyImpl(spe::SyncControlDelegate& aSyncCtrl) const {
