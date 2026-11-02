@@ -11,6 +11,24 @@
 
 namespace cinnabar {
 
+/*!
+ * \brief Default implementation of `LobbyFrontendManager`.
+ *
+ * Dependencies:
+ * - `AuthorizationManager`
+ * - `LobbyBackendManager`
+ * - `WindowManager`
+ *
+ * Event listing:
+ * - NOTE: this manager does not implement _eventPreUpdate(), but it receives input events at the end of
+ *         this event while `WindowManager` is processing said events.
+ * - _eventBeginUpdate() => Poll events from `LobbyBackendManager` and adjust the frontend accordingly.
+ * - _eventUpdate1()     => (Client only) Show/Hide the GUI.
+ * - _eventDrawGUI()     => (Client only) Draw the GUI.
+ *
+ * Execution priority hint:
+ * - n/a
+ */
 class DefaultLobbyFrontendManager
     : public LobbyFrontendManager
     , public spe::NonstateObject {

@@ -16,7 +16,6 @@
 #include <Hobgoblin/Logging.hpp>
 #include <Hobgoblin/RigelNet_macros.hpp>
 #include <SPeMPE/Managers/Synced_varmap_manager.hpp>
-#include <SPeMPE/Managers/Window_manager.hpp>
 #include <SPeMPE/Managers/Networking_manager.hpp>
 #include <SPeMPE/Utility/Rpc_receiver_context_template.hpp>
 #include <SFML/Graphics.hpp>
@@ -329,19 +328,22 @@ bool DefaultLobbyBackendManager::lockInPendingChanges() {
                         "This method can only be called while in Host mode!");
     }
 
-    if (_lockedIn == _desired) {
-        _enqueueLobbyLockedIn(false);
-        HG_LOG_INFO(LOG_ID, "Slots locked in (no change).");
-        return false; // Nothing to change
+    const bool somethingDidChange = !(_lockedIn == _desired);
+    if (somethingDidChange) {
+        _lockedIn = _desired;
     }
 
-    _lockedIn = _desired;
+    // NOTE: Player indices are (re)sent even if nothing changed, because a client
+    //       may have reconnected into the same slot with identical info, and in that
+    //       case it would otherwise never learn its player index.
     for (hg::PZInteger slotIndex = 0; slotIndex < _getSize(); slotIndex += 1) {
         const auto clientIndex = _lockedIn[slotIndex].clientIndex;
 
         _clientIdxToPlayerIdxMapping[clientIndex] = slotIndex;
 
-        _updateVarmapForLockedInEntry(slotIndex);
+        if (somethingDidChange) {
+            _updateVarmapForLockedInEntry(slotIndex);
+        }
 
         auto& netMgr = ccomp<NetworkingManager>();
         if (clientIndex >= 0) {
@@ -353,6 +355,12 @@ bool DefaultLobbyBackendManager::lockInPendingChanges() {
         } else if (clientIndex == CLIENT_INDEX_LOCAL) {
             _localPlayerIndex = slotIndex;
         }
+    }
+
+    if (!somethingDidChange) {
+        _enqueueLobbyLockedIn(false);
+        HG_LOG_INFO(LOG_ID, "Slots locked in (no change).");
+        return false;
     }
 
     _enqueueLobbyChanged();

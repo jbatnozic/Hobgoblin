@@ -10,8 +10,10 @@ add_executable(${PROJECT_NAME}
     "Source/CBR/GameContext/Game_context_factory.cpp"
     "Source/CBR/GameContext/Graphics_system_provider.cpp"
 
+    "Source/CBR/InteriorWorld/Cell_props.cpp"
     "Source/CBR/InteriorWorld/Interior_world.cpp"
 
+    "Source/CBR/Managers/Gameplay/Auxiliary_gameplay_manager_default.cpp"
     "Source/CBR/Managers/Gameplay/Main_game_flow_manager_default.cpp"
     "Source/CBR/Managers/Gameplay/Overworld_manager_default.cpp"
     "Source/CBR/Managers/UserInterface/Interactivity_manager_default.cpp"

@@ -10,6 +10,18 @@
 
 namespace cinnabar {
 
+/*!
+ * \brief Default implementation of `MainGameFlowManager`.
+ *
+ * Dependencies:
+ * - <none>
+ *
+ * Event listing:
+ * - _eventDisplay() => Adjust global EXECON level.
+ *
+ * Execution priority hint:
+ * - Literally last, even after `WindowManager`.
+ */
 class DefaultMainGameFlowManager
     : public spe::NonstateObject
     , public MainGameFlowManager

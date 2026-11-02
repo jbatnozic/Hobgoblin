@@ -245,7 +245,6 @@ void AttachableGhost::_eventUpdate1(spe::IfDummy) {
         break;
 
     case DummyState::DROPPING:
-        // TODO: timeout for provisional states
         if (_leftClicked && localPlayerIndex != -1 && self.holdingPlayerIndex == -1) {
             _dummyState_changeTo_PICKING_UP(true);
         } else if (localPlayerIndex < 0) {
@@ -362,6 +361,7 @@ void AttachableGhost::_eventUpdate1(spe::IfMaster) {
 
     if (!_inHeadlessContext) {
         // DEV-mode UI code
+        // TODO: implement ghost holding for dev mode
 #if 0
     const auto& winMgr      = ccomp<MWindow>();
     const auto  input       = winMgr.getInput();

@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "Stream_io_overloads.hpp"
+#include "Stream_io_overloads.hpp" // IWYU pragma: keep
 
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/HGExcept.hpp>
@@ -28,19 +28,28 @@ using MWindow       = spe::WindowManager;
 
 constexpr const char* LOG_ID = "Cinnabar1";
 
-#define PRIORITY_VARMAPMGR     16
-#define PRIORITY_NETWORKMGR    15
-#define PRIORITY_LOBBYBACKMGR  14
-#define PRIORITY_LOBBYFRONTMGR 13
-#define PRIORITY_AUTHMGR       12
-// #define PRIORITY_GAMEPLAYMGR   10
-#define PRIORITY_ENTITIES       10
-#define PRIORITY_INPUTMGR       7
-#define PRIORITY_ENVIRONMENTMGR 5
-// #define PRIORITY_PLAYERAVATAR   5
-#define PRIORITY_INTERACTIVITYMGR 1
-#define PRIORITY_WINDOWMGR        0
-#define PRIORITY_MAINGAMEFLOWMGR  -1
+// PRIORITIES BEGIN ///////////////////////////////////////////////////////////
+
+// First-block managers/controllers
+#define PRIORITY_VARMAPMGR     2500
+#define PRIORITY_NETWORKMGR    2400
+#define PRIORITY_INPUTMGR      2300
+#define PRIORITY_LOBBYBACKMGR  2200
+#define PRIORITY_LOBBYFRONTMGR 2100
+#define PRIORITY_AUTHMGR       2000
+
+// Gameplay entities & gameplay managers/controllers
+#define PRIORITY_AUXGAMEPLAYMGR 1200
+#define PRIORITY_ENTITIES       1100
+#define PRIORITY_ENVIRONMENTMGR 1000
+
+// Last-block managers/controllers
+#define PRIORITY_INTERACTIVITYMGR  300
+#define PRIORITY_NETWORKSENDHELPER 200
+#define PRIORITY_WINDOWMGR         100
+#define PRIORITY_MAINGAMEFLOWMGR   000
+
+// PRIORITIES END /////////////////////////////////////////////////////////////
 
 #define STATE_BUFFERING_LENGTH 2
 

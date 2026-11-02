@@ -10,6 +10,18 @@
 
 namespace cinnabar {
 
+/*!
+ * \brief Default implementation of `AuxiliaryGameplayManager`.
+ *
+ * Dependencies:
+ * - <none>
+ *
+ * Event listing:
+ * - _eventUpdate1() => Simulate Chipmunk (Alvin) physics space.
+ *
+ * Execution priority hint:
+ * - n/a
+ */
 class DefaultOverworldManager
     : public spe::StateObject
     , public OverworldManager {

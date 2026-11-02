@@ -8,8 +8,10 @@
 namespace cinnabar {
 
 class MainGameFlowManager : public spe::ContextComponent {
-public:
+private:
     SPEMPE_CTXCOMP_TAG("cinnabar::MainGameFlowManager");
 };
+
+using MMainGameFlow = MainGameFlowManager;
 
 } // namespace cinnabar
