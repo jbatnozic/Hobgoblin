@@ -13,6 +13,10 @@
 HOBGOBLIN_NAMESPACE_BEGIN
 namespace qao {
 
+namespace {
+bool g_qaoMetadataInitialized = false;
+} // namespace
+
 QAO_REGISTER_CLASS(QAO_Base, UHOBGOBLIN_QAO_Base) {
     /* This is the only class which doesn't need to have its superclass set */
 }
@@ -119,6 +123,8 @@ bool QAO_SendMessage(QAO_MessageHandlerMap& aMessageHandlerMap,
                      QAO_Base&              aReceiverInstance,
                      void*                  aMessagePayloadPtr,
                      bool                   aConst) {
+    assert(g_qaoMetadataInitialized && "Did you forget to call QAO_InitializeMetadata?");
+
     QAO_UntypedMessage untypedMessagePtr = nullptr;
 
     const auto instTypeIdx = std::type_index{typeid(aReceiverInstance)};
@@ -163,9 +169,6 @@ bool QAO_SendMessage(QAO_MessageHandlerMap& aMessageHandlerMap,
 } // namespace qao_detail
 
 // MARK: Init
-namespace {
-bool g_qaoMetadataInitialized = false;
-} // namespace
 
 void QAO_InitializeMetadata() {
     {

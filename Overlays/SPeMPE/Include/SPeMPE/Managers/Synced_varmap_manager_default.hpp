@@ -17,8 +17,17 @@
 namespace jbatnozic {
 namespace spempe {
 
-/**
- * Needs: Networking manager
+/*!
+ * \brief Default implementation of `SyncedVarmapManager`.
+ *
+ * Dependencies:
+ * - `NetworkingManager`
+ *
+ * Event listing:
+ * - _eventEndUpdate() => (Host only) Send (upload) state updates.
+ *
+ * Execution priority hint:
+ * - Just before `NetworkingManager`.
  */
 class DefaultSyncedVarmapManager 
     : public SyncedVarmapManager

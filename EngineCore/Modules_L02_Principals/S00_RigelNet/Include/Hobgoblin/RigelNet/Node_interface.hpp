@@ -16,6 +16,7 @@
 
 #include <cassert>
 #include <functional>
+#include <string_view>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
@@ -51,6 +52,12 @@ public:
 
     //! Call the provided funtion if this node is a Server.
     void callIfServer(std::function<void(RN_ServerInterface& client)> func);
+
+    //! Throw RN_IllegalMessage if the node is a Client.
+    void illegalIfClient(std::string_view aMessageName);
+
+    //! Throw RN_IllegalMessage if the node is a Server.
+    void illegalIfServer(std::string_view aMessageName);
 
     void setUserData(std::nullptr_t);
 
