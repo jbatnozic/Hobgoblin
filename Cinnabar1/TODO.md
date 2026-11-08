@@ -1,0 +1,5 @@
+- AuxGameplayManager player/ship tracking
+- View switching
+- [Nice to have] Latency optimizer
+- Use NodeStatusWord
+- Reduce server EXECON while no client is connected

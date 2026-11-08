@@ -41,7 +41,7 @@ private:
     hg::alvin::MainCollisionDispatcher _mcd;
 };
 
-QAO_REGISTER_CLASS(DefaultOverworldManager, cinnabar_OverworldManager) {
+QAO_REGISTER_CLASS(DefaultOverworldManager, cinnabar_DefaultOverworldManager) {
     QAO_LOCAL_ALIAS(C, klass);
     klass.setSuperclass<spe::StateObject>();
 }

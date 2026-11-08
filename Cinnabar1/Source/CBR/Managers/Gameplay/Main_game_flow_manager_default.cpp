@@ -38,15 +38,15 @@ void DefaultMainGameFlowManager::_willDetach(QAO_Runtime& aRuntime) {
 
 void DefaultMainGameFlowManager::_eventDisplay() {
     auto& context = ctx();
-    auto& gs = context.getGameState();
-    
+    auto& gs      = context.getGameState();
+
     const auto currentOrdinal = context.getCurrentIterationOrdinal();
     if (_iterOrdinal <= currentOrdinal) {
         _iterOrdinal = currentOrdinal + 1;
     } else {
         return;
     }
-    
+
     const auto& caller = getName();
 
     // Update
@@ -72,15 +72,7 @@ void DefaultMainGameFlowManager::_eventDisplay() {
 }
 
 void DefaultMainGameFlowManager::onNetworkingEvent(const RN_Event& aEvent) {
-    // TODO: The main game flow manager is probably not the best place to upload
-    //       local lobby info; consider moving this elsewhere (e.g. lobby backend
-    //       or a dedicated client connection handler).
-    if (ccomp<MNetworking>().isClient()) {
-        aEvent.visit([this](const RN_Event::Connected&) {
-            HG_LOG_INFO(LOG_ID, "Client lobby uploading local info to server.");
-            ccomp<MLobbyBackend>().uploadLocalInfo();
-        });
-    }
+    // TODO
 }
 
 } // namespace cinnabar

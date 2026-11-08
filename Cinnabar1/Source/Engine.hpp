@@ -31,10 +31,11 @@ constexpr const char* LOG_ID = "Cinnabar1";
 // PRIORITIES BEGIN ///////////////////////////////////////////////////////////
 
 // First-block managers/controllers
-#define PRIORITY_VARMAPMGR     2500
-#define PRIORITY_NETWORKMGR    2400
-#define PRIORITY_INPUTMGR      2300
-#define PRIORITY_LOBBYBACKMGR  2200
+#define PRIORITY_VARMAPMGR     2600
+#define PRIORITY_NETWORKMGR    2500
+#define PRIORITY_INPUTMGR      2400
+#define PRIORITY_LOBBYBACKMGR  2300
+#define PRIORITY_LOBBYEVENTMGR 2200
 #define PRIORITY_LOBBYFRONTMGR 2100
 #define PRIORITY_AUTHMGR       2000
 

@@ -7,8 +7,9 @@
 #include <CBR/Managers/Gameplay/Auxiliary_gameplay_manager_default.hpp>
 #include <CBR/Managers/Gameplay/Main_game_flow_manager_default.hpp>
 #include <CBR/Managers/Gameplay/Overworld_manager_default.hpp>
+#include <CBR/Managers/Lobby/Lobby_frontend_manager_default.hpp>
+#include <CBR/Managers/Lobby/Lobby_event_manager_default.hpp>
 #include <CBR/Managers/UserInterface/Interactivity_manager_default.hpp>
-#include <CBR/Managers/UserInterface/Lobby_frontend_manager_default.hpp>
 #include <CBR/Player_controls.hpp>
 
 #include <Hobgoblin/RmlUi.hpp>
@@ -286,6 +287,12 @@ void AttachLobbyFrontendManager(spe::GameContext& aContext, GameContextMode aMod
     aContext.attachAndOwnComponent(std::move(lobbyFrontendMgr));
 }
 
+void AttachLobbyEventManager(spe::GameContext& aContext, const GameContextCreationParams&) {
+    auto lobbyFrontendMgr = QAO_Create<DefaultLobbyEventManager>(aContext.getQAORuntime().nonOwning(),
+                                                                 PRIORITY_LOBBYEVENTMGR);
+    aContext.attachAndOwnComponent(std::move(lobbyFrontendMgr));
+}
+
 void AttachAuthorizationManager(spe::GameContext& aContext, GameContextMode aMode) {
     auto authMgr = QAO_Create<spe::DefaultAuthorizationManager>(aContext.getQAORuntime().nonOwning(),
                                                                 PRIORITY_AUTHMGR);
@@ -410,6 +417,7 @@ std::unique_ptr<spe::GameContext> CreateServerGameContext(const GameContextCreat
     AttachInputSyncManager(*ctx, aParams);
     AttachSyncedVarmapManager(*ctx, GCMODE);
     AttachLobbyBackendManager(*ctx, aParams);
+    AttachLobbyEventManager(*ctx, aParams);
     AttachLobbyFrontendManager(*ctx, GCMODE);
     AttachAuthorizationManager(*ctx, GCMODE);
     AttachInteractivityManager(*ctx, aParams);
@@ -451,6 +459,7 @@ std::unique_ptr<spe::GameContext> CreateClientGameContext(const GameContextCreat
     AttachInputSyncManager(*ctx, aParams);
     AttachSyncedVarmapManager(*ctx, GCMODE);
     AttachLobbyBackendManager(*ctx, aParams);
+    AttachLobbyEventManager(*ctx, aParams);
     AttachLobbyFrontendManager(*ctx, GCMODE);
     AttachAuthorizationManager(*ctx, GCMODE);
     AttachInteractivityManager(*ctx, aParams);
@@ -492,6 +501,7 @@ std::unique_ptr<spe::GameContext> CreateDevGameContext(const GameContextCreation
     AttachInputSyncManager(*ctx, aParams);
     AttachSyncedVarmapManager(*ctx, GCMODE);
     AttachLobbyBackendManager(*ctx, aParams);
+    AttachLobbyEventManager(*ctx, aParams);
     AttachLobbyFrontendManager(*ctx, GCMODE);
     AttachAuthorizationManager(*ctx, GCMODE);
     AttachInteractivityManager(*ctx, aParams);

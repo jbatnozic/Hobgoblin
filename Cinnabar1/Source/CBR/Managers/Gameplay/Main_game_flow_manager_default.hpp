@@ -40,7 +40,7 @@ private:
     std::uint32_t _iterOrdinal = 0;
 };
 
-QAO_REGISTER_CLASS(DefaultMainGameFlowManager, cinnabar_MainGameFlowManager) {
+QAO_REGISTER_CLASS(DefaultMainGameFlowManager, cinnabar_DefaultMainGameFlowManager) {
     QAO_LOCAL_ALIAS(C, klass);
     klass.setSuperclass<spe::NonstateObject>();
 }

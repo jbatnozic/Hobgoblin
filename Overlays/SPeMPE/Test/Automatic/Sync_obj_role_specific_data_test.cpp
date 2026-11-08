@@ -209,8 +209,13 @@ protected:
         _masterObj = {};
         _dummyObj  = {};
 
-        return (_serverCtx->getQAORuntime().getObjectCount() == 1 &&
-                _clientCtx->getQAORuntime().getObjectCount() == 1);
+        const auto serverObjectCount = _serverCtx->getQAORuntime().getObjectCount();
+        const auto clientObjectCount = _clientCtx->getQAORuntime().getObjectCount();
+
+        constexpr int EXPECTED_OBJECT_COUNT = 2; // NetworkingManager and its Send-Helper object
+
+        return (serverObjectCount == EXPECTED_OBJECT_COUNT &&
+                clientObjectCount == EXPECTED_OBJECT_COUNT);
     }
 };
 

@@ -16,6 +16,7 @@ SPEMPE_DEFINE_AUTODIFF_STATE(Asteroid_VisibleState,
     SPEMPE_MEMBER(double, x, 0.0),
     SPEMPE_MEMBER(double, y, 0.0),
     SPEMPE_MEMBER(hg::math::AngleF, rotation, hg::math::AngleF::zero())
+    // TODO: SyncId of ShipController (if any, and in that case, x/y/rotation are relative to that)
 ) {
     hg::math::Vector2d getPosition() const {
         return {x, y};

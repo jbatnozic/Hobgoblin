@@ -97,9 +97,14 @@ public:
     // UTILITY                                                               //
     ///////////////////////////////////////////////////////////////////////////
 
-    hg::math::Vector2d getAnchor() const;
-
-    hg::math::AngleF getRotation() const;
+    //! \brief get the current visible state of the ship controller.
+    //!
+    //! \warning it is only safe to call this on a Dummy object if it is not deactivated! (otherwise
+    //!          what the function call does is undefined/UB)
+    //!
+    //! \warning it is always safe to call this on a Master object, but remember that it will only
+    //!          update its visible state in its _eventUpdate1() method!
+    const ShipController_VisibleState& getCurrentVisibleState() const;
 
     const ShipAttachable* getAttachableWithIndex(std::int16_t aIndex) const;
 
@@ -143,6 +148,7 @@ private:
 
     void _eventBeginUpdate() override;
     void _eventUpdate1(spe::IfMaster) override;
+    void _eventUpdate1(spe::IfDummy) override;
     void _eventEndUpdate(spe::IfMaster) override;
     void _eventPostUpdate() override;
     void _eventDraw1() override;

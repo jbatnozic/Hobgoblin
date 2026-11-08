@@ -16,8 +16,9 @@ add_executable(${PROJECT_NAME}
     "Source/CBR/Managers/Gameplay/Auxiliary_gameplay_manager_default.cpp"
     "Source/CBR/Managers/Gameplay/Main_game_flow_manager_default.cpp"
     "Source/CBR/Managers/Gameplay/Overworld_manager_default.cpp"
+    "Source/CBR/Managers/Lobby/Lobby_event_manager_default.cpp"
+    "Source/CBR/Managers/Lobby/Lobby_frontend_manager_default.cpp"
     "Source/CBR/Managers/UserInterface/Interactivity_manager_default.cpp"
-    "Source/CBR/Managers/UserInterface/Lobby_frontend_manager_default.cpp"
 
     "Source/CBR/Overworld/Asteroid.cpp"
 

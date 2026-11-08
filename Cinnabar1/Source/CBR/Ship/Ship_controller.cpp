@@ -460,26 +460,8 @@ void ShipController::detach(ShipAttachable& aAttachable) {
 // MARK: UTILITY                                                         //
 ///////////////////////////////////////////////////////////////////////////
 
-hg::math::Vector2d ShipController::getAnchor() const {
-    // TODO: temporary implementation
-    if (isMasterObject()) {
-        return getAttachableWithIndex(0)->getPolyShape().getAnchor();
-    }
-    if (isDeactivated()) {
-        return {};
-    }
-    return _getCurrentState().getPosition();
-}
-
-hg::math::AngleF ShipController::getRotation() const {
-    // TODO: temporary implementation
-    if (isMasterObject()) {
-        return getAttachableWithIndex(0)->getPolyShape().getRotation();
-    }
-    if (isDeactivated()) {
-        return {};
-    }
-    return _getCurrentState().rotation;
+const ShipController_VisibleState& ShipController::getCurrentVisibleState() const {
+    return _getCurrentState();
 }
 
 const ShipAttachable* ShipController::getAttachableWithIndex(std::int16_t aIndex) const {
@@ -681,6 +663,16 @@ void ShipController::_eventUpdate1(spe::IfMaster) {
 
     _getCurrentState().setPosition(mainAtt.getPolyShape().getAnchor());
     _getCurrentState().rotation = mainAtt.getPolyShape().getRotation();
+
+    _transformGlobalToShip->setToIdentity();
+    _transformGlobalToShip->rotate(_getCurrentState().rotation);
+    _transformShipToGlobal->setToInverseOf(*_transformGlobalToShip);
+}
+
+void ShipController::_eventUpdate1(spe::IfDummy) {
+    if (isDeactivated()) {
+        return;
+    }
 
     _transformGlobalToShip->setToIdentity();
     _transformGlobalToShip->rotate(_getCurrentState().rotation);

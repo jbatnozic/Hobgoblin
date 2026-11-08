@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <CBR/Managers/UserInterface/Lobby_frontend_manager.hpp>
+#include <CBR/Managers/Lobby/Lobby_frontend_manager.hpp>
 #include <Engine.hpp>
 
 #include <memory>
@@ -17,6 +17,7 @@ namespace cinnabar {
  * Dependencies:
  * - `AuthorizationManager`
  * - `LobbyBackendManager`
+ * - `LobbyEventManager`
  * - `WindowManager`
  *
  * Event listing:
@@ -46,6 +47,7 @@ private:
     friend Impl;
     std::unique_ptr<Impl> _impl;
 
+    void _didAttach(QAO_Runtime& aRuntime) override;
     void _willDetach(QAO_Runtime& aRuntime) override;
 
     void _eventBeginUpdate() override;
@@ -55,7 +57,7 @@ private:
     friend void ActivateCommand(DefaultLobbyFrontendManager& aMgr, int aCommand, void* aArgs);
 };
 
-QAO_REGISTER_CLASS(DefaultLobbyFrontendManager, cinnabar_LobbyFrontendManager) {
+QAO_REGISTER_CLASS(DefaultLobbyFrontendManager, cinnabar_DefaultLobbyFrontendManager) {
     QAO_LOCAL_ALIAS(C, klass);
     klass.setSuperclass<spe::NonstateObject>();
 }

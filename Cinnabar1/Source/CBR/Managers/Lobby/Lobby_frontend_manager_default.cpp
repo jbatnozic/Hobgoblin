@@ -3,6 +3,8 @@
 
 #include "Lobby_frontend_manager_default.hpp"
 
+#include "Lobby_event_manager.hpp"
+
 #include <Hobgoblin/HGExcept.hpp>
 #include <Hobgoblin/Logging.hpp>
 #include <Hobgoblin/RigelNet_macros.hpp>
@@ -235,7 +237,8 @@ RN_DEFINE_RPC(LobbyFrontendManager_Kick, RN_ARGS(std::string&, aAuthToken, hg::P
 
 class DefaultLobbyFrontendManager::Impl
     : hg::util::NonCopyable
-    , hg::util::NonMoveable {
+    , hg::util::NonMoveable
+    , LobbyEventListener {
 public:
 #define CTX   _super.ctx
 #define CCOMP _super.ccomp
@@ -243,7 +246,16 @@ public:
     explicit Impl(DefaultLobbyFrontendManager& aLobbyFrontendManager)
         : _super{aLobbyFrontendManager} {}
 
-    void cleanUp() {
+    void didAttach() {
+        CCOMP<MLobbyEvent>().addEventListener(this);
+    }
+
+    void willDetach() {
+        CCOMP<MLobbyEvent>().removeEventListener(this);
+        cleanUp();
+    }
+
+    void cleanUp() { // TODO: to private
         if (_document) {
             CCOMP<MWindow>().getGUIContext().UnloadDocument(_document);
             _document = nullptr;
@@ -284,28 +296,6 @@ public:
 
     Mode getMode() const {
         return _mode;
-    }
-
-    void eventBeginUpdate() {
-        auto&                  lobbyBackendMgr = CCOMP<MLobbyBackend>();
-        spe::LobbyBackendEvent ev;
-        while (lobbyBackendMgr.pollEvent(ev)) {
-            ev.strictVisit(
-                [this](spe::LobbyBackendEvent::LobbyLockedIn& aEvData) {
-                    HG_LOG_INFO(LOG_ID, "(event) Lobby locked in.");
-                    if (_mode == Mode::Client && aEvData.somethingDidChange) {
-                        _document->Show();
-                        _documentVisible = true;
-                    }
-                },
-                [this](spe::LobbyBackendEvent::LobbyChanged&) {
-                    HG_LOG_INFO(LOG_ID, "(event) Lobby changed.");
-                    if (_mode == Mode::Client) {
-                        _document->Show();
-                        _documentVisible = true;
-                    }
-                });
-        }
     }
 
     void eventUpdate1() {
@@ -449,6 +439,24 @@ private:
         return constructor.GetModelHandle();
     }
 
+    void onLobbyEvent(const spe::LobbyBackendEvent& aEvent) override {
+        aEvent.strictVisit(
+            [this](const spe::LobbyBackendEvent::LobbyLockedIn& aEvData) {
+                HG_LOG_INFO(LOG_ID, "(event) Lobby locked in.");
+                if (_mode == Mode::Client && aEvData.somethingDidChange) {
+                    _document->Show();
+                    _documentVisible = true;
+                }
+            },
+            [this](const spe::LobbyBackendEvent::LobbyChanged&) {
+                HG_LOG_INFO(LOG_ID, "(event) Lobby changed.");
+                if (_mode == Mode::Client) {
+                    _document->Show();
+                    _documentVisible = true;
+                }
+            });
+    }
+
 #undef CCOMP
 #undef CTX
 };
@@ -480,13 +488,18 @@ DefaultLobbyFrontendManager::Mode DefaultLobbyFrontendManager::getMode() const {
     return _impl->getMode();
 }
 
+void DefaultLobbyFrontendManager::_didAttach(QAO_Runtime& aRuntime) {
+    NonstateObject::_didAttach(aRuntime);
+    _impl->didAttach();
+}
+
 void DefaultLobbyFrontendManager::_willDetach(QAO_Runtime& aRuntime) {
-    _impl->cleanUp();
+    _impl->willDetach();
     NonstateObject::_willDetach(aRuntime);
 }
 
 void DefaultLobbyFrontendManager::_eventBeginUpdate() {
-    _impl->eventBeginUpdate();
+    // _impl->eventBeginUpdate();
 }
 
 void DefaultLobbyFrontendManager::_eventUpdate1() {

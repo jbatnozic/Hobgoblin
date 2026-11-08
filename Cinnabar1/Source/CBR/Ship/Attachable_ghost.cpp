@@ -87,7 +87,7 @@ RN_DEFINE_RPC(AskServerToAdjustAttachableGhostPosition,
 AttachableGhost::AttachableGhost(QAO_InstGuard aInstGuard, spe::SyncId aSyncId)
     : SyncObjSuper{aInstGuard,
                    QAO_ExeCon::GAMEPLAY,
-                   PRIORITY_ENTITIES,
+                   PRIORITY_ENTITIES - 1, // TODO
                    QAO_STATIC_NAME("cinnabar::AttachableGhost"),
                    aSyncId} //
 {
@@ -142,7 +142,8 @@ void AttachableGhost::_initMaster(QAO_GenericId aAssociatedShipController,
 
     // _cursorOffset = mousePosRel;
     _getCurrentState().angleOffsetRelativeToShipController =
-        _controllerPtr->getRotation().shortestDistanceTo(_attachablePtr->getPolyShape().getRotation());
+        _controllerPtr->getCurrentVisibleState().rotation.shortestDistanceTo(
+            _attachablePtr->getPolyShape().getRotation());
 
     tryHold(aOnBehalfOfPlayerIndex);
 }
@@ -294,43 +295,50 @@ void AttachableGhost::_eventUpdate1(spe::IfDummy) {
             _shape.setRotation(_shape.getRotation() +
                                hg::math::AngleF::fromDegrees(input.getVerticalMouseWheelScroll()));
 
-            // Adjust current state
+            if (!_controllerPtr->isDeactivated()) {
+                // Adjust current state
 
-            const auto controllerAnchorOffset =
-                hg::math::RotateVector(_shape.getAnchor() - _controllerPtr->getAnchor(),
-                                       -_controllerPtr->getRotation());
+                const auto& controllerVS = _controllerPtr->getCurrentVisibleState();
+                const auto  controllerAnchorOffset =
+                    hg::math::RotateVector(_shape.getAnchor() - controllerVS.getPosition(),
+                                           -controllerVS.rotation);
 
-            self.xOffsetRelativeToShipController = controllerAnchorOffset.x;
-            self.yOffsetRelativeToShipController = controllerAnchorOffset.y;
+                self.xOffsetRelativeToShipController = controllerAnchorOffset.x;
+                self.yOffsetRelativeToShipController = controllerAnchorOffset.y;
 
-            self.angleOffsetRelativeToShipController =
-                _controllerPtr->getRotation().shortestDistanceTo(_shape.getRotation());
+                self.angleOffsetRelativeToShipController =
+                    controllerVS.rotation.shortestDistanceTo(_shape.getRotation());
 
-            // Send to server
+                // Send to server
 
-            Compose_AskServerToAdjustAttachableGhostPosition(
-                ccomp<MNetworking>().getNode(),
-                RN_COMPOSE_FOR_ALL,
-                this->getSyncId(),
-                localPlayerIndex,
-                self.xOffsetRelativeToShipController,
-                self.yOffsetRelativeToShipController,
-                self.angleOffsetRelativeToShipController);
+                Compose_AskServerToAdjustAttachableGhostPosition(
+                    ccomp<MNetworking>().getNode(),
+                    RN_COMPOSE_FOR_ALL,
+                    this->getSyncId(),
+                    localPlayerIndex,
+                    self.xOffsetRelativeToShipController,
+                    self.yOffsetRelativeToShipController,
+                    self.angleOffsetRelativeToShipController);
+            }
         }
         break;
 
     case DummyState::DROPPING:
     case DummyState::RECEIVING:
         {
-            const auto ctrlAnchor = _controllerPtr->getAnchor();
-            const auto ctrlRot    = _controllerPtr->getRotation();
-            const auto rotatedOffset =
-                hg::math::RotateVector(hg::math::Vector2d{self.xOffsetRelativeToShipController,
-                                                          self.yOffsetRelativeToShipController},
-                                       ctrlRot);
+            if (!_controllerPtr->isDeactivated()) {
+                const auto& controllerVS = _controllerPtr->getCurrentVisibleState();
+                const auto  rotatedOffset =
+                    hg::math::RotateVector(hg::math::Vector2d{self.xOffsetRelativeToShipController,
+                                                              self.yOffsetRelativeToShipController},
+                                           controllerVS.rotation);
 
-            _shape.setAnchor(ctrlAnchor + rotatedOffset);
-            _shape.setRotation(_controllerPtr->getRotation() + self.angleOffsetRelativeToShipController);
+                _shape.setAnchor(controllerVS.getPosition() + rotatedOffset);
+                _shape.setRotation(controllerVS.rotation + self.angleOffsetRelativeToShipController);
+            } else {
+                _shape.setAnchor({});
+                _shape.setRotation(hg::math::AngleF::zero());
+            }
         }
         break;
 
@@ -340,8 +348,7 @@ void AttachableGhost::_eventUpdate1(spe::IfDummy) {
 
     _shape.recalcRel();
     if (!_controllerPtr->isDeactivated()) {
-        // TODO: not possible until the interior world is present on clients too!
-        // _controllerPtr->calcFootprint(_shape, _cellFootprint);
+        _controllerPtr->calcFootprint(_shape, _cellFootprint);
     }
 }
 
@@ -423,12 +430,11 @@ void AttachableGhost::_eventUpdate1(spe::IfMaster) {
 #endif
     }
 
-    const auto& self       = _getCurrentState();
-    const auto  ctrlAnchor = _controllerPtr->getAnchor();
-    const auto  ctrlRot    = _controllerPtr->getRotation();
-    const auto  rotOffset  = hg::math::RotateVector(self.getXYOffset(), ctrlRot);
-    _shape.setAnchor(ctrlAnchor + rotOffset);
-    _shape.setRotation(_controllerPtr->getRotation() + self.angleOffsetRelativeToShipController);
+    const auto& self         = _getCurrentState();
+    const auto& controllerVS = _controllerPtr->getCurrentVisibleState();
+    const auto  rotOffset    = hg::math::RotateVector(self.getXYOffset(), controllerVS.rotation);
+    _shape.setAnchor(controllerVS.getPosition() + rotOffset);
+    _shape.setRotation(controllerVS.rotation + self.angleOffsetRelativeToShipController);
 
     _shape.recalcRel();
     _controllerPtr->calcFootprint(_shape, _cellFootprint);
@@ -592,7 +598,7 @@ void AttachableGhost::_dummyState_changeTo_HOLDING_AND_SENDING(bool aAsk) {
                                                this->getSyncId(),
                                                _leftClickPlayerIndex);
     }
-    
+
     if (_dummyState != DummyState::PICKING_UP) {
         _cursorOffset = (ccomp<MWindow>().getInput().getViewRelativeMousePos() - _shape.getAnchor());
     }
