@@ -252,14 +252,7 @@ public:
 
     void willDetach() {
         CCOMP<MLobbyEvent>().removeEventListener(this);
-        cleanUp();
-    }
-
-    void cleanUp() { // TODO: to private
-        if (_document) {
-            CCOMP<MWindow>().getGUIContext().UnloadDocument(_document);
-            _document = nullptr;
-        }
+        _cleanUp();
     }
 
     void setToHeadlessHostMode() {
@@ -457,6 +450,13 @@ private:
             });
     }
 
+    void _cleanUp() { // TODO: to private
+        if (_document) {
+            CCOMP<MWindow>().getGUIContext().UnloadDocument(_document);
+            _document = nullptr;
+        }
+    }
+
 #undef CCOMP
 #undef CTX
 };
@@ -496,10 +496,6 @@ void DefaultLobbyFrontendManager::_didAttach(QAO_Runtime& aRuntime) {
 void DefaultLobbyFrontendManager::_willDetach(QAO_Runtime& aRuntime) {
     _impl->willDetach();
     NonstateObject::_willDetach(aRuntime);
-}
-
-void DefaultLobbyFrontendManager::_eventBeginUpdate() {
-    // _impl->eventBeginUpdate();
 }
 
 void DefaultLobbyFrontendManager::_eventUpdate1() {

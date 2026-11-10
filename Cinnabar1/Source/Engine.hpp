@@ -67,4 +67,10 @@ constexpr const char* LOG_ID = "Cinnabar1";
     ) -> QAO_Handle<T>
 // clang-format on
 
+// SFINAE:
+// For in-class method declarations or definitions
+#define TMP_ENABLE_IF(...)     typename ::std::enable_if<__VA_ARGS__, bool>::type = true
+// For out-of-class (OOC) method definitions
+#define TMP_ENABLE_IF_OOC(...) typename ::std::enable_if<__VA_ARGS__, bool>::type
+
 } // namespace cinnabar

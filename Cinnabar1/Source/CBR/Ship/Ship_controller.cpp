@@ -9,6 +9,7 @@
 #include <CBR/InteriorWorld/Cell_archs.hpp>
 #include <CBR/InteriorWorld/Cell_props.hpp>
 #include <CBR/Managers/Gameplay/Overworld_manager.hpp>
+#include <CBR/Managers/UserInterface/Interactivity_manager.hpp>
 
 #include <GridGoblin/World/World_config.hpp>
 #include <Hobgoblin/Alvin/Constraint.hpp>
@@ -718,7 +719,8 @@ void ShipController::_eventDraw1() {
         return;
     }
 
-    auto& winMgr = ccomp<MWindow>();
+    auto& graphicsSystem = ccomp<MWindow>().getGraphicsSystem();
+    auto& canvas         = ccomp<MInteractivity>().getActiveCanvas<DrawOverworld>();
 
     uwga::VertexArray vArr{uwga::PrimitiveType::TRIANGLES, 3};
     vArr.anchor = _getCurrentState().getPosition();
@@ -732,21 +734,21 @@ void ShipController::_eventDraw1() {
         vert.color    = (i == 0) ? uwga::COLOR_RED : uwga::COLOR_WHEAT;
     }
 
-    winMgr.getActiveCanvas().draw(vArr);
+    canvas.draw(vArr);
 
     // Center circle
     {
-        uwga::CircleShape circle{winMgr.getGraphicsSystem(), 4.f, 8};
+        uwga::CircleShape circle{graphicsSystem, 4.f, 8};
         circle.setOrigin(4.f, 4.f);
         circle.setAnchor(_getCurrentState().getPosition());
         circle.setFillColor(uwga::COLOR_LIME);
-        winMgr.getActiveCanvas().draw(circle);
+        canvas.draw(circle);
     }
 
     // Grid square
     if (_drawGrid) {
         uwga::RectangleShape rect{
-            winMgr.getGraphicsSystem(),
+            graphicsSystem,
             {OVERWORLD_CELL_SIZE, OVERWORLD_CELL_SIZE}
         };
         rect.setRotation(-_getCurrentState().rotation);
@@ -765,7 +767,7 @@ void ShipController::_eventDraw1() {
         rect.setOutlineColor(uwga::COLOR_RED);
         rect.setFillColor(uwga::COLOR_TRANSPARENT);
 
-        winMgr.getActiveCanvas().draw(rect);
+        canvas.draw(rect);
     }
 }
 

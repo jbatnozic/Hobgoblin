@@ -208,7 +208,7 @@ void Asteroid::_eventDraw1() {
         return;
     }
 
-    auto& canvas = ccomp<MWindow>().getActiveCanvas();
+    auto& canvas = ccomp<MInteractivity>().getActiveCanvas<DrawOverworld>();
 
     const auto vertCount = _polyShape.getVertexCount();
 

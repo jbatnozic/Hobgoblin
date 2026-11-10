@@ -45,6 +45,8 @@ public:
     void setToHostMode(hg::PZInteger aPlayerCount) override;
     void setToDevMode() override;
 
+    PlayerViewFocus getCurrentPlayerViewFocus() const override;
+
     void pushClickableObject(QAO_GenericId                           aClickableId,
                              int                                     aFinegrainedPriority,
                              std::intptr_t                           aUserData,
@@ -56,10 +58,13 @@ public:
     const PlayerControls& getControlsOfClient(int aClientIndex) const override;
 
 private:
-    Mode _mode = Mode::INITIAL;
+    Mode            _mode            = Mode::INITIAL;
+    PlayerViewFocus _playerViewFocus = PlayerViewFocus::OVERWORLD; // TODO: temporary! should be DEFAULT!
 
     MWindow*       _winMgr          = nullptr;
     MLobbyBackend* _lobbyBackendMgr = nullptr;
+
+    std::unique_ptr<hg::uwga::RenderTexture> _secondaryFocusRenderTexture;
 
     struct ClickableInfo {
         QAO_GenericId                           id;
@@ -88,11 +93,16 @@ private:
     void _eventBeginUpdate() override;
     void _eventPreDraw() override;
 
+    void _initSecondaryFocusRenderTexture();
+
     hg::math::Vector2d _getMouseWorldPosition();
 
     void _gatherRemotePlayerControls();
     void _sendLocalPlayerControls();
     void _dispatchPNCSEvents();
+
+    hg::uwga::Canvas& _getActiveCanvasForShipInterior() override;
+    hg::uwga::Canvas& _getActiveCanvasForOverworld() override;
 };
 
 QAO_REGISTER_CLASS(DefaultInteractivityManager, cinnabar_InteractivityManager) {

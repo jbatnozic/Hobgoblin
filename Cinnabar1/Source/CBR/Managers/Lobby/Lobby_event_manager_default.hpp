@@ -18,7 +18,7 @@ namespace cinnabar {
  * - `NetworkingManager`
  *
  * Event listing:
- * - _eventBeginUpdate() =>
+ * - _eventBeginUpdate() => Polly lobby events and dispatch them to listeners.
  *
  * Execution priority hint:
  * - Right after `LobbyBackendManager`.

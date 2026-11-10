@@ -87,6 +87,7 @@ void DefaultInteractivityManager::setToClientMode() {
                                        headless == false,
                                        networking == true);
     _mode = Mode::CLIENT;
+    _initSecondaryFocusRenderTexture();
 }
 
 void DefaultInteractivityManager::setToHostMode(hg::PZInteger aPlayerCount) {
@@ -99,6 +100,11 @@ void DefaultInteractivityManager::setToHostMode(hg::PZInteger aPlayerCount) {
 void DefaultInteractivityManager::setToDevMode() {
     SPEMPE_VALIDATE_GAME_CONTEXT_FLAGS(ctx(), privileged == true, headless == false);
     _mode = Mode::DEV;
+    _initSecondaryFocusRenderTexture();
+}
+
+auto DefaultInteractivityManager::getCurrentPlayerViewFocus() const -> PlayerViewFocus {
+    return _playerViewFocus;
 }
 
 void DefaultInteractivityManager::pushClickableObject(
@@ -195,6 +201,25 @@ void DefaultInteractivityManager::_eventPreDraw() {
 
         break; // End the loop after the "foreground-most" object receives its message
     }
+
+    if (_secondaryFocusRenderTexture != nullptr) {
+        _secondaryFocusRenderTexture->clear(hg::uwga::COLOR_BLACK);
+    }
+}
+
+void DefaultInteractivityManager::_initSecondaryFocusRenderTexture() {
+    HG_ASSERT(getRuntime() != nullptr);
+
+    if (_secondaryFocusRenderTexture == nullptr) {
+        using hg::uwga::BatchingConfig;
+        const BatchingConfig      batchingConfig{.strategy = BatchingConfig::Strategy::FAST_N_LOOSE};
+        const hg::math::Vector2pz size{1920, 1080};
+
+        HG_ASSERT(_winMgr != nullptr);
+
+        _secondaryFocusRenderTexture =
+            _winMgr->getGraphicsSystem().createRenderTexture(batchingConfig, size);
+    }
 }
 
 hg::math::Vector2d DefaultInteractivityManager::_getMouseWorldPosition() {
@@ -266,6 +291,44 @@ void DefaultInteractivityManager::_dispatchPNCSEvents() {
         (void)QAO_SendMessage<HandlePNCSEvent>(*instance, &evData);
 
         break; // End the loop after the "foreground-most" object receives its message
+    }
+}
+
+hg::uwga::Canvas& DefaultInteractivityManager::_getActiveCanvasForShipInterior() {
+    [[maybe_unused]] QAO_Event::Enum currentEvent;
+    HG_ASSERT((currentEvent = getRuntime()->getCurrentEvent(),
+               (currentEvent == QAO_Event::DRAW_1 || currentEvent == QAO_Event::DRAW_2)));
+
+    switch (_playerViewFocus) {
+        case PlayerViewFocus::SHIP_INTERIOR:
+            return _winMgr->getActiveCanvas();
+            break;
+
+        case PlayerViewFocus::OVERWORLD:
+            return *_secondaryFocusRenderTexture;
+            break;
+
+        default:
+            HG_UNREACHABLE("Illegal value for PlayerViewFocus ({})!", (int)_playerViewFocus);
+    }
+}
+
+hg::uwga::Canvas& DefaultInteractivityManager::_getActiveCanvasForOverworld() {
+    [[maybe_unused]] QAO_Event::Enum currentEvent;
+    HG_ASSERT((currentEvent = getRuntime()->getCurrentEvent(),
+               (currentEvent == QAO_Event::DRAW_1 || currentEvent == QAO_Event::DRAW_2)));
+
+   switch (_playerViewFocus) {
+        case PlayerViewFocus::SHIP_INTERIOR:
+            return *_secondaryFocusRenderTexture;
+            break;
+            
+        case PlayerViewFocus::OVERWORLD:
+            return _winMgr->getActiveCanvas();
+            break;
+
+        default:
+            HG_UNREACHABLE("Illegal value for PlayerViewFocus ({})!", (int)_playerViewFocus);
     }
 }
 

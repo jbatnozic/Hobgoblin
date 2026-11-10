@@ -465,7 +465,7 @@ void AttachableGhost::_eventDraw1() {
     }
     vArr.vertices[vertCount + 1] = vArr.vertices[1];
 
-    auto& canvas = ccomp<MWindow>().getActiveCanvas();
+    auto& canvas = ccomp<MInteractivity>().getActiveCanvas<DrawOverworld>();
     canvas.draw(vArr);
 
     _shape.debugDraw(hg::uwga::COLOR_AQUA, canvas);

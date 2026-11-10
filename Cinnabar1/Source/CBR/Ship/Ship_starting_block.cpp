@@ -150,8 +150,8 @@ void ShipStartingBlock::_eventDraw1() {
         return;
     }
 
-    auto& winMgr = ccomp<MWindow>();
-    _polyShape.debugDraw(hg::uwga::COLOR_GREY, winMgr.getActiveCanvas());
+    auto& canvas = ccomp<MInteractivity>().getActiveCanvas<DrawOverworld>();
+    _polyShape.debugDraw(hg::uwga::COLOR_GREY, canvas);
 }
 
 void ShipStartingBlock::_applyPropulsion(const spe::WindowFrameInputView& aInput) {

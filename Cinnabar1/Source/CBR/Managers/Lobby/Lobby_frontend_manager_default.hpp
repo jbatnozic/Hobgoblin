@@ -22,8 +22,8 @@ namespace cinnabar {
  *
  * Event listing:
  * - NOTE: this manager does not implement _eventPreUpdate(), but it receives input events at the end of
- *         this event while `WindowManager` is processing said events.
- * - _eventBeginUpdate() => Poll events from `LobbyBackendManager` and adjust the frontend accordingly.
+ *         this event while `WindowManager` is processing said events. Also, it does not implement
+ *         _eventBeginUpdate(), but it receives lobby events during this event from `LobbyEventManager`.
  * - _eventUpdate1()     => (Client only) Show/Hide the GUI.
  * - _eventDrawGUI()     => (Client only) Draw the GUI.
  *
@@ -50,7 +50,6 @@ private:
     void _didAttach(QAO_Runtime& aRuntime) override;
     void _willDetach(QAO_Runtime& aRuntime) override;
 
-    void _eventBeginUpdate() override;
     void _eventUpdate1() override;
     void _eventDrawGUI() override;
 
