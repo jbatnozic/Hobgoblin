@@ -11,6 +11,7 @@ add_executable(${PROJECT_NAME}
     "Priority_resolver_test.cpp"
     "Reflection_test_dummy.cpp"
     "Reflection_test.cpp"
+    "Registry_test.cpp"
     "Test_with_runtime.cpp"
 )
 

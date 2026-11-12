@@ -43,6 +43,10 @@ QAO_Runtime::QAO_Runtime(util::AnyPtr aUserData, const QAO_ExeCon* aExeconAddres
     pushRoom("default");
 }
 
+/*
+    TODO: the code in this file is seriously exception unsafe (unlike QAO_Registry); refactor it!
+*/
+
 QAO_Runtime::~QAO_Runtime() {
     popAllRooms(NO_PROPAGATE_EXCEPTIONS);
 
@@ -128,29 +132,37 @@ void QAO_Runtime::attachObject(AvoidNull<QAO_GenericHandle> aHandle) {
     QAO_Base* const objRaw         = aHandle.underlying().ptr();
     const auto      id             = _registry.insert(std::move(aHandle));
 
-    auto ordererInsertionResult =
+    auto [iter, didInsert] =
         _orderer.insert(qao_detail::QAO_HandleFactory::createHandle(objRaw, false));
-    HG_HARD_ASSERT(ordererInsertionResult.second);
+    HG_HARD_ASSERT(didInsert);
 
     const auto roomCount = getRoomCount();
     objRaw->_context     = {.stepOrdinal     = MIN_STEP_ORDINAL,
                             .id              = id,
-                            .ordererIterator = ordererInsertionResult.first,
+                            .ordererIterator = iter,
                             .runtime         = this,
                             .roomId          = (roomCount == 0 || !ownedByRuntime)
                                                    ? QAO_INVALID_ROOM_ID
                                                    : static_cast<QAO_RoomId>(roomCount)};
 
-    objRaw->_didAttach(SELF);
+    try {
+        objRaw->_didAttach(SELF);
 
-    if (HG_UNLIKELY_CONDITION((objRaw->_flags & QAO_Base::ATTACHED_PROPERLY_BIT) == 0)) {
-        HG_UNLIKELY_BRANCH;
-        HG_THROW_TRACED(AssertionFailedError,
-                        0,
-                        "Object to attach ({}) wasn't attached properly. Do all derived "
-                        "classes call the "
-                        "_didAttach() method of their superclasses?",
-                        objRaw->getDebugDescription());
+        if (HG_UNLIKELY_CONDITION((objRaw->_flags & QAO_Base::ATTACHED_PROPERLY_BIT) == 0)) {
+            HG_UNLIKELY_BRANCH;
+            HG_THROW_TRACED(AssertionFailedError,
+                            0,
+                            "Object to attach ({}) wasn't attached properly. Do all derived "
+                            "classes call the "
+                            "_didAttach() method of their superclasses?",
+                            objRaw->getDebugDescription());
+        }
+    } catch (...) {
+        objRaw->_context = {};
+        _orderer.erase(iter);
+        auto handle = _registry.remove(id.getIndex());
+        handle._release();
+        throw;
     }
 }
 
@@ -174,29 +186,37 @@ void QAO_Runtime::attachObject(AvoidNull<QAO_GenericHandle> aHandle, QAO_Generic
     QAO_Base* const objRaw         = aHandle.underlying().ptr();
     _registry.insertWithId(std::move(aHandle), aSpecificId);
 
-    auto ordererInsertionResult =
+    auto [iter, didInsert] =
         _orderer.insert(qao_detail::QAO_HandleFactory::createHandle(objRaw, false));
-    HG_HARD_ASSERT(ordererInsertionResult.second);
+    HG_HARD_ASSERT(didInsert);
 
     const auto roomCount = getRoomCount();
     objRaw->_context     = {.stepOrdinal     = MIN_STEP_ORDINAL,
                             .id              = aSpecificId,
-                            .ordererIterator = ordererInsertionResult.first,
+                            .ordererIterator = iter,
                             .runtime         = this,
                             .roomId          = (roomCount == 0 || !ownedByRuntime)
                                                    ? QAO_INVALID_ROOM_ID
                                                    : static_cast<QAO_RoomId>(roomCount)};
+              
+    try {
+        objRaw->_didAttach(SELF);
 
-    objRaw->_didAttach(SELF);
-
-    if (HG_UNLIKELY_CONDITION((objRaw->_flags & QAO_Base::ATTACHED_PROPERLY_BIT) == 0)) {
-        HG_UNLIKELY_BRANCH;
-        HG_THROW_TRACED(AssertionFailedError,
-                        0,
-                        "Object to attach ({}) wasn't attached properly. Do all derived "
-                        "classes call the "
-                        "_didAttach() method of their superclasses?",
-                        aHandle->getDebugDescription());
+        if (HG_UNLIKELY_CONDITION((objRaw->_flags & QAO_Base::ATTACHED_PROPERLY_BIT) == 0)) {
+            HG_UNLIKELY_BRANCH;
+            HG_THROW_TRACED(AssertionFailedError,
+                            0,
+                            "Object to attach ({}) wasn't attached properly. Do all derived "
+                            "classes call the "
+                            "_didAttach() method of their superclasses?",
+                            objRaw->getDebugDescription());
+        }
+    } catch (...) {
+        objRaw->_context = {};
+        _orderer.erase(iter);
+        auto handle = _registry.remove(aSpecificId.getIndex());
+        handle._release();
+        throw;
     }
 }
 
@@ -205,7 +225,7 @@ AvoidNull<QAO_GenericHandle> QAO_Runtime::detachObject(QAO_GenericId aId) {
     HG_VALIDATE_PRECONDITION(!handle.isNull() &&
                              "Object by given ID must exist attached to the Runtime.");
 
-    handle->_willDetach(SELF);
+    handle->_willDetach(SELF); // TODO: what happens if this (or anything else in this function) throws?!
     if (HG_UNLIKELY_CONDITION((handle->_flags & QAO_Base::DETACHED_PROPERLY_BIT) == 0)) {
         HG_UNLIKELY_BRANCH;
         HG_THROW_TRACED(AssertionFailedError,
@@ -358,10 +378,9 @@ void QAO_Runtime::updateExecutionPriorityForObject(QAO_Base& object, int newPrio
     _orderer.erase(qao_detail::QAO_HandleFactory::createHandle(&object, false));
     object._executionPriority = newPriority;
 
-    const auto ord_pair = _orderer.insert(
-        qao_detail::QAO_HandleFactory::createHandle(&object,
-                                                    false)); // first = iterator, second = added_new
-    object._context.ordererIterator = ord_pair.first;
+    const auto [iter, didInsert] =
+        _orderer.insert(qao_detail::QAO_HandleFactory::createHandle(&object, false));
+    object._context.ordererIterator = iter;
 }
 
 // Execution
