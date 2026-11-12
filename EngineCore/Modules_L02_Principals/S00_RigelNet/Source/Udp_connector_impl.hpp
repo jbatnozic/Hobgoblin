@@ -20,8 +20,6 @@
 
 #include <chrono>
 #include <cstdint>
-#include <deque>
-#include <functional>
 #include <memory>
 #include <optional>
 
@@ -41,6 +39,7 @@ public:
                         const std::chrono::microseconds& aTimeoutLimit,
                         const std::string&               aPassphrase,
                         const RN_RetransmitPredicate&    aRetransmitPredicate,
+                        const std::uint32_t&             aLocalNodeStatusWord,
                         rn_detail::EventFactory          aEventFactory,
                         PZInteger                        aMaxPacketSize);
 
@@ -98,12 +97,13 @@ public:
     PZInteger getRecvBufferSize() const override;
 
 private:
-    // _socket, _timeoutLimit, _passphrase and _retransmitPredicate are references
-    // to objects that live in the Server or Client object.
+    // _socket, _timeoutLimit, _passphrase, _retransmitPredicate, and _localNodeStatusWord are
+    // references to objects that live in the Server or Client object.
     RN_SocketAdapter&                _socket;
     const std::chrono::microseconds& _timeoutLimit;
     const std::string&               _passphrase;
     const RN_RetransmitPredicate&    _retransmitPredicate;
+    const std::uint32_t&             _localNodeStatusWord;
 
     rn_detail::EventFactory _eventFactory;
 

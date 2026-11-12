@@ -1,12 +1,9 @@
 // Copyright 2024 Jovan Batnozic. Released under MS-PL licence in Serbia.
 // See https://github.com/jbatnozic/Hobgoblin?tab=readme-ov-file#licence
 
-// clang-format off
-
-
-#include <Hobgoblin/RigelNet/Factories.hpp>
 #include <Hobgoblin/Common.hpp>
 #include <Hobgoblin/HGExcept.hpp>
+#include <Hobgoblin/RigelNet/Factories.hpp>
 
 #include "Udp_client_impl.hpp"
 #include "Udp_server_impl.hpp"
@@ -37,7 +34,9 @@ public:
 
     // From RN_NodeInterface:
 
-    RN_Telemetry update(RN_UpdateMode mode) override { return {}; }
+    RN_Telemetry update(RN_UpdateMode mode) override {
+        return {};
+    }
 
     void addEventListener(NeverNull<RN_EventListener*> aEventListener) override {}
 
@@ -57,15 +56,13 @@ public:
         return *reinterpret_cast<RN_ConnectorInterface*>(0x12345678);
     }
 
-    void kickClient(PZInteger          aClientIndex,
-                    bool               aNotifyRemote,
-                    const std::string& aMessage) override {}
+    void kickClient(PZInteger aClientIndex, bool aNotifyRemote, const std::string& aMessage) override {}
 
     ///////////////////////////////////////////////////////////////////////////
     // STATE INSPECTION                                                      //
     ///////////////////////////////////////////////////////////////////////////
 
-    bool isRunning() const override { 
+    bool isRunning() const override {
         return false;
     }
 
@@ -85,7 +82,7 @@ public:
         return 0;
     }
 
-    int getSenderIndex() const override { 
+    int getSenderIndex() const override {
         return -1;
     }
 
@@ -103,6 +100,12 @@ public:
         return RN_NetworkingStack::Default;
     }
 
+    void setNodeStatusWord(std::uint32_t aNodeStatusWord) override {}
+
+    std::uint32_t getNodeStatusWord() const override {
+        return 0;
+    }
+
 private:
     std::string _passphrase = "";
 
@@ -110,7 +113,9 @@ private:
 
     void _compose(PZInteger receiver, const void* data, std::size_t sizeInBytes) override {}
 
-    util::Packet* _getCurrentPacket() override { return nullptr; }
+    util::Packet* _getCurrentPacket() override {
+        return nullptr;
+    }
 
     void _setUserData(util::AnyPtr userData) override {}
 
@@ -120,10 +125,10 @@ private:
 };
 } // namespace
 
-std::unique_ptr<RN_ServerInterface> RN_ServerFactory::createServer(RN_Protocol aProtocol,
-                                                                   std::string aPassphrase,
-                                                                   PZInteger aServerSize,
-                                                                   PZInteger aMaxPacketSize,
+std::unique_ptr<RN_ServerInterface> RN_ServerFactory::createServer(RN_Protocol        aProtocol,
+                                                                   std::string        aPassphrase,
+                                                                   PZInteger          aServerSize,
+                                                                   PZInteger          aMaxPacketSize,
                                                                    RN_NetworkingStack aNetworkingStack) {
     switch (aProtocol) {
     case RN_Protocol::TCP:
@@ -131,7 +136,10 @@ std::unique_ptr<RN_ServerInterface> RN_ServerFactory::createServer(RN_Protocol a
         break;
 
     case RN_Protocol::UDP:
-        return std::make_unique<RN_UdpServerImpl>(aPassphrase, aServerSize, aNetworkingStack, aMaxPacketSize);
+        return std::make_unique<RN_UdpServerImpl>(aPassphrase,
+                                                  aServerSize,
+                                                  aNetworkingStack,
+                                                  aMaxPacketSize);
         break;
 
     default:
@@ -152,9 +160,9 @@ class RN_DummyClient : public RN_ClientInterface {
 };
 } // namespace
 
-std::unique_ptr<RN_ClientInterface> RN_ClientFactory::createClient(RN_Protocol aProtocol,
-                                                                   std::string aPassphrase,
-                                                                   PZInteger aMaxPacketSize,
+std::unique_ptr<RN_ClientInterface> RN_ClientFactory::createClient(RN_Protocol        aProtocol,
+                                                                   std::string        aPassphrase,
+                                                                   PZInteger          aMaxPacketSize,
                                                                    RN_NetworkingStack aNetworkingStack) {
     switch (aProtocol) {
     case RN_Protocol::TCP:
@@ -182,5 +190,3 @@ std::unique_ptr<RN_ClientInterface> RN_ClientFactory::createDummyClient() {
 HOBGOBLIN_NAMESPACE_END
 
 #include <Hobgoblin/Private/Pmacro_undef.hpp>
-
-// clang-format on

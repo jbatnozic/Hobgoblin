@@ -15,7 +15,9 @@
 #include <Hobgoblin/Utility/Packet.hpp>
 
 #include <cassert>
+#include <cstdint>
 #include <functional>
+#include <string_view>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
@@ -52,6 +54,12 @@ public:
     //! Call the provided funtion if this node is a Server.
     void callIfServer(std::function<void(RN_ServerInterface& client)> func);
 
+    //! Throw RN_IllegalMessage if the node is a Client.
+    void illegalIfClient(std::string_view aMessageName);
+
+    //! Throw RN_IllegalMessage if the node is a Server.
+    void illegalIfServer(std::string_view aMessageName);
+
     void setUserData(std::nullptr_t);
 
     template <class T>
@@ -62,6 +70,29 @@ public:
 
     template <class T>
     T* getUserDataOrThrow() const;
+
+    //! \brief set the Status Word of the local node.
+    //!
+    //! A Node's Status Word is a special 32-bit value which will be synced to its connected remotes
+    //! outside of the normal information flow channels (it is sent periodically, with the same
+    //! frequency as the usual update cycle). Using this mechanism, the remotes can 'learn' about the
+    //! local node's overall status even if the normal messaging pipeline is choked or stalled.
+    //! However, note that order of delivery, and the delivery itself, of the status words is not
+    //! guaranteed, so don't tie any crucual functionality to this.
+    //!
+    //! It is up to the user to decide how to use the 32 bits of the Status Word, as long as all of the
+    //! connected nodes agre on the format. The intended design of the Status Word is to let the remotes
+    //! know if the local node is 'experiencing' normal operation, throttling due to system load or 
+    //! network load, an error condition, or some other condition. You can also include some information
+    //! like whether the game is currently loading, or is it paused or not, etc.
+    //!
+    //! \see `RN_NodeStatus`
+    virtual void setNodeStatusWord(std::uint32_t aNodeStatusWord) = 0;
+
+    //! \brief get the current Status Word of the local node.
+    //!
+    //! \see setNodeStatusWord
+    virtual std::uint32_t getNodeStatusWord() const = 0;
 
 private:
     virtual void _compose(RN_ComposeForAllType receiver, const void* data, std::size_t sizeInBytes) = 0;

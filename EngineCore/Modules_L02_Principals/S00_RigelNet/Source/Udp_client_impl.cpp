@@ -26,6 +26,7 @@ RN_UdpClientImpl::RN_UdpClientImpl(std::string        aPassphrase,
                  _timeoutLimit,
                  _passphrase,
                  _retransmitPredicate,
+                 _localNodeStatusWord,
                  rn_detail::EventFactory{_eventListeners},
                  _maxPacketSize}
     , _passphrase{std::move(aPassphrase)}
@@ -142,6 +143,14 @@ RN_Protocol RN_UdpClientImpl::getProtocol() const noexcept {
 
 RN_NetworkingStack RN_UdpClientImpl::getNetworkingStack() const noexcept {
     return _socket.getNetworkingStack();
+}
+
+void RN_UdpClientImpl::setNodeStatusWord(std::uint32_t aNodeStatusWord) {
+    _localNodeStatusWord = aNodeStatusWord;
+}
+
+std::uint32_t RN_UdpClientImpl::getNodeStatusWord() const {
+    return _localNodeStatusWord;
 }
 
 ///////////////////////////////////////////////////////////////////////////

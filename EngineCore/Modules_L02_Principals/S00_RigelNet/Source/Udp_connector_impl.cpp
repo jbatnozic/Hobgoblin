@@ -130,12 +130,14 @@ RN_UdpConnectorImpl::RN_UdpConnectorImpl(RN_SocketAdapter&                aSocke
                                          const std::chrono::microseconds& aTimeoutLimit,
                                          const std::string&               aPassphrase,
                                          const RN_RetransmitPredicate&    aRetransmitPredicate,
+                                         const std::uint32_t&             aLocalNodeStatusWord,
                                          rn_detail::EventFactory          aEventFactory,
                                          PZInteger                        aMaxPacketSize)
     : _socket{aSocket}
     , _timeoutLimit{aTimeoutLimit}
     , _passphrase{aPassphrase}
     , _retransmitPredicate{aRetransmitPredicate}
+    , _localNodeStatusWord{aLocalNodeStatusWord}
     , _eventFactory{aEventFactory}
     , _maxPacketSize{aMaxPacketSize}
     , _status{RN_ConnectorStatus::Disconnected}
@@ -320,9 +322,10 @@ RN_Telemetry RN_UdpConnectorImpl::sendWeakAcks() {
     assert(_status == RN_ConnectorStatus::Connected);
 
     RN_Telemetry telemetry;
-    telemetry.uploadByteCount += _sendBuffer.sendWeakAcks([this](util::Packet& aPacket) {
-        _socket.send(aPacket, _remoteInfo.ipAddress, _remoteInfo.port);
-    });
+    telemetry.uploadByteCount +=
+        _sendBuffer.sendWeakAcks(_localNodeStatusWord, [this](util::Packet& aPacket) {
+            _socket.send(aPacket, _remoteInfo.ipAddress, _remoteInfo.port);
+        });
     if (telemetry.uploadByteCount > 0) {
         telemetry.uploadByteCount += UDP_HEADER_BYTE_COUNT;
     }
@@ -774,6 +777,7 @@ void RN_UdpConnectorImpl::_processAcksPacket(util::Packet& packet) {
         HG_THROW_TRACED(InvalidDataError, 0, "Received ACKS packet (status: Accepting).");
 
     case RN_ConnectorStatus::Connected:
+        _remoteInfo.nodeStatusWord = packet.extract<std::uint32_t>();
         while (!packet.endOfPacket()) {
             const auto ackOrd = packet.extract<PacketOrdinal>();
             _receivedAck(ackOrd, false);
