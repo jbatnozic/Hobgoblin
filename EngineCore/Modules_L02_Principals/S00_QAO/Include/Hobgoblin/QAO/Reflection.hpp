@@ -270,10 +270,10 @@ public:
     //! \brief return the type info of the described class.
     const std::type_info& getTypeInfo() const;
 
-    //! \brief return the type index of the returned class.
+    //! \brief return the type index of the described class.
     std::type_index getTypeIndex() const;
 
-    //! \brief get pointers to the described class's superclass.
+    //! \brief get pointer to the described class's superclass.
     //! \note the returned pointer can be null if the desribed class is `QAO_Base`.
     const QAO_ClassMetadata* getSuperclass() const;
 

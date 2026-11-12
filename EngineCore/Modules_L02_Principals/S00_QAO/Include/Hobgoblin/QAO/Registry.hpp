@@ -10,6 +10,7 @@
 #include <Hobgoblin/QAO/Id.hpp>
 #include <Hobgoblin/Utility/Slab_indexer.hpp>
 
+#include <cstddef>
 #include <unordered_map>
 #include <vector>
 
@@ -26,8 +27,27 @@ class QAO_Registry {
 public:
     QAO_Registry(PZInteger aCapacity = 1);
 
-    QAO_GenericId     insert(QAO_GenericHandle aHandle);
-    void              insertWithId(QAO_GenericHandle aHandle, QAO_GenericId aId);
+    //! Insert an object into the registry and assign it a new ID.
+    //! \returns the ID assigned to the object.
+    //! \throws InvalidArgumentError if `aHandle` is null.
+    //! \throws TracedRuntimeError on serial number clash.
+    //! \note provides the strong exception guarantee: if this method throws, the registry
+    //!       is left unchanged and `aHandle` is not moved from.
+    QAO_GenericId insert(QAO_GenericHandle&& aHandle);
+
+    //! Insert an object into the registry with a specific, predetermined ID.
+    //! \throws InvalidArgumentError if `aHandle` is null.
+    //! \throws TracedLogicError if the index of `aId` is already in use.
+    //! \throws TracedRuntimeError if the serial of `aId` is already in use.
+    //! \note provides the strong exception guarantee: if this method throws, the registry
+    //!       is left unchanged and `aHandle` is not moved from.
+    void insertWithId(QAO_GenericHandle&& aHandle, QAO_GenericId aId);
+
+    //! Remove the object with the given index from the registry.
+    //! \returns the handle that was stored in the registry (owning or non-owning),
+    //!          or a null handle if there was no object with this index.
+    //! \throws std::out_of_range if `aIndex` is outside of the registry's current size.
+    //! \note provides the strong exception guarantee.
     QAO_GenericHandle remove(QAO_Index aIndex);
 
     //! Look for an object with the specified index.
@@ -64,8 +84,7 @@ private:
 
     std::unordered_map<QAO_Serial, QAO_Index> _serialToIndex;
 
-    void       _adjustSize();
-    QAO_Serial _nextSerial();
+    void _adjustSize(std::size_t aMinSize);
 };
 
 } // namespace qao_detail

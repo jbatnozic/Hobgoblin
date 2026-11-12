@@ -13,6 +13,7 @@ HOBGOBLIN_NAMESPACE_BEGIN
 namespace qao {
 
 class QAO_Base;
+class QAO_Runtime;
 
 template <class taObject>
 class QAO_Handle;
@@ -214,11 +215,19 @@ public:
 private:
     template <class T>
     friend class QAO_Handle;
+    friend class QAO_Runtime;
     friend class qao_detail::QAO_HandleFactory;
     friend void QAO_Destroy(QAO_Handle<QAO_Base>&& aHandle);
 
     taObject* _object   = nullptr;
     bool      _isOwning = false;
+
+    taObject* _release() {
+        taObject* obj = _object;
+        _object   = nullptr;
+        _isOwning = false;
+        return obj;
+    }
 };
 
 using QAO_GenericHandle = QAO_Handle<QAO_Base>;
