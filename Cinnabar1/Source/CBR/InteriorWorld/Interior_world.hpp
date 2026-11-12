@@ -4,13 +4,15 @@
 #pragma once
 
 #include <Engine.hpp>
-// #include <InteriorWorld/Graph_of_attachables.hpp>
+#include <CBR/InteriorWorld/Internal_runtime.hpp>
+#include <CBR/Ship/Onboard_player_info.hpp>
 
 #include <Hobgoblin/Utility/Stream_input.hpp>
 #include <Hobgoblin/Utility/Stream_output.hpp>
 #include <GridGoblin/World/World.hpp>
 
 #include <memory>
+#include <optional>
 
 namespace cinnabar {
 
@@ -26,7 +28,9 @@ public:
         DUMMY
     };
 
-    InteriorWorld(Mode aMode);
+    InteriorWorld(Mode aMode, spe::GameContext& aContext);
+
+    const OnboardPlayerInfo& getOnboardPlayerInfo() const;
 
     ///////////////////////////////////////////////////////////////////////////
     // MARK: CYCLE METHODS                                                   //
@@ -51,27 +55,33 @@ public:
     void editWorld(taCallable&& aCallable);
 
     ///////////////////////////////////////////////////////////////////////////
-    // MARK: STREAMING METHODS                                               //
+    // MARK: SYNCHRONIZATION METHODS                                         //
     ///////////////////////////////////////////////////////////////////////////
 
     //! \brief Write the state off all cells of all available chunks of the
     //!        underlying GridGoblin world into a stream.
-    void writeWholeState(hg::util::OutputStream& aOStream) const;
+    void writeWholeCellState(hg::util::OutputStream& aOStream) const;
 
     //! \brief Set the state of all cells of the underlying GridGoblin world according
     //!        to the world state representation read from the given stream.
-    void readWholeState(hg::util::InputStream& aIStream);
+    void readWholeCellState(hg::util::InputStream& aIStream);
 
     //! \returns whether anything was written to the stream or not
-    bool writeStateDiff(hg::util::OutputStream& aOStream) const;
+    bool writeCellStateDiff(hg::util::OutputStream& aOStream) const;
 
-    void readAndApplyStateDiff(hg::util::InputStream& aIStream);
+    void readAndApplyCellStateDiff(hg::util::InputStream& aIStream);
+
+    //! \brief Force every Synchronized Object held by the IW's internal runtime to immediately
+    //!        compose messages to sync its CREATE and UPDATE events to the given client.
+    void doFullSyncOfCreateAndUpdateOfEntireInternalRuntimeForClient(hg::PZInteger aClientIndex);
 
 private:
     Mode _mode;
 
     jbatnozic::gridgoblin::World         _world;
     jbatnozic::gridgoblin::CellEditInfos _cellEditInfos;
+
+    InternalRuntime _internalRuntime;
 
     // TODO: vector - list of associated player IDs
 

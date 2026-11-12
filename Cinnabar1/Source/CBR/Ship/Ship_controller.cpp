@@ -99,8 +99,7 @@ ShipController::ShipController(QAO_InstGuard aInstGuard)
                    QAO_ExeCon::GAMEPLAY,
                    PRIORITY_ENTITIES, // TODO: set in relation to attachables
                    QAO_STATIC_NAME("cinnabar::ShipController"),
-                   spe::SYNC_ID_NEW}
-    , _interiorWorld{InteriorWorld::Mode::MASTER} {}
+                   spe::SYNC_ID_NEW} {}
 
 QAO_Handle<ShipController> ShipController::createDummy(QAO_RuntimeRef aRuntime, spe::SyncId aSyncId) {
     return QAO_Create_USE_IN_FACTORY_FUNCTIONS_ONLY<ShipController>(aRuntime, aSyncId);
@@ -111,13 +110,14 @@ ShipController::ShipController(QAO_InstGuard aInstGuard, spe::SyncId aSyncId)
                    QAO_ExeCon::GAMEPLAY,
                    PRIORITY_ENTITIES, // TODO: set in relation to attachables
                    QAO_STATIC_NAME("cinnabar::ShipController"),
-                   aSyncId}
-    , _interiorWorld{InteriorWorld::Mode::DUMMY} {}
+                   aSyncId} {}
 
 void ShipController::init(ShipAttachable& aInitialShipAttachable) {
     HG_VALIDATE_PRECONDITION(isMasterObject());
 
     _graphOfAttachables.init(*this);
+
+    _masterData->onboardPlayerInfo.updateMappings(ccomp<MLobbyBackend>());
 
     const auto* iwSliceData = aInitialShipAttachable.getInteriorWorldSliceData();
     HG_VALIDATE_ARGUMENT(
@@ -135,6 +135,40 @@ void ShipController::init(ShipAttachable& aInitialShipAttachable) {
     const auto id = _graphOfAttachables.insertInitialAttachable(aInitialShipAttachable);
 
     _copySliceDataToInteriorWorld_rot000(*iwSliceData, tlCellPosInIW, id);
+}
+
+bool ShipController::addOnboardPlayer(std::int8_t aPlayerIndex) {
+    HG_VALIDATE_PRECONDITION(isMasterObject());
+
+    auto& onboardPlayerInfo = _masterData->onboardPlayerInfo;
+
+    const auto didAdd = onboardPlayerInfo.addOnboardPlayer(aPlayerIndex);
+    if (!didAdd) {
+        return false;
+    }
+
+    const auto clientIndex = onboardPlayerInfo.playerIdxToClientIdx(aPlayerIndex);
+    if (clientIndex >= 0) {
+        // Compose sync messages for CREATE and UPDATE events of all internal synced objects immediately
+        _interiorWorld->doFullSyncOfCreateAndUpdateOfEntireInternalRuntimeForClient(clientIndex);
+        // SVS will be synced later, right now we just need to set the flag for it
+        onboardPlayerInfo.setSecondaryVisibleStateSyncedForClient(clientIndex, false);
+    }
+
+    return true;
+}
+
+bool ShipController::removeOnboardPlayer(std::int8_t aPlayerIndex) {
+    HG_VALIDATE_PRECONDITION(isMasterObject());
+
+    const auto didRemove = _masterData->onboardPlayerInfo.removeOnboardPlayer(aPlayerIndex);
+    if (!didRemove) {
+        return false;
+    }
+
+    // TODO: instruct this player to drop all internal state
+
+    return true;
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -219,7 +253,7 @@ void ShipController::calcFootprint(const PolyShape& aShape, CellFootprint& aCell
                                aabbGridBottomRight.y - aabbGridTopLeft.y + 1);
     aCellFootprint.totalBitmask = CellFootprint::EMPTY;
 
-    const auto&                             ggwld = _interiorWorld.getUnderlying();
+    const auto&                             ggwld = _interiorWorld->getUnderlying();
     jbatnozic::gridgoblin::cell::CellKindId cellKindId;
     for (int y = aabbGridTopLeft.y; y <= aabbGridBottomRight.y; ++y) {
         for (int x = aabbGridTopLeft.x; x <= aabbGridBottomRight.x; ++x) {
@@ -335,7 +369,7 @@ AttachmentEvaluation ShipController::evalAttachment(const AttachableGhost& aGhos
     // makes contact with at least one existing attachable, so only bond strength has to be analyzed.
     result.orientation = RelativeIWSliceOrientation::NOT_RELEVANT;
 
-    result.status = CheckProjectionBondStrength(_interiorWorld, aCellFootprint, result.bonds);
+    result.status = CheckProjectionBondStrength(*_interiorWorld, aCellFootprint, result.bonds);
 
     if (aCellFootprint.totalBitmask & CellFootprint::COLLIDES_WITH_IW) {
         result.status |= AttachmentEvaluation::OVERLAP;
@@ -412,7 +446,7 @@ void ShipController::attach(AttachableGhost&            aGhost,
                                                              ccomp<MOverworld>().getAlvinSpace());
     const auto& grid  = aCellFootprint.cells;
 
-    _interiorWorld.editWorld([&](WorldEditor& aEditor) {
+    _interiorWorld->editWorld([&](WorldEditor& aEditor) {
         for (hg::PZInteger y = 0; y < grid.getHeight(); ++y) {
             for (hg::PZInteger x = 0; x < grid.getWidth(); ++x) {
                 const auto cell = grid[y][x];
@@ -635,9 +669,14 @@ void ShipController::_didAttach(QAO_Runtime& aRuntime) {
     _transformGlobalToShip = ccomp<GraphicsSystemProvider>().getSystem().createTransform();
     _transformShipToGlobal = _transformGlobalToShip->clone();
 
+    InteriorWorld::Mode iwMode = InteriorWorld::Mode::DUMMY;
     if (isMasterObject()) {
         _getCurrentState().initMirror();
+        iwMode = InteriorWorld::Mode::MASTER;
     }
+    _interiorWorld.emplace(iwMode, ctx());
+
+    // TODO: subscribe to receive lobby change updates
 }
 
 void ShipController::_willDetach(QAO_Runtime& aRuntime) {
@@ -652,11 +691,13 @@ void ShipController::_willDetach(QAO_Runtime& aRuntime) {
         }
     }
 
+    _interiorWorld.reset();
+
     SyncObjSuper::_willDetach(aRuntime);
 }
 
 void ShipController::_eventBeginUpdate() {
-    _interiorWorld.onBeginUpdate();
+    _interiorWorld->onBeginUpdate();
 }
 
 void ShipController::_eventUpdate1(spe::IfMaster) {
@@ -684,7 +725,7 @@ void ShipController::_eventEndUpdate(spe::IfMaster) {
     {
         auto& stream = _masterData->cellDiffPacket;
         stream.clear();
-        if (_interiorWorld.writeStateDiff(stream)) {
+        if (_interiorWorld->writeCellStateDiff(stream)) {
             _getCurrentState().svsCounter += 1;
         } else {
             stream.clear();
@@ -707,7 +748,7 @@ bool ShouldApplySVSUpdate(std::uint8_t aCurrentSVSCounter, std::uint8_t aTag) {
 #endif
 
 void ShipController::_eventPostUpdate() {
-    _interiorWorld.onEndUpdate(); // TODO: misnomer
+    _interiorWorld->onEndUpdate(); // TODO: misnomer
 
     if (isMasterObject()) {
         _getCurrentState().commit();
@@ -768,6 +809,19 @@ void ShipController::_eventDraw1() {
         rect.setFillColor(uwga::COLOR_TRANSPARENT);
 
         canvas.draw(rect);
+    }
+}
+
+void ShipController::onLobbyEvent(const spe::LobbyBackendEvent& aEvent) {
+    bool somethingDidChange = false;
+    aEvent.visit([&somethingDidChange](const spe::LobbyBackendEvent::LobbyChanged&) {
+        somethingDidChange = true;
+    });
+
+    if (somethingDidChange) {
+        if (isMasterObject()) {
+            _masterData->onboardPlayerInfo.updateMappings(ccomp<MLobbyBackend>());
+        }
     }
 }
 
@@ -1038,7 +1092,7 @@ char ShipController::_checkSliceDataToIWIntegration_rot000(
     std::vector<AttachmentEvaluation::BondStrength>& aOutBonds) //
 {
     return CheckSliceDataToIWIntegration(
-        _interiorWorld,
+        *_interiorWorld,
         aSlice,
         [aStartingCorner](hg::PZInteger x, hg::PZInteger y) -> hg::math::Vector2i {
             return {aStartingCorner.x + x, aStartingCorner.y + y};
@@ -1052,7 +1106,7 @@ char ShipController::_checkSliceDataToIWIntegration_rot090(
     std::vector<AttachmentEvaluation::BondStrength>& aOutBonds) //
 {
     return CheckSliceDataToIWIntegration(
-        _interiorWorld,
+        *_interiorWorld,
         aSlice,
         [aStartingCorner](hg::PZInteger x, hg::PZInteger y) -> hg::math::Vector2i {
             return {aStartingCorner.x + y, aStartingCorner.y - x};
@@ -1066,7 +1120,7 @@ char ShipController::_checkSliceDataToIWIntegration_rot180(
     std::vector<AttachmentEvaluation::BondStrength>& aOutBonds) //
 {
     return CheckSliceDataToIWIntegration(
-        _interiorWorld,
+        *_interiorWorld,
         aSlice,
         [aStartingCorner](hg::PZInteger x, hg::PZInteger y) -> hg::math::Vector2i {
             return {aStartingCorner.x - x, aStartingCorner.y - y};
@@ -1080,7 +1134,7 @@ char ShipController::_checkSliceDataToIWIntegration_rot270(
     std::vector<AttachmentEvaluation::BondStrength>& aOutBonds) //
 {
     return CheckSliceDataToIWIntegration(
-        _interiorWorld,
+        *_interiorWorld,
         aSlice,
         [aStartingCorner](hg::PZInteger x, hg::PZInteger y) -> hg::math::Vector2i {
             return {aStartingCorner.x - y, aStartingCorner.y + x};
@@ -1094,7 +1148,7 @@ void ShipController::_copySliceDataToInteriorWorld_rot000(
     std::int16_t                                  aAttachableId) //
 {
     CopySliceDataToInteriorWorld(
-        _interiorWorld,
+        *_interiorWorld,
         aSlice,
         aAttachableId,
         [aStartingCorner](hg::PZInteger x, hg::PZInteger y) -> hg::math::Vector2pz {
@@ -1108,7 +1162,7 @@ void ShipController::_copySliceDataToInteriorWorld_rot090(
     std::int16_t                                  aAttachableId) //
 {
     CopySliceDataToInteriorWorld(
-        _interiorWorld,
+        *_interiorWorld,
         aSlice,
         aAttachableId,
         [aStartingCorner](hg::PZInteger x, hg::PZInteger y) -> hg::math::Vector2pz {
@@ -1122,7 +1176,7 @@ void ShipController::_copySliceDataToInteriorWorld_rot180(
     std::int16_t                                  aAttachableId) //
 {
     CopySliceDataToInteriorWorld(
-        _interiorWorld,
+        *_interiorWorld,
         aSlice,
         aAttachableId,
         [aStartingCorner](hg::PZInteger x, hg::PZInteger y) -> hg::math::Vector2pz {
@@ -1136,7 +1190,7 @@ void ShipController::_copySliceDataToInteriorWorld_rot270(
     std::int16_t                                  aAttachableId) //
 {
     CopySliceDataToInteriorWorld(
-        _interiorWorld,
+        *_interiorWorld,
         aSlice,
         aAttachableId,
         [aStartingCorner](hg::PZInteger x, hg::PZInteger y) -> hg::math::Vector2pz {
@@ -1209,9 +1263,9 @@ RN_DEFINE_RPC(ShipController_SyncCreate,
 
 void ApplySVSUpdate(ShipController& aShipCtrl, hg::util::Packet& aCellStatePacket, bool aIsFullState) {
     if (aIsFullState) {
-        aShipCtrl._interiorWorld.readWholeState(aCellStatePacket);
+        aShipCtrl._interiorWorld->readWholeCellState(aCellStatePacket);
     } else {
-        aShipCtrl._interiorWorld.readAndApplyStateDiff(aCellStatePacket);
+        aShipCtrl._interiorWorld->readAndApplyCellStateDiff(aCellStatePacket);
     }
 }
 
@@ -1242,35 +1296,34 @@ void ShipController::_syncCreateImpl(spe::SyncControlDelegate& aSyncCtrl) const 
     Compose_ShipController_SyncCreate(aSyncCtrl.getLocalNode(),
                                       aSyncCtrl.getFilteredRecepients(),
                                       this->getSyncId());
-
-    for (hg::PZInteger clientIdx : aSyncCtrl.getFilteredRecepients()) {
-        _masterData->_onboardClientData.setBit(clientIdx * 2 + 0);
-        _masterData->_onboardClientData.clearBit(clientIdx * 2 + 1);
-    }
 }
 
 void ShipController::_syncUpdateImpl(spe::SyncControlDelegate& aSyncCtrl) const {
-    aSyncCtrl.filter([](hg::PZInteger aClientIndex) -> spe::SyncFilterStatus {
-        return spe::SyncFilterStatus::REGULAR_SYNC; // TODO: implement proper filtering
+    auto& onboardPlayerInfo = _masterData->onboardPlayerInfo;
+
+#if 0
+    aSyncCtrl.filter([&onboardPlayerInfo](hg::PZInteger aClientIndex) -> spe::SyncFilterStatus {
+        return onboardPlayerInfo.isClientOnboard((std::int8_t)aClientIndex)
+                   ? spe::SyncFilterStatus::REGULAR_SYNC
+                   : /* Determine by distance or something? */;
     });
-    SPEMPE_SYNC_UPDATE_DEFAULT_IMPL(ShipController, aSyncCtrl);
+#endif
 
     // Compose secondary visible state
     for (hg::PZInteger clientIdx : aSyncCtrl.getFilteredRecepients()) {
-        if (!_masterData->_onboardClientData.getBit(clientIdx * 2 + 0)) {
+        if (!onboardPlayerInfo.isClientOnboard((std::int8_t)clientIdx)) {
             continue;
         }
-        if (!_masterData->_onboardClientData.getBit(clientIdx * 2 + 1)) {
+        if (!onboardPlayerInfo.isSecondaryVisibleStateSyncedForClient((std::int8_t)clientIdx)) {
             // Send full state
             hg::util::Packet fullCellStatePacket;
-            _interiorWorld.writeWholeState(fullCellStatePacket);
+            _interiorWorld->writeWholeCellState(fullCellStatePacket);
             Compose_ShipController_SyncSVSUpdate(aSyncCtrl.getLocalNode(),
                                                  clientIdx,
                                                  this->getSyncId(),
                                                  fullCellStatePacket,
                                                  true);
-            _masterData->_onboardClientData.setBit(clientIdx * 2 + 1);
-
+            onboardPlayerInfo.setSecondaryVisibleStateSyncedForClient((std::int8_t)clientIdx, true);
         } else if (_masterData->cellDiffPacket.getDataSize() > 0) {
             // Send just the diff
             Compose_ShipController_SyncSVSUpdate(aSyncCtrl.getLocalNode(),
@@ -1280,6 +1333,12 @@ void ShipController::_syncUpdateImpl(spe::SyncControlDelegate& aSyncCtrl) const 
                                                  false);
         }
     }
+
+    //! \warning ////////////////////////////////////////////////////////////////////////////////////////
+    //! \warning Because ShipCtrl's VS is autodiff, the default UPDATE sync impl can filter !!!!!!!!!!!!!
+    //! \warning That's why this call must go last!
+    //! \warning ////////////////////////////////////////////////////////////////////////////////////////
+    SPEMPE_SYNC_UPDATE_DEFAULT_IMPL(ShipController, aSyncCtrl);
 }
 
 void ShipController::_syncDestroyImpl(spe::SyncControlDelegate& aSyncCtrl) const {

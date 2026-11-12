@@ -73,4 +73,7 @@ constexpr const char* LOG_ID = "Cinnabar1";
 // For out-of-class (OOC) method definitions
 #define TMP_ENABLE_IF_OOC(...) typename ::std::enable_if<__VA_ARGS__, bool>::type
 
+// Miscellaneous:
+#define FALLTHROUGH [[fallthrough]]
+
 } // namespace cinnabar

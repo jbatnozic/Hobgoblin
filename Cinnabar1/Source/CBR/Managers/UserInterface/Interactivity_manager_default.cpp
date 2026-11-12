@@ -160,12 +160,12 @@ void DefaultInteractivityManager::_eventBeginUpdate() {
         break;
 
     case Mode::CLIENT:
-        _dispatchPNCSEvents();
         _sendLocalPlayerControls();
-        break;
+        FALLTHROUGH;
 
     case Mode::DEV:
         _dispatchPNCSEvents();
+        _switchPlayerViewFocusIfNeeded();
         break;
 
     default:
@@ -291,6 +291,23 @@ void DefaultInteractivityManager::_dispatchPNCSEvents() {
         (void)QAO_SendMessage<HandlePNCSEvent>(*instance, &evData);
 
         break; // End the loop after the "foreground-most" object receives its message
+    }
+}
+
+void DefaultInteractivityManager::_switchPlayerViewFocusIfNeeded() {
+    if (_winMgr->getInput().checkPressed(hg::in::PK_TAB, spe::WindowFrameInputView::Mode::Edge)) {
+        switch (_playerViewFocus) {
+        case PlayerViewFocus::SHIP_INTERIOR:
+            _playerViewFocus = PlayerViewFocus::OVERWORLD;
+            break;
+
+        case PlayerViewFocus::OVERWORLD:
+            _playerViewFocus = PlayerViewFocus::SHIP_INTERIOR;
+            break;
+
+        default:
+            HG_UNREACHABLE("Illegal value for PlayerViewFocus ({})!", (int)_playerViewFocus);
+        }
     }
 }
 

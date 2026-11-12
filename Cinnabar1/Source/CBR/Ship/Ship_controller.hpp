@@ -3,11 +3,13 @@
 
 #pragma once
 
+#include <CBR/Managers/Lobby/Lobby_event_manager.hpp>
 #include <CBR/InteriorWorld/Interior_world.hpp>
 #include <CBR/QAOMessages/Downcast_to_ship_controller.hpp>
 #include <CBR/Ship/Attachment_evaluation.hpp>
 #include <CBR/Ship/Graph_of_attachables.hpp>
 #include <CBR/Ship/Ship_attachable.hpp>
+#include <CBR/Ship/Onboard_player_info.hpp>
 #include <CBR/Utility/Cell_footprint.hpp>
 #include <CBR/Utility/Poly_shape.hpp>
 #include <Engine.hpp>
@@ -17,7 +19,9 @@
 #include <Hobgoblin/Utility/Packet.hpp>
 #include <Hobgoblin/UWGA/Transform.hpp>
 
+#include <cstdint>
 #include <memory>
+#include <optional>
 #include <variant>
 
 namespace cinnabar {
@@ -51,7 +55,8 @@ struct ShipController_MasterData;
 //!        exterior and interior.
 class ShipController
     : public spe::SynchronizedObject<ShipController_VisibleState,
-                                     SPEMPE_RSDATA_HEAP(ShipController_MasterData, void)> {
+                                     SPEMPE_RSDATA_HEAP(ShipController_MasterData, void)>
+    , private LobbyEventListener {
 public:
     //! Factory method to create a master object.
     static QAO_Handle<ShipController> createMaster(QAO_RuntimeRef  aRuntime,
@@ -62,6 +67,10 @@ public:
                                                   spe::SyncId       aSyncId);
 
     void init(ShipAttachable& aInitialShipAttachable); // TODO: to private
+
+    bool addOnboardPlayer(std::int8_t aPlayerIndex);
+
+    bool removeOnboardPlayer(std::int8_t aPlayerIndex);
 
     ///////////////////////////////////////////////////////////////////////////
     // ATTACHING                                                             //
@@ -130,8 +139,8 @@ private:
     std::unique_ptr<uwga::Transform> _transformGlobalToShip;
     std::unique_ptr<uwga::Transform> _transformShipToGlobal;
 
-    GraphOfAttachables _graphOfAttachables;
-    InteriorWorld      _interiorWorld;
+    GraphOfAttachables           _graphOfAttachables;
+    std::optional<InteriorWorld> _interiorWorld;
 
     // Temporarily here
     hg::math::Vector2f _mousePosInLocalCoords = {};
@@ -152,6 +161,8 @@ private:
     void _eventEndUpdate(spe::IfMaster) override;
     void _eventPostUpdate() override;
     void _eventDraw1() override;
+
+    void onLobbyEvent(const spe::LobbyBackendEvent& aEvent) override;
 
     //! Returns a non-INVALID rotation, if able, and a rotation hint otherwise.
     static std::variant<RelativeIWSliceOrientation, hg::math::AngleF> _checkIWSliceOrientation(
@@ -205,16 +216,7 @@ private:
 // MARK: MasterData
 
 struct ShipController_MasterData {
-    //! This bitset tracks relations between the ShipController's SVS and the data synced to the
-    //! clients, in the following way:
-    //! - there are 2 bits per clients, so bits 0 and 1 pertain to client 0, bits 2 and 3 pertain to
-    //!   client 1, and so on.
-    //! - of the two bits pertaining to an individual client, the less significant bit (e.g., bit 0 for
-    //!   client 0) tells us whether the client is "onboard" this ship [controller] and whether SVS data
-    //!   *should* be synced to this client.
-    //! - of the two bits pertaining to an individual client, the more significant bit (e.g., bit 1 for
-    //!   client 0) tells us whether SVS data has been synced to this client thus far. 
-    mutable hg::util::DynamicBitset _onboardClientData;
+    mutable OnboardPlayerInfo onboardPlayerInfo;
 
     hg::util::Packet cellDiffPacket;
 };

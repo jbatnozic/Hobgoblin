@@ -26,6 +26,7 @@ void DefaultMainGameFlowManager::_didAttach(QAO_Runtime& aRuntime) {
     if (ctx().isPrivileged()) {
         auto core = ShipStartingBlock::createMaster(aRuntime, {150.0, 150.0});
         auto ship = ShipController::createMaster(aRuntime, *core);
+        ship->addOnboardPlayer(0);
 
         auto asteroid = Asteroid::createMaster(aRuntime, {512.0, 712.0});
     }

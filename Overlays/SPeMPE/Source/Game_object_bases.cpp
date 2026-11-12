@@ -130,6 +130,33 @@ void SynchronizedObjectBase::_doSyncDestroy(bool aIgnoreFilters) const {
     _syncObjReg->syncObjectDestroy(this, aIgnoreFilters);
 }
 
+void SynchronizedObjectBase::_doSyncCreate(hg::PZInteger aClientIndex,
+                                           SyncFlags     aFlags,
+                                           bool          aIgnoreFilters) const {
+    if (!isMasterObject()) {
+        HG_THROW_TRACED(hg::TracedLogicError, 0, "Dummy objects cannot request synchronization.");
+    }
+    _syncObjReg->syncObjectCreate(this, aClientIndex, aFlags, aIgnoreFilters);
+}
+
+void SynchronizedObjectBase::_doSyncUpdate(hg::PZInteger aClientIndex,
+                                           SyncFlags     aFlags,
+                                           bool          aIgnoreFilters) const {
+    if (!isMasterObject()) {
+        HG_THROW_TRACED(hg::TracedLogicError, 0, "Dummy objects cannot request synchronization.");
+    }
+    _syncObjReg->syncObjectUpdate(this, aClientIndex, aFlags, aIgnoreFilters);
+}
+
+void SynchronizedObjectBase::_doSyncDestroy(hg::PZInteger aClientIndex,
+                                            SyncFlags     aFlags,
+                                            bool          aIgnoreFilters) const {
+    if (!isMasterObject()) {
+        HG_THROW_TRACED(hg::TracedLogicError, 0, "Dummy objects cannot request synchronization");
+    }
+    _syncObjReg->syncObjectDestroy(this, aClientIndex, aFlags, aIgnoreFilters);
+}
+
 bool SynchronizedObjectBase::_willUpdateDeleteThis() const {
     return (_deathCounter == 0);
 }

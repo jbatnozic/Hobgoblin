@@ -100,6 +100,7 @@ private:
     void _gatherRemotePlayerControls();
     void _sendLocalPlayerControls();
     void _dispatchPNCSEvents();
+    void _switchPlayerViewFocusIfNeeded();
 
     hg::uwga::Canvas& _getActiveCanvasForShipInterior() override;
     hg::uwga::Canvas& _getActiveCanvasForOverworld() override;

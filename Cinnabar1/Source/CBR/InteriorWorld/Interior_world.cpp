@@ -3,6 +3,9 @@
 
 #include "Interior_world.hpp"
 
+#include <CBR/QAOMessages/Sync_create_and_update_to_client.hpp>
+
+#include <Hobgoblin/Common/Build_type.hpp>
 #include <Hobgoblin/Utility/Compact_int.hpp>
 #include <Hobgoblin/Utility/On_scope_exit.hpp>
 
@@ -62,9 +65,10 @@ void ForEachCellInChunkDo(jbatnozic::gridgoblin::World&  aWorld,
 }
 } // namespace
 
-InteriorWorld::InteriorWorld(Mode aMode)
+InteriorWorld::InteriorWorld(Mode aMode, spe::GameContext& aContext)
     : _mode{aMode}
-    , _world{WORLD_CONFIG} //
+    , _world{WORLD_CONFIG}
+    , _internalRuntime{*this, &aContext, nullptr} //
 {
     _world.attachBinder(this);
 }
@@ -81,7 +85,7 @@ const jbatnozic::gridgoblin::World& InteriorWorld::getUnderlying() const {
     return _world;
 }
 
-void InteriorWorld::writeWholeState(hg::util::OutputStream& aOStream) const {
+void InteriorWorld::writeWholeCellState(hg::util::OutputStream& aOStream) const {
     const auto& memLayout = _world.getChunkMemoryLayoutInfo();
     const auto  endIter   = _world.availableChunksEnd();
 
@@ -109,7 +113,7 @@ void InteriorWorld::writeWholeState(hg::util::OutputStream& aOStream) const {
     aOStream << static_cast<std::uint16_t>(0xFFFF);
 }
 
-void InteriorWorld::readWholeState(hg::util::InputStream& aIStream) {
+void InteriorWorld::readWholeCellState(hg::util::InputStream& aIStream) {
     _world.toggleEditJournaling(false);
     HG_ON_SCOPE_EXIT_CAP1(this, _world.toggleEditJournaling(_getPreferredWorldEditJournalingFlag()));
 
@@ -161,7 +165,7 @@ void InteriorWorld::readWholeState(hg::util::InputStream& aIStream) {
     _world.toggleEditJournaling(_getPreferredWorldEditJournalingFlag());
 }
 
-bool InteriorWorld::writeStateDiff(hg::util::OutputStream& aOStream) const {
+bool InteriorWorld::writeCellStateDiff(hg::util::OutputStream& aOStream) const {
     if (_cellEditInfos.empty()) {
         return false;
     }
@@ -178,7 +182,7 @@ bool InteriorWorld::writeStateDiff(hg::util::OutputStream& aOStream) const {
     return true;
 }
 
-void InteriorWorld::readAndApplyStateDiff(hg::util::InputStream& aIStream) {
+void InteriorWorld::readAndApplyCellStateDiff(hg::util::InputStream& aIStream) {
     using grid::BuildingBlock;
 
     const auto cellCount = aIStream.extract<hg::util::CompactUInt28>().value();
@@ -208,6 +212,37 @@ void InteriorWorld::readAndApplyStateDiff(hg::util::InputStream& aIStream) {
             }
         }
     });
+}
+
+void InteriorWorld::doFullSyncOfCreateAndUpdateOfEntireInternalRuntimeForClient(
+    hg::PZInteger aClientIndex) //
+{
+    // clang-format off
+    const auto recepientInfo = SyncRecepientInfo{
+        .clientIndex = aClientIndex,
+        .syncFlags   = spe::SyncFlags::FULL_STATE
+    };
+    // clang-format on
+
+    const auto endIter = _internalRuntime.end();
+    for (auto iter = _internalRuntime.begin(); iter != endIter; ++iter) {
+        const QAO_GenericHandle     handle = *iter;
+        [[maybe_unused]] const bool didAnswer =
+            QAO_SendMessage<SyncCreateAndUpdateToClient>(*handle, &recepientInfo);
+#if HG_BUILD_TYPE == HG_DEBUG
+        if (!didAnswer) {
+            const auto* syncObj = dynamic_cast<spe::SynchronizedObjectBase*>(handle.ptr());
+            if (syncObj) {
+                HG_THROW_TRACED(
+                    hg::TracedLogicError,
+                    0,
+                    "Object {} is a Synchronized Object but did not answer to QAO Message '{}'!",
+                    syncObj->getDebugDescription(),
+                    "SyncCreateAndUpdateToClient");
+            }
+        }
+#endif
+    }
 }
 
 bool InteriorWorld::_getPreferredWorldEditJournalingFlag() const {

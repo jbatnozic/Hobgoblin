@@ -12,6 +12,7 @@ add_executable(${PROJECT_NAME}
 
     "Source/CBR/InteriorWorld/Cell_props.cpp"
     "Source/CBR/InteriorWorld/Interior_world.cpp"
+    "Source/CBR/InteriorWorld/Entities/Spaceman.cpp"
 
     "Source/CBR/Managers/Gameplay/Auxiliary_gameplay_manager_default.cpp"
     "Source/CBR/Managers/Gameplay/Main_game_flow_manager_default.cpp"
@@ -24,6 +25,7 @@ add_executable(${PROJECT_NAME}
 
     "Source/CBR/Ship/Attachable_ghost.cpp"
     "Source/CBR/Ship/Graph_of_attachables.cpp"
+    "Source/CBR/Ship/Onboard_player_info.cpp"
     "Source/CBR/Ship/Ship_attachable.cpp"
     "Source/CBR/Ship/Ship_controller.cpp"
     "Source/CBR/Ship/Ship_starting_block.cpp"
