@@ -9,23 +9,62 @@
 
 #include <algorithm>
 #include <cassert>
+#include <functional>
 #include <type_traits>
 
 namespace jbatnozic {
 namespace spempe {
 namespace {
 constexpr const char* LOG_ID = "SPeMPE";
+
+class DefaultNetworkingManagerSendHelper : public NonstateObject {
+public:
+    DefaultNetworkingManagerSendHelper(hg::QAO_InstGuard     aInstGuard,
+                                       int                   aExecutionPriority,
+                                       std::function<void()> aDoSendFunc)
+        : NonstateObject{aInstGuard,
+                         hg::QAO_ExeCon::ESSENTIAL,
+                         aExecutionPriority,
+                         QAO_STATIC_NAME("::jbatnozic::spempe::DefaultNetworkingManagerSendHelper")}
+        , _doSendFunc{std::move(aDoSendFunc)} {}
+
+private:
+    std::function<void()> _doSendFunc;
+
+    void _eventEndUpdate() override {
+        if (_doSendFunc) {
+            _doSendFunc();
+        }
+    }
+};
 } // namespace
 
 DefaultNetworkingManager::DefaultNetworkingManager(hobgoblin::QAO_InstGuard aInstGuard,
                                                    int                      aExecutionPriority,
+                                                   int                      aSendExecutionPriority,
                                                    hg::PZInteger            aStateBufferingLength)
     : NonstateObject{aInstGuard,
                      hg::QAO_ExeCon::ESSENTIAL,
                      aExecutionPriority,
                      QAO_STATIC_NAME("::jbatnozic::spempe::DefaultNetworkingManager")}
+    , _sendHelper{hg::QAO_Create<DefaultNetworkingManagerSendHelper>(nullptr,
+                                                                     aSendExecutionPriority,
+                                                                     [this]() {
+                                                                         _doSend();
+                                                                     })}
     , _node{hg::RN_ServerFactory::createDummyServer()}
-    , _syncObjReg{*_node, aStateBufferingLength} {}
+    , _syncObjReg{*_node, aStateBufferingLength} //
+{
+    HG_HARD_ASSERT(_sendHelper.isOwning());
+}
+
+DefaultNetworkingManager::DefaultNetworkingManager(hobgoblin::QAO_InstGuard aInstGuard,
+                                                   int                      aExecutionPriority,
+                                                   hg::PZInteger            aStateBufferingLength)
+    : DefaultNetworkingManager(aInstGuard,
+                               aExecutionPriority,
+                               aExecutionPriority,
+                               aStateBufferingLength) {}
 
 DefaultNetworkingManager::~DefaultNetworkingManager() {
     if (_mode != Mode::Uninitialized) {
@@ -91,6 +130,14 @@ bool DefaultNetworkingManager::isServer() const {
 
 bool DefaultNetworkingManager::isClient() const {
     return _mode == Mode::Client;
+}
+
+void DefaultNetworkingManager::setSendExecutionPriority(int aSendExecutionPriority) {
+    _sendHelper->setExecutionPriority(aSendExecutionPriority);
+}
+
+int DefaultNetworkingManager::getSendExecutionPriority() const {
+    return _sendHelper->getExecutionPriority();
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -246,6 +293,16 @@ SynchronizedObjectBase* DefaultNetworkingManager::mapSyncIdToObject(SyncId aSync
 // PROTECTED & PRIVATE METHODS                                           //
 ///////////////////////////////////////////////////////////////////////////
 
+void DefaultNetworkingManager::_didAttach(hg::QAO_Runtime& aRuntime) {
+    NonstateObject::_didAttach(aRuntime);
+    aRuntime.attachObject(_sendHelper);
+}
+
+void DefaultNetworkingManager::_willDetach(hg::QAO_Runtime& aRuntime) {
+    aRuntime.detachObject(_sendHelper);
+    NonstateObject::_willDetach(aRuntime);
+}
+
 void DefaultNetworkingManager::_eventPreUpdate() {
     _telemetry.emplace_back();
     _telemetry.pop_front();
@@ -259,6 +316,10 @@ void DefaultNetworkingManager::_eventBeginUpdate() {
 }
 
 void DefaultNetworkingManager::_eventEndUpdate() {
+    // _doSend();
+}
+
+void DefaultNetworkingManager::_doSend() {
     // Update all Synchronized objects
     if (_node->isServer()) {
         _syncObjReg.update();

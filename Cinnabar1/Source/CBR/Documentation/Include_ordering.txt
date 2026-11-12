@@ -1,0 +1,44 @@
+INCLUDE RULES
+=============
+
+Include paths
+-------------
+- Project headers are included by their full path relative to Source/, with angle brackets:
+      #include <CBR/Ship/Ship_attachable.hpp>
+- Exception: in .cpp files, a header which is in the same directory as the .cpp file is included
+  by its file name only, with quotes:
+      #include "Ship_attachable.hpp"
+- Headers which live directly in Source/ (Engine.hpp, Stream_io_overloads.hpp) are included as
+  <Engine.hpp> and <Stream_io_overloads.hpp> (or with quotes from .cpp files in Source/).
+
+Include order
+-------------
+Includes are split into the following groups, in this order, with a single blank line between
+groups:
+
+  1. (.cpp files only) The associated header of the same name, if any.
+         #include "Ship_controller.hpp"
+  2. Other headers of the CBR project (including Engine.hpp and Stream_io_overloads.hpp).
+         #include "Attachable_ghost.hpp"
+         #include <CBR/Managers/Gameplay/Overworld_manager.hpp>
+         #include <Engine.hpp>
+  3. Headers from the engine (Hobgoblin, SPeMPE, GridGoblin).
+         #include <GridGoblin/World/World_config.hpp>
+         #include <Hobgoblin/HGExcept.hpp>
+         #include <SPeMPE/SPeMPE.hpp>
+  4. Headers from 3rd party libraries.
+         #include <argparse/argparse.h>
+  5. Standard library headers.
+         #include <cstdint>
+         #include <vector>
+
+Within each group, includes are sorted alphabetically (case-sensitive, by the whole include
+text). This means that:
+- uppercase letters come before lowercase ones (<Hobgoblin/UWGA/...> before <Hobgoblin/Utility/...>),
+- in group 2, "quoted" includes come before <angle-bracket> includes.
+
+Enforcement
+-----------
+These rules are enforced by Cinnabar1/.clang-format (IncludeBlocks: Regroup + IncludeCategories).
+Note that clang-format only reorders and regroups includes; it does NOT fix include paths or
+choose between quotes and angle brackets - that part has to be done by hand.

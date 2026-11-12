@@ -16,8 +16,10 @@
 #include <Hobgoblin/RigelNet_macros.hpp>
 #include <Hobgoblin/Utility/Randomization.hpp>
 
+#include <algorithm>
 #include <cassert>
 #include <sstream>
+#include <vector>
 
 namespace jbatnozic {
 namespace spempe {
@@ -44,6 +46,10 @@ RN_DEFINE_RPC(USPEMPE_DeactivateObject, RN_ARGS(SyncId, aSyncId)) {
 bool IsFilteredOut(NetworkingManager::ExeCon aExeconThreshold,
                    NetworkingManager::ExeConSyncFilter aFilter) {
     return aExeconThreshold < aFilter.min || aExeconThreshold > aFilter.max;
+}
+
+bool CompareBySyncId(const SynchronizedObjectBase* aLhs, const SynchronizedObjectBase* aRhs) {
+    return aLhs->getSyncId() < aRhs->getSyncId();
 }
 } // namespace
 
@@ -256,11 +262,11 @@ namespace detail {
 //! \note This macro is meant to be called only from within a method
 //!       of SynchronizedObjectRegistry class.
 #define CALL_SYNC_CREATE_IMPL(_object_ptr_, _sync_ctrl_ref_, _node_ref_) \
-    do { \
-        (_sync_ctrl_ref_)._impl->targetObject(_object_ptr_); \
-        (_sync_ctrl_ref_)._impl->resetAllStatuses(); \
-        (_object_ptr_)->__spempeimpl_syncCreateImpl(_sync_ctrl_ref_); \
-        Align((_object_ptr_), (_sync_ctrl_ref_), (_node_ref_)); \
+    do {                                                                 \
+        (_sync_ctrl_ref_)._impl->targetObject(_object_ptr_);             \
+        (_sync_ctrl_ref_)._impl->resetAllStatuses();                     \
+        (_object_ptr_)->__spempeimpl_syncCreateImpl(_sync_ctrl_ref_);    \
+        Align((_object_ptr_), (_sync_ctrl_ref_), (_node_ref_));          \
     } while (false)
 
 //! Use this macro to properly call a synchronized object's UPDATE
@@ -273,11 +279,11 @@ namespace detail {
 //! \note This macro is meant to be called only from within a method
 //!       of SynchronizedObjectRegistry class.
 #define CALL_SYNC_UPDATE_IMPL(_object_ptr_, _sync_ctrl_ref_, _node_ref_) \
-    do { \
-        (_sync_ctrl_ref_)._impl->targetObject(_object_ptr_); \
-        (_sync_ctrl_ref_)._impl->resetAllStatuses(); \
-        (_object_ptr_)->__spempeimpl_syncUpdateImpl(_sync_ctrl_ref_); \
-        Align((_object_ptr_), (_sync_ctrl_ref_), (_node_ref_)); \
+    do {                                                                 \
+        (_sync_ctrl_ref_)._impl->targetObject(_object_ptr_);             \
+        (_sync_ctrl_ref_)._impl->resetAllStatuses();                     \
+        (_object_ptr_)->__spempeimpl_syncUpdateImpl(_sync_ctrl_ref_);    \
+        Align((_object_ptr_), (_sync_ctrl_ref_), (_node_ref_));          \
     } while (false)
 
 //! Use this macro to properly call a synchronized object's DESTROY
@@ -290,11 +296,11 @@ namespace detail {
 //! \note This macro is meant to be called only from within a method
 //!       of SynchronizedObjectRegistry class.
 #define CALL_SYNC_DESTROY_IMPL(_object_ptr_, _sync_ctrl_ref_, _node_ref_) \
-    do { \
-        (_sync_ctrl_ref_)._impl->targetObject(_object_ptr_); \
-        (_sync_ctrl_ref_)._impl->resetAllStatuses(); \
-        (_object_ptr_)->__spempeimpl_syncDestroyImpl(_sync_ctrl_ref_); \
-        Align((_object_ptr_), (_sync_ctrl_ref_), (_node_ref_)); \
+    do {                                                                  \
+        (_sync_ctrl_ref_)._impl->targetObject(_object_ptr_);              \
+        (_sync_ctrl_ref_)._impl->resetAllStatuses();                      \
+        (_object_ptr_)->__spempeimpl_syncDestroyImpl(_sync_ctrl_ref_);    \
+        /* Align((_object_ptr_), (_sync_ctrl_ref_), (_node_ref_)); */     \
     } while (false)
 
 SynchronizedObjectRegistry::SynchronizedObjectRegistry(hg::RN_NodeInterface& node,
@@ -421,14 +427,19 @@ void SynchronizedObjectRegistry::syncStateUpdates() {
     _syncControlDelegate._impl->targetAllRecepientsConnectedToNode(*_node);
     _syncControlDelegate._impl->setSyncFlags(SyncFlags::NONE);
 
-    // Sync creations:
-    for (auto* object : _newlyCreatedObjects) {
-        if (IsFilteredOut(object->getExeconThreshold(), _execonCreateFilter)) {
-            continue;
+    // Sync creations (in ascending SyncId order):
+    if (!_newlyCreatedObjects.empty()) {
+        std::vector<const SynchronizedObjectBase*> objectsToCreate{_newlyCreatedObjects.begin(),
+                                                                   _newlyCreatedObjects.end()};
+        std::sort(objectsToCreate.begin(), objectsToCreate.end(), CompareBySyncId);
+        for (auto* object : objectsToCreate) {
+            if (IsFilteredOut(object->getExeconThreshold(), _execonCreateFilter)) {
+                continue;
+            }
+            CALL_SYNC_CREATE_IMPL(object, _syncControlDelegate, *_node);
         }
-        CALL_SYNC_CREATE_IMPL(object, _syncControlDelegate, *_node);
+        _newlyCreatedObjects.clear();
     }
-    _newlyCreatedObjects.clear();
 
     // Sync updates:
     for (auto& pair : _mappings) {
@@ -465,9 +476,14 @@ void SynchronizedObjectRegistry::syncCompleteState(hg::PZInteger clientIndex) {
     _syncControlDelegate._impl->setSyncFlags(SyncFlags::FULL_STATE);
     _syncControlDelegate._impl->targetRecepient(clientIndex);
 
-    for (auto& mapping : _mappings) {
-        auto* object = mapping.second;
+    std::vector<const SynchronizedObjectBase*> objects;
+    objects.reserve(_mappings.size());
+    for (const auto& mapping : _mappings) {
+        objects.push_back(mapping.second);
+    }
+    std::sort(objects.begin(), objects.end(), CompareBySyncId);
 
+    for (auto* object : objects) {
         if (!IsFilteredOut(object->getExeconThreshold(), _execonCreateFilter)) {
             CALL_SYNC_CREATE_IMPL(object, _syncControlDelegate, *_node);
         }
@@ -591,6 +607,54 @@ void SynchronizedObjectRegistry::syncObjectDestroy(const SynchronizedObjectBase*
     CALL_SYNC_DESTROY_IMPL(object, _syncControlDelegate, *_node);
 
     _alreadyDestroyedObjects.insert(object);
+}
+
+void SynchronizedObjectRegistry::syncObjectCreate(const SynchronizedObjectBase* object,
+                                                  hg::PZInteger                 aClientIndex,
+                                                  SyncFlags                     aFlags,
+                                                  bool                          aIgnoreFilters) {
+    HG_ASSERT(object != nullptr);
+
+    if (!aIgnoreFilters && IsFilteredOut(object->getExeconThreshold(), _execonCreateFilter)) {
+        return;
+    }
+
+    _syncControlDelegate._impl->targetRecepient(aClientIndex);
+    _syncControlDelegate._impl->setSyncFlags(aFlags);
+
+    CALL_SYNC_CREATE_IMPL(object, _syncControlDelegate, *_node);
+}
+
+void SynchronizedObjectRegistry::syncObjectUpdate(const SynchronizedObjectBase* object,
+                                                  hg::PZInteger                 aClientIndex,
+                                                  SyncFlags                     aFlags,
+                                                  bool                          aIgnoreFilters) {
+    HG_ASSERT(object != nullptr);
+
+    if (!aIgnoreFilters && IsFilteredOut(object->getExeconThreshold(), _execonUpdateFilter)) {
+        return;
+    }
+
+    _syncControlDelegate._impl->targetRecepient(aClientIndex);
+    _syncControlDelegate._impl->setSyncFlags(aFlags);
+
+    CALL_SYNC_UPDATE_IMPL(object, _syncControlDelegate, *_node);
+}
+
+void SynchronizedObjectRegistry::syncObjectDestroy(const SynchronizedObjectBase* object,
+                                                   hg::PZInteger                 aClientIndex,
+                                                   SyncFlags                     aFlags,
+                                                   bool                          aIgnoreFilters) {
+    HG_ASSERT(object != nullptr);
+
+    if (!aIgnoreFilters && IsFilteredOut(object->getExeconThreshold(), _execonDestroyFilter)) {
+        return;
+    }
+
+    _syncControlDelegate._impl->targetRecepient(aClientIndex);
+    _syncControlDelegate._impl->setSyncFlags(aFlags);
+
+    CALL_SYNC_DESTROY_IMPL(object, _syncControlDelegate, *_node);
 }
 
 void SynchronizedObjectRegistry::deactivateObject(SyncId aObjectId, hg::PZInteger aDelayInSteps) {

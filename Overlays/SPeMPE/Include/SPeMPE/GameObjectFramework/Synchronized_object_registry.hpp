@@ -58,6 +58,19 @@ public:
     void syncObjectUpdate(const SynchronizedObjectBase* object, bool aIgnoreFilters);
     void syncObjectDestroy(const SynchronizedObjectBase* object, bool aIgnoreFilters);
 
+    void syncObjectCreate(const SynchronizedObjectBase* object,
+                          hg::PZInteger                 aClientIndex,
+                          SyncFlags                     aFlags,
+                          bool                          aIgnoreFilters);
+    void syncObjectUpdate(const SynchronizedObjectBase* object,
+                          hg::PZInteger                 aClientIndex,
+                          SyncFlags                     aFlags,
+                          bool                          aIgnoreFilters);
+    void syncObjectDestroy(const SynchronizedObjectBase* object,
+                           hg::PZInteger                 aClientIndex,
+                           SyncFlags                     aFlags,
+                           bool                          aIgnoreFilters);
+
     //! \brief call this once per update step to keep the registry up to date
     void update();
     void syncStateUpdates();

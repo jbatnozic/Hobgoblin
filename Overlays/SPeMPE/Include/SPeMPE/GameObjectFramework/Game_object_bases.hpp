@@ -124,11 +124,18 @@ public:
     virtual bool isDeactivated() const = 0;
 
 protected:
-    // Call the following to sync this object's creation/update/destruction right away.
+    // Call the following to sync this object's creation/update/destruction right away. [advanced use]
 
     void _doSyncCreate(bool aIgnoreFilters = true) const;
     void _doSyncUpdate(bool aIgnoreFilters = true) const;
     void _doSyncDestroy(bool aIgnoreFilters = true) const;
+
+    // Call the following to sync this object's creation/update/destruction right away,
+    // but only to a specific client, and with specific flags. [advanced use]
+
+    void _doSyncCreate(hg::PZInteger aClientIndex, SyncFlags aFlags = SyncFlags::NONE, bool aIgnoreFilters = true) const;
+    void _doSyncUpdate(hg::PZInteger aClientIndex, SyncFlags aFlags = SyncFlags::NONE, bool aIgnoreFilters = true) const;
+    void _doSyncDestroy(hg::PZInteger aClientIndex, SyncFlags aFlags = SyncFlags::NONE, bool aIgnoreFilters = true) const;
 
     // Lifecycle
 
