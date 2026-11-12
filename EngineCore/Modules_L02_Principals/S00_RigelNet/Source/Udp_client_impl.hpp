@@ -16,6 +16,7 @@
 #include "Udp_connector_impl.hpp"
 
 #include <chrono>
+#include <cstdint>
 #include <string>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
@@ -79,6 +80,10 @@ public:
 
     RN_NetworkingStack getNetworkingStack() const noexcept override;    
 
+    void setNodeStatusWord(std::uint32_t aNodeStatusWord) override;
+
+    std::uint32_t getNodeStatusWord() const override;
+
 private:
     RN_SocketAdapter _socket;
     PZInteger _maxPacketSize;
@@ -88,6 +93,7 @@ private:
     std::string _passphrase;
     std::chrono::microseconds _timeoutLimit = std::chrono::microseconds{0};
     RN_RetransmitPredicate _retransmitPredicate;
+    std::uint32_t _localNodeStatusWord = 0;
     bool _running = false;
 
     util::Packet* _currentPacket = nullptr;

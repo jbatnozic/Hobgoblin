@@ -14,6 +14,7 @@
 #include "Udp_connector_impl.hpp"
 
 #include <chrono>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
@@ -93,6 +94,10 @@ public:
 
     RN_NetworkingStack getNetworkingStack() const noexcept override;
 
+    void setNodeStatusWord(std::uint32_t aNodeStatusWord) override;
+
+    std::uint32_t getNodeStatusWord() const override;
+
     ///////////////////////////////////////////////////////////////////////////
     // NOT INHERITED                                                         //
     ///////////////////////////////////////////////////////////////////////////
@@ -109,6 +114,7 @@ private:
     std::string               _passphrase;
     std::chrono::microseconds _timeoutLimit = std::chrono::microseconds{0};
     RN_RetransmitPredicate    _retransmitPredicate;
+    std::uint32_t             _localNodeStatusWord = 0;
     int                       _senderIndex = -1;
     bool                      _running     = false;
 

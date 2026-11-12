@@ -61,8 +61,12 @@ public:
     //! Usually this will send all of the prepared acks, unless there's so many of them that not
     //! all can fit in a single packet (due to max packet size). In this case, the rest will be sent
     //! the next time this function is called.
+    //!
+    //! \param aNodeStatusWord current Status Word of the local node calling this function.
+    //! \param aSendFunction callable object accepting a single reference to a `hg::util::Packet` (or
+    //!                      equivalent) and returning `void`; used to send the prepared packet.
     template <class taSendFunction>
-    PZInteger sendWeakAcks(const taSendFunction& aSendFunction);
+    PZInteger sendWeakAcks(std::uint32_t aNodeStatusWord, const taSendFunction& aSendFunction);
 
     struct AckReceivedResult {
         //! Time it took from the moment the packet was sent until it was strongly acknowledged.
@@ -197,7 +201,8 @@ UdpSendBuffer::SendResult UdpSendBuffer::sendData(NeverNull<PZInteger*>     aPac
 }
 
 template <class taSendFunction>
-PZInteger UdpSendBuffer::sendWeakAcks(const taSendFunction& aSendFunction) {
+PZInteger UdpSendBuffer::sendWeakAcks(std::uint32_t         aNodeStatusWord,
+                                      const taSendFunction& aSendFunction) {
     static constexpr auto LOG_ID = "Hobgoblin.RigelNet";
 
     if (_weakAcks.empty()) {
@@ -205,7 +210,7 @@ PZInteger UdpSendBuffer::sendWeakAcks(const taSendFunction& aSendFunction) {
     }
 
     util::Packet packet;
-    packet << UDP_PACKET_KIND_ACKS;
+    packet << UDP_PACKET_KIND_ACKS << aNodeStatusWord;
 
     const std::size_t limit =
         static_cast<std::size_t>(_maxPacketSize - packet.getDataSize()) / sizeof(PacketOrdinal);

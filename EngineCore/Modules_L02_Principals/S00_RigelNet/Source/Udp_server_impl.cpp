@@ -39,6 +39,7 @@ RN_UdpServerImpl::RN_UdpServerImpl(std::string passphrase,
             _timeoutLimit,
             _passphrase,
             _retransmitPredicate,
+            _localNodeStatusWord,
             rn_detail::EventFactory{_eventListeners, i},
             _maxPacketSize);
 
@@ -89,6 +90,7 @@ void RN_UdpServerImpl::resize(PZInteger newSize) {
             _timeoutLimit,
             _passphrase,
             _retransmitPredicate,
+            _localNodeStatusWord,
             rn_detail::EventFactory{_eventListeners, i},
             _maxPacketSize);
 
@@ -187,6 +189,14 @@ RN_Protocol RN_UdpServerImpl::getProtocol() const noexcept {
 
 RN_NetworkingStack RN_UdpServerImpl::getNetworkingStack() const noexcept {
     return _socket.getNetworkingStack();
+}
+
+void RN_UdpServerImpl::setNodeStatusWord(std::uint32_t aNodeStatusWord) {
+    _localNodeStatusWord = aNodeStatusWord;
+}
+
+std::uint32_t RN_UdpServerImpl::getNodeStatusWord() const {
+    return _localNodeStatusWord;
 }
 
 ///////////////////////////////////////////////////////////////////////////
