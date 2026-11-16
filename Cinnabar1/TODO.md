@@ -3,3 +3,4 @@
 - [Nice to have] Latency optimizer
 - Use NodeStatusWord
 - Reduce server EXECON while no client is connected
+- QAO_Runtime, QAO_Create/Destroy, QAO_Handle - exception safety

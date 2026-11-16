@@ -676,10 +676,14 @@ void ShipController::_didAttach(QAO_Runtime& aRuntime) {
     }
     _interiorWorld.emplace(iwMode, ctx());
 
-    // TODO: subscribe to receive lobby change updates
+    ccomp<MNetworking>().addEventListener(this);
+    ccomp<MLobbyEvent>().addEventListener(this);
 }
 
 void ShipController::_willDetach(QAO_Runtime& aRuntime) {
+    ccomp<MNetworking>().removeEventListener(this);
+    ccomp<MLobbyEvent>().removeEventListener(this);
+
     // TODO: temporary implementation
     if (isMasterObject()) {
         for (int i = 0; i < 2048; ++i) {
@@ -812,17 +816,31 @@ void ShipController::_eventDraw1() {
     }
 }
 
-void ShipController::onLobbyEvent(const spe::LobbyBackendEvent& aEvent) {
-    bool somethingDidChange = false;
-    aEvent.visit([&somethingDidChange](const spe::LobbyBackendEvent::LobbyChanged&) {
-        somethingDidChange = true;
-    });
-
-    if (somethingDidChange) {
-        if (isMasterObject()) {
-            _masterData->onboardPlayerInfo.updateMappings(ccomp<MLobbyBackend>());
-        }
+void ShipController::onNetworkingEvent(const RN_Event& aEvent) {
+    if (!isMasterObject()) {
+        return; // For now, networking events are only needed by the master
     }
+
+    aEvent.visit([this](const RN_Event::Connected& aEventData) {
+        _masterData->onboardPlayerInfo.setSecondaryVisibleStateSyncedForClient(
+            static_cast<std::int8_t>(aEventData.clientIndex.value()),
+            false);
+    });
+}
+
+/*
+ * The `LobbyChanged` event tells us that the lobby is somehow different than during the last
+ * iteration, but it doesn't tell us how. In this case that's actually convenient for our use
+ * case: we just want to call `updateMappings` once if the lobby is changed at all.
+ */
+void ShipController::onLobbyEvent(const spe::LobbyBackendEvent& aEvent) {
+    if (!isMasterObject()) {
+        return; // For now, lobby events are only needed by the master
+    }
+
+    aEvent.visit([this](const spe::LobbyBackendEvent::LobbyChanged&) {
+        _masterData->onboardPlayerInfo.updateMappings(ccomp<MLobbyBackend>());
+    });
 }
 
 std::variant<RelativeIWSliceOrientation, hg::math::AngleF> ShipController::_checkIWSliceOrientation(

@@ -56,6 +56,7 @@ struct ShipController_MasterData;
 class ShipController
     : public spe::SynchronizedObject<ShipController_VisibleState,
                                      SPEMPE_RSDATA_HEAP(ShipController_MasterData, void)>
+    , private spe::NetworkingEventListener
     , private LobbyEventListener {
 public:
     //! Factory method to create a master object.
@@ -162,6 +163,7 @@ private:
     void _eventPostUpdate() override;
     void _eventDraw1() override;
 
+    void onNetworkingEvent(const RN_Event& aEvent) override;
     void onLobbyEvent(const spe::LobbyBackendEvent& aEvent) override;
 
     //! Returns a non-INVALID rotation, if able, and a rotation hint otherwise.

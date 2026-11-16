@@ -56,17 +56,17 @@ public:
     spe::SyncFilterStatus getSyncFilterStatusForClient(std::int8_t aClientIndex) const;
 
 private:
-    static constexpr hg::PZInteger BITS_PER_CLIENT = 2;
-
-    //! This bitset stores information about clients in the following way:
-    //! - there are 2 bits per client, so bits 0 and 1 pertain to client 0, bits 2 and 3 pertain to
-    //!   client 1, and so on.
-    //! - of the two bits pertaining to an individual client, the less significant bit (e.g., bit 0 for
-    //!   client 0) tells us whether the client is "onboard" the ship [controller] associated with this
+    static constexpr hg::PZInteger BITS_PER_PC = 2; // Bits per player or client
+    
+    //! This bitset stores information about players/clients in pairs, and in the following way:
+    //! - The 1st pair (bits 0 and 1) belongs to player 0 and client 0; then the 2nd pair (bits 2 and 3)
+    //!   belongs to player 1 and client 1, and so on.
+    //! - Of the two bits in every pair, the lower bit (e.g., bit 0 for player 0; or bit 4 for player 2)
+    //!   tells us whether the relevant player is onboard the ship [controller] associated with this
     //!   `OnboardPlayerInfo` object and whether SVS data *should* be synced to this client.
-    //! - of the two bits pertaining to an individual client, the more significant bit (e.g., bit 1 for
-    //!   client 0) tells us whether SVS data has been synced to this client thus far. 
-    hg::util::DynamicBitset _clientStatusBits;
+    //! - Of the two bits in every pair, the higher bit (e.g., bit 1 for client 0; or bit 5 for player 2)
+    //!   tells us us whether SVS data has been synced to the relevant client thus far.
+    hg::util::DynamicBitset _bitset;
 
     //! Maps player indices to client indices.
     //! `_playerToClientMapping[N]` == client index of player N.

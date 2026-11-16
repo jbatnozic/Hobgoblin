@@ -742,6 +742,7 @@ hg::PZInteger DefaultLobbyBackendManager::_findOptimalPositionForClient(const RN
 void DefaultLobbyBackendManager::_removeDesiredEntriesForDisconnectedPlayers() {
     const auto& server = ccomp<NetworkingManager>().getServer();
 
+    bool somethingDidChange = false;
     for (std::size_t i = 0; i < hg::pztos(_getSize()); i += 1) {
         auto& player = _desired[i];
 
@@ -760,8 +761,12 @@ void DefaultLobbyBackendManager::_removeDesiredEntriesForDisconnectedPlayers() {
             player.clientIndex = CLIENT_INDEX_UNKNOWN;
 
             _updateVarmapForDesiredEntry(i);
-            // TODO ev: lobby changed
+            somethingDidChange = true;
         }
+    }
+
+    if (somethingDidChange) {
+        _enqueueLobbyChanged();
     }
 }
 
