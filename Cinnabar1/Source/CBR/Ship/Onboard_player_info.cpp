@@ -80,7 +80,13 @@ bool OnboardPlayerInfo::isSecondaryVisibleStateSyncedForClient(std::int8_t aClie
 // MARK: Client Management
 
 bool OnboardPlayerInfo::isClientOnboard(std::int8_t aClientIndex) const {
-    return _bitset.getBit(aClientIndex * BITS_PER_PC + 0);
+    const auto playerIndex = clientIdxToPlayerIdx(aClientIndex);
+    if (playerIndex < 0) {
+        // This situation can happen if a player is connected but hasn't been assigned
+        // to a slot yet (lobby hasn't been locked in yet).
+        return false;
+    }
+    return isPlayerOnboard(playerIndex);
 }
 
 spe::SyncFilterStatus OnboardPlayerInfo::getSyncFilterStatusForClient(std::int8_t aClientIndex) const {
