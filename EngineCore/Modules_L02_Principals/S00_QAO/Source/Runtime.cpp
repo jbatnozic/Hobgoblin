@@ -112,7 +112,9 @@ QAO_RuntimeRef QAO_Runtime::nonOwning() {
     return rv;
 }
 
-void QAO_Runtime::attachObject(AvoidNull<QAO_GenericHandle> aHandle) {
+void QAO_Runtime::attachObject(QAO_GenericHandle&& aHandle) {
+    HG_VALIDATE_ARGUMENT(!aHandle.isNull());
+
     if (HG_UNLIKELY_CONDITION((aHandle->_flags & QAO_Base::SET_UP_PROPERLY_BIT) == 0)) {
         HG_UNLIKELY_BRANCH;
         HG_THROW_TRACED(AssertionFailedError,
@@ -126,15 +128,26 @@ void QAO_Runtime::attachObject(AvoidNull<QAO_GenericHandle> aHandle) {
     HG_VALIDATE_PRECONDITION(aHandle->getRuntime() == nullptr);
     // Usually we can't insert objects when there is no active room, but for objects that
     // won't be owned by the runtime this doesn't matter.
-    HG_VALIDATE_PRECONDITION(getRoomCount() > 0 || !aHandle.underlying().isOwning());
+    HG_VALIDATE_PRECONDITION(getRoomCount() > 0 || !aHandle.isOwning());
 
-    const bool      ownedByRuntime = aHandle.underlying().isOwning();
-    QAO_Base* const objRaw         = aHandle.underlying().ptr();
-    const auto      id             = _registry.insert(std::move(aHandle));
+    const bool      ownedByRuntime = aHandle.isOwning();
+    QAO_Base* const objRaw         = aHandle.ptr();
 
-    auto [iter, didInsert] =
-        _orderer.insert(qao_detail::QAO_HandleFactory::createHandle(objRaw, false));
+    auto [iter, didInsert] = _orderer.insert(qao_detail::QAO_HandleFactory::createHandle(objRaw, false));
+    // If insertion into the orderer fails, no container will have been changed (including
+    // `aHandle`), so in that case it's safe to propagate the failure upwards as-is.
     HG_HARD_ASSERT(didInsert);
+
+    QAO_GenericId id;
+    try {
+        // If insertion into the registry fails, the registry itself will remain unchanged, as
+        // well as `aHandle`, but we will already have modified the orderer, so we need to
+        // clean it up before propagating the failure upwards.
+        id = _registry.insert(std::move(aHandle));
+    } catch (...) {
+        _orderer.erase(iter);
+        throw;
+    }
 
     const auto roomCount = getRoomCount();
     objRaw->_context     = {.stepOrdinal     = MIN_STEP_ORDINAL,
@@ -158,15 +171,27 @@ void QAO_Runtime::attachObject(AvoidNull<QAO_GenericHandle> aHandle) {
                             objRaw->getDebugDescription());
         }
     } catch (...) {
+        // Here is the tricky part: if the final step of attaching fails,
+        // we must restore all of the following (in the specified order):
+        // - the object's context
+        // - `aHandle` and the registry
+        // - the orderer
+        // And then propagate the failure up to the caller to deal with it.
+
+        // `_didAttach()` could have invalidated `iter` by changing instance priority
+        const auto ordererIter = objRaw->_context.ordererIterator;
+
         objRaw->_context = {};
-        _orderer.erase(iter);
-        auto handle = _registry.remove(id.getIndex());
-        handle._release();
+        aHandle          = _registry.remove(id.getIndex());
+        _orderer.erase(ordererIter);
+
         throw;
     }
 }
 
-void QAO_Runtime::attachObject(AvoidNull<QAO_GenericHandle> aHandle, QAO_GenericId aSpecificId) {
+void QAO_Runtime::attachObject(QAO_GenericHandle&& aHandle, QAO_GenericId aSpecificId) {
+    HG_VALIDATE_ARGUMENT(!aHandle.isNull());
+
     if (HG_UNLIKELY_CONDITION((aHandle->_flags & QAO_Base::SET_UP_PROPERLY_BIT) == 0)) {
         HG_UNLIKELY_BRANCH;
         HG_THROW_TRACED(AssertionFailedError,
@@ -180,15 +205,25 @@ void QAO_Runtime::attachObject(AvoidNull<QAO_GenericHandle> aHandle, QAO_Generic
     HG_VALIDATE_PRECONDITION(aHandle->getRuntime() == nullptr);
     // Usually we can't insert objects when there is no active room, but for objects that
     // won't be owned by the runtime this doesn't matter.
-    HG_VALIDATE_PRECONDITION(getRoomCount() > 0 || !aHandle.underlying().isOwning());
+    HG_VALIDATE_PRECONDITION(getRoomCount() > 0 || !aHandle.isOwning());
 
-    const bool      ownedByRuntime = aHandle.underlying().isOwning();
-    QAO_Base* const objRaw         = aHandle.underlying().ptr();
-    _registry.insertWithId(std::move(aHandle), aSpecificId);
+    const bool      ownedByRuntime = aHandle.isOwning();
+    QAO_Base* const objRaw         = aHandle.ptr();
 
-    auto [iter, didInsert] =
-        _orderer.insert(qao_detail::QAO_HandleFactory::createHandle(objRaw, false));
+    auto [iter, didInsert] = _orderer.insert(qao_detail::QAO_HandleFactory::createHandle(objRaw, false));
+    // If insertion into the orderer fails, no container will have been changed (including
+    // `aHandle`), so in that case it's safe to propagate the failure upwards as-is.
     HG_HARD_ASSERT(didInsert);
+
+    try {
+        // If insertion into the registry fails, the registry itself will remain unchanged, as
+        // well as `aHandle`, but we will already have modified the orderer, so we need to
+        // clean it up before propagating the failure upwards.
+        _registry.insertWithId(std::move(aHandle), aSpecificId);
+    } catch (...) {
+        _orderer.erase(iter);
+        throw;
+    }
 
     const auto roomCount = getRoomCount();
     objRaw->_context     = {.stepOrdinal     = MIN_STEP_ORDINAL,
@@ -198,7 +233,7 @@ void QAO_Runtime::attachObject(AvoidNull<QAO_GenericHandle> aHandle, QAO_Generic
                             .roomId          = (roomCount == 0 || !ownedByRuntime)
                                                    ? QAO_INVALID_ROOM_ID
                                                    : static_cast<QAO_RoomId>(roomCount)};
-              
+
     try {
         objRaw->_didAttach(SELF);
 
@@ -212,10 +247,20 @@ void QAO_Runtime::attachObject(AvoidNull<QAO_GenericHandle> aHandle, QAO_Generic
                             objRaw->getDebugDescription());
         }
     } catch (...) {
+        // Here is the tricky part: if the final step of attaching fails,
+        // we must restore all of the following (in the specified order):
+        // - the object's context
+        // - `aHandle` and the registry
+        // - the orderer
+        // And then propagate the failure up to the caller to deal with it.
+
+        // `_didAttach()` could have invalidated `iter` by changing instance priority
+        const auto ordererIter = objRaw->_context.ordererIterator;
+
         objRaw->_context = {};
-        _orderer.erase(iter);
-        auto handle = _registry.remove(aSpecificId.getIndex());
-        handle._release();
+        aHandle          = _registry.remove(aSpecificId.getIndex());
+        _orderer.erase(ordererIter);
+
         throw;
     }
 }

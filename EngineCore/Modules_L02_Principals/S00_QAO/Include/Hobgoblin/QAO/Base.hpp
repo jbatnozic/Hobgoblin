@@ -84,8 +84,19 @@ public:
 
 protected:
     // Lifecycle callbacks
+
+    //! \brief Called right after the object is created (after the constructor returns).
+    //! \note if `_setUp()` throws, `_tearDown()` will NOT be called during cleanup!
     virtual void _setUp();
+
+    //! \brief Called during destruction, right before the destructor call.
+    //! \warning the QAO library is set up in a way to always swallow and never propagate
+    //!          exceptions thrown from `_tearDown()`, so take that into consideration when
+    //!          overriding this method.
     virtual void _tearDown();
+
+    //! \warning DO NOT attempt to destroy the object or detach it from the runtime from within this
+    //!          method!
     virtual void _didAttach(QAO_Runtime& aRuntime);
     virtual void _willDetach(QAO_Runtime& aRuntime);
 

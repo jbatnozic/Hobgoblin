@@ -23,6 +23,11 @@ class QAO_Base;
 
 namespace qao_detail {
 
+//! \brief Tracks all objects currently attached to its owning Runtime.
+//!
+//! This class is designed with a strong exception guarantee in mind: if any non-const
+//! method throws, the registry is left unchanged and input parameters passed by
+//! reference are also left unchanged.
 class QAO_Registry {
 public:
     QAO_Registry(PZInteger aCapacity = 1);
@@ -30,17 +35,14 @@ public:
     //! Insert an object into the registry and assign it a new ID.
     //! \returns the ID assigned to the object.
     //! \throws InvalidArgumentError if `aHandle` is null.
-    //! \throws TracedRuntimeError on serial number clash.
-    //! \note provides the strong exception guarantee: if this method throws, the registry
-    //!       is left unchanged and `aHandle` is not moved from.
+    //! \note provides the strong exception guarantee.
     QAO_GenericId insert(QAO_GenericHandle&& aHandle);
 
     //! Insert an object into the registry with a specific, predetermined ID.
     //! \throws InvalidArgumentError if `aHandle` is null.
     //! \throws TracedLogicError if the index of `aId` is already in use.
     //! \throws TracedRuntimeError if the serial of `aId` is already in use.
-    //! \note provides the strong exception guarantee: if this method throws, the registry
-    //!       is left unchanged and `aHandle` is not moved from.
+    //! \note provides the strong exception guarantee.
     void insertWithId(QAO_GenericHandle&& aHandle, QAO_GenericId aId);
 
     //! Remove the object with the given index from the registry.

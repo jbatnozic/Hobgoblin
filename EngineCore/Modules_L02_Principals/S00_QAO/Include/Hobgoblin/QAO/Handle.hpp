@@ -4,6 +4,8 @@
 #ifndef UHOBGOBLIN_QAO_HANDLE_HPP
 #define UHOBGOBLIN_QAO_HANDLE_HPP
 
+#include <Hobgoblin/QAO/Runtime_ref.hpp>
+
 #include <type_traits>
 #include <utility>
 
@@ -17,6 +19,12 @@ class QAO_Runtime;
 
 template <class taObject>
 class QAO_Handle;
+
+template <class T, class... taArgs>
+QAO_Handle<T> QAO_Create(QAO_RuntimeRef aRuntimeRef, taArgs&&... aArgs);
+
+template <class T, class... taArgs>
+QAO_Handle<T> QAO_Create_USE_IN_FACTORY_FUNCTIONS_ONLY(QAO_RuntimeRef aRuntimeRef, taArgs&&... aArgs);
 
 void QAO_Destroy(QAO_Handle<QAO_Base>&& aHandle);
 
@@ -215,8 +223,12 @@ public:
 private:
     template <class T>
     friend class QAO_Handle;
-    friend class QAO_Runtime;
     friend class qao_detail::QAO_HandleFactory;
+    template <class T, class... taArgs>
+    friend auto QAO_Create(QAO_RuntimeRef aRuntimeRef, taArgs&&... aArgs) -> QAO_Handle<T>;
+    template <class T, class... taArgs>
+    friend auto QAO_Create_USE_IN_FACTORY_FUNCTIONS_ONLY(QAO_RuntimeRef aRuntimeRef, taArgs&&... aArgs)
+        -> QAO_Handle<T>;
     friend void QAO_Destroy(QAO_Handle<QAO_Base>&& aHandle);
 
     taObject* _object   = nullptr;

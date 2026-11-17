@@ -26,7 +26,7 @@ QAO_Registry::QAO_Registry(PZInteger capacity)
     are split into 3 sections:
       - Check   : Check state and input parameters; can throw; no state change.
       - Reserve : Grow containers as needed.
-      - Commit  :
+      - Commit  : Change state (modify containers).
     In all of the above, we're ignoring the existence of `std::bad_alloc`, because if that happens,
     the app is fucked anyway.
 */
@@ -36,10 +36,10 @@ QAO_GenericId QAO_Registry::insert(QAO_GenericHandle&& aHandle) {
 
     HG_VALIDATE_ARGUMENT(!!aHandle);
 
-    const auto serial = _serialCounter;
-    if (_serialToIndex.count(serial) != 0) {
-        HG_THROW_TRACED(TracedRuntimeError, 0, "Fatal serial number clash with value {}.", serial);
+    while (_serialToIndex.count(_serialCounter) != 0) {
+        _serialCounter++; // Find a valid serial number
     }
+    const auto serial = _serialCounter;
 
     // SECTION: Reserve
 

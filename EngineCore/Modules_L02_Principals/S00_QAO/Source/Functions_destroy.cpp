@@ -7,6 +7,7 @@
 #include <Hobgoblin/QAO/Base.hpp>
 #include <Hobgoblin/QAO/Handle.hpp>
 #include <Hobgoblin/QAO/Runtime.hpp>
+#include <Hobgoblin/Utility/Swallow.hpp>
 
 #include <utility>
 
@@ -38,7 +39,9 @@ void QAO_Destroy(QAO_GenericHandle&& aHandle) {
                         "its runtime.");
     }
 
-    object->_tearDown();
+    util::Swallow([object]() {
+        object->_tearDown();
+    });
     delete object;
 }
 

@@ -45,30 +45,6 @@ TEST_F(QAO_RegistryTest, InsertNullHandleThrowsWithoutModifyingRegistry) {
     EXPECT_EQ(_registry.instanceCount(), 0);
 }
 
-TEST_F(QAO_RegistryTest, InsertSerialClashThrowsWithoutModifyingRegistryOrHandle) {
-    // Occupy the serial that the next insert() would hand out, at some other index.
-    auto first = MakeDummy();
-    _registry.insertWithId(std::move(first), TestId{QAO_STARTING_SERIAL, 5});
-    ASSERT_EQ(_registry.instanceCount(), 1);
-
-    auto       handle = MakeDummy();
-    const auto ptr    = handle.ptr();
-    EXPECT_THROW(_registry.insert(std::move(handle)), hg::TracedRuntimeError);
-
-    // Handle not moved from, object not destroyed
-    EXPECT_FALSE(handle.isNull());
-    EXPECT_TRUE(handle.isOwning());
-    EXPECT_EQ(handle.ptr(), ptr);
-
-    // Registry unchanged: no slot leaked, no stray mapping
-    EXPECT_EQ(_registry.instanceCount(), 1);
-    for (QAO_Index i = 0; i < 5; i += 1) {
-        EXPECT_TRUE(_registry.findObjectWithIndex(i).isNull()) << "index " << i;
-    }
-    EXPECT_FALSE(_registry.findObjectWithSerial(QAO_STARTING_SERIAL).isNull());
-    EXPECT_TRUE(_registry.findObjectWithSerial(QAO_STARTING_SERIAL + 1).isNull());
-}
-
 TEST_F(QAO_RegistryTest, InsertGrowsAndAssignsSequentialIds) {
     const auto id0 = _registry.insert(MakeDummy());
     const auto id1 = _registry.insert(MakeDummy());

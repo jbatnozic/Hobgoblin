@@ -43,11 +43,62 @@ public:
     //! Create a non-owning reference to this runtime.
     QAO_RuntimeRef nonOwning();
 
-    // Object manipulation
-    void attachObject(AvoidNull<QAO_GenericHandle> aHandle);
+    ///////////////////////////////////////////////////////////////////////////
+    // MARK: ATTACHING OBJECTS                                               //
+    ///////////////////////////////////////////////////////////////////////////
 
-    // TODO: adding objects with specific IDs seems to be unused (serialization?)
-    void attachObject(AvoidNull<QAO_GenericHandle> aHandle, QAO_GenericId aSpecificId);
+    //! \brief Attach an object to this Runtime.
+    //!
+    //! \param aHandle rvalue reference to the (non-null) handle pointing to the object to detach. If
+    //!                the handle is owning, ownership of the object will be transferred over to the
+    //!                runtime. Otherwise, whoever is owning the object will keep owning it. If this
+    //!                method call is successful, the passed handle will be moved-from.
+    //!
+    //! \throws InvalidArgumentError if `aHandle` is null.
+    //! \throws PreconditionNotMetError if the object to attach is already attached to (any) runtime, or
+    //!                                 if you want to pass the ownership of the object onto the runtime,
+    //!                                 but the current room count is 0.
+    //! \throws ? (propagates the exception) if the object's `_didAttach()` call throws.
+    //!
+    //! This method provides the strong exception guarantee: If an exception is thrown from it, the
+    //! Runtime will be left in a valid state, without the passed object attached or partially attached,
+    //! and also `aHandle` (or rather the original referenced object) will not have been moved-from or
+    //! modified in any way.
+    void attachObject(QAO_GenericHandle&& aHandle);
+
+    //! \brief Attach helper for typed handles.
+    //! \see `attachObject(QAO_GenericHandle&&)`
+    template <class T>
+    void attachObject(QAO_Handle<T>&& aHandle) {
+        QAO_GenericHandle generic{std::move(aHandle)};
+        try {
+            attachObject(std::move(generic));
+        } catch (...) {
+            aHandle = generic.downcastMove<T>();
+            throw;
+        }
+    }
+
+    //! Similar to `attachObject(QAO_GenericHandle&&)`, but inserts with caller-specified ID
+    //! (for deserialization purposes) and throws if that ID's index or serial is already taken.
+    void attachObject(QAO_GenericHandle&& aHandle, QAO_GenericId aSpecificId);
+
+    //! \brief Attach helper for typed handles.
+    //! \see `attachObject(QAO_GenericHandle&&, QAO_GenericId)`
+    template <class T>
+    void attachObject(QAO_Handle<T>&& aHandle, QAO_GenericId aSpecificId) {
+        QAO_GenericHandle generic{std::move(aHandle)};
+        try {
+            attachObject(std::move(generic), aSpecificId);
+        } catch (...) {
+            aHandle = generic.downcastMove<T>();
+            throw;
+        }
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // MARK: DETACHING OBJECTS                                               //
+    ///////////////////////////////////////////////////////////////////////////
 
     //! Detach an object from the runtime.
     //! - If the object was owned by the runtime, an owning handle will be returned.
@@ -62,6 +113,10 @@ public:
 
     //! \warning NOT YET IMPLEMENTED
     void destroyAllOwnedObjects(bool aPropagateExceptions = PROPAGATE_EXCEPTIONS);
+
+    ///////////////////////////////////////////////////////////////////////////
+    // MARK: ROOM MANAGEMENT                                                 //
+    ///////////////////////////////////////////////////////////////////////////
 
     //! \brief Push a new room onto the room stack.
     //!
@@ -104,6 +159,18 @@ public:
     //! \brief Get the size of the room stack.
     PZInteger getRoomCount() const;
 
+    ///////////////////////////////////////////////////////////////////////////
+    // MARK: EXECUTION                                                       //
+    ///////////////////////////////////////////////////////////////////////////
+
+    void            startStep();
+    void            advanceStep(bool& done, std::int32_t eventFlags = QAO_ALL_EVENT_FLAGS);
+    QAO_Event::Enum getCurrentEvent() const;
+
+    ///////////////////////////////////////////////////////////////////////////
+    // MARK: INSPECTION                                                      //
+    ///////////////////////////////////////////////////////////////////////////
+
     template <class T = QAO_Base>
     QAO_Handle<T> find(const std::string& name) const;
 
@@ -115,18 +182,15 @@ public:
 
     void updateExecutionPriorityForObject(QAO_Base& object, int new_priority);
 
-    // Execution
-    void            startStep();
-    void            advanceStep(bool& done, std::int32_t eventFlags = QAO_ALL_EVENT_FLAGS);
-    QAO_Event::Enum getCurrentEvent() const;
-
-    // Other
     PZInteger getObjectCount() const noexcept;
     bool      ownsObject(QAO_GenericId aId) const;
     bool      ownsObject(QAO_Base& aObject) const;
     bool      ownsObject(NeverNull<QAO_GenericHandle> aObject) const;
 
-    // User data
+    ///////////////////////////////////////////////////////////////////////////
+    // MARK: USERDATA MANAGEMENT                                             //
+    ///////////////////////////////////////////////////////////////////////////
+
     void setUserData(std::nullptr_t);
 
     template <class T>
@@ -138,7 +202,9 @@ public:
     template <class T>
     T* getUserDataOrThrow() const;
 
-    // Execon
+    ///////////////////////////////////////////////////////////////////////////
+    // MARK: EXECON MANAGEMENT                                               //
+    ///////////////////////////////////////////////////////////////////////////
 
     //! \brief set the address from which the runtime will read the current execon level
     //! If set to null, the runtime will always assume `QAO_ExeCon::META_EXECUTE_ALL`.
@@ -147,7 +213,10 @@ public:
     //! \brief return the set execon address.
     const QAO_ExeCon* getExeconAddress() const;
 
-    // Orderer/instance iterations:
+    ///////////////////////////////////////////////////////////////////////////
+    // MARK: ORDERER ITERATIONS                                              //
+    ///////////////////////////////////////////////////////////////////////////
+
     QAO_OrdererIterator begin();
     QAO_OrdererIterator end();
 

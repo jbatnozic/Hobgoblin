@@ -31,13 +31,21 @@ namespace qao {
 //! \param aArgs parameters that will be forwarded to the constructor of `T` after
 //!              the instantiation guard (`QAO_InstGuard`).
 //!
+//! \throws ? propagates any exception thrown by `T`'s constructor or by `QAO_Runtime::attachObject`
+//!           if the runtime reference is not NULL and attaching fails.
+//!
 //! \returns handle to the newly created object. If the passed runtime ref was non-NULL and
 //!          owning, the runtime will own the object; thus the returned handle will be
-//!          non-owning. Oherwise the returned handle will own the object.
+//!          non-owning. Otherwise the returned handle will own the object.
 template <class T, class... taArgs>
 QAO_Handle<T> QAO_Create(QAO_RuntimeRef aRuntimeRef, taArgs&&... aArgs);
 
-//! TODO(add description)
+//! This function behaves EXACTLY the same as `QAO_Create` above. The only difference is the name.
+//! The intended use-case is that if you want your class derived from `QAO_Base` to only be
+//! constructible via a static factory function, instead of by calling `QAO_Create` directly, you can
+//! make its constructor `private` and befriend `QAO_Create_USE_IN_FACTORY_FUNCTIONS_ONLY`. Then your
+//! factory can use this function, while seeing this function call outside of a factory will be an
+//! immediate and noticeable red flag.
 template <class T, class... taArgs>
 QAO_Handle<T> QAO_Create_USE_IN_FACTORY_FUNCTIONS_ONLY(QAO_RuntimeRef aRuntimeRef, taArgs&&... aArgs);
 
@@ -47,33 +55,36 @@ QAO_Handle<T> QAO_Create_USE_IN_FACTORY_FUNCTIONS_ONLY(QAO_RuntimeRef aRuntimeRe
 // MARK: Implementations (internal)                                      //
 ///////////////////////////////////////////////////////////////////////////
 
-#define UHOBGOBLIN_QAO_CREATE_BODY(_ta_args_, _runtime_ref_, _args_)                             \
-    QAO_InstGuard instGuard;                                                                     \
-    T*            object = new T(instGuard, std::forward<_ta_args_>(_args_)...);                 \
-                                                                                                 \
-    bool didSetUp = false;                                                                       \
-    try {                                                                                        \
-        static_cast<QAO_Base*>(object)->_setUp();                                                \
-        didSetUp = true;                                                                         \
-                                                                                                 \
-        auto* rt = (_runtime_ref_).ptr();                                                        \
-        if (rt) {                                                                                \
-            const bool rtOwnsObject = (_runtime_ref_).isOwning();                                \
-            rt->attachObject(qao_detail::QAO_HandleFactory::createHandle(object, rtOwnsObject)); \
-            return qao_detail::QAO_HandleFactory::createHandle(object, !rtOwnsObject);           \
-        }                                                                                        \
-        return qao_detail::QAO_HandleFactory::createHandle(object, true);                        \
-    } catch (...) {                                                                              \
-        if (didSetUp) {                                                                          \
-            util::Swallow([object]() {                                                           \
-                static_cast<QAO_Base*>(object)->_tearDown();                                     \
-            });                                                                                  \
-        }                                                                                        \
-        delete object;                                                                           \
-        throw;                                                                                   \
-    }                                                                                            \
-                                                                                                 \
-    HG_UNREACHABLE();                                                                            \
+#define UHOBGOBLIN_QAO_CREATE_BODY(_ta_args_, _runtime_ref_, _args_)                                     \
+    QAO_InstGuard instGuard;                                                                             \
+    T*            object = new T(instGuard, std::forward<_ta_args_>(_args_)...);                         \
+                                                                                                         \
+    bool              didSetUp = false;                                                                  \
+    QAO_GenericHandle handle;                                                                            \
+    try {                                                                                                \
+        static_cast<QAO_Base*>(object)->_setUp();                                                        \
+        didSetUp = true;                                                                                 \
+                                                                                                         \
+        auto* rt = (_runtime_ref_).ptr();                                                                \
+        if (rt) {                                                                                        \
+            const bool rtOwnsObject = (_runtime_ref_).isOwning();                                        \
+            handle                  = qao_detail::QAO_HandleFactory::createHandle(object, rtOwnsObject); \
+            rt->attachObject(std::move(handle));                                                         \
+            return qao_detail::QAO_HandleFactory::createHandle(object, !rtOwnsObject);                   \
+        }                                                                                                \
+        return qao_detail::QAO_HandleFactory::createHandle(object, true);                                \
+    } catch (...) {                                                                                      \
+        if (didSetUp) {                                                                                  \
+            util::Swallow([object]() {                                                                   \
+                static_cast<QAO_Base*>(object)->_tearDown();                                             \
+            });                                                                                          \
+        }                                                                                                \
+        handle._release();                                                                               \
+        delete object;                                                                                   \
+        throw;                                                                                           \
+    }                                                                                                    \
+                                                                                                         \
+    HG_UNREACHABLE();                                                                                    \
     return {}
 
 template <class T, class... taArgs>
