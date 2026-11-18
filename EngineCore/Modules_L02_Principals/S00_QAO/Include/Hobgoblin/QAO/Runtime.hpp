@@ -238,6 +238,9 @@ private:
     QAO_OrdererIterator      _step_orderer_iterator;
     util::AnyPtr             _userData;
     const QAO_ExeCon*        _execon;
+
+    template <class taCallable>
+    void _attachObjectImpl(QAO_GenericHandle&& aHandle, taCallable&& aInsertIntoRegistryAndReturnId);
 };
 
 template <class T>

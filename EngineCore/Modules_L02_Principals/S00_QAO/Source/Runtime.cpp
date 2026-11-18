@@ -112,7 +112,11 @@ QAO_RuntimeRef QAO_Runtime::nonOwning() {
     return rv;
 }
 
-void QAO_Runtime::attachObject(QAO_GenericHandle&& aHandle) {
+// MARK: Attaching objects
+
+template <class taCallable>
+void QAO_Runtime::_attachObjectImpl(QAO_GenericHandle&& aHandle,
+                                    taCallable&&        aInsertIntoRegistryAndReturnId) {
     HG_VALIDATE_ARGUMENT(!aHandle.isNull());
 
     if (HG_UNLIKELY_CONDITION((aHandle->_flags & QAO_Base::SET_UP_PROPERLY_BIT) == 0)) {
@@ -143,7 +147,7 @@ void QAO_Runtime::attachObject(QAO_GenericHandle&& aHandle) {
         // If insertion into the registry fails, the registry itself will remain unchanged, as
         // well as `aHandle`, but we will already have modified the orderer, so we need to
         // clean it up before propagating the failure upwards.
-        id = _registry.insert(std::move(aHandle));
+        id = aInsertIntoRegistryAndReturnId(std::move(aHandle));
     } catch (...) {
         _orderer.erase(iter);
         throw;
@@ -189,81 +193,21 @@ void QAO_Runtime::attachObject(QAO_GenericHandle&& aHandle) {
     }
 }
 
-void QAO_Runtime::attachObject(QAO_GenericHandle&& aHandle, QAO_GenericId aSpecificId) {
-    HG_VALIDATE_ARGUMENT(!aHandle.isNull());
-
-    if (HG_UNLIKELY_CONDITION((aHandle->_flags & QAO_Base::SET_UP_PROPERLY_BIT) == 0)) {
-        HG_UNLIKELY_BRANCH;
-        HG_THROW_TRACED(AssertionFailedError,
-                        0,
-                        "Object to attach ({}) wasn't set up properly. Do all derived "
-                        "classes call the "
-                        "_setUp() method of their superclasses?",
-                        aHandle->getDebugDescription());
-    }
-
-    HG_VALIDATE_PRECONDITION(aHandle->getRuntime() == nullptr);
-    // Usually we can't insert objects when there is no active room, but for objects that
-    // won't be owned by the runtime this doesn't matter.
-    HG_VALIDATE_PRECONDITION(getRoomCount() > 0 || !aHandle.isOwning());
-
-    const bool      ownedByRuntime = aHandle.isOwning();
-    QAO_Base* const objRaw         = aHandle.ptr();
-
-    auto [iter, didInsert] = _orderer.insert(qao_detail::QAO_HandleFactory::createHandle(objRaw, false));
-    // If insertion into the orderer fails, no container will have been changed (including
-    // `aHandle`), so in that case it's safe to propagate the failure upwards as-is.
-    HG_HARD_ASSERT(didInsert);
-
-    try {
-        // If insertion into the registry fails, the registry itself will remain unchanged, as
-        // well as `aHandle`, but we will already have modified the orderer, so we need to
-        // clean it up before propagating the failure upwards.
-        _registry.insertWithId(std::move(aHandle), aSpecificId);
-    } catch (...) {
-        _orderer.erase(iter);
-        throw;
-    }
-
-    const auto roomCount = getRoomCount();
-    objRaw->_context     = {.stepOrdinal     = MIN_STEP_ORDINAL,
-                            .id              = aSpecificId,
-                            .ordererIterator = iter,
-                            .runtime         = this,
-                            .roomId          = (roomCount == 0 || !ownedByRuntime)
-                                                   ? QAO_INVALID_ROOM_ID
-                                                   : static_cast<QAO_RoomId>(roomCount)};
-
-    try {
-        objRaw->_didAttach(SELF);
-
-        if (HG_UNLIKELY_CONDITION((objRaw->_flags & QAO_Base::ATTACHED_PROPERLY_BIT) == 0)) {
-            HG_UNLIKELY_BRANCH;
-            HG_THROW_TRACED(AssertionFailedError,
-                            0,
-                            "Object to attach ({}) wasn't attached properly. Do all derived "
-                            "classes call the "
-                            "_didAttach() method of their superclasses?",
-                            objRaw->getDebugDescription());
-        }
-    } catch (...) {
-        // Here is the tricky part: if the final step of attaching fails,
-        // we must restore all of the following (in the specified order):
-        // - the object's context
-        // - `aHandle` and the registry
-        // - the orderer
-        // And then propagate the failure up to the caller to deal with it.
-
-        // `_didAttach()` could have invalidated `iter` by changing instance priority
-        const auto ordererIter = objRaw->_context.ordererIterator;
-
-        objRaw->_context = {};
-        aHandle          = _registry.remove(aSpecificId.getIndex());
-        _orderer.erase(ordererIter);
-
-        throw;
-    }
+void QAO_Runtime::attachObject(QAO_GenericHandle&& aHandle) {
+    _attachObjectImpl(std::move(aHandle), [this](QAO_GenericHandle&& aHandle_) -> QAO_GenericId {
+        return _registry.insert(std::move(aHandle_));
+    });
 }
+
+void QAO_Runtime::attachObject(QAO_GenericHandle&& aHandle, QAO_GenericId aSpecificId) {
+    _attachObjectImpl(std::move(aHandle),
+                      [this, aSpecificId](QAO_GenericHandle&& aHandle_) -> QAO_GenericId {
+                          _registry.insertWithId(std::move(aHandle_), aSpecificId);
+                          return aSpecificId;
+                      });
+}
+
+// MARK: Detaching objects
 
 AvoidNull<QAO_GenericHandle> QAO_Runtime::detachObject(QAO_GenericId aId) {
     auto handle = _registry.findObjectWithId(aId);
@@ -307,6 +251,8 @@ AvoidNull<QAO_GenericHandle> QAO_Runtime::detachObject(NeverNull<QAO_GenericHand
 void QAO_Runtime::destroyAllOwnedObjects(bool aPropagateExceptions) {
     HG_NOT_IMPLEMENTED();
 }
+
+// MARK: Room management
 
 const QAO_Room& QAO_Runtime::pushRoom(std::string aRoomName) {
     const auto roomCount = getRoomCount();
@@ -417,18 +363,7 @@ PZInteger QAO_Runtime::getRoomCount() const {
     return stopz(_roomStack.size());
 }
 
-void QAO_Runtime::updateExecutionPriorityForObject(QAO_Base& object, int newPriority) {
-    assert(find(object.getId()).ptr() == &object);
-
-    _orderer.erase(qao_detail::QAO_HandleFactory::createHandle(&object, false));
-    object._executionPriority = newPriority;
-
-    const auto [iter, didInsert] =
-        _orderer.insert(qao_detail::QAO_HandleFactory::createHandle(&object, false));
-    object._context.ordererIterator = iter;
-}
-
-// Execution
+// MARK: Execution
 
 void QAO_Runtime::startStep() {
     _currentEvent          = QAO_Event::PRE_UPDATE;
@@ -486,7 +421,18 @@ QAO_Event::Enum QAO_Runtime::getCurrentEvent() const {
     return _currentEvent;
 }
 
-// Other
+// MARK: Inspection
+
+void QAO_Runtime::updateExecutionPriorityForObject(QAO_Base& object, int newPriority) {
+    assert(find(object.getId()).ptr() == &object);
+
+    _orderer.erase(qao_detail::QAO_HandleFactory::createHandle(&object, false));
+    object._executionPriority = newPriority;
+
+    const auto [iter, didInsert] =
+        _orderer.insert(qao_detail::QAO_HandleFactory::createHandle(&object, false));
+    object._context.ordererIterator = iter;
+}
 
 PZInteger QAO_Runtime::getObjectCount() const noexcept {
     return _registry.instanceCount();
@@ -505,13 +451,13 @@ bool QAO_Runtime::ownsObject(NeverNull<QAO_GenericHandle> aObject) const {
     return ownsObject(*aObject);
 }
 
-// User data
+// MARK: User data management
 
 void QAO_Runtime::setUserData(std::nullptr_t) {
     _userData.reset(nullptr);
 }
 
-// Execon
+// MARK: EXECON management
 
 void QAO_Runtime::setExeconAddress(const QAO_ExeCon* aExeconAddress) {
     _execon = aExeconAddress;
@@ -521,7 +467,7 @@ const QAO_ExeCon* QAO_Runtime::getExeconAddress() const {
     return _execon;
 }
 
-// Orderer/instance iterations
+// MARK: Iterating
 
 QAO_OrdererIterator QAO_Runtime::begin() {
     return _orderer.begin();
