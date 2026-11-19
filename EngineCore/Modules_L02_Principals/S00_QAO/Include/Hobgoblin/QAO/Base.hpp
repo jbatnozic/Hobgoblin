@@ -86,19 +86,70 @@ protected:
     // Lifecycle callbacks
 
     //! \brief Called right after the object is created (after the constructor returns).
-    //! \note if `_setUp()` throws, `_tearDown()` will NOT be called during cleanup!
+    //!
+    //! The only use case that this function has, and the only advantage it has over the constructor,
+    //! is that the dynamic type of the instance is fully resolved and available at the time of calling.
+    //!
+    //! \warning don't forget to call the `_setUp()` method of the superclass before anything else when
+    //!          overriding this method!
+    //!
+    //! \warning DO NOT attempt to destroy or attach/detach (directly or indirectly) the object in this
+    //!          method! It will lead to catastrophic bugs!
+    //!
+    //! \note if `_setUp()` throws, object creation (the `QAO_Create` call) will fail, and,
+    //!       analogously to a throwing constructor, `_tearDown()` will NOT be called during cleanup!
     virtual void _setUp();
 
-    //! \brief Called during destruction, right before the destructor call.
-    //! \warning the QAO library is set up in a way to always swallow and never propagate
-    //!          exceptions thrown from `_tearDown()`, so take that into consideration when
-    //!          overriding this method.
-    virtual void _tearDown();
-
-    //! \warning DO NOT attempt to destroy the object or detach it from the runtime from within this
-    //!          method!
+    //! \brief Called right after the object is attached to a runtime.
+    //!
+    //! Use this method to do any setup or initialization that requires the object to have the overall
+    //! context that being attached to a runtime provides.
+    //!
+    //! \warning don't forget to call the `_didAttach()` method of the superclass before anything else
+    //!          when overriding this method!
+    //!
+    //! \warning DO NOT attempt to destroy or attach/detach (directly or indirectly) the object in this
+    //!          method! It will lead to catastrophic bugs!
+    //!
+    //! \note if `_didAttach()` throws, attaching the object will fail, and, analogously to a throwing
+    //!       constructor, `_willDetach()` will NOT be called during cleanup!
     virtual void _didAttach(QAO_Runtime& aRuntime);
+
+    //! \brief Called just before the object is detached from its runtime.
+    //!
+    //! This method's implementation should do minimal work outside of nulling out some fields
+    //! or unsubscribing the object from runtime-bound components; in general, it should only prepare
+    //! the object to exist without the overall context that being attached to a runtime provides.
+    //!
+    //! \warning don't forget to call the `_willDetach()` method of the superclass after anything else
+    //!          when overriding this method!
+    //!
+    //! \warning DO NOT attempt to destroy or attach/detach (directly or indirectly) the object in this
+    //!          method! It will lead to catastrophic bugs!
+    //!
+    //! \note the QAO library is set up so that it always swallows and never propagates any exceptions
+    //!       that escape from `_willDetach()`. (there is no perfect way to handle this: any serious
+    //!       error - including the inability to properly detach an object from its runtime - most
+    //!       likely leads the whole runtime into an invalid state, where the only possible recovery is
+    //!       to tear it down, so it was decided that exceptions from `_willDetach()` must not prevent
+    //!       that. On the bright side, the operations usually done in this method should be
+    //!       sufficiently simple so that producing an exception is really unlikely.)
     virtual void _willDetach(QAO_Runtime& aRuntime);
+
+    //! \brief Called during destruction, right before the destructor call.
+    //!
+    //! The only use case that this function has, and the only advantage it has over the destructor,
+    //! is that the dynamic type of the instance is still resolved and available at the time of calling.
+    //!
+    //! \warning don't forget to call the `_tearDown()` method of the superclass after anything else
+    //!          when overriding this method!
+    //!
+    //! \warning DO NOT attempt to destroy or attach/detach (directly or indirectly) the object in this
+    //!          method! It will lead to catastrophic bugs!
+    //!
+    //! \note exceptions that escape this method are always swallowed (see the description of
+    //!       `_willDetach` for the reasoning).
+    virtual void _tearDown();
 
 private:
     // Befriend `QAO_Create*` so that it can call `_setUp()` when needed.
@@ -132,6 +183,9 @@ private:
         DETACHED_PROPERLY_BIT  = (1u << 12u),
         NAME_IS_STATIC_BIT     = (1u << 11u),
     };
+
+    using EventHandlerPointer = void(QAO_Base::*)();
+    static const EventHandlerPointer EVENT_FUNC_TABLE[QAO_Event::EVENT_COUNT];
 
     // Update
     virtual void _eventPreUpdate() {}

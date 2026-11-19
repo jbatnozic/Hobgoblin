@@ -151,6 +151,9 @@ public:
         : SyncObjSuper{aInstGuard, hg::QAO_ExeCon::GAMEPLAY, 0, "Avatar", aSyncId} {}
 
     void _willDetach(hg::QAO_Runtime& aRuntime) override {
+        // In general it's not a good idea to add more objects during `_willDetach()`
+        // unconditially as we do here, but for the purposes of this test it's good
+        // enough, and it incidentally helps to test runtime cleanup & destruction.
         hg::QAO_Create<AvatarDrop>(aRuntime)->customData = _getCurrentState().customData;
         SyncObjSuper::_willDetach(aRuntime);
     }

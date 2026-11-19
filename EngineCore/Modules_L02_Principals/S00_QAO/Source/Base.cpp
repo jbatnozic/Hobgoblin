@@ -11,7 +11,6 @@
 #include <Hobgoblin/QAO/Runtime.hpp>
 
 #include <cassert>
-#include <memory>
 #include <typeinfo>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
@@ -109,7 +108,7 @@ void QAO_Base::setExecutionPriority(int new_priority) {
         return;
     }
     if (_context.runtime != nullptr) {
-        _context.runtime->updateExecutionPriorityForObject(SELF, new_priority);
+        _context.runtime->_updateExecutionPriorityForObject(SELF, new_priority);
     } else {
         _executionPriority = new_priority;
     }
@@ -142,28 +141,27 @@ void QAO_Base::setName(QAO_NameRef aName) {
 
 // Private
 
+const QAO_Base::EventHandlerPointer QAO_Base::EVENT_FUNC_TABLE[QAO_Event::EVENT_COUNT] = {
+    // Update step
+    &QAO_Base::_eventPreUpdate,
+    &QAO_Base::_eventBeginUpdate,
+    &QAO_Base::_eventUpdate1,
+    &QAO_Base::_eventUpdate2,
+    &QAO_Base::_eventEndUpdate,
+    &QAO_Base::_eventPostUpdate,
+    // Draw step
+    &QAO_Base::_eventPreDraw,
+    &QAO_Base::_eventDraw1,
+    &QAO_Base::_eventDraw2,
+    &QAO_Base::_eventDrawGUI,
+    &QAO_Base::_eventPostDraw,
+    // Display step
+    &QAO_Base::_eventDisplay //
+};
+
 void QAO_Base::_callEvent(QAO_Event::Enum ev) {
-    // clang-format off
-    using EventHandlerPointer = void(QAO_Base::*)();
-    const EventHandlerPointer handlers[QAO_Event::EVENT_COUNT] = {
-        &QAO_Base::_eventPreUpdate,
-        &QAO_Base::_eventBeginUpdate,
-        &QAO_Base::_eventUpdate1,
-        &QAO_Base::_eventUpdate2,
-        &QAO_Base::_eventEndUpdate,
-        &QAO_Base::_eventPostUpdate,
-
-        &QAO_Base::_eventPreDraw,
-        &QAO_Base::_eventDraw1,
-        &QAO_Base::_eventDraw2,
-        &QAO_Base::_eventDrawGUI,
-        &QAO_Base::_eventPostDraw,
-
-        &QAO_Base::_eventDisplay
-    };
     assert(ev >= 0 && ev < QAO_Event::EVENT_COUNT);
-    (this->*handlers[ev])();
-    // clang-format on
+    (this->*EVENT_FUNC_TABLE[ev])();
 }
 
 } // namespace qao

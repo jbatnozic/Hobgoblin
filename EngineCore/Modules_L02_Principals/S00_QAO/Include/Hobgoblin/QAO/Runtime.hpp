@@ -180,8 +180,6 @@ public:
     template <class T>
     T* find(QAO_Id<T> id) const;
 
-    void updateExecutionPriorityForObject(QAO_Base& object, int new_priority);
-
     PZInteger getObjectCount() const noexcept;
     bool      ownsObject(QAO_GenericId aId) const;
     bool      ownsObject(QAO_Base& aObject) const;
@@ -230,6 +228,8 @@ public:
     QAO_OrdererConstReverseIterator crend() const;
 
 private:
+    friend class QAO_Base;
+
     qao_detail::QAO_Registry _registry;
     qao_detail::QAO_Orderer  _orderer;
     std::vector<QAO_Room>    _roomStack;
@@ -241,6 +241,8 @@ private:
 
     template <class taCallable>
     void _attachObjectImpl(QAO_GenericHandle&& aHandle, taCallable&& aInsertIntoRegistryAndReturnId);
+
+    void _updateExecutionPriorityForObject(QAO_Base& aObject, int aNewPriority);
 };
 
 template <class T>

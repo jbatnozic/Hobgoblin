@@ -7,11 +7,12 @@
 #include <Hobgoblin/Logging.hpp>
 #include <Hobgoblin/QAO/Base.hpp>
 #include <Hobgoblin/QAO/Runtime.hpp>
+#include <Hobgoblin/Utility/Swallow.hpp>
 
 #include <cassert>
-#include <cstring>
 #include <exception>
 #include <limits>
+#include <string>
 
 #include <Hobgoblin/Private/Pmacro_define.hpp>
 
@@ -42,10 +43,6 @@ QAO_Runtime::QAO_Runtime(util::AnyPtr aUserData, const QAO_ExeCon* aExeconAddres
 {
     pushRoom("default");
 }
-
-/*
-    TODO: the code in this file is seriously exception unsafe (unlike QAO_Registry); refactor it!
-*/
 
 QAO_Runtime::~QAO_Runtime() {
     popAllRooms(NO_PROPAGATE_EXCEPTIONS);
@@ -88,20 +85,9 @@ QAO_Runtime::~QAO_Runtime() {
             if (current.isNull()) {
                 continue; // Could have been destroyed by another object's detaching or destruction
             }
-            try {
+            util::Swallow([&, this]() {
                 MoveToUnderlying(detachObject(id)).reset();
-            } catch (const TracedException& ex) {
-                HG_LOG_ERROR(LOG_ID,
-                             "Encountered an error while forcibly detaching object. Details: {}",
-                             ex.getFormattedDescription());
-            } catch (const std::exception& ex) {
-                HG_LOG_ERROR(LOG_ID,
-                             "Encountered an error while forcibly detaching object. Details: {}",
-                             ex.what());
-            } catch (...) {
-                HG_LOG_ERROR(LOG_ID,
-                             "Encountered an error while forcibly detaching object. Details: n/a");
-            }
+            });
         }
     }
 }
@@ -185,6 +171,10 @@ void QAO_Runtime::_attachObjectImpl(QAO_GenericHandle&& aHandle,
         // `_didAttach()` could have invalidated `iter` by changing instance priority
         const auto ordererIter = objRaw->_context.ordererIterator;
 
+        if (_step_orderer_iterator == ordererIter) {
+            ++_step_orderer_iterator;
+        }
+
         objRaw->_context = {};
         aHandle          = _registry.remove(id.getIndex());
         _orderer.erase(ordererIter);
@@ -214,27 +204,48 @@ AvoidNull<QAO_GenericHandle> QAO_Runtime::detachObject(QAO_GenericId aId) {
     HG_VALIDATE_PRECONDITION(!handle.isNull() &&
                              "Object by given ID must exist attached to the Runtime.");
 
-    handle->_willDetach(SELF); // TODO: what happens if this (or anything else in this function) throws?!
-    if (HG_UNLIKELY_CONDITION((handle->_flags & QAO_Base::DETACHED_PROPERLY_BIT) == 0)) {
-        HG_UNLIKELY_BRANCH;
-        HG_THROW_TRACED(AssertionFailedError,
-                        0,
-                        "Object to detach ({}) wasn't detached properly. Do all derived "
-                        "classes call the "
-                        "_willDetach() method of their superclasses?",
-                        handle->getDebugDescription());
-    }
-    handle->_context = QAO_Base::Context{};
+    // In general, detaching an object should do minimal work outside of nulling out some fields
+    // or unsubscribing the object from runtime-bound components (and similar). So, right from the
+    // get-go, we don't really expect that throwing due to improper detaching is a real factor or
+    // something that's likely to happen. But, more importantly than that, detaching objects
+    // either happens during runtime destruction, or, an exception escaping from here is likely to
+    // lead to runtime destruction (during stack unwinding) or at least to some rooms being popped.
+    // Either way, the most reasonable thing to do here is to swallow any exceptions and remove the
+    // object from the runtime anyway, in whatever state it may be.
+    util::Swallow([this, &handle]() {
+        handle->_willDetach(SELF);
 
-    const auto index = aId.getIndex();
+        if (HG_UNLIKELY_CONDITION((handle->_flags & QAO_Base::DETACHED_PROPERLY_BIT) == 0)) {
+            HG_UNLIKELY_BRANCH;
+            HG_THROW_TRACED(AssertionFailedError,
+                            0,
+                            "Object to detach ({}) wasn't detached properly. Do all derived "
+                            "classes call the "
+                            "_willDetach() method of their superclasses?",
+                            handle->getDebugDescription());
+        }
+    });
 
-    auto rv = _registry.remove(index);
-
-    // If current _step_orderer_iterator points to released object, advance it first
+    // If current _step_orderer_iterator points to the object being detached, advance it first
     if (_step_orderer_iterator != _orderer.end() && _step_orderer_iterator->ptr() == handle.ptr()) {
-        _step_orderer_iterator = std::next(_step_orderer_iterator);
+        ++_step_orderer_iterator;
     }
-    _orderer.erase(qao_detail::QAO_HandleFactory::createHandle(handle.ptr(), false));
+
+    // We know that `remove()` will not throw because of the precondition check at the start
+    auto rv = _registry.remove(aId.getIndex());
+
+    // We would have to have some truly extraordinary circumstances for this to fail...
+    if (auto iter = _orderer.find(qao_detail::QAO_HandleFactory::createHandle(handle.ptr(), false));
+        iter != _orderer.end()) //
+    {
+        _orderer.erase(iter);
+    } else {
+        HG_LOG_ERROR(LOG_ID,
+                     "Object to detach ({}) was not found in the orderer at all.",
+                     rv->getDebugDescription());
+    }
+
+    handle->_context = QAO_Base::Context{};
 
     return rv;
 }
@@ -380,34 +391,37 @@ void QAO_Runtime::advanceStep(bool& done, std::int32_t eventFlags) {
             continue;
         }
 
-        auto ev       = static_cast<QAO_Event::Enum>(i);
-        _currentEvent = ev;
+        _currentEvent = static_cast<QAO_Event::Enum>(i);
 
-        while (curr != _orderer.end()) {
-            auto* const instance = curr->ptr();
-
-            char currBeforeEvent[sizeof(curr)];
-            std::memcpy(currBeforeEvent, &curr, sizeof(curr));
-
-            if ((!_execon || (*_execon >= instance->getExeconThreshold())) &&
-                instance->_context.stepOrdinal < _step_counter) //
-            {
-                instance->_context.stepOrdinal = _step_counter;
-                instance->_callEvent(ev);
-                // After calling _callEvent, the instance variable must no longer be used until
-                // reassigned, because an instance is allowed to delete itself inside of an event
-                // implementation
+        while (true) {
+            // Try to find the first instance whose event needs to be executed next.
+            // If no instance is found, we're done with this event.
+            while (true) {
+                if (curr == _orderer.end()) {
+                    goto EVENT_FINISHED;
+                }
+                if ((*curr)->_context.stepOrdinal >= _step_counter) {
+                    ++curr;
+                } else {
+                    break;
+                }
             }
-            // If the step orderer iterator wasn't advanced by the _callEvent invocation (by the callee
-            // deleting itself), it must be advanced here. Raw memory compare is necessary because
-            // the iterator being compared then becomes invalid when deleting the list node.
-            const bool stepIteratorStayedTheSame =
-                (std::memcmp(currBeforeEvent, &curr, sizeof(curr)) == 0);
-            if (stepIteratorStayedTheSame && curr != _orderer.end()) {
-                curr = std::next(curr);
+
+            QAO_Base* instance = curr->ptr();
+
+            if (!_execon || (*_execon >= instance->getExeconThreshold())) {
+                instance->_context.stepOrdinal = _step_counter;
+                instance->_callEvent(_currentEvent);
+                //! \warning After calling _callEvent, the instance variable must no longer be used 
+                //!          until reassigned, because an instance is allowed to delete itself inside 
+                //!          of an event implementation
+                instance = nullptr;
+            } else {
+                ++curr;
             }
         }
 
+    EVENT_FINISHED:
         curr = _orderer.begin();
         _step_counter += 1;
     }
@@ -422,17 +436,6 @@ QAO_Event::Enum QAO_Runtime::getCurrentEvent() const {
 }
 
 // MARK: Inspection
-
-void QAO_Runtime::updateExecutionPriorityForObject(QAO_Base& object, int newPriority) {
-    assert(find(object.getId()).ptr() == &object);
-
-    _orderer.erase(qao_detail::QAO_HandleFactory::createHandle(&object, false));
-    object._executionPriority = newPriority;
-
-    const auto [iter, didInsert] =
-        _orderer.insert(qao_detail::QAO_HandleFactory::createHandle(&object, false));
-    object._context.ordererIterator = iter;
-}
 
 PZInteger QAO_Runtime::getObjectCount() const noexcept {
     return _registry.instanceCount();
@@ -499,6 +502,23 @@ QAO_OrdererConstReverseIterator QAO_Runtime::crbegin() const {
 
 QAO_OrdererConstReverseIterator QAO_Runtime::crend() const {
     return _orderer.crend();
+}
+
+// MARK: Private methods
+
+void QAO_Runtime::_updateExecutionPriorityForObject(QAO_Base& aObject, int aNewPriority) {
+    HG_ASSERT(aObject._context.runtime == this);
+
+    if (_step_orderer_iterator != _orderer.end() && _step_orderer_iterator->ptr() == &aObject) {
+        ++_step_orderer_iterator;
+    }
+
+    auto nh = _orderer.extract(aObject._context.ordererIterator);
+    HG_ASSERT(&aObject == nh.value().ptr());
+
+    aObject._executionPriority = aNewPriority;
+
+    aObject._context.ordererIterator = _orderer.insert(std::move(nh)).position;
 }
 
 } // namespace qao
