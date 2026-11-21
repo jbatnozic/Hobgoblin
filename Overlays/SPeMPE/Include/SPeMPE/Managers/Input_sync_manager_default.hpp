@@ -17,6 +17,21 @@
 namespace jbatnozic {
 namespace spempe {
 
+/*!
+ * \brief Default implementation of `InputSyncManager`.
+ *
+ * Dependencies:
+ * - `NetworkingManager`
+ *
+ * Event listing:
+ * - _eventBeginUpdate() => (Host only) Apply received input.
+ * - _eventUpdate1()     => (Client only) Send (upload) recorded input.
+ * - _eventEndUpdate()   => (Host only) Advance all state schedulers.
+ *
+ * Execution priority hint:
+ * - Anywhere as long as it's after `NetworkingManager`, recommended as close as possible
+ *   (just after) it.
+ */
 class DefaultInputSyncManager 
     : public InputSyncManager
     , public NonstateObject {

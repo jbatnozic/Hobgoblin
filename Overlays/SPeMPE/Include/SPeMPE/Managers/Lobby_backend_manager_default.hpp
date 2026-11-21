@@ -21,8 +21,19 @@
 namespace jbatnozic {
 namespace spempe {
 
-/**
- * Needs: Networking manager, Synced varmap manager, [opt] Window manager
+/*!
+ * \brief Default implementation of `LobbyBackendManager`.
+ *
+ * Dependencies:
+ * - `NetworkingManager`
+ * - `SyncedVarmapManager`
+ *
+ * Event listing:
+ * - _eventBeginUpdate() => Adjust lobby according to received data.
+ * - _eventPostUpdate()  => Clear event queue.
+ *
+ * Execution priority hint:
+ * - Just after `NetworkingManager`.
  */
 class DefaultLobbyBackendManager
     : public LobbyBackendManager

@@ -25,6 +25,23 @@ namespace spempe {
 
 namespace hg = ::jbatnozic::hobgoblin;
 
+/*!
+ * \brief Default implementation of `WindowManager`.
+ *
+ * Dependencies:
+ * - <none>
+ *
+ * Event listing:
+ * - _eventPreUpdate() => (Normal only) Record window input.
+ * - _eventPreDraw()   => (Normal only) Clear MRT (main render texture).
+ * - _eventDraw2()     => (Normal only) Clear window and draw MRT.
+ * - _eventDrawGUI()   => (Normal only) Draw the GUI.
+ * - _eventDisplay()   => (Normal only) Display window and sleep (if needed);
+ *                        (Headless only) sleep (if needed).
+ *
+ * Execution priority hint:
+ * - Dead last, executes after everything else.
+ */
 class DefaultWindowManager
     : public WindowManager
     , public NonstateObject {

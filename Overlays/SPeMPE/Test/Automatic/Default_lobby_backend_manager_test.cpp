@@ -420,6 +420,39 @@ TEST_F(DefaultLobbyBackendManagerTest, MultipleClientsTest) {
     }
 }
 
+TEST_F(DefaultLobbyBackendManagerTest, ReconnectWithIdenticalInfoTest) {
+    // SCENARIO: client connects, lock in, client disconnects, client reconnects (with
+    //           identical info) into the same slot, lock in -> client gets its index again.
+    for (int attempt = 0; attempt < 2; attempt += 1) {
+        _initClientContext(CLI1);
+        _runAllContextsFor(2);
+        ASSERT_EQ(_netMgr[CLI1]->getClient().getServerConnector().getStatus(),
+                  jbatnozic::hobgoblin::RN_ConnectorStatus::Connected);
+
+        _lobbyMgr[CLI1]->setLocalName("cli1");
+        _lobbyMgr[CLI1]->setLocalUniqueId("5678");
+        _lobbyMgr[CLI1]->uploadLocalInfo();
+        _runAllContextsFor(2);
+
+        ASSERT_EQ(_lobbyMgr[CLI1]->getLocalPlayerIndex(), PLAYER_INDEX_UNKNOWN);
+
+        _lobbyMgr[HOST]->lockInPendingChanges();
+        _runAllContextsFor(2);
+
+        ASSERT_EQ(_lobbyMgr[CLI1]->getLocalPlayerIndex(), 1) << "attempt " << attempt;
+        ASSERT_EQ(_lobbyMgr[HOST]->clientIdxToPlayerIdx(0), 1);
+
+        _netMgr[HOST]->getServer().setTimeoutLimit(std::chrono::microseconds{1});
+        _netMgr[CLI1]->getClient().disconnect(false);
+        _runAllContextsFor(4);
+        ASSERT_EQ(_netMgr[HOST]->getServer().getClientConnector(0).getStatus(),
+                  jbatnozic::hobgoblin::RN_ConnectorStatus::Disconnected);
+        _netMgr[HOST]->getServer().setTimeoutLimit(std::chrono::seconds{5});
+
+        _cleanupContext(CLI1);
+    }
+}
+
 TEST_F(DefaultLobbyBackendManagerTest, SwapSlotsTest) {
     // TODO
 }

@@ -24,7 +24,7 @@ namespace gh = ::jbatnozic::hobgoblin;
 //! \note it does NOT contain the ID of the edited cell, but \see `CellEditInfos`.
 struct CellEditInfo {
     //! Mask of all the building blocks that were edited in the indicated cell.
-    BuildingBlockMask bbMask;
+    BuildingBlockMask bbMask = BuildingBlock::NONE;
 };
 
 //! A container used to inform a listener about changes to cells of a world.

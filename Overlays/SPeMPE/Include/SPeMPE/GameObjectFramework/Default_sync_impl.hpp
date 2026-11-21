@@ -47,12 +47,14 @@ void DefaultSyncCreateHandler(hg::RN_NodeInterface& node, SyncId syncId) {
 }
 
 template <class taSyncObj, class taNetwMgr>
-void DefaultSyncUpdateHandler(
+taSyncObj* DefaultSyncUpdateHandler(
     hg::RN_NodeInterface& node,
     SyncId syncId,
     SyncFlags flags,
     typename taSyncObj::VisibleState& state)
 {
+    taSyncObj* rv = nullptr;
+
     node.callIfClient([&](hg::RN_ClientInterface& client) {
         auto  rc         = SPEMPE_GET_RPC_RECEIVER_CONTEXT(client);
         auto* regAddr    = rc.netwMgr.__spempeimpl_getRegistryAddress().copy();
@@ -66,11 +68,15 @@ void DefaultSyncUpdateHandler(
                 flags
             );
         }
+
+        rv = object;
     });
 
     node.callIfServer([](hg::RN_ServerInterface&) {
         throw hg::RN_IllegalMessage("Server received a sync message");
     });
+
+    return rv;
 }
 
 template <class taSyncObj, class taNetwMgr>
@@ -217,6 +223,8 @@ T& StripConstFromRef(const T& aRef) {
 
 } // namespace detail
 
+// clang-format on
+
 // ===== Internal begin =====
 
 #define USPEMPE_MACRO_EXPAND(_x_) _x_
@@ -226,41 +234,43 @@ T& StripConstFromRef(const T& aRef) {
 
 #define USPEMPE_GENERATE_DEFAULT_SYNC_HANDLER_EMPTY(_class_name_) /* Empty */
 
-#define USPEMPE_GENERATE_DEFAULT_SYNC_HANDLER_CREATE(_class_name_) \
-    RN_DEFINE_RPC(USPEMPE_Create##_class_name_, \
-                  RN_ARGS(::jbatnozic::spempe::SyncId, syncId)) { \
-        ::jbatnozic::spempe::detail::DefaultSyncCreateHandler<_class_name_, \
+#define USPEMPE_GENERATE_DEFAULT_SYNC_HANDLER_CREATE(_class_name_)                                     \
+    RN_DEFINE_RPC(USPEMPE_Create##_class_name_, RN_ARGS(::jbatnozic::spempe::SyncId, syncId)) {        \
+        ::jbatnozic::spempe::detail::DefaultSyncCreateHandler<_class_name_,                            \
                                                               ::jbatnozic::spempe::NetworkingManager>( \
-            RN_NODE_IN_HANDLER(), syncId); \
+            RN_NODE_IN_HANDLER(),                                                                      \
+            syncId);                                                                                   \
     }
 
-#define USPEMPE_GENERATE_DEFAULT_SYNC_HANDLER_UPDATE(_class_name_) \
-    RN_DEFINE_RPC(USPEMPE_Update##_class_name_, \
-                  RN_ARGS(::jbatnozic::spempe::SyncId, syncId, \
-                          ::jbatnozic::spempe::SyncFlags, flags, \
-                          _class_name_::VisibleState&, state)) { \
-        ::jbatnozic::spempe::detail::DefaultSyncUpdateHandler<_class_name_, \
-                                                              ::jbatnozic::spempe::NetworkingManager>( \
-            RN_NODE_IN_HANDLER(), syncId, flags, state); \
+#define USPEMPE_GENERATE_DEFAULT_SYNC_HANDLER_UPDATE(_class_name_)                               \
+    RN_DEFINE_RPC(USPEMPE_Update##_class_name_,                                                  \
+                  RN_ARGS(::jbatnozic::spempe::SyncId,                                           \
+                          syncId,                                                                \
+                          ::jbatnozic::spempe::SyncFlags,                                        \
+                          flags,                                                                 \
+                          _class_name_::VisibleState&,                                           \
+                          state)) {                                                              \
+        (void)::jbatnozic::spempe::detail::DefaultSyncUpdateHandler<                             \
+            _class_name_,                                                                        \
+            ::jbatnozic::spempe::NetworkingManager>(RN_NODE_IN_HANDLER(), syncId, flags, state); \
     }
 
-#define USPEMPE_GENERATE_DEFAULT_SYNC_HANDLER_DESTROY(_class_name_) \
-    RN_DEFINE_RPC(USPEMPE_Destroy##_class_name_, \
-                  RN_ARGS(::jbatnozic::spempe::SyncId, syncId)) { \
-        ::jbatnozic::spempe::detail::DefaultSyncDestroyHandler<_class_name_, \
+#define USPEMPE_GENERATE_DEFAULT_SYNC_HANDLER_DESTROY(_class_name_)                                     \
+    RN_DEFINE_RPC(USPEMPE_Destroy##_class_name_, RN_ARGS(::jbatnozic::spempe::SyncId, syncId)) {        \
+        ::jbatnozic::spempe::detail::DefaultSyncDestroyHandler<_class_name_,                            \
                                                                ::jbatnozic::spempe::NetworkingManager>( \
-            RN_NODE_IN_HANDLER(), syncId); \
+            RN_NODE_IN_HANDLER(),                                                                       \
+            syncId);                                                                                    \
     }
 
 #define USPEMPE_GENERATE_MULTIPLE_DEFAULT_SYNC_HANDLERS(_class_name_, _tag_1_, _tag_2_, _tag_3_, ...) \
-    USPEMPE_GENERATE_DEFAULT_SYNC_HANDLER_##_tag_1_ (_class_name_) \
-    USPEMPE_GENERATE_DEFAULT_SYNC_HANDLER_##_tag_2_ (_class_name_) \
-    USPEMPE_GENERATE_DEFAULT_SYNC_HANDLER_##_tag_3_ (_class_name_)
+    USPEMPE_GENERATE_DEFAULT_SYNC_HANDLER_##_tag_1_(_class_name_)                                     \
+        USPEMPE_GENERATE_DEFAULT_SYNC_HANDLER_##_tag_2_(_class_name_)                                 \
+            USPEMPE_GENERATE_DEFAULT_SYNC_HANDLER_##_tag_3_(_class_name_)
 
 #define USPEMPE_GENERATE_DEFAULT_SYNC_HANDLERS(_class_name_, ...) \
-    USPEMPE_MACRO_EXPAND( \
-        USPEMPE_GENERATE_MULTIPLE_DEFAULT_SYNC_HANDLERS(_class_name_, __VA_ARGS__, EMPTY, EMPTY) \
-    )
+    USPEMPE_MACRO_EXPAND(                                         \
+        USPEMPE_GENERATE_MULTIPLE_DEFAULT_SYNC_HANDLERS(_class_name_, __VA_ARGS__, EMPTY, EMPTY))
 
 // ===== Internal end =====
 
@@ -269,44 +279,41 @@ T& StripConstFromRef(const T& aRef) {
 //! Example of usage:
 //!     SPEMPE_GENERATE_DEFAULT_SYNC_HANDLERS(MyClass, (CREATE, DESTROY));
 #define SPEMPE_GENERATE_DEFAULT_SYNC_HANDLERS(_class_name_, _for_events_) \
-    USPEMPE_MACRO_EXPAND( \
-        USPEMPE_GENERATE_DEFAULT_SYNC_HANDLERS(_class_name_, USPEMPE_MACRO_EXPAND_VA _for_events_) \
-    )
+    USPEMPE_MACRO_EXPAND(                                                 \
+        USPEMPE_GENERATE_DEFAULT_SYNC_HANDLERS(_class_name_, USPEMPE_MACRO_EXPAND_VA _for_events_))
 
 //! Calls the default sync/CREATE implementation of a SynchronizedObject
 //! generated by SPEMPE_GENERATE_DEFAULT_SYNC_HANDLERS.
-#define SPEMPE_SYNC_CREATE_DEFAULT_IMPL(_class_name_, _sync_ctrl_) \
-    Compose_USPEMPE_Create##_class_name_((_sync_ctrl_).getLocalNode(), \
+#define SPEMPE_SYNC_CREATE_DEFAULT_IMPL(_class_name_, _sync_ctrl_)              \
+    Compose_USPEMPE_Create##_class_name_((_sync_ctrl_).getLocalNode(),          \
                                          (_sync_ctrl_).getFilteredRecepients(), \
                                          this->getSyncId())
 
 //! Calls the default sync/UPDATE implementation of a SynchronizedObject
 //! generated by SPEMPE_GENERATE_DEFAULT_SYNC_HANDLERS.
 //! Note: Will properly detect and handle autodiff objects.
-#define SPEMPE_SYNC_UPDATE_DEFAULT_IMPL(_class_name_, _sync_ctrl_) \
-    do { \
-        ::jbatnozic::spempe::SyncFlags __spempeImpl_localSyncFlags; \
+#define SPEMPE_SYNC_UPDATE_DEFAULT_IMPL(_class_name_, _sync_ctrl_)                                \
+    do {                                                                                          \
+        ::jbatnozic::spempe::SyncFlags __spempeImpl_localSyncFlags;                               \
         const auto __spempeimpl_oldPackMode = ::jbatnozic::spempe::detail::AlignState_PreCompose( \
-            *this, \
-            ::jbatnozic::spempe::detail::StripConstFromRef(_getCurrentState()), \
-            _sync_ctrl_, \
-            &__spempeImpl_localSyncFlags \
-        ); \
-        Compose_USPEMPE_Update##_class_name_((_sync_ctrl_).getLocalNode(), \
-                                             (_sync_ctrl_).getFilteredRecepients(), \
-                                             this->getSyncId(), \
-                                             __spempeImpl_localSyncFlags, \
-                                             _getCurrentState()); \
-        ::jbatnozic::spempe::detail::AlignState_PostCompose( \
-            ::jbatnozic::spempe::detail::StripConstFromRef(_getCurrentState()), \
-            __spempeimpl_oldPackMode \
-        ); \
+            *this,                                                                                \
+            ::jbatnozic::spempe::detail::StripConstFromRef(_getCurrentState()),                   \
+            _sync_ctrl_,                                                                          \
+            &__spempeImpl_localSyncFlags);                                                        \
+        Compose_USPEMPE_Update##_class_name_((_sync_ctrl_).getLocalNode(),                        \
+                                             (_sync_ctrl_).getFilteredRecepients(),               \
+                                             this->getSyncId(),                                   \
+                                             __spempeImpl_localSyncFlags,                         \
+                                             _getCurrentState());                                 \
+        ::jbatnozic::spempe::detail::AlignState_PostCompose(                                      \
+            ::jbatnozic::spempe::detail::StripConstFromRef(_getCurrentState()),                   \
+            __spempeimpl_oldPackMode);                                                            \
     } while (false)
 
 //! Calls the default sync/DESTROY implementation of a SynchronizedObject
 //! generated by SPEMPE_GENERATE_DEFAULT_SYNC_HANDLERS.
-#define SPEMPE_SYNC_DESTROY_DEFAULT_IMPL(_class_name_, _sync_ctrl_) \
-    Compose_USPEMPE_Destroy##_class_name_((_sync_ctrl_).getLocalNode(), \
+#define SPEMPE_SYNC_DESTROY_DEFAULT_IMPL(_class_name_, _sync_ctrl_)              \
+    Compose_USPEMPE_Destroy##_class_name_((_sync_ctrl_).getLocalNode(),          \
                                           (_sync_ctrl_).getFilteredRecepients(), \
                                           this->getSyncId())
 
@@ -314,5 +321,3 @@ T& StripConstFromRef(const T& aRef) {
 } // namespace jbatnozic
 
 #endif // !SPEMPE_GAME_OBJECT_FRAMEWORK_DEFAULT_SYNC_IMPL_HPP
-
-// clang-format on

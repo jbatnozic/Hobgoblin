@@ -63,6 +63,9 @@ public:
     virtual bool isServer() const        = 0;
     virtual bool isClient() const        = 0;
 
+    virtual void setSendExecutionPriority(int aSendExecutionPriority) = 0;
+    virtual int  getSendExecutionPriority() const = 0;
+
     ///////////////////////////////////////////////////////////////////////////
     // NODE ACCESS                                                           //
     ///////////////////////////////////////////////////////////////////////////
